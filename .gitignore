@@ -1,0 +1,4 @@
+.DS_Store
+settings_local.py
+*.pyc
+/static
