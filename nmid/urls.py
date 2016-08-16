@@ -15,7 +15,11 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
+from camp_fin.views import IndexView, CandidateList, CandidateDetail
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
+    url(r'^$', IndexView.as_view(), name='index'),
+    url(r'^candidates/$', CandidateList.as_view(), name='candidate-list'),
+    url(r'^candidates/(?P<pk>[0-9]+)/$', CandidateDetail.as_view(), name='candidate-detail')
 ]
