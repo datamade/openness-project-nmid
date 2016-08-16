@@ -1,7 +1,51 @@
 {% extends 'base.html' %}
 
 {% block full_content %}
-{% for candidate in object_list %}
-    <a href="{% url 'candidate-detail' candidate.id %}">{{ candidate.first_name }} {{ candidate.last_name }}</a>
-{% endfor %}
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-12">
+
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Candidate</th>
+            <th>Contact</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for candidate in object_list %}
+            <tr>
+              <td>
+                <a href="{% url 'candidate-detail' candidate.id %}">
+                  {{ candidate.first_name }} {{ candidate.last_name }}
+                  {% if candidate.suffix != null %}
+                    , {{ candidate.suffix }}
+                  {% endif %}
+                </a>
+              </td>
+              <td>
+                <ul>
+                  {% if candidate.business_phone != null %}
+                    <li><i class="fa fa-phone" aria-hidden="true"></i> (business) {{ candidate.business_phone}}</li>
+                  {% endif %}
+                  {% if candidate.home_phone != null %}
+                    <li><i class="fa fa-phone" aria-hidden="true"></i> (home) {{ candidate.home_phone }}</li>
+                  {% endif %}
+                  {% if candidate.email != null %}
+                    <li><i class="fa fa-envelope-o" aria-hidden="true"></i> {{ candidate.email }}</li>
+                  {% endif %}
+                </ul>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+</div>
+
 {% endblock %}
+
