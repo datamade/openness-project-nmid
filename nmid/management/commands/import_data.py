@@ -7,12 +7,16 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--recreate',
-            action='store_true',
-            dest='recreate',
-            default=False,
-            help='Recreate search lookup table'
+            '--entity_types',
+            dest='entity_types',
+            default='candidate,pac',
+            help='Comma separated list of entity types'
         )
 
     def handle(self, *args, **options):
-        pass
+
+        entity_types = options['entity_types'].split(',')
+
+        print(entity_types)
+
+
