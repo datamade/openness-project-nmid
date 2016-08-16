@@ -1,0 +1,46 @@
+from collections import OrderedDict
+
+CANDIDATE = OrderedDict([
+    ('CandidateId', 'id'),
+    ('EntityId', 'entity_id'),
+    ('Prefix', 'prefix'),
+    ('FirstName', 'first_name'),
+    ('LastName', 'last_name'),
+    ('MiddleName', 'middle_name'),
+    ('Suffix', 'suffix'),
+    ('BusinessPhone', 'business_phone'),
+    ('HomePhone', 'home_phone'),
+    ('AddressId', 'address_id'),
+    ('StatusId', 'status_id'),
+    ('DateAdded', 'date_added'),
+    ('ContactId', 'contact_id'),
+    ('EmailAccount', 'email'),
+    ('DateLastUpdated', 'date_updated'),
+    ('QualCandidateId', 'qual_candidate_id'),
+    ('Deceased', 'deceased'),
+])
+
+PAC = OrderedDict([
+    ('PoliticalActionCommitteeId', 'id'),
+    ('EntityId', 'entity_id'),
+    ('Name', 'name'),
+    ('Acronym', 'acronym'),
+    ('BusinessPhone', 'business_phone'),
+    ('HomePhone', 'home_phone'),
+    ('EmailAddress', 'email'),
+    ('AddressId', 'address_id'),
+    ('TreasurerId', 'treasurer_id'),
+    ('DateAdded', 'date_added'),
+    ('StatusId', 'status_id'),
+    ('ContactId', 'contact_id'),
+    ('DateLastUpdated', 'date_updated'),
+    ('BankName', 'bank_name'),
+    ('BankPhone', 'bank_phone'),
+    ('FaxPhone', 'fax_number'),
+    ('BankAddressId', 'bank_address_id'),
+    ('InitialBalance', 'initial_balance'),
+    ('IsInitialBalanceSetByPAC', 'initial_balance_from_self'),
+    ('InitialDebt', 'initial_debt'),
+    ('IsInitialDebtSetByPAC', 'initial_debt_from_self'),
+])
+
