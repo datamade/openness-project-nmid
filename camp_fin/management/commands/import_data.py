@@ -64,7 +64,27 @@ class Command(BaseCommand):
         self.addNewRecords()
     
     def addNewRecords(self):
-        pass
+        
+        select_fields = ', '.join(['raw."{0}"::{2} AS {1}'.format(k,v['field'], v['data_type']) for k,v in \
+                                    self.table_mapper.items()])
+        
+        dat_fields = ', '.join([c['field'] for c in self.table_mapper.values()])
+        
+        insert_new = ''' 
+            INSERT INTO {django_table} (
+              {dat_fields}
+            )
+              SELECT {select_fields}
+              FROM raw_{entity_type} AS raw
+              JOIN new_{entity_type} AS new
+                ON raw."{raw_pk_col}" = new.id
+        '''.format(django_table=self.django_table,
+                   dat_fields=dat_fields,
+                   select_fields=select_fields,
+                   entity_type=self.entity_type,
+                   raw_pk_col=self.raw_pk_col)
+        
+        self.executeTransaction(insert_new)
 
     def updateExistingRecords(self):
         changes = ''' 
@@ -78,10 +98,10 @@ class Command(BaseCommand):
         self.executeTransaction(changes)
         
         raw_fields = ', '.join(['raw."{}"'.format(c) for c in \
-                                  self.table_mappers.keys()])
+                                  self.table_mapper.keys()])
 
-        dat_fields = ', '.join(['dat.{}'.format(c) for c in \
-                                  self.table_mappers.values()])
+        dat_fields = ', '.join(['dat.{}'.format(c['field']) for c in \
+                                  self.table_mapper.values()])
 
         where_clause = '''
             WHERE md5(({raw_fields})::text) != md5(({dat_fields})::text)
@@ -101,7 +121,7 @@ class Command(BaseCommand):
 
         self.executeTransaction(find_changes)
         
-        set_fields = ', '.join(['{1}=s."{0}"'.format(k,v) for k,v in \
+        set_fields = ', '.join(['{1}=s."{0}"::{2}'.format(k,v['field'], v['data_type']) for k,v in \
                                     self.table_mapper.items()])
 
         update_dat = ''' 
@@ -117,7 +137,7 @@ class Command(BaseCommand):
         '''.format(django_table=self.django_table,
                    set_fields=set_fields,
                    raw_fields=raw_fields,
-                   entity_type=entity_type,
+                   entity_type=self.entity_type,
                    raw_pk_col=self.raw_pk_col)
         
         self.executeTransaction(update_dat)
