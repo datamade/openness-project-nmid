@@ -1,5 +1,24 @@
 {% extends 'base.html' %}
 
 {% block full_content %}
-{{ object }}
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-12">
+      <h1>{{ candidate.first_name }} {{ candidate.last_name }}</h1>
+        <ul>
+          {% if candidate.business_phone != null %}
+            <li><i class="fa fa-phone" aria-hidden="true"></i> (business) {{ candidate.business_phone}}</li>
+          {% endif %}
+          {% if candidate.home_phone != null %}
+            <li><i class="fa fa-phone" aria-hidden="true"></i> (home) {{ candidate.home_phone }}</li>
+          {% endif %}
+          {% if candidate.email != null %}
+            <li><i class="fa fa-envelope-o" aria-hidden="true"></i> {{ candidate.email }}</li>
+          {% endif %}
+        </ul>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
