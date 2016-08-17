@@ -1,0 +1,46 @@
+from collections import OrderedDict
+
+CANDIDATE = OrderedDict([
+    ('CandidateId', {'field': 'id', 'data_type': 'bigint'}),
+    ('EntityId', {'field': 'entity_id', 'data_type': 'bigint'}),
+    ('Prefix', {'field': 'prefix', 'data_type': 'varchar'}),
+    ('FirstName', {'field': 'first_name', 'data_type': 'varchar'}),
+    ('LastName', {'field': 'last_name', 'data_type': 'varchar'}),
+    ('MiddleName', {'field': 'middle_name', 'data_type': 'varchar'}),
+    ('Suffix', {'field': 'suffix', 'data_type': 'varchar'}),
+    ('BusinessPhone', {'field': 'business_phone', 'data_type': 'varchar'}),
+    ('HomePhone', {'field': 'home_phone', 'data_type': 'varchar'}),
+    ('AddressId', {'field': 'address_id', 'data_type': 'bigint'}),
+    ('StatusId', {'field': 'status_id', 'data_type': 'bigint'}),
+    ('DateAdded', {'field': 'date_added', 'data_type': 'date'}),
+    ('ContactId', {'field': 'contact_id', 'data_type': 'bigint'}),
+    ('EmailAccount', {'field': 'email', 'data_type': 'varchar'}),
+    ('DateLastUpdated', {'field': 'date_updated', 'data_type': 'timestamp with time zone'}),
+    ('QualCandidateId', {'field': 'qual_candidate_id', 'data_type': 'bigint'}),
+    ('Deceased', {'field': 'deceased', 'data_type': 'boolean'}),
+])
+
+PAC = OrderedDict([
+    ('PoliticalActionCommitteeId', {'field': 'id', 'data_type': 'bigint'}),
+    ('EntityId', {'field': 'entity_id', 'data_type': 'bigint'}),
+    ('Name', {'field': 'name', 'data_type': 'varchar'}),
+    ('Acronym', {'field': 'acronym', 'data_type': 'varchar'}),
+    ('BusinessPhone', {'field': 'business_phone', 'data_type': 'varchar'}),
+    ('HomePhone', {'field': 'home_phone', 'data_type': 'varchar'}),
+    ('EmailAddress', {'field': 'email', 'data_type': 'varchar'}),
+    ('AddressId', {'field': 'address_id', 'data_type': 'bigint'}),
+    ('TreasurerId', {'field': 'treasurer_id', 'data_type': 'bigint'}),
+    ('DateAdded', {'field': 'date_added', 'data_type': 'date'}),
+    ('StatusId', {'field': 'status_id', 'data_type': 'bigint'}),
+    ('ContactId', {'field': 'contact_id', 'data_type': 'bigint'}),
+    ('DateLastUpdated', {'field': 'date_updated', 'data_type': 'timestamp with time zone'}),
+    ('BankName', {'field': 'bank', 'data_type': 'varchar'}),
+    ('BankPhone', {'field': 'bank_phone', 'data_type': 'varchar'}),
+    ('FaxPhone', {'field': 'fax_number', 'data_type': 'varchar'}),
+    ('BankAddressId', {'field': 'bank_address_id', 'data_type': 'bigint'}),
+    ('InitialBalance', {'field': 'initial_balance', 'data_type': 'money::numeric::double precision'}),
+    ('IsInitialbalanceSetByPAC', {'field': 'initial_balance_from_self', 'data_type': 'boolean'}),
+    ('InitialDebt', {'field': 'initial_debt', 'data_type': 'money::numeric::double precision'}),
+    ('IsInitialDebtSetByPac', {'field': 'initial_debt_from_self', 'data_type': 'boolean'}),
+])
+
