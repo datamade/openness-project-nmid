@@ -79,6 +79,11 @@ class Campaign(models.Model):
     biannual = models.NullBooleanField()
     from_campaign = models.ForeignKey('Campaign', db_constraint=False, null=True)
     
+    def __str__(self):
+        candidate_name = '{0} {1}'.format(self.candidate.first_name, 
+                                          self.candidate.last_name)
+        office = self.office.description
+        return '{0} ({1})'.format(candidate_name, office)
 
 class OfficeType(models.Model):
     description = models.CharField(max_length=50)
@@ -174,6 +179,15 @@ class Filing(models.Model):
     edited = models.BooleanField()
     regenerate = models.NullBooleanField()
     
+    def __str__(self):
+        filing_date = '{0}/{1}'.format(self.filing_period.filing_date.month, 
+                                       self.filing_period.filing_date.year)
+
+        name = '{0} {1} ({2})'.format(self.campaign.candidate.first_name,
+                                      self.campaign.candidate.last_name,
+                                      filing_date)
+        return name
+
 class FilingPeriod(models.Model):
     filing_date = models.DateTimeField()
     due_date = models.DateTimeField()

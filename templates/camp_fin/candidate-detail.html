@@ -3,22 +3,46 @@
 {% block full_content %}
 
 <div class="container">
-  <div class="row">
-    <div class="col-md-12">
-      <h1>{{ candidate.first_name }} {{ candidate.last_name }}</h1>
-        <ul>
-          {% if candidate.business_phone != null %}
-            <li><i class="fa fa-phone" aria-hidden="true"></i> (business) {{ candidate.business_phone}}</li>
-          {% endif %}
-          {% if candidate.home_phone != null %}
-            <li><i class="fa fa-phone" aria-hidden="true"></i> (home) {{ candidate.home_phone }}</li>
-          {% endif %}
-          {% if candidate.email != null %}
-            <li><i class="fa fa-envelope-o" aria-hidden="true"></i> {{ candidate.email }}</li>
-          {% endif %}
-        </ul>
+    <div class="row">
+        <div class="col-md-12">
+            <h1>{{ candidate.first_name }} {{ candidate.last_name }}</h1>
+            <ul>
+                {% if candidate.business_phone %}
+                    <li><i class="fa fa-phone" aria-hidden="true"></i> (business) {{ candidate.business_phone}}</li>
+                {% endif %}
+                {% if candidate.home_phone %}
+                    <li><i class="fa fa-phone" aria-hidden="true"></i> (home) {{ candidate.home_phone }}</li>
+                {% endif %}
+                {% if candidate.email %}
+                    <li><i class="fa fa-envelope-o" aria-hidden="true"></i> {{ candidate.email }}</li>
+                {% endif %}
+            </ul>
+        </div>
     </div>
-  </div>
+    <div class="row">
+        <div class="col-md-12">
+            <table class="table table-condensed">
+                <thead>
+                    <tr>
+                        <th>Filing period</th>
+                        <th>Campaign</th>
+                        <th>Opening balance</th>
+                        <th>Closing balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for filing in filings %}
+                        <tr>
+                            <td>{{ filing.filing_period.description }} {{ filing.filing_period.filing_date|date:"F o" }}</td>
+                            <td>{{ filing.campaign }}</td>
+                            <td>{{ filing.opening_balance }}</td>
+                            <td>{{ filing.closing_balance }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 {% endblock %}
