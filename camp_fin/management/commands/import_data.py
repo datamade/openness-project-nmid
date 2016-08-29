@@ -4,11 +4,14 @@ import sqlalchemy as sa
 
 import psycopg2
 
+from openpyxl import load_workbook
+
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 
 from nmid.typeinferer import TypeInferer
-from .table_mappers import CANDIDATE, PAC
+from .table_mappers import CANDIDATE, PAC, FILING, FILING_PERIOD, CONTRIB_EXP, \
+    CONTRIB_EXP_TYPE, CAMPAIGN, OFFICE_TYPE, OFFICE
 
 DB_CONN = 'postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}'
 
@@ -17,8 +20,27 @@ engine = sa.create_engine(DB_CONN.format(**settings.DATABASES['default']),
                           server_side_cursors=True)
 
 RAW_PK_LOOKUP = {
-    'candidate': 'CandidateId',
-    'pac': 'PoliticalActionCommitteeId',
+    'candidate': 'candidateid',
+    'pac': 'politicalactioncommitteeid',
+    'filing': 'reportid',
+    'filingperiod': 'filingperiodid',
+    'transaction': 'contribexpenditureid',
+    'transactiontype': 'contribexpendituretypeid',
+    'campaign': 'campaignid',
+    'officetype': 'officetypeid',
+    'office': 'electionofficeid',
+}
+
+MAPPER_LOOKUP = {
+    'candidate': CANDIDATE,
+    'pac': PAC,
+    'filing': FILING,
+    'filingperiod': FILING_PERIOD,
+    'transaction': CONTRIB_EXP,
+    'transactiontype': CONTRIB_EXP_TYPE,
+    'campaign': CAMPAIGN,
+    'officetype': OFFICE_TYPE,
+    'office': OFFICE,
 }
 
 class Command(BaseCommand):
@@ -38,18 +60,27 @@ class Command(BaseCommand):
             required=True,
             help='Relative path to file to load'
         )
+        parser.add_argument(
+            '--encoding', 
+            dest='encoding',
+            default='utf-8',
+            help='File encoding (defaults to UTF-8)'
+        )
+
 
     def handle(self, *args, **options):
 
         self.entity_type = options['entity_type']
         self.file_path = options['file_path']
+        self.encoding = options['encoding']
+
+        if self.file_path.endswith('xlsx'):
+            self.convertXLSX()
+
         self.django_table = 'camp_fin_{}'.format(self.entity_type)
         self.raw_pk_col = RAW_PK_LOOKUP[self.entity_type]
         
-        if self.entity_type == 'candidate':
-            self.table_mapper = CANDIDATE
-        elif self.entity_type == 'pac':
-            self.table_mapper = PAC
+        self.table_mapper = MAPPER_LOOKUP[self.entity_type]
 
         self.connection = engine.connect()
         
@@ -62,7 +93,41 @@ class Command(BaseCommand):
         self.findNewRecords()
         
         self.addNewRecords()
-    
+        
+        # This should only be necessary until we get the actual entity table
+        
+        if self.entity_type in ['candidate', 'pac', 'filing']:
+            self.populateEntityTable()
+
+    def convertXLSX(self):
+        wb = load_workbook(self.file_path)
+        sheet = wb.get_active_sheet()
+        
+        header = [r.value for r in sheet.rows[0]]
+        
+        csv_path = '{}.csv'.format(self.file_path.rsplit('.', 1)[0])
+        
+        with open(csv_path, 'w') as f:
+            writer = csv.writer(f)
+            writer.writerow(header)
+            for row in sheet.rows[1:]:
+                row_values = [r.value for r in row]
+                writer.writerow(row_values)
+        
+        self.file_path = csv_path
+
+    def populateEntityTable(self):
+        entities = ''' 
+            INSERT INTO camp_fin_entity
+              SELECT DISTINCT d.entity_id
+              FROM {table} AS d
+              LEFT JOIN camp_fin_entity AS e
+                ON d.entity_id = e.id
+              WHERE e.id IS NULL
+        '''.format(table=self.django_table)
+        
+        self.executeTransaction(entities)
+
     def addNewRecords(self):
         
         select_fields = ', '.join(['raw."{0}"::{2} AS {1}'.format(k,v['field'], v['data_type']) for k,v in \
@@ -177,19 +242,19 @@ class Command(BaseCommand):
                                  autoload_with=self.connection.engine)
         
         except sa.exc.NoSuchTableError:
-            inferer = TypeInferer(self.file_path)
+            inferer = TypeInferer(self.file_path, encoding=self.encoding)
             inferer.infer()
             
             sql_table = sa.Table('raw_{0}'.format(self.entity_type), 
                                  sa.MetaData())
         
             for column_name, column_type in inferer.types.items():
-                sql_table.append_column(sa.Column(column_name, column_type()))
+                sql_table.append_column(sa.Column(column_name.lower().replace('"', ''), column_type()))
         
         dialect = sa.dialects.postgresql.dialect()
         create_table = str(sa.schema.CreateTable(sql_table)\
                            .compile(dialect=dialect)).strip(';')
-
+        
         self.executeTransaction('DROP TABLE IF EXISTS raw_{0}'.format(self.entity_type))
         self.executeTransaction(create_table)
 
@@ -198,10 +263,10 @@ class Command(BaseCommand):
         DB_CONN_STR = DB_CONN.format(**settings.DATABASES['default'])
 
         copy_st = ''' 
-            COPY raw_{0} FROM STDIN WITH CSV HEADER DELIMITER ','
+            COPY raw_{0} FROM STDIN WITH CSV HEADER
         '''.format(self.entity_type)
         
-        with open(self.file_path, 'r') as f:
+        with open(self.file_path, 'r', encoding=self.encoding) as f:
             next(f)
             with psycopg2.connect(DB_CONN_STR) as conn:
                 with conn.cursor() as curs:

@@ -1,6 +1,7 @@
 import csv
 import datetime
 from csvkit.cleanup import RowChecker
+from csvkit.exceptions import LengthMismatchError
 from dateutil.parser import parse
 import sqlalchemy as sa
 from collections import OrderedDict
@@ -17,7 +18,7 @@ class TypeInferer(object):
                  fpath, 
                  encoding='utf-8', 
                  delimiter=',', 
-                 quoting=csv.QUOTE_NONE):
+                 quoting=csv.QUOTE_MINIMAL):
 
         self.fpath = fpath
         self.encoding = encoding
@@ -35,10 +36,11 @@ class TypeInferer(object):
             reader = csv.reader(f, delimiter=self.delimiter, quoting=self.quoting)
             header = next(reader)
             checker = RowChecker(reader)
-            for row in checker.checked_rows():
+            for idx, row in enumerate(checker.checked_rows()):
                 try:
                     yield row[col_idx]
-                except IndexError:
+                except (IndexError, LengthMismatchError):
+                    print(e)
                     continue
 
     def infer(self):
