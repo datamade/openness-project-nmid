@@ -38,7 +38,7 @@ PAC = OrderedDict([
     ('bankphone', {'field': 'bank_phone', 'data_type': 'varchar'}),
     ('faxphone', {'field': 'fax_number', 'data_type': 'varchar'}),
     ('bankaddressid', {'field': 'bank_address_id', 'data_type': 'bigint'}),
-    ('initialbalance', {'field': 'initial_balance', 'data_type': 'money::numeric::double precision'}),
+    ('initialbalance', {'field': 'initial_balance', 'data_type': 'double precision'}),
     ('isinitialbalancesetbypac', {'field': 'initial_balance_from_self', 'data_type': 'boolean'}),
     ('initialdebt', {'field': 'initial_debt', 'data_type': 'money::numeric::double precision'}),
     ('isinitialdebtsetbypac', {'field': 'initial_debt_from_self', 'data_type': 'boolean'}),
@@ -168,7 +168,6 @@ CAMPAIGN = OrderedDict([
 OFFICE_TYPE = OrderedDict([
     ('officetypeid', {'field': 'id', 'data_type': 'bigint'}),
     ('description', {'field': 'description', 'data_type': 'varchar'}),
-    ('order', {'field': 'order', 'data_type': 'bigint'}),
 ])
 
 OFFICE = OrderedDict([

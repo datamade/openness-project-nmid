@@ -267,14 +267,12 @@ class Command(BaseCommand):
         '''.format(self.entity_type)
         
         with open(self.file_path, 'r', encoding=self.encoding) as f:
-            next(f)
             with psycopg2.connect(DB_CONN_STR) as conn:
                 with conn.cursor() as curs:
                     try:
                         curs.copy_expert(copy_st, f)
                     except psycopg2.IntegrityError as e:
                         logger.error(e, exc_info=True)
-                        print(e)
                         conn.rollback()
         
         self.executeTransaction('''

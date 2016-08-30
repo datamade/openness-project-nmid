@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block full_content %}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            {% for election_season, offices in elections.items %}
+            <h3>Election season {{ election_season }}</h3>
+            <table class="table table-condensed">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>District</th>
+                        <th>County</th>
+                        <th>Division</th>
+                        <th>Party</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for office in offices %}
+                    <tr>
+                        <td>{{ office.office_name }}</td>
+                        <td>{{ office.description }}</td>
+                        <td>{{ office.district_id }}</td>
+                        <td>{{ office.county_id }}</td>
+                        <td>{{ office.division_id }}</td>
+                        <td>{{ office.political_party_id }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+

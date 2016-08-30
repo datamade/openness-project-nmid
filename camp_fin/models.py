@@ -87,10 +87,8 @@ class Campaign(models.Model):
 
 class OfficeType(models.Model):
     description = models.CharField(max_length=50)
-    order = models.IntegerField()
 
 class Office(models.Model):
-    office_type = models.ForeignKey('OfficeType', db_constraint=False)
     description = models.CharField(max_length=100)
     status = models.ForeignKey('Status', db_constraint=False)
     office_type = models.ForeignKey('OfficeType', db_constraint=False, null=True)
