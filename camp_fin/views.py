@@ -3,72 +3,97 @@ from collections import namedtuple, OrderedDict
 
 from django.views.generic import ListView, TemplateView, DetailView
 from django.http import HttpResponseNotFound
-from .models import Candidate, Office
 from django.db import transaction, connection
 
-class CandidateList(ListView):
-    model = Candidate
+from .models import Candidate, Office
+from .base_views import PaginatedList
+
+class CandidateList(PaginatedList):
     template_name = "camp_fin/candidate-list.html"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['candidate_count'] = len(context['object_list'])
-        return context
-
-class CandidateDetail(DetailView):
-    model = Candidate
-    template_name = "camp_fin/candidate-detail.html"
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['filings'] = context['candidate'].entity.filing_set.order_by('-filing_period__filing_date')
-
-        return context
-
-class OfficeDetail(TemplateView):
-    template_name = 'camp_fin/office-detail.html'
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        
-        # TODO: If we end up going this way, we need to figure out how to 404
-        # properly
-        
-        office_id = kwargs['slug'].rsplit('-', 1)[1]
-
+    def get_queryset(self, **kwargs):
         cursor = connection.cursor()
+        
+        self.order_by = self.request.GET.get('order_by', 'closing_balance')
+        self.sort_order = self.request.GET.get('sort_order', 'desc')
 
         cursor.execute(''' 
-            SELECT 
-              campaign.election_season_id,
-              office.description AS office_name, 
-              office_type.description, 
-              campaign.district_id, 
-              campaign.county_id, 
-              campaign.division_id,
-              candidate.*
-            FROM camp_fin_office AS office 
-            LEFT JOIN camp_fin_officetype AS office_type 
-              ON office.office_type_id = office_type.id 
-            LEFT JOIN camp_fin_campaign AS campaign 
-              ON office.id = campaign.office_id
-            JOIN camp_fin_candidate AS candidate
-              ON campaign.candidate_id = candidate.id
-            WHERE office.id = %s
-            ORDER BY campaign.election_season_id DESC
-        ''', [office_id])
+            SELECT * FROM (
+              SELECT DISTINCT ON (candidate.id) 
+                candidate.*, 
+                campaign.committee_name,
+                campaign.county_id,
+                campaign.district_id,
+                campaign.division_id,
+                office.description AS office_name,
+                filing.closing_balance, 
+                filing.date_last_amended 
+              FROM camp_fin_candidate AS candidate 
+              JOIN camp_fin_filing AS filing 
+                USING(entity_id)
+              JOIN camp_fin_campaign AS campaign
+                ON filing.campaign_id = campaign.id
+              JOIN camp_fin_office AS office
+                ON campaign.office_id = office.id
+              ORDER BY candidate.id, filing.date_added desc
+            ) AS s
+            ORDER BY {0} {1}
+        '''.format(self.order_by, self.sort_order))
         
-        columns = [col[0] for col in cursor.description]
-        result_tuple = namedtuple('Office', columns)
+        columns = [c[0] for c in cursor.description]
+        candidate_tuple = namedtuple('Candidate', columns)
+
+        return [candidate_tuple(*r) for r in cursor]
         
-        elections = OrderedDict()
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        context['sort_order'] = self.sort_order
+        
+        context['toggle_order'] = 'desc'
+        if self.sort_order.lower() == 'desc':
+            context['toggle_order'] = 'asc'
 
-        for season_id, rows in itertools.groupby(cursor, key=lambda x: x[0]):
-            distinct_rows = {result_tuple(*r) for r in rows}
-            elections[season_id] = sorted(list(distinct_rows), key=lambda x: x[1])
-            context['office'] = elections[season_id][0].office_name
+        context['order_by'] = self.order_by
 
-        context['elections'] = elections
+        return context
+
+class CandidateDetail(ListView):
+    template_name = "camp_fin/candidate-detail.html"
+    
+    def get_queryset(self, **kwargs):
+        cursor = connection.cursor()
+        
+        cursor.execute(''' 
+            SELECT * FROM (
+              SELECT DISTINCT ON (campaign.id) 
+                candidate.*, 
+                campaign.committee_name,
+                campaign.county_id,
+                campaign.district_id,
+                campaign.division_id,
+                campaign.election_season_id,
+                campaign.primary_election_winner_status,
+                campaign.general_election_winner_status,
+                office.description AS office_name 
+              FROM camp_fin_candidate AS candidate 
+              JOIN camp_fin_campaign AS campaign
+                ON candidate.id = campaign.candidate_id
+              JOIN camp_fin_office AS office
+                ON campaign.office_id = office.id
+              WHERE candidate.id = %s
+            ) AS s
+            ORDER BY election_season_id
+        ''', [self.kwargs['pk']])
+        
+        columns = [c[0] for c in cursor.description]
+        candidate_tuple = namedtuple('Candidate', columns)
+        return [candidate_tuple(*r) for r in cursor]
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['candidate'] = context['object_list'][0]
 
         return context
 

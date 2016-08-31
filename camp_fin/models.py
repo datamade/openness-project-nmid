@@ -122,7 +122,6 @@ class Transaction(models.Model):
     last_name = models.CharField(max_length=255, null=True)
     suffix = models.CharField(max_length=15, null=True)
     company_name = models.CharField(max_length=255, null=True)
-    candidate = models.ForeignKey("Candidate", db_constraint=False, null=True)
     address = models.CharField(max_length=255, null=True)
     city = models.CharField(max_length=50, null=True)
     state = models.CharField(max_length=25, null=True)

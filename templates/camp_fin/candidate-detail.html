@@ -4,19 +4,41 @@
 
 <div class="container">
     <div class="row">
-        <div class="col-md-12">
-            <h1>{{ candidate.first_name }} {{ candidate.last_name }}</h1>
-            <ul>
+        <div class="col-md-6">
+            <h1>
+                {% spaceless %}
+                {{ candidate.prefix|default_if_none:"" }}
+                {{ candidate.first_name|default_if_none:"" }}
+                {{ candidate.middle_name|default_if_none:"" }}
+                {{ candidate.last_name|default_if_none:"" }}
+                {{ candidate.suffix|default_if_none:"" }}
+                {% endspaceless %}
+            </h1>
+            <table class="table table-condensed">
+                <tbody>
                 {% if candidate.business_phone %}
-                    <li><i class="fa fa-phone" aria-hidden="true"></i> (business) {{ candidate.business_phone}}</li>
+                    <tr>
+                        <td>
+                            <i class="fa fa-phone" aria-hidden="true"></i> (business) {{ candidate.business_phone}}
+                        </td>
+                    <tr>
                 {% endif %}
                 {% if candidate.home_phone %}
-                    <li><i class="fa fa-phone" aria-hidden="true"></i> (home) {{ candidate.home_phone }}</li>
+                    <tr>
+                        <td>
+                            <i class="fa fa-phone" aria-hidden="true"></i> (home) {{ candidate.home_phone }}
+                        </td>
+                    </tr>
                 {% endif %}
                 {% if candidate.email %}
-                    <li><i class="fa fa-envelope-o" aria-hidden="true"></i> {{ candidate.email }}</li>
+                    <tr>
+                        <td>
+                            <i class="fa fa-envelope-o" aria-hidden="true"></i> {{ candidate.email }}
+                        </td>
+                    </tr>
                 {% endif %}
-            </ul>
+                </tbody>
+            </table>
         </div>
     </div>
     <div class="row">
@@ -26,18 +48,20 @@
                 <thead>
                     <tr>
                         <th>Office</th>
-                        <th>Campaign</th>
-                        <th>Opening balance</th>
-                        <th>Closing balance</th>
+                        <th>Committee name</th>
+                        <th>Election season</th>
+                        <th>Won primary?</th>
+                        <th>Won general?</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for filing in filings %}
+                    {% for campaign in object_list %}
                         <tr>
-                            <td>{{ filing.filing_period.description }} {{ filing.filing_period.filing_date|date:"F o" }}</td>
-                            <td>{{ filing.campaign }}</td>
-                            <td>{{ filing.opening_balance }}</td>
-                            <td>{{ filing.closing_balance }}</td>
+                            <td>{{ campaign.office_name }}</td>
+                            <td>{{ campaign.committee_name|default_if_none:"" }}</td>
+                            <td>{{ campaign.election_season_id }}</td>
+                            <td>{{ campaign.primary_election_winner_status|default_if_none:"" }}</td>
+                            <td>{{ campaign.general_election_winner_status|default_if_none:"" }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
