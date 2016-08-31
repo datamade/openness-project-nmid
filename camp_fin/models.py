@@ -17,10 +17,33 @@ class Candidate(models.Model):
     date_updated = models.DateTimeField(null=True)
     qual_candidate_id = models.IntegerField(null=True)
     deceased = models.BooleanField()
+    
+    slug = models.CharField(max_length=500)
 
     def __str__(self):
         name = '{0} {1}'.format(self.first_name, self.last_name)
         return name
+    
+    @property
+    def full_name(self):
+        full_name = ''
+        
+        if self.prefix:
+            full_name = '{}'.format(self.prefix)
+        
+        if self.first_name:
+            full_name = '{0} {1}'.format(full_name, self.first_name)
+
+        if self.middle_name:
+            full_name = '{0} {1}'.format(full_name, self.middle_name)
+
+        if self.last_name:
+            full_name = '{0} {1}'.format(full_name, self.last_name)
+
+        if self.suffix:
+            full_name = '{0} {1}'.format(full_name, self.suffix)
+
+        return full_name.strip()
 
 class PAC(models.Model):
     entity = models.ForeignKey("Entity", db_constraint=False)
@@ -43,6 +66,8 @@ class PAC(models.Model):
     initial_balance_from_self = models.NullBooleanField(null=True)
     initial_debt = models.FloatField(null=True)
     initial_debt_from_self = models.NullBooleanField(null=True)
+    
+    slug = models.CharField(max_length=500)
 
     def __str__(self):
         return self.name

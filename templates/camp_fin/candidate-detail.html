@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load helpers %}
 
 {% block full_content %}
 
@@ -6,13 +7,7 @@
     <div class="row">
         <div class="col-md-6">
             <h1>
-                {% spaceless %}
-                {{ candidate.prefix|default_if_none:"" }}
-                {{ candidate.first_name|default_if_none:"" }}
-                {{ candidate.middle_name|default_if_none:"" }}
-                {{ candidate.last_name|default_if_none:"" }}
-                {{ candidate.suffix|default_if_none:"" }}
-                {% endspaceless %}
+                {{ candidate.full_name }}
             </h1>
             <table class="table table-condensed">
                 <tbody>
@@ -40,6 +35,38 @@
                 </tbody>
             </table>
         </div>
+        <div class="col-sm-6">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>{{ latest_filing.filing_period.description }} Report</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Opening balance</td>
+                        <td>{{ latest_filing.opening_balance|format_money }}</td>
+                    </tr>
+                    <tr>
+                        <td>Total contributions</td>
+                        <td>{{ latest_filing.total_contributions|format_money }}</td>
+                    </tr>
+                    <tr>
+                        <td>Total in-kind contributions</td>
+                        <td>{{ latest_filing.total_inkind|format_money }}</td>
+                    </tr>
+                    <tr>
+                        <td>Total expenditures</td>
+                        <td>{{ latest_filing.total_expenditures|format_money }}</td>
+                    </tr>
+                    <tr>
+                        <td>Closing balance</td>
+                        <td>{{ latest_filing.closing_balance|format_money }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
     <div class="row">
         <div class="col-md-12">
@@ -55,7 +82,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for campaign in object_list %}
+                    {% for campaign in candidate.campaign_set.all %}
                         <tr>
                             <td>{{ campaign.office_name }}</td>
                             <td>{{ campaign.committee_name|default_if_none:"" }}</td>
@@ -66,6 +93,11 @@
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            
         </div>
     </div>
 </div>

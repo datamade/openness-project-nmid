@@ -48,7 +48,7 @@
                     {% for candidate in object_list %}
                         <tr>
                             <td>
-                                <a href="{% url 'candidate-detail' candidate.id %}">
+                                <a href="{% url 'candidate-detail' candidate.slug %}">
                                     {% spaceless %}
                                     {{ candidate.prefix|default_if_none:"" }}
                                     {{ candidate.first_name|default_if_none:"" }}

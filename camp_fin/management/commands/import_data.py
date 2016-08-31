@@ -8,6 +8,7 @@ from openpyxl import load_workbook
 
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
+from django.utils.text import slugify
 
 from nmid.typeinferer import TypeInferer
 from .table_mappers import CANDIDATE, PAC, FILING, FILING_PERIOD, CONTRIB_EXP, \
@@ -99,6 +100,9 @@ class Command(BaseCommand):
         if self.entity_type in ['candidate', 'pac', 'filing']:
             self.populateEntityTable()
 
+        if self.entity_type in ['candidate', 'pac']:
+            self.populateSlugField()
+
     def convertXLSX(self):
         wb = load_workbook(self.file_path)
         sheet = wb.get_active_sheet()
@@ -127,6 +131,39 @@ class Command(BaseCommand):
         '''.format(table=self.django_table)
         
         self.executeTransaction(entities)
+    
+    def populateSlugField(self):
+        if self.entity_type == 'candidate':
+            name_components = [
+                'first_name', 
+                'last_name', 
+            ]
+            
+            selects = []
+
+            for component in name_components:
+                select = "COALESCE({}, '')".format(component)
+                selects.append(select)
+
+            name_select = " || ' ' || ".join(selects)
+
+        elif self.entity_type == 'pac':
+            name_select = 'name'
+
+        slugify = ''' 
+            UPDATE {django_table} SET
+              slug = s.slug
+            FROM (
+              SELECT
+                regexp_replace(TRANSLATE(REPLACE(LOWER({name_select}), ' ', '-'), 'áàâãäåāăąÁÂÃÄÅĀĂĄèééêëēĕėęěĒĔĖĘĚìíîïìĩīĭÌÍÎÏÌĨĪĬóôõöōŏőÒÓÔÕÖŌŎŐùúûüũūŭůÙÚÛÜŨŪŬŮ','aaaaaaaaaaaaaaaaaeeeeeeeeeeeeeeeiiiiiiiiiiiiiiiiooooooooooooooouuuuuuuuuuuuuuuu'), '[^\w -]', '', 'g') || '-' || id::varchar as slug,
+                id
+              FROM {django_table}
+            ) AS s
+            WHERE {django_table}.id = s.id
+        '''.format(django_table=self.django_table,
+                   name_select=name_select)
+        
+        self.executeTransaction(slugify)
 
     def addNewRecords(self):
         

@@ -5,8 +5,13 @@ from django.views.generic import ListView, TemplateView, DetailView
 from django.http import HttpResponseNotFound
 from django.db import transaction, connection
 
-from .models import Candidate, Office
-from .base_views import PaginatedList
+from rest_framework import routers, serializers, viewsets
+
+from .models import Candidate, Office, Transaction
+from .base_views import PaginatedList, JSONResponseMixin
+
+class IndexView(TemplateView):
+    template_name = 'index.html'
 
 class CandidateList(PaginatedList):
     template_name = "camp_fin/candidate-list.html"
@@ -58,44 +63,51 @@ class CandidateList(PaginatedList):
 
         return context
 
-class CandidateDetail(ListView):
+class CandidateDetail(DetailView):
     template_name = "camp_fin/candidate-detail.html"
-    
-    def get_queryset(self, **kwargs):
-        cursor = connection.cursor()
-        
-        cursor.execute(''' 
-            SELECT * FROM (
-              SELECT DISTINCT ON (campaign.id) 
-                candidate.*, 
-                campaign.committee_name,
-                campaign.county_id,
-                campaign.district_id,
-                campaign.division_id,
-                campaign.election_season_id,
-                campaign.primary_election_winner_status,
-                campaign.general_election_winner_status,
-                office.description AS office_name 
-              FROM camp_fin_candidate AS candidate 
-              JOIN camp_fin_campaign AS campaign
-                ON candidate.id = campaign.candidate_id
-              JOIN camp_fin_office AS office
-                ON campaign.office_id = office.id
-              WHERE candidate.id = %s
-            ) AS s
-            ORDER BY election_season_id
-        ''', [self.kwargs['pk']])
-        
-        columns = [c[0] for c in cursor.description]
-        candidate_tuple = namedtuple('Candidate', columns)
-        return [candidate_tuple(*r) for r in cursor]
+    model = Candidate
 
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['candidate'] = context['object_list'][0]
+        
+        latest_filing = context['candidate'].entity.filing_set\
+                                            .order_by('-filing_period__filing_date')\
+                                            .first()
+        
+        context['latest_filing'] = latest_filing
 
         return context
 
-class IndexView(TemplateView):
-    template_name = 'index.html'
+class TransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+
+class TransactionBaseViewSet(viewsets.ModelViewSet):
+    serializer_class = TransactionSerializer
+    default_filter = {}
+
+    def get_queryset(self):
+
+        if self.default_filter:
+            queryset = Transaction.objects.filter(**self.default_filter)
+        else:
+            queryset = Transaction.objects.all()
+
+        candidate_id = self.request.query_params.get('candidate_id')
+        if candidate_id:
+            queryset = queryset.filter(filing__campaign__candidate__id=candidate_id)
+
+        return queryset
+
+class TransactionViewSet(TransactionBaseViewSet):
+    pass
+
+class ContributionViewSet(TransactionBaseViewSet):
+    default_filter = {'transaction_type__contribution': True}
+
+
+class ExpenditureViewSet(TransactionBaseViewSet):
+    default_filter = {'transaction_type__contribution': False}
+
+
