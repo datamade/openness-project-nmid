@@ -5,9 +5,10 @@ from django.views.generic import ListView, TemplateView, DetailView
 from django.http import HttpResponseNotFound
 from django.db import transaction, connection
 
-from rest_framework import routers, serializers, viewsets
+from rest_framework import serializers, viewsets, filters, generics, metadata
+from rest_framework.response import Response
 
-from .models import Candidate, Office, Transaction
+from .models import Candidate, Office, Transaction, Campaign, Filing, PAC
 from .base_views import PaginatedList, JSONResponseMixin
 
 class IndexView(TemplateView):
@@ -76,16 +77,76 @@ class CandidateDetail(DetailView):
                                             .first()
         
         context['latest_filing'] = latest_filing
-
+        
         return context
 
+class CandidateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Candidate
+        fields = '__all__'
+
+class PACSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = PAC
+        fields = '__all__'
+
+class FilingField(serializers.RelatedField):
+
+    def to_representation(self, value):
+        
+        if value.entity.pac_set.all():
+            serializer = PACSerializer(value.entity.pac_set.first())
+        
+        elif value.entity.candidate_set.all():
+            serializer = CandidateSerializer(value.entity.candidate_set.first())
+
+        return serializer.data
+
+
 class TransactionSerializer(serializers.ModelSerializer):
+    transaction_type = serializers.StringRelatedField(read_only=True)
+    full_name = serializers.StringRelatedField(read_only=True)
+    transaction_subject = FilingField(read_only=True)
+
     class Meta:
         model = Transaction
+        
+        fields = (
+            'id',
+            'amount', 
+            'received_date', 
+            'date_added', 
+            'check_number',
+            'memo',
+            'description',
+            'transaction_type',
+            'name_prefix',
+            'first_name',
+            'middle_name',
+            'last_name',
+            'suffix',
+            'company_name',
+            'full_name',
+            'address',
+            'city',
+            'state',
+            'zipcode',
+            'full_address',
+            'country',
+            'occupation',
+            'expenditure_for_certified_candidate',
+            'transaction_subject'
+        )
+
 
 class TransactionBaseViewSet(viewsets.ModelViewSet):
     serializer_class = TransactionSerializer
     default_filter = {}
+    filter_backends = (filters.OrderingFilter,)
+    
+    ordering_fields = ('last_name', 'amount', 'received_date')
 
     def get_queryset(self):
 
@@ -95,9 +156,12 @@ class TransactionBaseViewSet(viewsets.ModelViewSet):
             queryset = Transaction.objects.all()
 
         candidate_id = self.request.query_params.get('candidate_id')
+        pac_id = self.request.query_params.get('pac_id')
         if candidate_id:
             queryset = queryset.filter(filing__campaign__candidate__id=candidate_id)
-
+        if pac_id:
+            queryset = queryset.filter(filing__entity__pac__id=pac_id)
+        
         return queryset
 
 class TransactionViewSet(TransactionBaseViewSet):
@@ -109,5 +173,116 @@ class ContributionViewSet(TransactionBaseViewSet):
 
 class ExpenditureViewSet(TransactionBaseViewSet):
     default_filter = {'transaction_type__contribution': False}
+
+class TopMoneySerializer(serializers.Serializer):
+    name_prefix = serializers.CharField()
+    first_name = serializers.CharField()
+    middle_name = serializers.CharField()
+    last_name = serializers.CharField()
+    suffix = serializers.CharField()
+    company_name = serializers.CharField()
+    amount = serializers.CharField()
+    last_donated_date = serializers.DateTimeField()
+
+class TopDonorsView(viewsets.ViewSet):
+    
+    def list(self, request):
+        
+        cursor = connection.cursor()
+        
+        query = ''' 
+            SELECT
+              SUM(amount) AS amount,
+              MAX(received_date) AS last_donated_date,
+              name_prefix,
+              first_name,
+              middle_name,
+              last_name,
+              suffix,
+              company_name
+            FROM camp_fin_transaction AS transaction
+            JOIN camp_fin_transactiontype AS type
+              ON transaction.transaction_type_id = type.id
+            WHERE type.contribution = TRUE
+            GROUP BY 
+              name_prefix,
+              first_name,
+              middle_name,
+              last_name,
+              suffix,
+              company_name
+            ORDER BY amount DESC
+            LIMIT 100
+        '''
+        
+        cursor.execute(query)
+        
+        columns = [c[0] for c in cursor.description]
+        donor_tuple = namedtuple('Donor', columns)
+        
+        objects =  [donor_tuple(*r) for r in cursor]
+        
+        serializer = TopMoneySerializer(objects, many=True)
+
+        return Response(serializer.data)
+
+    def retrieve(self, request, pk=None):
+        cursor = connection.cursor()
+        
+        query = ''' 
+            SELECT
+              SUM(amount) AS amount,
+              MAX(received_date) AS last_donated_date,
+              name_prefix,
+              first_name,
+              middle_name,
+              last_name,
+              suffix,
+              company_name
+            FROM camp_fin_transaction AS transaction
+            JOIN camp_fin_transactiontype AS type
+              ON transaction.transaction_type_id = type.id
+            JOIN camp_fin_filing AS filing
+              ON transaction.filing_id = filing.id
+            JOIN camp_fin_entity AS entity
+              ON filing.entity_id = entity.id
+            WHERE type.contribution = TRUE
+            AND entity.id = %s
+            GROUP BY 
+              name_prefix,
+              first_name,
+              middle_name,
+              last_name,
+              suffix,
+              company_name
+            ORDER BY amount DESC
+            LIMIT 100
+        '''
+        
+        entity_type = self.request.query_params.get('entity_type', 'candidate')
+        
+        # TODO: Return 404 if the thing is not found
+        if entity_type == 'candidate':
+            candidate = Candidate.objects.get(id=pk)
+            entity_id = candidate.entity_id
+        elif entity_type == 'pac':
+            pac = PAC.objects.get(id=pk)
+            entity_id = pac.entity_id
+        
+        else:
+            return Response({'error': 'object not found'}, status=404)
+
+
+
+        cursor.execute(query, [entity_id])
+        
+        columns = [c[0] for c in cursor.description]
+        donor_tuple = namedtuple('Donor', columns)
+        
+        objects =  [donor_tuple(*r) for r in cursor]
+        
+        serializer = TopMoneySerializer(objects, many=True)
+
+        return Response(serializer.data)
 
 

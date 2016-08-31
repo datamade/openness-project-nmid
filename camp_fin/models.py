@@ -21,8 +21,7 @@ class Candidate(models.Model):
     slug = models.CharField(max_length=500)
 
     def __str__(self):
-        name = '{0} {1}'.format(self.first_name, self.last_name)
-        return name
+        return self.full_name
     
     @property
     def full_name(self):
@@ -163,14 +162,62 @@ class Transaction(models.Model):
     def __str__(self):
         if self.company_name:
             return self.company_name
-        else:
-            name = '{0} {1}'.format(self.first_name, self.last_name)
-            return name
+        return self.full_name
+    
+    @property
+    def transaction_subject(self):
+        # This is here so that the API key makes a little more sense
+        return self.filing
+
+    @property
+    def full_name(self):
+        full_name = ''
+        
+        if self.name_prefix:
+            full_name = '{}'.format(self.name_prefix)
+        
+        if self.first_name:
+            full_name = '{0} {1}'.format(full_name, self.first_name)
+
+        if self.middle_name:
+            full_name = '{0} {1}'.format(full_name, self.middle_name)
+
+        if self.last_name:
+            full_name = '{0} {1}'.format(full_name, self.last_name)
+
+        if self.suffix:
+            full_name = '{0} {1}'.format(full_name, self.suffix)
+
+        return full_name.strip()
+    
+    @property
+    def full_address(self):
+        full_address = ''
+        
+        if self.address:
+            full_address = '{}'.format(self.address)
+        
+        if self.city:
+            full_address = '{0} {1}'.format(full_address, self.city)
+
+        if self.state:
+            full_address = '{0}, {1}'.format(full_address, self.state)
+
+        if self.zipcode:
+            full_address = '{0} {1}'.format(full_address, self.zipcode)
+
+        if self.country:
+            full_address = '{0} {1}'.format(full_address, self.country)
+
+        return full_address.strip()
 
 class TransactionType(models.Model):
     description = models.CharField(max_length=50)
     contribution = models.BooleanField()
     anonymous = models.BooleanField()
+    
+    def __str__(self):
+        return self.description
 
 class Filing(models.Model):
     entity = models.ForeignKey('Entity', db_constraint=False)
