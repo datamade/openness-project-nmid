@@ -135,6 +135,41 @@ class CommitteeDetail(DetailView):
         
         return context
 
+class TransactionDetail(DetailView):
+    model = Transaction
+    
+    def get_template_name(self, **kwargs):
+        
+        
+        return [template_name]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        context['entity'] = None
+
+        if context['transaction'].filing.entity.candidate_set.all():
+            context['entity'] = context['transaction'].filing.entity.candidate_set.first()
+            context['office'] = context['transaction'].filing.campaign.office
+        elif context['transaction'].filing.entity.pac_set.all():
+            context['entity'] = context['transaction'].filing.entity.pac_set.first()
+            context['office'] = None
+
+        context['entity_type'] = context['entity']._meta.model_name
+
+        if context['transaction'].transaction_type.description.lower().endswith('contribution'):
+            context['transaction_type'] = 'contribution'
+        else:
+            context['transaction_type'] = 'expenditure'
+
+        return context
+
+class ContributionDetail(TransactionDetail):
+    template_name = 'camp_fin/contribution-detail.html'
+
+class ExpenditureDetail(TransactionDetail):
+    template_name = 'camp_fin/expenditure-detail.html'
+
 class CandidateSerializer(serializers.ModelSerializer):
 
     class Meta:

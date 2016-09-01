@@ -20,3 +20,15 @@ def get_sort_icon(s):
     if s.lower() == 'desc':
         return ' <i class="fa fa-sort-amount-desc"> </i>'
     return ' <i class="fa fa-sort-amount-asc"> </i>'
+
+@register.filter
+def get_transaction_verb(s):
+    verbs = {
+        'Monetary contribution': 'donated',
+        'In Kind contribution': 'donated in-kind',
+        'Anonymous Contribution': 'anonymously donated',
+        'Refund monetary  (NOT BEING USED)': 'was refunded',
+        'Monetary Expenditure': 'spent',
+    }
+    return verbs.get(s, '')
+

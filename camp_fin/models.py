@@ -70,6 +70,12 @@ class PAC(models.Model):
 
     def __str__(self):
         return self.name
+    
+    @property
+    def full_name(self):
+        # This is here so we can treat pacs and candidates the same in
+        # templates
+        return self.name
 
 class Campaign(models.Model):
     olddb_id = models.IntegerField(null=True)

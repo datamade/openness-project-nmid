@@ -155,11 +155,21 @@
                             <% } %>
                         </td>
                         <td class="text-right nowrap">
-                                <a href="/contributions/<%= transaction.id %>">
-                                    <%= transaction_verb(transaction.transaction_type) %> <strong>
-                                <%= accounting.formatMoney(transaction.amount) %>
-                                </strong>
-                            </a>
+                            <% if (transaction.transaction_type.toLowerCase().endsWith('contribution')){ %>
+                                <a href="/contributions/<%= transaction.id %>/">
+                                    <%= transaction_verb(transaction.transaction_type) %>
+                                    <strong>
+                                        <%= accounting.formatMoney(transaction.amount) %>
+                                    </strong>
+                                </a>
+                            <% } else { %>
+                                <a href="/expenditures/<%= transaction.id %>/">
+                                    <%= transaction_verb(transaction.transaction_type) %>
+                                    <strong>
+                                        <%= accounting.formatMoney(transaction.amount) %>
+                                    </strong>
+                                </a>
+                            <% } %>
                         </td>
                         <td class='nowrap'>
                             on <%= moment(transaction.received_date).format('MMMM DD, YYYY') %>

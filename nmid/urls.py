@@ -20,7 +20,8 @@ from rest_framework import routers
 
 from camp_fin.views import IndexView, CandidateList, CandidateDetail, \
     ContributionViewSet, ExpenditureViewSet, TransactionViewSet, TopDonorsView, \
-    TopExpensesView, CommitteeList, CommitteeDetail
+    TopExpensesView, CommitteeList, CommitteeDetail, ContributionDetail, \
+    ExpenditureDetail
 
 router = routers.DefaultRouter()
 router.register(r'contributions', ContributionViewSet, base_name='contributions')
@@ -34,6 +35,8 @@ urlpatterns = [
     url(r'^$', IndexView.as_view(), name='index'),
     url(r'^candidates/$', CandidateList.as_view(), name='candidate-list'),
     url(r'^candidates/(?P<slug>[\w-]+)/$', CandidateDetail.as_view(), name='candidate-detail'),
+    url(r'^contributions/(?P<pk>[0-9]+)/$', ContributionDetail.as_view(), name='contribution-detail'),
+    url(r'^expenditures/(?P<pk>[0-9]+)/$', ExpenditureDetail.as_view(), name='expenditure-detail'),
     url(r'^committees/$', CommitteeList.as_view(), name='committee-list'),
     url(r'^committees/(?P<slug>[\w-]+)/$', CommitteeDetail.as_view(), name='committee-detail'),
     url(r'^api/', include(router.urls)),
