@@ -14,6 +14,9 @@ from .base_views import PaginatedList
 class IndexView(TemplateView):
     template_name = 'index.html'
 
+class SearchView(TemplateView):
+    template_name = 'camp_fin/search.html'
+
 class CandidateList(PaginatedList):
     template_name = "camp_fin/candidate-list.html"
 
@@ -182,7 +185,7 @@ class PACSerializer(serializers.ModelSerializer):
         model = PAC
         fields = '__all__'
 
-class FilingField(serializers.RelatedField):
+class EntityField(serializers.RelatedField):
 
     def to_representation(self, value):
         
@@ -198,7 +201,7 @@ class FilingField(serializers.RelatedField):
 class TransactionSerializer(serializers.ModelSerializer):
     transaction_type = serializers.StringRelatedField(read_only=True)
     full_name = serializers.StringRelatedField(read_only=True)
-    transaction_subject = FilingField(read_only=True)
+    transaction_subject = EntityField(read_only=True)
 
     class Meta:
         model = Transaction
