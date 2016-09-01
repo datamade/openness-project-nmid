@@ -1,4 +1,5 @@
 import csv
+import zipfile
 
 import sqlalchemy as sa
 
@@ -44,64 +45,104 @@ MAPPER_LOOKUP = {
     'office': OFFICE,
 }
 
+FILE_LOOKUP = {
+    'campaign': 'Cam_Campaign.xlsx',
+    'transaction': 'Cam_ContribExpenditure.zip',
+    'transactiontype': 'Cam_ContribExpenditureType.xlsx',
+    'office': 'Cam_ElectionOffice.xlsx',
+    'filingperiod': 'Cam_FilingPeriod.xlsx',
+    'officetype': 'Cam_OfficeType.xlsx',
+    'filing': 'Cam_Report.csv',
+    'candidate': 'Candidates.xlsx',
+    'pac': 'PACs.xlsx',
+}
+
 class Command(BaseCommand):
     help = 'Import New Mexico Campaign Finance data'
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--entity-type',
-            dest='entity_type',
-            required=True,
-            help='Entity type in referenced file'
+            '--entity-types',
+            dest='entity_types',
+            default='all',
+            help='Comma separated list of entity types to import'
         )
-
-        parser.add_argument(
-            '--file-path',
-            dest='file_path',
-            required=True,
-            help='Relative path to file to load'
-        )
-        parser.add_argument(
-            '--encoding', 
-            dest='encoding',
-            default='utf-8',
-            help='File encoding (defaults to UTF-8)'
-        )
-
 
     def handle(self, *args, **options):
-
-        self.entity_type = options['entity_type']
-        self.file_path = options['file_path']
-        self.encoding = options['encoding']
-
-        if self.file_path.endswith('xlsx'):
-            self.convertXLSX()
-
-        self.django_table = 'camp_fin_{}'.format(self.entity_type)
-        self.raw_pk_col = RAW_PK_LOOKUP[self.entity_type]
         
-        self.table_mapper = MAPPER_LOOKUP[self.entity_type]
+        entity_types = options['entity_types'].split(',')
+        
+        if entity_types == ['all']:
+            entity_types = FILE_LOOKUP.keys()
 
-        self.connection = engine.connect()
-        
-        self.makeRawTable()
-        self.importRawData()
-        
-        self.updateExistingRecords()
+        for entity_type in entity_types:
+            self.entity_type = entity_type
+            file_name = FILE_LOOKUP.get(entity_type)
 
-        self.makeNewTable()
-        self.findNewRecords()
-        
-        self.addNewRecords()
-        
-        # This should only be necessary until we get the actual entity table
-        
-        if self.entity_type in ['candidate', 'pac', 'filing']:
-            self.populateEntityTable()
+            if file_name:
+                
+                self.stdout.write(self.style.SUCCESS('Importing {}'.format(file_name)))
 
-        if self.entity_type in ['candidate', 'pac']:
-            self.populateSlugField()
+                self.file_path = 'data/{}'.format(file_name)
+
+                self.encoding = 'utf-8'
+                if entity_type == 'transaction':
+                    self.encoding = 'windows-1252'
+
+                if self.file_path.endswith('xlsx'):
+                    self.convertXLSX()
+                
+                if self.file_path.endswith('zip'):
+                    self.unzipFile()
+
+                self.django_table = 'camp_fin_{}'.format(self.entity_type)
+                self.raw_pk_col = RAW_PK_LOOKUP[self.entity_type]
+                
+                self.table_mapper = MAPPER_LOOKUP[self.entity_type]
+
+                self.connection = engine.connect()
+                
+                self.makeRawTable()
+                count = self.importRawData()
+                
+                self.stdout.write(self.style.SUCCESS('Found {0} records in {1}'.format(count, file_name)))
+
+                count = self.updateExistingRecords()
+                
+                self.stdout.write(self.style.SUCCESS('Updated {0} records in {1}'.format(count, self.django_table)))
+
+                self.makeNewTable()
+                count = self.findNewRecords()
+                
+                self.addNewRecords()
+                
+                self.stdout.write(self.style.SUCCESS('Inserted {0} new records into {1}'.format(count, self.django_table)))
+                
+                # This should only be necessary until we get the actual entity table
+                
+                if self.entity_type in ['candidate', 'pac', 'filing']:
+                    self.populateEntityTable()
+                    self.stdout.write(self.style.SUCCESS('Populated entity table for {}'.format(self.entity_type)))
+
+                if self.entity_type in ['candidate', 'pac']:
+                    self.populateSlugField()
+                    self.stdout.write(self.style.SUCCESS('Populated slug fields for {}'.format(self.entity_type)))
+                
+                self.stdout.write(self.style.SUCCESS('\n'))
+            else:
+                self.stdout.write(self.style.ERROR('"{}" is not a valid entity'.format(self.entity_type)))
+                self.stdout.write(self.style.SUCCESS('\n'))
+                
+        self.stdout.write(self.style.SUCCESS('Import complete!'.format(self.entity_type)))
+
+
+    def unzipFile(self):
+        file_name = self.file_path.split('/')[1].rsplit('.', 1)[0]
+        file_name = '{}.csv'.format(file_name)
+        with zipfile.ZipFile(self.file_path) as zf:
+            zf.extract(file_name, path='data')
+        
+        self.file_path = 'data/{}'.format(file_name)
 
     def convertXLSX(self):
         wb = load_workbook(self.file_path)
@@ -198,16 +239,16 @@ class Command(BaseCommand):
         
         self.executeTransaction('DROP TABLE IF EXISTS change_{}'.format(self.entity_type))
         self.executeTransaction(changes)
+
+        wheres = []
+
+        for raw_col, mapping in self.table_mapper.items():
+            condition = '''
+                ((raw."{0}" IS NOT NULL OR dat.{1} IS NOT NULL) AND raw."{0}"::{2} <> dat.{1})
+            '''.format(raw_col, mapping['field'], mapping['data_type'])
+            wheres.append(condition)
         
-        raw_fields = ', '.join(['raw."{}"'.format(c) for c in \
-                                  self.table_mapper.keys()])
-
-        dat_fields = ', '.join(['dat.{}'.format(c['field']) for c in \
-                                  self.table_mapper.values()])
-
-        where_clause = '''
-            WHERE md5(({raw_fields})::text) != md5(({dat_fields})::text)
-        '''.format(raw_fields=raw_fields, dat_fields=dat_fields)
+        where_clause = ' OR '.join(wheres)
 
         find_changes = ''' 
             INSERT INTO change_{entity_type}
@@ -215,17 +256,19 @@ class Command(BaseCommand):
               FROM raw_{entity_type} AS raw
               JOIN {django_table} AS dat
                 ON raw."{raw_pk_col}" = dat.id
-              {where_clause}
+              WHERE {where_clause}
         '''.format(entity_type=self.entity_type,
                    raw_pk_col=self.raw_pk_col,
                    django_table=self.django_table,
                    where_clause=where_clause)
-
+        
         self.executeTransaction(find_changes)
         
         set_fields = ', '.join(['{1}=s."{0}"::{2}'.format(k,v['field'], v['data_type']) for k,v in \
                                     self.table_mapper.items()])
-
+        
+        raw_fields = ', '.join(['raw."{}"'.format(c) for c in \
+                                  self.table_mapper.keys()])
         update_dat = ''' 
             UPDATE {django_table} SET
               {set_fields}
@@ -243,6 +286,10 @@ class Command(BaseCommand):
                    raw_pk_col=self.raw_pk_col)
         
         self.executeTransaction(update_dat)
+        
+        change_count = self.connection.execute('SELECT COUNT(*) AS count FROM change_{}'.format(self.entity_type))
+        
+        return change_count.first().count
 
     def findNewRecords(self):
 
@@ -258,6 +305,9 @@ class Command(BaseCommand):
                    raw_pk_col=self.raw_pk_col)
         
         self.executeTransaction(find)
+        
+        new_count = self.connection.execute('SELECT COUNT(*) AS count FROM new_{}'.format(self.entity_type))
+        return new_count.first().count
 
     def makeNewTable(self):
         create = ''' 
@@ -315,6 +365,10 @@ class Command(BaseCommand):
         self.executeTransaction('''
             ALTER TABLE raw_{0} ADD PRIMARY KEY ("{1}")
         '''.format(self.entity_type, self.raw_pk_col))
+        
+        import_count = self.connection.execute('SELECT COUNT(*) AS count FROM raw_{}'.format(self.entity_type))
+
+        return import_count.first().count
 
     def executeTransaction(self, query, raise_exc=False, *args, **kwargs):
         trans = self.connection.begin()
@@ -329,6 +383,5 @@ class Command(BaseCommand):
             # TODO: Make some kind of logger
             # logger.error(e, exc_info=True)
             trans.rollback()
-            print(e)
             if raise_exc:
                 raise e
