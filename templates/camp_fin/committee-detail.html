@@ -8,28 +8,28 @@
     <div class="row">
         <div class="col-md-6">
             <h1>
-                {{ candidate.full_name }}
+                {{ pac.name }}
             </h1>
             <table class="table table-condensed">
                 <tbody>
-                {% if candidate.business_phone %}
+                {% if pac.business_phone %}
                     <tr>
                         <td>
-                            <i class="fa fa-phone" aria-hidden="true"></i> (business) {{ candidate.business_phone}}
+                            <i class="fa fa-phone" aria-hidden="true"></i> (business) {{ pac.business_phone}}
                         </td>
                     <tr>
                 {% endif %}
-                {% if candidate.home_phone %}
+                {% if pac.home_phone %}
                     <tr>
                         <td>
-                            <i class="fa fa-phone" aria-hidden="true"></i> (home) {{ candidate.home_phone }}
+                            <i class="fa fa-phone" aria-hidden="true"></i> (home) {{ pac.home_phone }}
                         </td>
                     </tr>
                 {% endif %}
-                {% if candidate.email %}
+                {% if pac.email %}
                     <tr>
                         <td>
-                            <i class="fa fa-envelope-o" aria-hidden="true"></i> {{ candidate.email }}
+                            <i class="fa fa-envelope-o" aria-hidden="true"></i> {{ pac.email }}
                         </td>
                     </tr>
                 {% endif %}
@@ -65,33 +65,6 @@
                         <td>Closing balance</td>
                         <td>{{ latest_filing.closing_balance|format_money }}</td>
                     </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-12">
-            <h3>Campaigns</h3>
-            <table class="table table-condensed">
-                <thead>
-                    <tr>
-                        <th>Office</th>
-                        <th>Committee name</th>
-                        <th>Election season</th>
-                        <th>Won primary?</th>
-                        <th>Won general?</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for campaign in candidate.campaign_set.all %}
-                        <tr>
-                            <td>{{ campaign.office.description }}</td>
-                            <td>{{ campaign.committee_name|default_if_none:"" }}</td>
-                            <td>{{ campaign.election_season_id }}</td>
-                            <td>{{ campaign.primary_election_winner_status|default_if_none:"" }}</td>
-                            <td>{{ campaign.general_election_winner_status|default_if_none:"" }}</td>
-                        </tr>
-                    {% endfor %}
                 </tbody>
             </table>
         </div>
@@ -260,7 +233,8 @@
         }
 
         function displayTopMoneyTable(transaction_type){
-            var url = '/api/' + transaction_type + '/' + '{{ candidate.id }}' + '/';
+            var url = '/api/' + transaction_type + '/' + '{{ pac.id }}' + '/';
+            url += '?entity_type=pac';
             $.when($.getJSON(url)).then(function(data){
                 var template = new EJS({'text': $('#top-money-table-guts').html()});
                 var context = {
@@ -278,7 +252,7 @@
                 var url = '/api/expenditures/';
             }
             var params = {
-                'candidate_id': '{{ candidate.id }}',
+                'pac_id': '{{ pac.id }}',
                 'limit': 25,
             }
             if (sort_order){

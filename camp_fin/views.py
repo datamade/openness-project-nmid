@@ -9,7 +9,7 @@ from rest_framework import serializers, viewsets, filters, generics, metadata
 from rest_framework.response import Response
 
 from .models import Candidate, Office, Transaction, Campaign, Filing, PAC
-from .base_views import PaginatedList, JSONResponseMixin
+from .base_views import PaginatedList
 
 class IndexView(TemplateView):
     template_name = 'index.html'
@@ -68,11 +68,66 @@ class CandidateDetail(DetailView):
     template_name = "camp_fin/candidate-detail.html"
     model = Candidate
 
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
         latest_filing = context['candidate'].entity.filing_set\
+                                            .order_by('-filing_period__filing_date')\
+                                            .first()
+        
+        context['latest_filing'] = latest_filing
+        
+        return context
+
+class CommitteeList(PaginatedList):
+    template_name = 'camp_fin/committee-list.html'
+
+    def get_queryset(self, **kwargs):
+        cursor = connection.cursor()
+        
+        self.order_by = self.request.GET.get('order_by', 'closing_balance')
+        self.sort_order = self.request.GET.get('sort_order', 'desc')
+
+        cursor.execute(''' 
+            SELECT * FROM (
+              SELECT DISTINCT ON (pac.id) 
+                pac.*, 
+                filing.closing_balance, 
+                filing.date_added AS filing_date
+              FROM camp_fin_pac AS pac 
+              JOIN camp_fin_filing AS filing 
+                USING(entity_id)
+              ORDER BY pac.id, filing.date_added desc
+            ) AS s
+            ORDER BY {0} {1}
+        '''.format(self.order_by, self.sort_order))
+        
+        columns = [c[0] for c in cursor.description]
+        pac_tuple = namedtuple('PAC', columns)
+
+        return [pac_tuple(*r) for r in cursor]
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        context['sort_order'] = self.sort_order
+        
+        context['toggle_order'] = 'desc'
+        if self.sort_order.lower() == 'desc':
+            context['toggle_order'] = 'asc'
+
+        context['order_by'] = self.order_by
+
+        return context
+
+class CommitteeDetail(DetailView):
+    template_name = "camp_fin/committee-detail.html"
+    model = PAC
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        latest_filing = context['pac'].entity.filing_set\
                                             .order_by('-filing_period__filing_date')\
                                             .first()
         
@@ -182,9 +237,9 @@ class TopMoneySerializer(serializers.Serializer):
     suffix = serializers.CharField()
     company_name = serializers.CharField()
     amount = serializers.CharField()
-    last_donated_date = serializers.DateTimeField()
+    last_date = serializers.DateTimeField()
 
-class TopDonorsView(viewsets.ViewSet):
+class TopMoneyView(viewsets.ViewSet):
     
     def list(self, request):
         
@@ -193,7 +248,7 @@ class TopDonorsView(viewsets.ViewSet):
         query = ''' 
             SELECT
               SUM(amount) AS amount,
-              MAX(received_date) AS last_donated_date,
+              MAX(received_date) AS last_date,
               name_prefix,
               first_name,
               middle_name,
@@ -203,7 +258,7 @@ class TopDonorsView(viewsets.ViewSet):
             FROM camp_fin_transaction AS transaction
             JOIN camp_fin_transactiontype AS type
               ON transaction.transaction_type_id = type.id
-            WHERE type.contribution = TRUE
+            WHERE type.contribution = %s
             GROUP BY 
               name_prefix,
               first_name,
@@ -215,12 +270,12 @@ class TopDonorsView(viewsets.ViewSet):
             LIMIT 100
         '''
         
-        cursor.execute(query)
+        cursor.execute(query, [self.contribution])
         
         columns = [c[0] for c in cursor.description]
-        donor_tuple = namedtuple('Donor', columns)
+        transaction_tuple = namedtuple('Transaction', columns)
         
-        objects =  [donor_tuple(*r) for r in cursor]
+        objects =  [transaction_tuple(*r) for r in cursor]
         
         serializer = TopMoneySerializer(objects, many=True)
 
@@ -232,7 +287,7 @@ class TopDonorsView(viewsets.ViewSet):
         query = ''' 
             SELECT
               SUM(amount) AS amount,
-              MAX(received_date) AS last_donated_date,
+              MAX(received_date) AS last_date,
               name_prefix,
               first_name,
               middle_name,
@@ -246,7 +301,7 @@ class TopDonorsView(viewsets.ViewSet):
               ON transaction.filing_id = filing.id
             JOIN camp_fin_entity AS entity
               ON filing.entity_id = entity.id
-            WHERE type.contribution = TRUE
+            WHERE type.contribution = %s
             AND entity.id = %s
             GROUP BY 
               name_prefix,
@@ -256,7 +311,7 @@ class TopDonorsView(viewsets.ViewSet):
               suffix,
               company_name
             ORDER BY amount DESC
-            LIMIT 100
+            LIMIT 25
         '''
         
         entity_type = self.request.query_params.get('entity_type', 'candidate')
@@ -274,15 +329,20 @@ class TopDonorsView(viewsets.ViewSet):
 
 
 
-        cursor.execute(query, [entity_id])
+        cursor.execute(query, [self.contribution, entity_id])
         
         columns = [c[0] for c in cursor.description]
-        donor_tuple = namedtuple('Donor', columns)
+        transaction_tuple = namedtuple('Transaction', columns)
         
-        objects =  [donor_tuple(*r) for r in cursor]
+        objects =  [transaction_tuple(*r) for r in cursor]
         
         serializer = TopMoneySerializer(objects, many=True)
 
         return Response(serializer.data)
 
+class TopDonorsView(TopMoneyView):
+    contribution = True
+
+class TopExpensesView(TopMoneyView):
+    contribution = False
 

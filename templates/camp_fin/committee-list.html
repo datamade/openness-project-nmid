@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load bootstrap_pagination %}
+{% load helpers %}
+{% block full_content %}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+
+            <table class="table table-striped" id="committee-list">
+                <thead>
+                    <tr>
+                        <th>
+                            <a href="{% url 'committee-list' %}?{% query_transform request order_by='name' sort_order=toggle_order %}">
+                                Committee
+                            </a>
+                            {% if order_by == 'last_name' %}
+                                {{ sort_order|get_sort_icon|safe }}
+                            {% endif %}
+                        </th>
+                        <th>
+                            <a href="{% url 'committee-list' %}?{% query_transform request order_by='closing_balance' sort_order=toggle_order %}">
+                                Current balance
+                            </a>
+                            {% if order_by == 'closing_balance' %}
+                                {{ sort_order|get_sort_icon|safe }}
+                            {% endif %}
+                        </th>
+                        <th>Latest report</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for committee in object_list %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'committee-detail' committee.slug %}">
+                                    {{ committee.name }}
+                                </a>
+                            </td>
+                            <td>{{ committee.closing_balance|format_money }}</td>
+                            <td>{{ committee.filing_date }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% bootstrap_paginate object_list range=10 %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
