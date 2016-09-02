@@ -80,11 +80,32 @@ class CandidateDetail(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        latest_filing = context['candidate'].entity.filing_set\
-                                            .order_by('-filing_period__filing_date')\
-                                            .first()
+        all_filings = context['candidate'].entity.filing_set\
+                                            .order_by('filing_period__filing_date')
+
+
+        balance_trend = [[ f.closing_balance, 
+                           f.filing_period.filing_date.year,
+                           f.filing_period.filing_date.month,
+                           f.filing_period.filing_date.day] 
+                           for f in all_filings]
+
+        donation_trend = [[f.total_contributions, 
+                           f.filing_period.filing_date.year,
+                           f.filing_period.filing_date.month,
+                           f.filing_period.filing_date.day] 
+                           for f in all_filings]
+
+        expend_trend = [[  (-1*f.total_expenditures), 
+                           f.filing_period.filing_date.year,
+                           f.filing_period.filing_date.month,
+                           f.filing_period.filing_date.day] 
+                           for f in all_filings]
         
-        context['latest_filing'] = latest_filing
+        context['latest_filing'] = all_filings.last()
+        context['balance_trend'] = balance_trend
+        context['donation_trend'] = donation_trend
+        context['expend_trend'] = expend_trend
         
         return context
 
