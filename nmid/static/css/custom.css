@@ -5,6 +5,7 @@ body {
 
 table {
     font-size: 16px;
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -18,3 +19,7 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
 
 
 a { color: #04A5AA; }
+a:hover, a:active { color: #8C0012; }
+
+
+th a { color: #333333; }

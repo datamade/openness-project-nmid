@@ -22,18 +22,18 @@
                             {% endif %}
                         </th>
                         <th>
-                            <a href="{% url 'committee-list' %}?{% query_transform request order_by='closing_balance' sort_order=toggle_order %}">
-                                Current balance
-                            </a>
-                            {% if order_by == 'closing_balance' %}
-                                {{ sort_order|get_sort_icon|safe }}
-                            {% endif %}
-                        </th>
-                        <th>
                             <a href="{% url 'committee-list' %}?{% query_transform request order_by='filing_date' sort_order=toggle_order %}">
                                 Latest report
                             </a>
                             {% if order_by == 'filing_date' %}
+                                {{ sort_order|get_sort_icon|safe }}
+                            {% endif %}
+                        </th>
+                        <th class='text-right'>
+                            <a href="{% url 'committee-list' %}?{% query_transform request order_by='closing_balance' sort_order=toggle_order %}">
+                                Current balance
+                            </a>
+                            {% if order_by == 'closing_balance' %}
                                 {{ sort_order|get_sort_icon|safe }}
                             {% endif %}
                         </th>
@@ -47,8 +47,8 @@
                                     {{ committee.name }}
                                 </a>
                             </td>
-                            <td>{{ committee.closing_balance|format_money }}</td>
-                            <td>{{ committee.filing_date }}</td>
+                            <td>{{ committee.filing_date | date:'M d, Y'}}</td>
+                            <td class='text-right'>{{ committee.closing_balance|format_money }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
