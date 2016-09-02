@@ -3,11 +3,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>{% block title %}{% endblock %}</title>
+    <title>{% block title %}{% endblock %} - New Mexico Campaign Finance</title>
 
-    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700,300italic' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="{% static 'css/bootstrap.flatly.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'css/bootstrap.yeti.min.css' %}" />
     <link rel="stylesheet" type="text/css" href="{% static 'css/custom.css' %}" />
 
     {% block extra_css %}{% endblock %}
@@ -22,19 +22,25 @@
                     <span id="logo-text">New Mexico Campaign Finance</span>
                 </a>
             </div>
-            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <div class="collapse navbar-collapse pull-right" id="bs-example-navbar-collapse-1">
                 <ul class="nav navbar-nav">
                     <li>
-                        <a href="/about/">About</a>
+                        <a href="/"><i class='fa fa-home'></i> Home</a>
                     </li>
                     <li>
-                        <a href='/candidates/'>Candidates</a>
+                        <a href="/search/"><i class='fa fa-search'></i> Search</a>
                     </li>
                     <li>
-                        <a href='/committees/'>Committees</a>
+                        <a href='/donations/'><i class='fa fa-dollar'></i> Donations</a>
                     </li>
                     <li>
-                        <a href="/search/">Search</a>
+                        <a href='/candidates/'><i class='fa fa-user'></i> Candidates</a>
+                    </li>
+                    <li>
+                        <a href='/committees/'><i class='fa fa-group'></i> Committees</a>
+                    </li>
+                    <li>
+                        <a href="/about/"><i class='fa fa-info-circle'></i> About</a>
                     </li>
                 </ul>
             </div>
@@ -46,8 +52,8 @@
 
     <div class="container-fluid footer">
         <div class='col-sm-12'>
-            <div class='clearfix'></div>
-
+            <hr />
+            <p class='text-center'><small>Brought to you by <a href='http://nmindepth.com/'>New Mexico In Depth</a>. Website built by <a href='https://datamade.us'>DataMade</a>.</small></p>
         </div>
     </div>
 

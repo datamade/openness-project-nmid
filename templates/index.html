@@ -1,13 +1,53 @@
 {% extends 'base.html' %}
 
 {% block title %}
-Clever
+Keep an eye on money in New Mexico politics
 {% endblock %}
 
 {% block full_content %}
 <div class="container">
-  <div class="row">
-    <div class="col-md-12">Hello world!</div>
-  </div>
+  
+    <div class='row'>
+        <div class='col-sm-12'>
+            <div class='jumbotron'>
+                <p>Keep an eye on money in New Mexico politics</p>
+
+                <form action='/search' method='GET'>
+                    <div class="input-group input-group-lg">
+                        <input type="text" class="form-control" placeholder="Search for names of candidates, committees and donors in New Mexico" name="term">
+                        <input type='hidden' name='table_name' value='candidates' />
+                        <input type='hidden' name='table_name' value='committees' />
+                        <input type='hidden' name='table_name' value='officers' />
+                        <input type='hidden' name='table_name' value='receipts' />
+                        <input type='hidden' name='table_name' value='expenditures' />
+                        <span class="input-group-btn">
+                            <button class="btn btn-default" type="submit"><i class='fa fa-search'></i> Search</button>
+                        </span>
+                    </div>
+                </form>
+            </div>
+
+            <h2><a href='/donations/'><i class='fa fa-fw fa-dollar'></i> Largest donations</a></h2>
+            <table class='table table-bordered'>
+                <tbody><tr><td>Coming soon!</td></tr></tbody>
+            </table>
+
+            <h2><a href='/candidates/'><i class='fa fa-fw fa-user'></i> Top candidates</a></h2>
+            <table class='table table-bordered'>
+                <tbody><tr><td>Coming soon!</td></tr></tbody>
+            </table>
+
+            <h2><a href='/committees/'><i class='fa fa-fw fa-group'></i> Committees</a></h2>
+            <table class='table table-bordered'>
+                <tbody><tr><td>Coming soon!</td></tr></tbody>
+            </table>
+
+            <h2><a href='/donations/'><i class='fa fa-fw fa-info-circle'></i> About</a></h2>
+            <p><strong>New Mexico Campaign Finance</strong> is a tool by New Mexico In Depth for browsing political contributions in the state of New Mexico.</p>
+
+            <p>The data comes from the New Mexcio Secretary of State. We built this site to give journalists, activists and citizens better access to and documentation for this data.</p>
+        </div>
+    </div>
+
 </div>
 {% endblock %}
