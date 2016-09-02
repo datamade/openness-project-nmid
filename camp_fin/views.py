@@ -17,6 +17,14 @@ class IndexView(TemplateView):
 class SearchView(TemplateView):
     template_name = 'camp_fin/search.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['term'] = self.request.GET.get('term')
+        context['table_name'] = self.request.GET.getlist('table_name')
+
+        return context
+
 class CandidateList(PaginatedList):
     template_name = "camp_fin/candidate-list.html"
 
@@ -189,13 +197,16 @@ class EntityField(serializers.RelatedField):
 
     def to_representation(self, value):
         
-        if value.entity.pac_set.all():
-            serializer = PACSerializer(value.entity.pac_set.first())
-        
-        elif value.entity.candidate_set.all():
-            serializer = CandidateSerializer(value.entity.candidate_set.first())
+        try:
+            if value.entity.pac_set.all():
+                serializer = PACSerializer(value.entity.pac_set.first())
+            
+            elif value.entity.candidate_set.all():
+                serializer = CandidateSerializer(value.entity.candidate_set.first())
 
-        return serializer.data
+            return serializer.data
+        except AttributeError:
+            return value
 
 
 class TransactionSerializer(serializers.ModelSerializer):
@@ -233,6 +244,41 @@ class TransactionSerializer(serializers.ModelSerializer):
             'transaction_subject'
         )
 
+class TransactionSearchSerializer(TransactionSerializer):
+    pac_slug = serializers.StringRelatedField(read_only=True)
+    candidate_slug = serializers.StringRelatedField(read_only=True)
+    
+    class Meta:
+        model = Transaction
+        
+        fields = (
+            'id',
+            'amount', 
+            'received_date', 
+            'date_added', 
+            'check_number',
+            'memo',
+            'description',
+            'transaction_type',
+            'name_prefix',
+            'first_name',
+            'middle_name',
+            'last_name',
+            'suffix',
+            'company_name',
+            'full_name',
+            'address',
+            'city',
+            'state',
+            'zipcode',
+            'full_address',
+            'country',
+            'occupation',
+            'expenditure_for_certified_candidate',
+            'transaction_subject',
+            'pac_slug',
+            'candidate_slug',
+        )
 
 class TransactionBaseViewSet(viewsets.ModelViewSet):
     serializer_class = TransactionSerializer
@@ -384,3 +430,182 @@ class TopDonorsView(TopMoneyView):
 class TopExpensesView(TopMoneyView):
     contribution = False
 
+class CandidateSearchSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Candidate
+        fields = (
+            'id',
+            'prefix',
+            'first_name',
+            'middle_name',
+            'last_name',
+            'full_name',
+            'suffix',
+            'business_phone',
+            'home_phone',
+            'date_added',
+            'email',
+            'date_updated',
+            'deceased',
+            'slug',
+        )
+
+class PACSearchSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = PAC
+        fields = (
+            'id',
+            'name',
+            'acronym',
+            'business_phone',
+            'home_phone',
+            'email',
+            'date_added',
+            'date_updated',
+            'bank_name',
+            'bank_phone',
+            'fax_number',
+            'initial_balance',
+            'initial_balance_from_self',
+            'initial_debt',
+            'initial_debt_from_self',
+            'slug',
+        )
+
+SERIALIZER_LOOKUP = {
+    'candidate': CandidateSearchSerializer,
+    'pac': PACSearchSerializer,
+    'contribution': TransactionSearchSerializer,
+    'expenditure': TransactionSearchSerializer,
+}
+
+class SearchAPIView(viewsets.ViewSet):
+    def list(self, request):
+        table_names = request.GET.getlist('table_name')
+        term = request.GET.get('term')
+
+        if not term:
+            return Response({'error': 'term is required'}, status=400)
+        
+        if not table_names:
+            table_names = [
+                'candidate', 
+                'pac', 
+                'contribution', 
+                'expenditure'
+            ]
+
+        response = {}
+
+        for table in table_names:
+            query = ''' 
+                SELECT * FROM camp_fin_{}
+                WHERE search_name @@ plainto_tsquery('english', %s)
+            '''.format(table)
+            
+            if table == 'contribution':
+                query = ''' 
+                    SELECT 
+                      o.*, 
+                      tt.description AS transaction_type,
+                      CASE WHEN 
+                        company_name IS NULL OR TRIM(company_name) = ''
+                      THEN
+                        TRIM(concat_ws(' ', 
+                                       o.name_prefix,
+                                       o.first_name,
+                                       o.middle_name,
+                                       o.last_name,
+                                       o.suffix))
+                      ELSE
+                        company_name
+                      END AS full_name,
+                      CASE WHEN 
+                        pac.name IS NULL OR TRIM(pac.name) = ''
+                      THEN
+                        TRIM(concat_ws(' ', 
+                                       candidate.prefix,
+                                       candidate.first_name,
+                                       candidate.middle_name,
+                                       candidate.last_name,
+                                       candidate.suffix))
+                      ELSE pac.name
+                      END AS transaction_subject,
+                      pac.slug AS pac_slug,
+                      candidate.slug AS candidate_slug
+                    FROM camp_fin_transaction AS o
+                    JOIN camp_fin_transactiontype AS tt
+                      ON o.transaction_type_id = tt.id
+                    JOIN camp_fin_filing AS filing 
+                      ON o.filing_id = filing.id
+                    JOIN camp_fin_entity AS entity
+                      ON filing.entity_id = entity.id
+                    LEFT JOIN camp_fin_pac AS pac
+                      ON entity.id = pac.entity_id
+                    LEFT JOIN camp_fin_candidate AS candidate
+                      ON entity.id = candidate.entity_id
+                    WHERE o.search_name @@ plainto_tsquery('english', %s)
+                      AND tt.contribution = TRUE
+                '''
+            elif table == 'expenditure':
+                query = ''' 
+                    SELECT 
+                      o.*,
+                      tt.description AS transaction_type,
+                      CASE WHEN 
+                        company_name IS NULL OR TRIM(company_name) = ''
+                      THEN
+                        TRIM(concat_ws(' ', 
+                                       o.name_prefix,
+                                       o.first_name,
+                                       o.middle_name,
+                                       o.last_name,
+                                       o.suffix))
+                      ELSE
+                        company_name
+                      END AS full_name,
+                      CASE WHEN 
+                        pac.name IS NULL OR TRIM(pac.name) = ''
+                      THEN
+                        TRIM(concat_ws(' ', 
+                                       candidate.prefix,
+                                       candidate.first_name,
+                                       candidate.middle_name,
+                                       candidate.last_name,
+                                       candidate.suffix))
+                      ELSE pac.name
+                      END AS transaction_subject,
+                      pac.slug AS pac_slug,
+                      candidate.slug AS candidate_slug
+                    FROM camp_fin_transaction AS o
+                    JOIN camp_fin_transactiontype AS tt
+                      ON o.transaction_type_id = tt.id
+                    JOIN camp_fin_filing AS filing 
+                      ON o.filing_id = filing.id
+                    JOIN camp_fin_entity AS entity
+                      ON filing.entity_id = entity.id
+                    LEFT JOIN camp_fin_pac AS pac
+                      ON entity.id = pac.entity_id
+                    LEFT JOIN camp_fin_candidate AS candidate
+                      ON entity.id = candidate.entity_id
+                    WHERE o.search_name @@ plainto_tsquery('english', %s)
+                      AND tt.contribution = FALSE
+                '''
+
+            serializer = SERIALIZER_LOOKUP[table]
+
+            cursor = connection.cursor()
+            cursor.execute(query, [term])
+            
+            columns = [c[0] for c in cursor.description]
+            result_tuple = namedtuple(table, columns)
+            
+            objects =  [result_tuple(*r) for r in cursor]
+            
+            serializer = serializer(objects, many=True)
+
+            response[table] = serializer.data
+
+        return Response(response)

@@ -21,7 +21,7 @@ from rest_framework import routers
 from camp_fin.views import IndexView, CandidateList, CandidateDetail, \
     ContributionViewSet, ExpenditureViewSet, TransactionViewSet, TopDonorsView, \
     TopExpensesView, CommitteeList, CommitteeDetail, ContributionDetail, \
-    ExpenditureDetail, SearchView
+    ExpenditureDetail, SearchView, SearchAPIView
 
 router = routers.DefaultRouter()
 router.register(r'contributions', ContributionViewSet, base_name='contributions')
@@ -29,6 +29,7 @@ router.register(r'expenditures', ExpenditureViewSet, base_name='expenditures')
 router.register(r'transactions', TransactionViewSet, base_name='transactions')
 router.register(r'top-donors', TopDonorsView, base_name='top-donors')
 router.register(r'top-expenses', TopExpensesView, base_name='top-expenses')
+router.register(r'search', SearchAPIView, base_name='search')
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
