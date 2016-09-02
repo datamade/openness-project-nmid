@@ -18,7 +18,7 @@ class Candidate(models.Model):
     qual_candidate_id = models.IntegerField(null=True)
     deceased = models.BooleanField()
     
-    slug = models.CharField(max_length=500)
+    slug = models.CharField(max_length=500, null=True)
 
     def __str__(self):
         return self.full_name
@@ -66,7 +66,7 @@ class PAC(models.Model):
     initial_debt = models.FloatField(null=True)
     initial_debt_from_self = models.NullBooleanField(null=True)
     
-    slug = models.CharField(max_length=500)
+    slug = models.CharField(max_length=500, null=True)
 
     def __str__(self):
         return self.name

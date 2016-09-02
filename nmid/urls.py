@@ -21,7 +21,7 @@ from rest_framework import routers
 from camp_fin.views import IndexView, CandidateList, CandidateDetail, \
     ContributionViewSet, ExpenditureViewSet, TransactionViewSet, TopDonorsView, \
     TopExpensesView, CommitteeList, CommitteeDetail, ContributionDetail, \
-    ExpenditureDetail, SearchView, SearchAPIView
+    ExpenditureDetail, SearchView, SearchAPIView, AboutView, DonationsView
 
 router = routers.DefaultRouter()
 router.register(r'contributions', ContributionViewSet, base_name='contributions')
@@ -34,6 +34,8 @@ router.register(r'search', SearchAPIView, base_name='search')
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^$', IndexView.as_view(), name='index'),
+    url(r'^about', AboutView.as_view(), name='about'),
+    url(r'^donations', DonationsView.as_view(), name='donations'),
     url(r'^search/$', SearchView.as_view(), name='search'),
     url(r'^candidates/$', CandidateList.as_view(), name='candidate-list'),
     url(r'^candidates/(?P<slug>[\w-]+)/$', CandidateDetail.as_view(), name='candidate-detail'),

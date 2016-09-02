@@ -14,6 +14,12 @@ from .base_views import PaginatedList
 class IndexView(TemplateView):
     template_name = 'index.html'
 
+class DonationsView(TemplateView):
+    template_name = 'camp_fin/donations.html'
+
+class AboutView(TemplateView):
+    template_name = 'about.html'
+
 class SearchView(TemplateView):
     template_name = 'camp_fin/search.html'
 

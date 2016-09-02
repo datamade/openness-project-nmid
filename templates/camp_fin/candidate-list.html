@@ -1,11 +1,14 @@
 {% extends 'base.html' %}
 {% load bootstrap_pagination %}
 {% load helpers %}
+{% block title %}Candidates{% endblock %}
 {% block full_content %}
 
 <div class="container">
     <div class="row">
         <div class="col-md-12">
+
+            <h1><i class='fa fa-fw fa-user'></i> Candidates</h1>
 
             <table class="table table-striped" id="candidate-list">
                 <thead>
@@ -18,23 +21,24 @@
                                 {{ sort_order|get_sort_icon|safe }}
                             {% endif %}
                         </th>
-                        <th>
-                            <a href="{% url 'candidate-list' %}?{% query_transform request order_by='committee_name' sort_order=toggle_order %}">
-                                Committee name
-                            </a>
-                            {% if order_by == 'committee_name' %}
-                                {{ sort_order|get_sort_icon|safe }}
-                            {% endif %}
-                        </th>
+
                         <th>
                             <a href="{% url 'candidate-list' %}?{% query_transform request order_by='office_name' sort_order=toggle_order %}">
-                                Office sought
+                                Office
                             </a>
                             {% if order_by == 'office_name' %}
                                 {{ sort_order|get_sort_icon|safe }}
                             {% endif %}
                         </th>
                         <th>
+                            <a href="{% url 'candidate-list' %}?{% query_transform request order_by='committee_name' sort_order=toggle_order %}">
+                                Committee
+                            </a>
+                            {% if order_by == 'committee_name' %}
+                                {{ sort_order|get_sort_icon|safe }}
+                            {% endif %}
+                        </th>
+                        <th class='text-right'>
                             <a href="{% url 'candidate-list' %}?{% query_transform request order_by='closing_balance' sort_order=toggle_order %}">
                                 Current balance
                             </a>
@@ -58,11 +62,11 @@
                                     {% endspaceless %}
                                 </a>
                             </td>
-                            <td>{{ candidate.committee_name|default_if_none:"" }}</td>
                             <td>
                                 {{ candidate.office_name }} {{ candidate.office_type }}
                             </td>
-                            <td>{{ candidate.closing_balance|format_money }}</td>
+                            <td>{{ candidate.committee_name|default_if_none:"" }}</td>
+                            <td class='text-right'>{{ candidate.closing_balance|format_money }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>

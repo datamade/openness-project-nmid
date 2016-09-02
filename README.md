@@ -11,26 +11,44 @@ We recommend using [virtualenv](http://virtualenv.readthedocs.org/en/latest/virt
 Once you have virtualenvwrapper set up, do this:
 
 ```bash
-mkvirtualenv nmid
+mkvirtualenv nmid -p /path/to/your/python3
 git clone https://github.com/datamade/nmid.git
 cd nmid
 pip install -r requirements.txt
 ```
 
-You can return to your virtualenv when needed:
+Next, change your application settings. Start by copying the example `settings_local_example.py`
 
-```bash
-workon nmid
+```
+cp nmid/settings_local_example.py nmid/settings_local.py
+```
+
+Then set your database name, user and password.
+
+Next, create a postgres database and run the Django migrations to setup the proper tables.
+
+```
+createdb nmid
+python manage.py migrate
+```
+
+##Data import
+
+To import the New Mexico campaign finance data into your database, run the `import_data` command.
+
+```
+python manage.py import_data
 ```
 
 ##Run the code
 
 Run the server with the following:
 ```bash
-python runserver.py
+workon nmid
+python manage.py runserver
 ```
 
-Then, navigate to: http://localhost:5000/
+Then, navigate to: http://localhost:8000/
 
 ## Team
 

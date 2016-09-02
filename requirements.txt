@@ -5,3 +5,4 @@ django-bootstrap-pagination==1.6.2
 djangorestframework==3.4.6
 markdown==2.6.6
 django-filter==0.14.0
+csvkit==0.9.1

@@ -1,11 +1,14 @@
 {% extends 'base.html' %}
 {% load bootstrap_pagination %}
 {% load helpers %}
+{% block title %}Committees{% endblock %}
 {% block full_content %}
 
 <div class="container">
     <div class="row">
         <div class="col-md-12">
+
+            <h1><i class='fa fa-fw fa-group'></i> Committees</h1>
 
             <table class="table table-striped" id="committee-list">
                 <thead>
@@ -14,11 +17,19 @@
                             <a href="{% url 'committee-list' %}?{% query_transform request order_by='name' sort_order=toggle_order %}">
                                 Committee
                             </a>
-                            {% if order_by == 'last_name' %}
+                            {% if order_by == 'name' %}
                                 {{ sort_order|get_sort_icon|safe }}
                             {% endif %}
                         </th>
                         <th>
+                            <a href="{% url 'committee-list' %}?{% query_transform request order_by='filing_date' sort_order=toggle_order %}">
+                                Latest report
+                            </a>
+                            {% if order_by == 'filing_date' %}
+                                {{ sort_order|get_sort_icon|safe }}
+                            {% endif %}
+                        </th>
+                        <th class='text-right'>
                             <a href="{% url 'committee-list' %}?{% query_transform request order_by='closing_balance' sort_order=toggle_order %}">
                                 Current balance
                             </a>
@@ -26,7 +37,6 @@
                                 {{ sort_order|get_sort_icon|safe }}
                             {% endif %}
                         </th>
-                        <th>Latest report</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -37,8 +47,8 @@
                                     {{ committee.name }}
                                 </a>
                             </td>
-                            <td>{{ committee.closing_balance|format_money }}</td>
-                            <td>{{ committee.filing_date }}</td>
+                            <td>{{ committee.filing_date | date:'M d, Y'}}</td>
+                            <td class='text-right'>{{ committee.closing_balance|format_money }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
