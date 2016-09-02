@@ -1,74 +1,72 @@
 {% extends 'base.html' %}
 {% load helpers %}
 {% load staticfiles %}
-
+{% block title %}{{ pac.name }}{% endblock %}
 {% block full_content %}
 
 <div class="container">
-    <div class="row">
-        <div class="col-md-6">
-            <h1>
-                {{ pac.name }}
-            </h1>
-            <table class="table table-condensed">
+    <p><a href='/committees'>&laquo; Committees</a></p>
+    <h1>{{ pac.name }}</h1>
+    <div class='row'>
+        <div class="col-sm-6">
+            <h4>{{ latest_filing.filing_period.description }} Report</h4>
+            <table class="table table-striped">
+                <tbody>
+                    <tr>
+                        <td>Opening balance</td>
+                        <td class='text-right'>{{ latest_filing.opening_balance|format_money }}</td>
+                    </tr>
+                    <tr>
+                        <td>Total contributions</td>
+                        <td class='text-right'>{{ latest_filing.total_contributions|format_money }}</td>
+                    </tr>
+                    <tr>
+                        <td>Total in-kind contributions</td>
+                        <td class='text-right'>{{ latest_filing.total_inkind|format_money }}</td>
+                    </tr>
+                    <tr>
+                        <td>Total expenditures</td>
+                        <td class='text-right'>{{ latest_filing.total_expenditures|format_money }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Closing balance</strong></td>
+                        <td class='text-right'><strong>{{ latest_filing.closing_balance|format_money }}</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class='col-sm-4 col-sm-offset-2'>
+            <h4>Contact information</h4>
+            <table class="table table-striped">
                 <tbody>
                 {% if pac.business_phone %}
                     <tr>
                         <td>
-                            <i class="fa fa-phone" aria-hidden="true"></i> (business) {{ pac.business_phone}}
+                            <i class="fa fa-fw fa-phone" aria-hidden="true"></i>
+                            {{ pac.business_phone}}
                         </td>
-                    <tr>
+                    </tr>
                 {% endif %}
                 {% if pac.home_phone %}
                     <tr>
                         <td>
-                            <i class="fa fa-phone" aria-hidden="true"></i> (home) {{ pac.home_phone }}
+                            <i class="fa fa-fw fa-phone" aria-hidden="true"></i>
+                            {{ pac.home_phone }}
                         </td>
                     </tr>
                 {% endif %}
                 {% if pac.email %}
                     <tr>
                         <td>
-                            <i class="fa fa-envelope-o" aria-hidden="true"></i> {{ pac.email }}
+                            <i class="fa fa-fw fa-envelope-o" aria-hidden="true"></i> <a href='mailto:{{pac.email}}'>{{ pac.email }}</a>
                         </td>
                     </tr>
                 {% endif %}
                 </tbody>
             </table>
         </div>
-        <div class="col-sm-6">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>{{ latest_filing.filing_period.description }} Report</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Opening balance</td>
-                        <td>{{ latest_filing.opening_balance|format_money }}</td>
-                    </tr>
-                    <tr>
-                        <td>Total contributions</td>
-                        <td>{{ latest_filing.total_contributions|format_money }}</td>
-                    </tr>
-                    <tr>
-                        <td>Total in-kind contributions</td>
-                        <td>{{ latest_filing.total_inkind|format_money }}</td>
-                    </tr>
-                    <tr>
-                        <td>Total expenditures</td>
-                        <td>{{ latest_filing.total_expenditures|format_money }}</td>
-                    </tr>
-                    <tr>
-                        <td>Closing balance</td>
-                        <td>{{ latest_filing.closing_balance|format_money }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
     </div>
+    <hr />
     <div class="row">
         <div class="col-md-12">
             <ul class="nav nav-pills">
@@ -199,12 +197,13 @@
                 <tr>
                     <% if(transaction_type == 'top-donors'){ %>
                         <th>Donor</th>
-                        <th>Total donated</th>
+                        <th>Latest date</th>
+                        <th class='text-right'>Total donated</th>
                     <% } else { %>
                         <th>Recipient</th>
-                        <th>Total received</th>
+                        <th>Latest date</th>
+                        <th class='text-right'>Total received</th>
                     <% } %>
-                    <th>Latest date</th>
                 </tr>
             </thead>
             <tbody>
@@ -221,10 +220,10 @@
                             </a>
                         </td>
                         <td class='nowrap'>
-                            <%= accounting.formatMoney(transaction.amount) %>
-                        </td>
-                        <td class='nowrap'>
                             <%= moment(transaction.last_date).format('MMM DD, YYYY') %>
+                        </td>
+                        <td class='text-right nowrap'>
+                            <%= accounting.formatMoney(transaction.amount) %>
                         </td>
                     </tr>
                 <% }) %>

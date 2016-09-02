@@ -1,49 +1,16 @@
 {% extends 'base.html' %}
 {% load helpers %}
 {% load staticfiles %}
-
+{% block title %}{{ candidate.full_name }}{% endblock %}
 {% block full_content %}
 
 <div class="container">
+    <p><a href='/candidates'>&laquo; Candidates</a></p>
+    <h1>{{ candidate.full_name }}</h1>
     <div class="row">
-        <div class="col-md-6">
-            <h1>
-                {{ candidate.full_name }}
-            </h1>
-            <table class="table table-condensed">
-                <tbody>
-                {% if candidate.business_phone %}
-                    <tr>
-                        <td>
-                            <i class="fa fa-phone" aria-hidden="true"></i> (business) {{ candidate.business_phone}}
-                        </td>
-                    <tr>
-                {% endif %}
-                {% if candidate.home_phone %}
-                    <tr>
-                        <td>
-                            <i class="fa fa-phone" aria-hidden="true"></i> (home) {{ candidate.home_phone }}
-                        </td>
-                    </tr>
-                {% endif %}
-                {% if candidate.email %}
-                    <tr>
-                        <td>
-                            <i class="fa fa-envelope-o" aria-hidden="true"></i> {{ candidate.email }}
-                        </td>
-                    </tr>
-                {% endif %}
-                </tbody>
-            </table>
-        </div>
         <div class="col-sm-6">
+            <h4>{{ latest_filing.filing_period.description }} Report <small>{{latest_filing.filing_period.filing_date | date:"M d, Y"}}</small></h4>
             <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>{{ latest_filing.filing_period.description }} Report</th>
-                        <th></th>
-                    </tr>
-                </thead>
                 <tbody>
                     <tr>
                         <td>Opening balance</td>
@@ -62,9 +29,37 @@
                         <td>{{ latest_filing.total_expenditures|format_money }}</td>
                     </tr>
                     <tr>
-                        <td>Closing balance</td>
-                        <td>{{ latest_filing.closing_balance|format_money }}</td>
+                        <td><strong>Closing balance</strong></td>
+                        <td><strong>{{ latest_filing.closing_balance|format_money }}</strong></td>
                     </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="col-sm-4 col-sm-offset-2">
+            <h4>Contact information</h4>
+            <table class="table table-striped">
+                <tbody>
+                {% if candidate.business_phone %}
+                    <tr>
+                        <td>
+                            <i class="fa fa-fw fa-phone" aria-hidden="true"></i> {{ candidate.business_phone}}
+                        </td>
+                    </tr>
+                {% endif %}
+                {% if candidate.home_phone %}
+                    <tr>
+                        <td>
+                            <i class="fa fa-fw fa-phone" aria-hidden="true"></i> {{ candidate.home_phone }}
+                        </td>
+                    </tr>
+                {% endif %}
+                {% if candidate.email %}
+                    <tr>
+                        <td>
+                            <i class="fa fa-fw fa-envelope-o" aria-hidden="true"></i> {{ candidate.email }}
+                        </td>
+                    </tr>
+                {% endif %}
                 </tbody>
             </table>
         </div>
@@ -72,7 +67,7 @@
     <div class="row">
         <div class="col-md-12">
             <h3>Campaigns</h3>
-            <table class="table table-condensed">
+            <table class="table table-striped">
                 <thead>
                     <tr>
                         <th>Office</th>
