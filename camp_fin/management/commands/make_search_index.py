@@ -13,6 +13,12 @@ class Command(BaseCommand):
     #     )
 
     def handle(self, *args, **options):
+        
+        self.drop_vector = ''' 
+            ALTER TABLE camp_fin_{}
+            DROP COLUMN IF EXISTS search_name
+        '''
+
         self.add_vector = ''' 
             ALTER TABLE camp_fin_{}
             ADD COLUMN search_name tsvector
@@ -30,7 +36,7 @@ class Command(BaseCommand):
 
         self.create_trigger = ''' 
             CREATE TRIGGER {0}_search_update
-            BEFORE INSERT OR UPDATE ON camp_fin_{0}
+            BEFORE INSERT OR UPDATE OF {1} ON camp_fin_{0}
             FOR EACH ROW EXECUTE PROCEDURE
             tsvector_update_trigger(search_name, 
                                     'pg_catalog.english', {1})
@@ -51,20 +57,92 @@ class Command(BaseCommand):
             'suffix'
         ]
 
-        vector_fields = ["COALESCE({}, '')".format(f) for f in index_fields]
+        vector = "concat_ws(' ', {})".format(', '.join(index_fields))
 
-        vector = " || ' ' || ".join(vector_fields)
-        
         with transaction.atomic():
             cursor = connection.cursor()
-
+            cursor.execute(self.drop_vector.format('candidate'))
             cursor.execute(self.add_vector.format('candidate'))
             cursor.execute(self.populate_vector.format('candidate', vector))
             cursor.execute(self.add_index.format('candidate'))
-            cursor.execute(self.create_trigger.format('candidate', ', '.join(index_fields)))
+            
+            cursor.execute(''' 
+                DROP TRIGGER IF EXISTS candidate_search_update 
+                ON camp_fin_candidate
+            ''')
+
+            cursor.execute(self.create_trigger.format('candidate', 
+                                                      ','.join(index_fields)))
 
     def makePACIndex(self):
-        pass
+        
+        with transaction.atomic():
+            cursor = connection.cursor()
+            cursor.execute(self.drop_vector.format('pac'))
+            cursor.execute(self.add_vector.format('pac'))
+            cursor.execute(self.populate_vector.format('pac', "COALESCE(name, '')"))
+            cursor.execute(self.add_index.format('pac'))
+            
+            cursor.execute(''' 
+                DROP TRIGGER IF EXISTS pac_search_update 
+                ON camp_fin_pac
+            ''')
+
+            cursor.execute(self.create_trigger.format('pac', 'name'))
 
     def makeTransactionIndex(self):
-        pass
+        
+        index_fields = [
+            'company_name',
+            'name_prefix',
+            'first_name',
+            'middle_name',
+            'last_name',
+            'suffix'
+        ]
+        
+        
+        vector = "concat_ws(' ', {})".format(', '.join(index_fields))
+
+        populate_anonymous = ''' 
+            UPDATE camp_fin_transactions SET
+              search_name = to_tsvector('english', 'Anonymous')
+            WHERE COALESCE(TRIM(concat_ws(' ', 
+                                          company_name, 
+                                          name_prefix, 
+                                          first_name, 
+                                          middle_name, 
+                                          last_name, 
+                                          suffix)), '') = ''
+        '''
+        
+        with transaction.atomic():
+            cursor = connection.cursor()
+            cursor.execute(self.drop_vector.format('transaction'))
+            cursor.execute(self.add_vector.format('transaction'))
+            cursor.execute(self.populate_vector.format('transaction', vector))
+            cursor.execute(self.add_index.format('transaction'))
+            
+            cursor.execute(''' 
+                DROP TRIGGER IF EXISTS transaction_search_update 
+                ON camp_fin_transaction
+            ''')
+
+            cursor.execute(self.create_trigger.format('transaction',
+                                                      ','.join(index_fields)))
+        
+            with open('data/anonymous_trigger.sql') as f:
+                anonymous_trigger = f.read()
+            
+            cursor.execute(anonymous_trigger)
+            
+            cursor.execute(''' 
+                DROP TRIGGER IF EXISTS add_anonymous_transactions
+                ON camp_fin_transaction
+            ''')
+
+            cursor.execute(''' 
+                CREATE TRIGGER add_anonymous_transactions
+                AFTER INSERT OR UPDATE OF {0} ON camp_fin_transaction
+                FOR EACH ROW EXECUTE PROCEDURE update_anonymous()
+            '''.format(','.join(index_fields)))

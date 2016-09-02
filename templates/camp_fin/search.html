@@ -8,7 +8,52 @@ Search
 <div class="container">
     <div class="row">
         <div class="col-md-12">
-            Search
+            <form method='GET'>
+                <div class="input-group input-group-lg">
+                    <input type="text" class="form-control" placeholder="Search for candidates, committees and donors in New Mexico" id="term" name="term" {% if term %}value="{{term}}"{% endif %}>
+                    <span class="input-group-btn">
+                        <button class="btn btn-default" type="submit"><i class='fa fa-search'></i> Search</button>
+                    </span>
+                </div>
+                <div class="form-group" id='filter-results'>
+                    <br />
+                    <div class="row">
+                        <div class="col-md-2">
+                            <span>Search for</span>
+                        </div>
+                        <div class="col-md-10">
+                            <label data-title='Candidates' data-content='Any person who seeks nomination for election, election to, or retention in public office'>
+                                <input type="checkbox" name="table_name" value="candidates" {% if 'candidates' in table_name %}checked='checked'{% endif %}> Candidates
+                            </label>
+                            <label data-title='Committees' data-content='Includes committees for political candidates, political parties, political action committees (PACs), and ballot initiatives'>
+                                <input type="checkbox" name="table_name" value="committees" {% if 'committees' in table_name %}checked='checked'{% endif %}> Committees
+                            </label>
+                            <label data-title='Committee officers' data-content='Chairmen and treasurerers for political committees'>
+                                <input type="checkbox" name="table_name" value="officers" {% if 'officers' in table_name %}checked='checked'{% endif %}> Committee officers
+                            </label>
+                            <label data-title='Donations' data-content='Any person or organization who has given to a political committee'>
+                                <input type="checkbox" name="table_name" value="receipts" {% if 'receipts' in table_name %}checked='checked'{% endif %}> Donations to committees
+                            </label>
+                            <label data-title='Expenditures' data-content='Any person or organization who was given money by a political committee'>
+                                <input type="checkbox" name="table_name" value="expenditures" {% if 'expenditures' in table_name %}checked='checked'{% endif %}> Expenditures by committees
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <span>Donation or expenditure date <small>(optional)</small></span>
+                        </div>
+                        <div class="col-md-3">
+                            <input id="search_date__ge" type="text" class="form-control date-filter" name="search_date__ge" {% if search_date__ge %}value="{{search_date__ge}}" {% endif %} placeholder="Date from"/>
+                        </div>
+                        <div class="col-md-3">
+                            <input id="search_date__le" type="text" class="form-control date-filter" name="search_date__le" {% if search_date__le %}value="{{search_date__le}}" {% endif %} placeholder="Date to"/>
+                        </div>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 </div>
