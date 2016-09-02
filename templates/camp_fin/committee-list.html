@@ -17,7 +17,7 @@
                             <a href="{% url 'committee-list' %}?{% query_transform request order_by='name' sort_order=toggle_order %}">
                                 Committee
                             </a>
-                            {% if order_by == 'last_name' %}
+                            {% if order_by == 'name' %}
                                 {{ sort_order|get_sort_icon|safe }}
                             {% endif %}
                         </th>
@@ -29,7 +29,14 @@
                                 {{ sort_order|get_sort_icon|safe }}
                             {% endif %}
                         </th>
-                        <th>Latest report</th>
+                        <th>
+                            <a href="{% url 'committee-list' %}?{% query_transform request order_by='filing_date' sort_order=toggle_order %}">
+                                Latest report
+                            </a>
+                            {% if order_by == 'filing_date' %}
+                                {{ sort_order|get_sort_icon|safe }}
+                            {% endif %}
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
