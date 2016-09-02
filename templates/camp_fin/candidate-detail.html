@@ -34,6 +34,14 @@
                     </tr>
                 </tbody>
             </table>
+
+            <h3>Net funds over time</h3>
+            <div id='net-funds-chart'></div>
+
+            <h3>Donations and expenditures over time</h3>
+            <div id='expend-chart'></div>
+
+
         </div>
         <div class="col-sm-4 col-sm-offset-2">
             <h4>Contact information</h4>
@@ -71,7 +79,7 @@
                 <thead>
                     <tr>
                         <th>Office</th>
-                        <th>Committee name</th>
+                        <th>Committee</th>
                         <th>Election season</th>
                         <th>Won primary?</th>
                         <th>Won general?</th>
@@ -110,9 +118,11 @@
 
 {% endblock %}
 {% block extra_js %}
+    <script src="{% static 'js/highcharts.js' %}"></script>
     <script src="{% static 'js/ejs_production.js' %}"></script>
     <script src="{% static 'js/accounting.min.js' %}"></script>
     <script src="{% static 'js/moment.min.js' %}"></script>
+    <script src="{% static 'js/chart_helper.js' %}"></script>
     <script>
         function transaction_verb(transaction_type){
             var verbs = {
@@ -124,6 +134,38 @@
             }
             return verbs[transaction_type];
         }
+
+        //render net balance chart
+        var balance_trend = {{balance_trend}};
+        var balance_trend_f = [];
+
+        // format investments
+        for (i = 0; i < balance_trend.length; i++) {
+            balance_trend_f.push([Date.UTC(balance_trend[i][1],balance_trend[i][2]-1,balance_trend[i][3]), balance_trend[i][0]]);
+        }
+
+        ChartHelper.netfunds('net-funds-chart', 'Net funds over time', '', 'Funds', balance_trend_f);
+
+
+        //render donation/expenditure chart
+        var expend_trend = {{expend_trend}};
+        var expend_trend_f = [];
+
+        var donation_trend = {{donation_trend}};
+        var donation_trend_f = [];
+
+        // format donations
+        for (i = 0; i < donation_trend.length; i++) {
+            donation_trend_f.push([Date.UTC(donation_trend[i][1],donation_trend[i][2]-1,donation_trend[i][3]), donation_trend[i][0]]);
+        }
+
+        // format expenditures
+        for (i = 0; i < expend_trend.length; i++) {
+            expend_trend_f.push([Date.UTC(expend_trend[i][1],expend_trend[i][2]-1,expend_trend[i][3]), expend_trend[i][0]]);
+        }
+
+        ChartHelper.donation_expenditure('expend-chart', 'Donations and expenditures over time', '', 'Money', [donation_trend_f, expend_trend_f]);
+
     </script>
     <script type="text/EJS" id="transaction-table-guts">
 

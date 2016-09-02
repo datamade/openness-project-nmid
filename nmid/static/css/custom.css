@@ -29,3 +29,5 @@ th a { color: #333333; }
 .nav-pills > li.active > a:focus {
     background-color: #8C0012;
 }
+
+#net-funds-chart { height: 200px; }
