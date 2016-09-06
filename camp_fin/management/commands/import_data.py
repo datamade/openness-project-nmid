@@ -118,7 +118,7 @@ class Command(BaseCommand):
 
                 self.django_table = 'camp_fin_{}'.format(self.entity_type)
                 self.raw_pk_col = [k for k, v in self.table_mapper.items() \
-                                       if v['field'] == 'id']
+                                       if v['field'] == 'id'][0]
                 
 
                 self.connection = engine.connect()
@@ -403,6 +403,7 @@ class Command(BaseCommand):
         except sa.exc.ProgrammingError as e:
             # TODO: Make some kind of logger
             # logger.error(e, exc_info=True)
+            print(e)
             trans.rollback()
             if raise_exc:
                 raise e
