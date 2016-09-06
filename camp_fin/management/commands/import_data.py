@@ -15,7 +15,8 @@ from nmid.typeinferer import TypeInferer
 from .table_mappers import CANDIDATE, PAC, FILING, FILING_PERIOD, CONTRIB_EXP, \
     CONTRIB_EXP_TYPE, CAMPAIGN, OFFICE_TYPE, OFFICE, CAMPAIGN_STATUS, COUNTY, \
     DISTRICT, ELECTION_SEASON, ENTITY, ENTITY_TYPE, FILING_TYPE, LOAN, \
-    LOAN_TRANSACTION, LOAN_TRANSACTION_TYPE, POLITICAL_PARTY, SPECIAL_EVENT
+    LOAN_TRANSACTION, LOAN_TRANSACTION_TYPE, POLITICAL_PARTY, SPECIAL_EVENT, \
+    TREASURER, DIVISION
 
 DB_CONN = 'postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}'
 
@@ -41,11 +42,12 @@ MAPPER_LOOKUP = {
     'entity': ENTITY,
     'entitytype': ENTITY_TYPE,
     'filingtype': FILING_TYPE,
-    'load': LOAN,
+    'loan': LOAN,
     'loantransaction': LOAN_TRANSACTION,
     'loantransactiontype': LOAN_TRANSACTION_TYPE,
     'politicalparty': POLITICAL_PARTY,
     'specialevent': SPECIAL_EVENT,
+    'treasurer': TREASURER,
 }
 
 FILE_LOOKUP = {
@@ -71,6 +73,7 @@ FILE_LOOKUP = {
     'loantransactiontype': 'Cam_LoanTransactionType.xlsx',
     'politicalparty': 'Cam_PoliticalParty.xlsx',
     'specialevent': 'Cam_SpecialEvent.xlsx',
+    'treasurer': 'Cam_Treasurer.xlsx',
 }
 
 class Command(BaseCommand):

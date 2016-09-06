@@ -259,18 +259,18 @@ LOAN = OrderedDict([
 ])
 
 LOAN_TRANSACTION = OrderedDict([
-    ("loantransactionid", {'field', 'id', 'data_type': 'bigint'}),
-    ("loanid", {'field', 'loan_id', 'data_type': 'bigint'}),
-    ("amount", {'field', 'loan_id', 'data_type': 'money::numeric::double precision'}),
-    ("interestpaid", {'field', 'interest_paid', 'data_type': 'double precision'}),
-    ("date", {'field', 'transaction_date', 'data_type': 'timestamp with time zone'}),
-    ("dateadded", {'field', 'date_added', 'data_type': 'timestamp with time zone'}),
-    ("checknumber", {'field', 'check_number', 'data_type': 'varchar'}),
-    ("memo", {'field', 'memo', 'data_type': 'varchar'}),
-    ("loantransactiontypeid", {'field', 'transaction_type_id', 'data_type': 'bigint'}),
-    ("transactionstatusid", {'field', 'transaction_status_id', 'data_type': 'bigint'}),
-    ("reportid", {'field', 'filing_id', 'data_type': 'bigint'}),
-    ("fromfileid", {'field', 'from_file_id', 'data_type': 'bigint'}),
+    ("loantransactionid", {'field': 'id', 'data_type': 'bigint'}),
+    ("loanid", {'field': 'loan_id', 'data_type': 'bigint'}),
+    ("amount", {'field': 'loan_id', 'data_type': 'money::numeric::double precision'}),
+    ("interestpaid", {'field': 'interest_paid', 'data_type': 'double precision'}),
+    ("date", {'field': 'transaction_date', 'data_type': 'timestamp with time zone'}),
+    ("dateadded", {'field': 'date_added', 'data_type': 'timestamp with time zone'}),
+    ("checknumber", {'field': 'check_number', 'data_type': 'varchar'}),
+    ("memo", {'field': 'memo', 'data_type': 'varchar'}),
+    ("loantransactiontypeid", {'field': 'transaction_type_id', 'data_type': 'bigint'}),
+    ("transactionstatusid", {'field': 'transaction_status_id', 'data_type': 'bigint'}),
+    ("reportid", {'field': 'filing_id', 'data_type': 'bigint'}),
+    ("fromfileid", {'field': 'from_file_id', 'data_type': 'bigint'}),
 ])
 
 LOAN_TRANSACTION_TYPE = OrderedDict([
@@ -305,9 +305,21 @@ SPECIAL_EVENT = OrderedDict([
     ("zip",{'field': 'zipcode', 'data_type': 'varchar'}),
     ("countyid",{'field': 'county_id', 'data_type': 'bigint'}),
     ("country",{'field': 'country', 'data_type': 'varchar'}),
-    ("fromfileid", {'field', 'from_file_id', 'data_type': 'bigint'}),
+    ("fromfileid", {'field': 'from_file_id', 'data_type': 'bigint'}),
 ])
 
 TREASURER = OrderedDict([
-    
+    ('treasurerid', {'field': 'id', 'data_type': 'bigint'}),
+    ('prefix', {'field': 'prefix', 'data_type': 'varchar'}),
+    ('firstname', {'field': 'first_name', 'data_type': 'varchar'}),
+    ('lastname', {'field': 'last_name', 'data_type': 'varchar'}),
+    ('middlename', {'field': 'middle_name', 'data_type': 'varchar'}),
+    ('suffix', {'field': 'suffix', 'data_type': 'varchar'}),
+    ('businessphone', {'field': 'business_phone', 'data_type': 'varchar'}),
+    ('alternativephone', {'field': 'alt_phone', 'data_type': 'varchar'}),
+    ('addressid', {'field': 'address_id', 'data_type': 'bigint'}),
+    ('emailaddress', {'field': 'email', 'data_type': 'varchar'}),
+    ('dateadded', {'field': 'date_added', 'data_type': 'timestamp with time zone'}),
+    ('statusid', {'field': 'status_id', 'data_type': 'bigint'}),
+    ('olddbentityid', {'field': 'olddb_entity_id', 'data_type': 'bigint'}),
 ])

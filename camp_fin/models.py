@@ -323,7 +323,7 @@ class LoanTransaction(models.Model):
     interest_paid = models.FloatField(null=True)
     transaction_date = models.DateTimeField()
     date_added = models.DateTimeField()
-    check_number = models.CharField(null=True)
+    check_number = models.CharField(max_length=10, null=True)
     memo = models.CharField(max_length=500, null=True)
     transaction_type = models.ForeignKey('LoanTransactionType', db_constraint=False)
     transaction_status = models.ForeignKey('Status', db_constraint=False)
