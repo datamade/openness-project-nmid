@@ -176,3 +176,20 @@ OFFICE = OrderedDict([
     ("statusid",{'field': 'status_id', 'data_type': 'bigint'}),
     ("officetypeid",{'field': 'office_type_id', 'data_type': 'bigint'}),
 ])
+
+CAMPAIGN_STATUS = OrderedDict([
+    ("campaignstatusid",{'field': 'id', 'data_type': 'bigint'}),
+    ("description",{'field': 'description', 'data_type': 'varchar'}),
+])
+
+COUNTY = OrderedDict([
+    ("countyid",{'field': 'id', 'data_type': 'bigint'}),
+    ("description",{'field': 'name', 'data_type': 'varchar'}),
+])
+
+DISTRICT = OrderedDict([
+    ("districtid",{'field': 'id', 'data_type': 'bigint'}),
+    ("electionofficeid",{'field': 'office_id', 'data_type': 'bigint'}),
+    ("description",{'field': 'name', 'data_type': 'varchar'}),
+    ("statusid",{'field': 'status_id', 'data_type': 'bigint'}),
+])

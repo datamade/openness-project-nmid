@@ -85,7 +85,7 @@ class Campaign(models.Model):
     division = models.ForeignKey('Division', db_constraint=False, null=True)
     district = models.ForeignKey('District', db_constraint=False, null=True)
     treasurer = models.ForeignKey('Treasurer', db_constraint=False, null=True)
-    status = models.ForeignKey('Status', db_constraint=False, null=True)
+    status = models.ForeignKey('CampaignStatus', db_constraint=False, null=True)
     date_added = models.DateTimeField()
     county = models.ForeignKey('County', db_constraint=False, null=True)
     political_party = models.ForeignKey('PoliticalParty', db_constraint=False)
@@ -127,10 +127,19 @@ class Office(models.Model):
         return self.description
 
 class District(models.Model):
-    pass
+    office = models.ForeignKey('Office', db_constraint=False)
+    name = models.CharField(max_length=25)
+    status = models.ForeignKey('Status')
+
+    def __str__(self):
+        return '{1} ({0})'.format(self.name, 
+                                  self.office.description)
 
 class County(models.Model):
-    pass
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
 
 class PoliticalParty(models.Model):
     pass
@@ -289,6 +298,12 @@ class Address(models.Model):
                                               self.state,
                                               self.zip_code)
         return address
+
+class CampaignStatus(models.Model):
+    description = models.CharField(max_length=10)
+
+    def __str__(self):
+        return self.description
 
 ######################################################################
 ### Below here are normalized tables that we may or may not end up ###

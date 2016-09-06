@@ -13,7 +13,8 @@ from django.utils.text import slugify
 
 from nmid.typeinferer import TypeInferer
 from .table_mappers import CANDIDATE, PAC, FILING, FILING_PERIOD, CONTRIB_EXP, \
-    CONTRIB_EXP_TYPE, CAMPAIGN, OFFICE_TYPE, OFFICE
+    CONTRIB_EXP_TYPE, CAMPAIGN, OFFICE_TYPE, OFFICE, CAMPAIGN_STATUS, COUNTY, \
+    DISTRICT
 
 DB_CONN = 'postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}'
 
@@ -31,6 +32,9 @@ RAW_PK_LOOKUP = {
     'campaign': 'campaignid',
     'officetype': 'officetypeid',
     'office': 'electionofficeid',
+    'campaignstatus': 'campaignstatusid',
+    'county': 'countyid',
+    'district': 'districtid',
 }
 
 MAPPER_LOOKUP = {
@@ -43,6 +47,9 @@ MAPPER_LOOKUP = {
     'campaign': CAMPAIGN,
     'officetype': OFFICE_TYPE,
     'office': OFFICE,
+    'campaignstatus': CAMPAIGN_STATUS,
+    'county': COUNTY,
+    'district': DISTRICT,
 }
 
 FILE_LOOKUP = {
@@ -55,6 +62,9 @@ FILE_LOOKUP = {
     'filing': 'Cam_Report.csv',
     'candidate': 'Candidates.xlsx',
     'pac': 'PACs.xlsx',
+    'campaignstatus': 'Cam_CampaignStatus.xlsx',
+    'county': 'Cam_County.xlsx',
+    'district': 'Cam_District.xlsx',
 }
 
 class Command(BaseCommand):
