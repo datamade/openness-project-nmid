@@ -13,25 +13,16 @@ from django.utils.text import slugify
 
 from nmid.typeinferer import TypeInferer
 from .table_mappers import CANDIDATE, PAC, FILING, FILING_PERIOD, CONTRIB_EXP, \
-    CONTRIB_EXP_TYPE, CAMPAIGN, OFFICE_TYPE, OFFICE
+    CONTRIB_EXP_TYPE, CAMPAIGN, OFFICE_TYPE, OFFICE, CAMPAIGN_STATUS, COUNTY, \
+    DISTRICT, ELECTION_SEASON, ENTITY, ENTITY_TYPE, FILING_TYPE, LOAN, \
+    LOAN_TRANSACTION, LOAN_TRANSACTION_TYPE, POLITICAL_PARTY, SPECIAL_EVENT, \
+    TREASURER, DIVISION
 
 DB_CONN = 'postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}'
 
 engine = sa.create_engine(DB_CONN.format(**settings.DATABASES['default']),
                           convert_unicode=True,
                           server_side_cursors=True)
-
-RAW_PK_LOOKUP = {
-    'candidate': 'candidateid',
-    'pac': 'politicalactioncommitteeid',
-    'filing': 'reportid',
-    'filingperiod': 'filingperiodid',
-    'transaction': 'contribexpenditureid',
-    'transactiontype': 'contribexpendituretypeid',
-    'campaign': 'campaignid',
-    'officetype': 'officetypeid',
-    'office': 'electionofficeid',
-}
 
 MAPPER_LOOKUP = {
     'candidate': CANDIDATE,
@@ -43,6 +34,20 @@ MAPPER_LOOKUP = {
     'campaign': CAMPAIGN,
     'officetype': OFFICE_TYPE,
     'office': OFFICE,
+    'campaignstatus': CAMPAIGN_STATUS,
+    'county': COUNTY,
+    'district': DISTRICT,
+    'division': DIVISION,
+    'electionseason': ELECTION_SEASON,
+    'entity': ENTITY,
+    'entitytype': ENTITY_TYPE,
+    'filingtype': FILING_TYPE,
+    'loan': LOAN,
+    'loantransaction': LOAN_TRANSACTION,
+    'loantransactiontype': LOAN_TRANSACTION_TYPE,
+    'politicalparty': POLITICAL_PARTY,
+    'specialevent': SPECIAL_EVENT,
+    'treasurer': TREASURER,
 }
 
 FILE_LOOKUP = {
@@ -55,6 +60,20 @@ FILE_LOOKUP = {
     'filing': 'Cam_Report.csv',
     'candidate': 'Candidates.xlsx',
     'pac': 'PACs.xlsx',
+    'campaignstatus': 'Cam_CampaignStatus.xlsx',
+    'county': 'Cam_County.xlsx',
+    'district': 'Cam_District.xlsx',
+    'division': 'Cam_Division.xlsx',
+    'electionseason': 'Cam_ElectionSeason.xlsx',
+    'entity': 'Cam_Entity.xlsx',
+    'entitytype': 'Cam_EntityType.xlsx',
+    'filingtype': 'Cam_FilingPeriodType.xlsx',
+    'loan': 'Cam_Loan.xlsx',
+    'loantransaction': 'Cam_LoanTransaction.xlsx',
+    'loantransactiontype': 'Cam_LoanTransactionType.xlsx',
+    'politicalparty': 'Cam_PoliticalParty.xlsx',
+    'specialevent': 'Cam_SpecialEvent.xlsx',
+    'treasurer': 'Cam_Treasurer.xlsx',
 }
 
 class Command(BaseCommand):
@@ -94,11 +113,13 @@ class Command(BaseCommand):
                 
                 if self.file_path.endswith('zip'):
                     self.unzipFile()
-
-                self.django_table = 'camp_fin_{}'.format(self.entity_type)
-                self.raw_pk_col = RAW_PK_LOOKUP[self.entity_type]
                 
                 self.table_mapper = MAPPER_LOOKUP[self.entity_type]
+
+                self.django_table = 'camp_fin_{}'.format(self.entity_type)
+                self.raw_pk_col = [k for k, v in self.table_mapper.items() \
+                                       if v['field'] == 'id']
+                
 
                 self.connection = engine.connect()
                 

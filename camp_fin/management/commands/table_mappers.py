@@ -176,3 +176,150 @@ OFFICE = OrderedDict([
     ("statusid",{'field': 'status_id', 'data_type': 'bigint'}),
     ("officetypeid",{'field': 'office_type_id', 'data_type': 'bigint'}),
 ])
+
+CAMPAIGN_STATUS = OrderedDict([
+    ("campaignstatusid",{'field': 'id', 'data_type': 'bigint'}),
+    ("description",{'field': 'description', 'data_type': 'varchar'}),
+])
+
+COUNTY = OrderedDict([
+    ("countyid",{'field': 'id', 'data_type': 'bigint'}),
+    ("description",{'field': 'name', 'data_type': 'varchar'}),
+])
+
+DISTRICT = OrderedDict([
+    ("districtid",{'field': 'id', 'data_type': 'bigint'}),
+    ("electionofficeid",{'field': 'office_id', 'data_type': 'bigint'}),
+    ("description",{'field': 'name', 'data_type': 'varchar'}),
+    ("statusid",{'field': 'status_id', 'data_type': 'bigint'}),
+])
+
+DIVISION = OrderedDict([
+    ("divisionid",{'field': 'id', 'data_type': 'bigint'}),
+    ("districtid",{'field': 'district_id', 'data_type': 'bigint'}),
+    ("description",{'field': 'name', 'data_type': 'varchar'}),
+    ("statusid",{'field': 'status_id', 'data_type': 'bigint'}),
+])
+
+ELECTION_SEASON = OrderedDict([
+    ("electionseasonid",{'field': 'id', 'data_type': 'bigint'}),
+    ("description",{'field': 'year', 'data_type': 'varchar'}),
+    ("statusid",{'field': 'status_id', 'data_type': 'bigint'}),
+    ("isspecial",{'field': 'special', 'data_type': 'boolean'}),
+])
+
+ENTITY = OrderedDict([
+    ("entityid",{'field': 'id', 'data_type': 'bigint'}),
+    ("userid",{'field': 'user_id', 'data_type': 'bigint'}),
+    ("entitytypeid",{'field': 'entity_type_id', 'data_type': 'bigint'}),
+    ("olddbentityid",{'field': 'olddb_id', 'data_type': 'bigint'}),
+])
+
+ENTITY_TYPE = OrderedDict([
+    ("entitytypeid",{'field': 'id', 'data_type': 'bigint'}),
+    ("description",{'field': 'description', 'data_type': 'varchar'}),
+])
+
+FILING_TYPE = OrderedDict([
+    ("filingperiodtypeid",{'field': 'id', 'data_type': 'bigint'}),
+    ("description",{'field': 'description', 'data_type': 'varchar'}),
+])
+
+LOAN = OrderedDict([
+    ("loanid",{'field': 'id', 'data_type': 'bigint'}),
+    ("contactid",{'field': 'contact_id', 'data_type': 'bigint'}),
+    ("amount",{'field': 'amount', 'data_type': 'money::numeric::double precision'}),
+    ("datereceived",{'field': 'received_date', 'data_type': 'timestamp with time zone'}),
+    ("dateadded",{'field': 'date_added', 'data_type': 'timestamp with time zone'}),
+    ("checknumber",{'field': 'check_number', 'data_type': 'varchar'}),
+    ("memo",{'field': 'memo', 'data_type': 'text'}),
+    ("reportid",{'field': 'filing_id', 'data_type': 'bigint'}),
+    ("olddbloanid",{'field': 'olddb_id', 'data_type': 'bigint'}),
+    ("prefix",{'field': 'name_prefix', 'data_type': 'varchar'}),
+    ("firstname",{'field': 'first_name', 'data_type': 'varchar'}),
+    ("middlename",{'field': 'middle_name', 'data_type': 'varchar'}),
+    ("lastname",{'field': 'last_name', 'data_type': 'varchar'}),
+    ("suffix",{'field': 'suffix', 'data_type': 'varchar'}),
+    ("companyname",{'field': 'company_name', 'data_type': 'varchar'}),
+    ("address",{'field': 'address', 'data_type': 'varchar'}),
+    ("city",{'field': 'city', 'data_type': 'varchar'}),
+    ("state",{'field': 'state', 'data_type': 'varchar'}),
+    ("zip",{'field': 'zipcode', 'data_type': 'varchar'}),
+    ("countyid",{'field': 'county_id', 'data_type': 'bigint'}),
+    ("country",{'field': 'country', 'data_type': 'varchar'}),
+    ("contacttypeid",{'field': 'contact_type_id', 'data_type': 'bigint'}),
+    ("transactionstatusid",{'field': 'status_id', 'data_type': 'bigint'}),
+    ("fromfileid",{'field': 'from_file_id', 'data_type': 'bigint'}),
+    ("contacttypeother",{'field': 'contact_type_other', 'data_type': 'varchar'}),
+    ("occupation",{'field': 'occupation', 'data_type': 'varchar'}),
+    ("loantransferdate",{'field': 'loan_transfer_date', 'data_type': 'timestamp with time zone'}),
+    ("interestrate",{'field': 'interest_rate', 'data_type': 'double precision'}),
+    ("duedate",{'field': 'due_date', 'data_type': 'timestamp with time zone'}),
+    ("paymentscheduleid",{'field': 'payment_schedule_id', 'data_type': 'bigint'}),
+])
+
+LOAN_TRANSACTION = OrderedDict([
+    ("loantransactionid", {'field': 'id', 'data_type': 'bigint'}),
+    ("loanid", {'field': 'loan_id', 'data_type': 'bigint'}),
+    ("amount", {'field': 'loan_id', 'data_type': 'money::numeric::double precision'}),
+    ("interestpaid", {'field': 'interest_paid', 'data_type': 'double precision'}),
+    ("date", {'field': 'transaction_date', 'data_type': 'timestamp with time zone'}),
+    ("dateadded", {'field': 'date_added', 'data_type': 'timestamp with time zone'}),
+    ("checknumber", {'field': 'check_number', 'data_type': 'varchar'}),
+    ("memo", {'field': 'memo', 'data_type': 'varchar'}),
+    ("loantransactiontypeid", {'field': 'transaction_type_id', 'data_type': 'bigint'}),
+    ("transactionstatusid", {'field': 'transaction_status_id', 'data_type': 'bigint'}),
+    ("reportid", {'field': 'filing_id', 'data_type': 'bigint'}),
+    ("fromfileid", {'field': 'from_file_id', 'data_type': 'bigint'}),
+])
+
+LOAN_TRANSACTION_TYPE = OrderedDict([
+    ("loantransactiontypeid",{'field': 'id', 'data_type': 'bigint'}),
+    ("description",{'field': 'description', 'data_type': 'varchar'}),
+])
+
+POLITICAL_PARTY = OrderedDict([
+    ("politicalpartyid",{'field': 'id', 'data_type': 'bigint'}),
+    ("description",{'field': 'name', 'data_type': 'varchar'}),
+])
+
+SPECIAL_EVENT = OrderedDict([
+    ('specialeventid', {'field': 'id', 'data_type': 'bigint'}),
+    ('eventname', {'field': 'event_name', 'data_type': 'varchar'}),
+    ('transactionstatusid', {'field': 'transaction_status', 'data_type': 'bigint'}),
+    ('dateadded', {'field': 'date_added', 'data_type': 'timestamp with time zone'}),
+    ('eventdate', {'field': 'event_date', 'data_type': 'timestamp with time zone'}),
+    ('admissionprice', {'field': 'admission_price', 'data_type': 'money::numeric::double precision'}),
+    ('nbrinattendance', {'field': 'attendance', 'data_type': 'int'}),
+    ('eventlocation', {'field': 'location', 'data_type': 'varchar'}),
+    ('eventdescription', {'field': 'description', 'data_type': 'varchar'}),
+    ('sponsors', {'field': 'sponsors', 'data_type': 'varchar'}),
+    ('totaladmissionfee', {'field': 'total_admissions', 'data_type': 'money::numeric::double precision'}),
+    ('unidentifiablecontribsanonymous', {'field': 'anonymous_contributions', 'data_type': 'money::numeric::double precision'}),
+    ('totalexpenditures', {'field': 'total_expenditures', 'data_type': 'money::numeric::double precision'}),
+    ('reportid', {'field': 'filing_id', 'data_type': 'bigint'}),
+    ('olddbspecialeventid', {'field': 'olddb_id', 'data_type': 'bigint'}),
+    ('olddbspecialeventid', {'field': 'olddb_id', 'data_type': 'bigint'}),
+    ("address",{'field': 'address', 'data_type': 'varchar'}),
+    ("city",{'field': 'city', 'data_type': 'varchar'}),
+    ("zip",{'field': 'zipcode', 'data_type': 'varchar'}),
+    ("countyid",{'field': 'county_id', 'data_type': 'bigint'}),
+    ("country",{'field': 'country', 'data_type': 'varchar'}),
+    ("fromfileid", {'field': 'from_file_id', 'data_type': 'bigint'}),
+])
+
+TREASURER = OrderedDict([
+    ('treasurerid', {'field': 'id', 'data_type': 'bigint'}),
+    ('prefix', {'field': 'prefix', 'data_type': 'varchar'}),
+    ('firstname', {'field': 'first_name', 'data_type': 'varchar'}),
+    ('lastname', {'field': 'last_name', 'data_type': 'varchar'}),
+    ('middlename', {'field': 'middle_name', 'data_type': 'varchar'}),
+    ('suffix', {'field': 'suffix', 'data_type': 'varchar'}),
+    ('businessphone', {'field': 'business_phone', 'data_type': 'varchar'}),
+    ('alternativephone', {'field': 'alt_phone', 'data_type': 'varchar'}),
+    ('addressid', {'field': 'address_id', 'data_type': 'bigint'}),
+    ('emailaddress', {'field': 'email', 'data_type': 'varchar'}),
+    ('dateadded', {'field': 'date_added', 'data_type': 'timestamp with time zone'}),
+    ('statusid', {'field': 'status_id', 'data_type': 'bigint'}),
+    ('olddbentityid', {'field': 'olddb_entity_id', 'data_type': 'bigint'}),
+])
