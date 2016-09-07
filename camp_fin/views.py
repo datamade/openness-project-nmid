@@ -19,9 +19,16 @@ from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer
 class IndexView(TemplateView):
     template_name = 'index.html'
 
-class DonationsView(TemplateView):
+class DonationsView(PaginatedList):
     model = Transaction
     template_name = 'camp_fin/donations.html'
+
+    queryset = Transaction.objects.order_by('-received_date')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Possibily add content here.
+        return context
 
 class AboutView(TemplateView):
     template_name = 'about.html'
