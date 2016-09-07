@@ -1,77 +1,53 @@
-{% extends 'base.html' %}
+{% extends 'base-detail.html' %}
 {% load helpers %}
 {% load staticfiles %}
 {% block title %}{{ candidate.full_name }}{% endblock %}
-{% block full_content %}
 
-<div class="container">
+{% block header %}
     <p><a href='/candidates'>&laquo; Candidates</a></p>
     <h1>{{ candidate.full_name }}</h1>
-    <div class="row">
-        <div class="col-sm-6">
-            <h4>{{ latest_filing.filing_period.description }} Report <small>{{latest_filing.filing_period.filing_date | date:"M d, Y"}}</small></h4>
-            <table class="table table-striped">
-                <tbody>
-                    <tr>
-                        <td>Opening balance</td>
-                        <td>{{ latest_filing.opening_balance|format_money }}</td>
-                    </tr>
-                    <tr>
-                        <td>Total contributions</td>
-                        <td>{{ latest_filing.total_contributions|format_money }}</td>
-                    </tr>
-                    <tr>
-                        <td>Total in-kind contributions</td>
-                        <td>{{ latest_filing.total_inkind|format_money }}</td>
-                    </tr>
-                    <tr>
-                        <td>Total expenditures</td>
-                        <td>{{ latest_filing.total_expenditures|format_money }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Closing balance</strong></td>
-                        <td><strong>{{ latest_filing.closing_balance|format_money }}</strong></td>
-                    </tr>
-                </tbody>
-            </table>
+{% endblock %}
 
-            <h3>Net funds over time</h3>
-            <div id='net-funds-chart'></div>
+{% block charts %}
+    <h3>Net funds over time</h3>
+    <div id='net-funds-chart'></div>
 
-            <h3>Donations and expenditures over time</h3>
-            <div id='expend-chart'></div>
+    <h3>Donations and expenditures over time</h3>
+    <div id='expend-chart'></div>
+{% endblock %}
 
-
-        </div>
-        <div class="col-sm-4 col-sm-offset-2">
-            <h4>Contact information</h4>
-            <table class="table table-striped">
-                <tbody>
-                {% if candidate.business_phone %}
-                    <tr>
-                        <td>
-                            <i class="fa fa-fw fa-phone" aria-hidden="true"></i> {{ candidate.business_phone}}
-                        </td>
-                    </tr>
-                {% endif %}
-                {% if candidate.home_phone %}
-                    <tr>
-                        <td>
-                            <i class="fa fa-fw fa-phone" aria-hidden="true"></i> {{ candidate.home_phone }}
-                        </td>
-                    </tr>
-                {% endif %}
-                {% if candidate.email %}
-                    <tr>
-                        <td>
-                            <i class="fa fa-fw fa-envelope-o" aria-hidden="true"></i> {{ candidate.email }}
-                        </td>
-                    </tr>
-                {% endif %}
-                </tbody>
-            </table>
-        </div>
+{% block contact %}
+    <div class="col-sm-4 col-sm-offset-2">
+        <h4>Contact information</h4>
+        <table class="table table-striped">
+            <tbody>
+            {% if candidate.business_phone %}
+                <tr>
+                    <td>
+                        <i class="fa fa-fw fa-phone" aria-hidden="true"></i> {{ candidate.business_phone}}
+                    </td>
+                </tr>
+            {% endif %}
+            {% if candidate.home_phone %}
+                <tr>
+                    <td>
+                        <i class="fa fa-fw fa-phone" aria-hidden="true"></i> {{ candidate.home_phone }}
+                    </td>
+                </tr>
+            {% endif %}
+            {% if candidate.email %}
+                <tr>
+                    <td>
+                        <i class="fa fa-fw fa-envelope-o" aria-hidden="true"></i> {{ candidate.email }}
+                    </td>
+                </tr>
+            {% endif %}
+            </tbody>
+        </table>
     </div>
+{% endblock %}
+
+{% block campaigns %}
     <div class="row">
         <div class="col-md-12">
             <h3>Campaigns</h3>
@@ -99,24 +75,8 @@
             </table>
         </div>
     </div>
-    <div class="row">
-        <div class="col-md-12">
-            <ul class="nav nav-pills">
-                <li role="presentation" class="active"><a class="transactions" href="javascript://" data-table_type="top-donors">Top 25 donors</a></li>
-                <li role="presentation"><a class="transactions" href="javascript://" data-table_type="top-expenses">Top 25 expenses</a></li>
-                <li role="presentation"><a class="transactions" href="javascript://" data-table_type="largest-contributions">Largest donations</a></li>
-                <li role="presentation"><a class="transactions" href="javascript://" data-table_type="largest-expenditures">Largest expenditures</a></li>
-                <li role="presentation"><a class="transactions" href="javascript://" data-table_type="contributions">All donations</a></li>
-                <li role="presentation"><a class="transactions" href="javascript://" data-table_type="expenditures">All expenditures</a></li>
-            </ul>
-            <div id='money-table-guts'>
-                <h1><i class='fa fa-spin fa-refresh'></i></h1>
-            </div>
-        </div>
-    </div>
-</div>
-
 {% endblock %}
+
 {% block extra_js %}
     <script src="{% static 'js/highcharts.js' %}"></script>
     <script src="{% static 'js/ejs_production.js' %}"></script>
