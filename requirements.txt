@@ -7,3 +7,4 @@ markdown==2.6.6
 django-filter==0.14.0
 csvkit==0.9.1
 gunicorn==19.6.0
+pytz==2016.6.1

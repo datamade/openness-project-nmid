@@ -1,9 +1,12 @@
 import csv
 import zipfile
+from datetime import datetime, timedelta
 
 import sqlalchemy as sa
 
 import psycopg2
+
+import pytz
 
 from openpyxl import load_workbook
 
@@ -78,7 +81,7 @@ FILE_LOOKUP = {
 
 class Command(BaseCommand):
     help = 'Import New Mexico Campaign Finance data'
-
+    
     def add_arguments(self, parser):
         parser.add_argument(
             '--entity-types',
@@ -93,52 +96,19 @@ class Command(BaseCommand):
         
         if entity_types == ['all']:
             entity_types = FILE_LOOKUP.keys()
+        
+        self.connection = engine.connect()
+
+        self.makeETLTracker()
 
         for entity_type in entity_types:
             self.entity_type = entity_type
-            file_name = FILE_LOOKUP.get(entity_type)
+            self.file_name = FILE_LOOKUP.get(entity_type)
 
-            if file_name:
+            if self.file_name:
                 
-                self.stdout.write(self.style.SUCCESS('Importing {}'.format(file_name)))
+                self.doETL()
 
-                self.file_path = 'data/{}'.format(file_name)
-
-                self.encoding = 'utf-8'
-                if entity_type == 'transaction':
-                    self.encoding = 'windows-1252'
-
-                if self.file_path.endswith('xlsx'):
-                    self.convertXLSX()
-                
-                if self.file_path.endswith('zip'):
-                    self.unzipFile()
-                
-                self.table_mapper = MAPPER_LOOKUP[self.entity_type]
-
-                self.django_table = 'camp_fin_{}'.format(self.entity_type)
-                self.raw_pk_col = [k for k, v in self.table_mapper.items() \
-                                       if v['field'] == 'id'][0]
-                
-
-                self.connection = engine.connect()
-                
-                self.makeRawTable()
-                count = self.importRawData()
-                
-                self.stdout.write(self.style.SUCCESS('Found {0} records in {1}'.format(count, file_name)))
-
-                count = self.updateExistingRecords()
-                
-                self.stdout.write(self.style.SUCCESS('Updated {0} records in {1}'.format(count, self.django_table)))
-
-                self.makeNewTable()
-                count = self.findNewRecords()
-                
-                self.addNewRecords()
-                
-                self.stdout.write(self.style.SUCCESS('Inserted {0} new records into {1}'.format(count, self.django_table)))
-                
                 # This should only be necessary until we get the actual entity table
                 
                 if self.entity_type in ['candidate', 'pac', 'filing']:
@@ -149,13 +119,80 @@ class Command(BaseCommand):
                     self.populateSlugField()
                     self.stdout.write(self.style.SUCCESS('Populated slug fields for {}'.format(self.entity_type)))
                 
+                if self.entity_type == 'loan':
+                    self.makeLoanBalanceView()
+                    self.stdout.write(self.style.SUCCESS('Made loan balance view'))
+
+
                 self.stdout.write(self.style.SUCCESS('\n'))
             else:
                 self.stdout.write(self.style.ERROR('"{}" is not a valid entity'.format(self.entity_type)))
                 self.stdout.write(self.style.SUCCESS('\n'))
                 
         self.stdout.write(self.style.SUCCESS('Import complete!'.format(self.entity_type)))
+    
+    def makeETLTracker(self):
+        create = ''' 
+            CREATE TABLE IF NOT EXISTS etl_tracker (
+              id SERIAL,
+              entity_type VARCHAR,
+              last_update timestamp with time zone,
+              PRIMARY KEY (id)
+            )
+        '''
+        self.executeTransaction(create)
+    
+    def updateTracker(self):
+        update = ''' 
+            INSERT INTO etl_tracker (
+              entity_type,
+              last_update
+            ) VALUES (
+              :entity_type,
+              NOW()
+            )
+        '''
+        self.executeTransaction(sa.text(update), 
+                                entity_type=self.entity_type)
 
+    def doETL(self):
+
+        self.stdout.write(self.style.SUCCESS('Importing {}'.format(self.file_name)))
+
+        self.file_path = 'data/{}'.format(self.file_name)
+
+        self.encoding = 'utf-8'
+        if self.entity_type == 'transaction':
+            self.encoding = 'windows-1252'
+
+        if self.file_path.endswith('xlsx'):
+            self.convertXLSX()
+        
+        if self.file_path.endswith('zip'):
+            self.unzipFile()
+        
+        self.table_mapper = MAPPER_LOOKUP[self.entity_type]
+
+        self.django_table = 'camp_fin_{}'.format(self.entity_type)
+        self.raw_pk_col = [k for k, v in self.table_mapper.items() \
+                                       if v['field'] == 'id'][0]
+        self.makeRawTable()
+        count = self.importRawData()
+        
+        self.stdout.write(self.style.SUCCESS('Found {0} records in {1}'.format(count, self.file_name)))
+
+        count = self.updateExistingRecords()
+        
+        self.stdout.write(self.style.SUCCESS('Updated {0} records in {1}'.format(count, self.django_table)))
+
+        self.makeNewTable()
+        count = self.findNewRecords()
+        
+        self.addNewRecords()
+        
+        self.updateTracker()
+
+        self.stdout.write(self.style.SUCCESS('Inserted {0} new records into {1}'.format(count, self.django_table)))
 
     def unzipFile(self):
         file_name = self.file_path.split('/')[1].rsplit('.', 1)[0]
@@ -181,6 +218,46 @@ class Command(BaseCommand):
                 writer.writerow(row_values)
         
         self.file_path = csv_path
+    
+    def makeLoanBalanceView(self):
+        timezone = pytz.timezone(settings.TIME_ZONE)
+        
+        transactions_updated = self.connection.execute(''' 
+            SELECT MAX(last_update) AS last_update
+            FROM etl_tracker
+            WHERE entity_type = 'loantransaction'
+        ''').first().last_update
+
+        if transactions_updated:
+            an_hour_ago = timezone.localize(datetime.now()) - timedelta(hours=1)
+            if transactions_updated < an_hour_ago:
+                self.entity_type = 'loantransaction'
+                self.file_name = FILE_LOOKUP['loantransaction']
+                self.doETL()
+        else:
+            self.entity_type = 'loantransaction'
+            self.file_name = FILE_LOOKUP['loantransaction']
+            self.doETL()
+        
+        try:
+            self.executeTransaction(''' 
+                REFRESH MATERIALIZED VIEW current_loan_status
+            ''', raise_exc=True)
+        except sa.exc.ProgrammingError:
+            self.executeTransaction(''' 
+                CREATE MATERIALIZED VIEW current_loan_status AS (
+                  SELECT
+                    loan.id,
+                    MAX(loan.amount) AS loan_amount,
+                    SUM(loantrans.amount) AS payments_made,
+                    (MAX(loan.amount) - SUM(loantrans.amount)) AS outstanding_balance
+                  FROM camp_fin_loan AS loan
+                  JOIN camp_fin_loantransaction AS loantrans
+                    ON loan.id = loantrans.loan_id
+                  GROUP BY loan.id
+                  HAVING ((MAX(loan.amount::numeric::money) - SUM(loantrans.amount::numeric::money)) > 0::money)
+                )
+            ''')
 
     def populateEntityTable(self):
         entities = ''' 
