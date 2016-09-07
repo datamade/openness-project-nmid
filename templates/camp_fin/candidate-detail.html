@@ -38,7 +38,7 @@
             {% if candidate.email %}
                 <tr>
                     <td>
-                        <i class="fa fa-fw fa-envelope-o" aria-hidden="true"></i> {{ candidate.email }}
+                        <i class="fa fa-fw fa-envelope-o" aria-hidden="true"></i> <a href='mailto:{{candidate.email}}'>{{ candidate.email }}</a>
                     </td>
                 </tr>
             {% endif %}

@@ -10,7 +10,7 @@
 
     <div class='row'>
         <div class="col-sm-6">
-            <h4>{{ latest_filing.filing_period.description }} Report</h4>
+            <h4>{{ latest_filing.filing_period.description }} Report <small>{{latest_filing.filing_period.filing_date | date:"M d, Y"}}</small></h4>
             <table class="table table-striped">
                 <tbody>
                     <tr>
