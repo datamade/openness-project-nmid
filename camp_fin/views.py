@@ -1,6 +1,6 @@
 import itertools
 from collections import namedtuple, OrderedDict
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.views.generic import ListView, TemplateView, DetailView
 from django.http import HttpResponseNotFound
@@ -55,10 +55,28 @@ class DonationsView(PaginatedList):
               ON entity.id = pac.entity_id
             LEFT JOIN camp_fin_candidate AS candidate
               ON entity.id = candidate.entity_id
-            ORDER BY o.received_date DESC;
+            WHERE tt.contribution = TRUE
+            AND o.received_date BETWEEN %s and %s
+            ORDER BY o.received_date DESC LIMIT 100;
         '''
 
-        cursor.execute(query)
+        days_donations = []
+        date = datetime.now().date()
+        start_date = (date - timedelta(days=7))
+
+        while len(days_donations) == 0:
+            end_date = date
+            cursor.execute(query, [start_date, end_date])
+            days_donations = list(cursor)
+
+            date = date - timedelta(days=1)
+            start_date = (date - timedelta(days=7))
+
+        columns = [c[0] for c in cursor.description]
+        result_tuple = namedtuple('Transaction', columns)
+        objects = [result_tuple(*r) for r in days_donations]
+
+        return objects
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
