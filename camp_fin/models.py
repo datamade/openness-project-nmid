@@ -19,32 +19,13 @@ class Candidate(models.Model):
     qual_candidate_id = models.IntegerField(null=True)
     deceased = models.BooleanField()
     
+    full_name = models.CharField(max_length=500)
+    
     slug = models.CharField(max_length=500, null=True)
 
     def __str__(self):
         return self.full_name
     
-    @property
-    def full_name(self):
-        full_name = ''
-        
-        if self.prefix:
-            full_name = '{}'.format(self.prefix)
-        
-        if self.first_name:
-            full_name = '{0} {1}'.format(full_name, self.first_name)
-
-        if self.middle_name:
-            full_name = '{0} {1}'.format(full_name, self.middle_name)
-
-        if self.last_name:
-            full_name = '{0} {1}'.format(full_name, self.last_name)
-
-        if self.suffix:
-            full_name = '{0} {1}'.format(full_name, self.suffix)
-
-        return full_name.strip()
-
 class PAC(models.Model):
     entity = models.ForeignKey("Entity", db_constraint=False)
     name = models.CharField(max_length=100)
@@ -177,10 +158,10 @@ class Transaction(models.Model):
     contact_type_other = models.CharField(max_length=25, null=True)
     occupation = models.CharField(max_length=255, null=True)
     expenditure_for_certified_candidate = models.NullBooleanField()
+    
+    full_name = models.CharField(max_length=500)
 
     def __str__(self):
-        if self.company_name:
-            return self.company_name
         return self.full_name
     
     @property
@@ -188,27 +169,6 @@ class Transaction(models.Model):
         # This is here so that the API key makes a little more sense
         return self.filing
 
-    @property
-    def full_name(self):
-        full_name = ''
-        
-        if self.name_prefix:
-            full_name = '{}'.format(self.name_prefix)
-        
-        if self.first_name:
-            full_name = '{0} {1}'.format(full_name, self.first_name)
-
-        if self.middle_name:
-            full_name = '{0} {1}'.format(full_name, self.middle_name)
-
-        if self.last_name:
-            full_name = '{0} {1}'.format(full_name, self.last_name)
-
-        if self.suffix:
-            full_name = '{0} {1}'.format(full_name, self.suffix)
-
-        return full_name.strip()
-    
     @property
     def full_address(self):
         full_address = ''
@@ -269,32 +229,11 @@ class Loan(models.Model):
     occupation = models.CharField(max_length=255, null=True)
     loan_transfer_date = models.DateTimeField(null=True)
     from_file_id = models.IntegerField(null=True)
+    
+    full_name = models.CharField(max_length=500)
 
     def __str__(self):
-        if self.company_name:
-            return self.company_name
         return self.full_name
-    
-    @property
-    def full_name(self):
-        full_name = ''
-        
-        if self.name_prefix:
-            full_name = '{}'.format(self.name_prefix)
-        
-        if self.first_name:
-            full_name = '{0} {1}'.format(full_name, self.first_name)
-
-        if self.middle_name:
-            full_name = '{0} {1}'.format(full_name, self.middle_name)
-
-        if self.last_name:
-            full_name = '{0} {1}'.format(full_name, self.last_name)
-
-        if self.suffix:
-            full_name = '{0} {1}'.format(full_name, self.suffix)
-
-        return full_name.strip()
     
     @property
     def full_address(self):
@@ -491,30 +430,11 @@ class Treasurer(models.Model):
     status = models.ForeignKey('Status', db_constraint=False)
     olddb_entity_id = models.IntegerField(null=True)
 
+    full_name = models.CharField(max_length=500)
+    
     def __str__(self):
         return self.full_name
     
-    @property
-    def full_name(self):
-        full_name = ''
-        
-        if self.prefix:
-            full_name = '{}'.format(self.prefix)
-        
-        if self.first_name:
-            full_name = '{0} {1}'.format(full_name, self.first_name)
-
-        if self.middle_name:
-            full_name = '{0} {1}'.format(full_name, self.middle_name)
-
-        if self.last_name:
-            full_name = '{0} {1}'.format(full_name, self.last_name)
-
-        if self.suffix:
-            full_name = '{0} {1}'.format(full_name, self.suffix)
-
-        return full_name.strip()
-
 
 ######################################################################
 ### Below here are normalized tables that we may or may not end up ###

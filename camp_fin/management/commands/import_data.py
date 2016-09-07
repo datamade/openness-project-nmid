@@ -153,8 +153,84 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(self.style.ERROR('"{}" is not a valid entity'.format(self.entity_type)))
                 self.stdout.write(self.style.SUCCESS('\n'))
-                
+            
+        self.addTransactionFullName()
+        self.addLoanFullName()
+        self.addCandidateFullName()
+
         self.stdout.write(self.style.SUCCESS('Import complete!'.format(self.entity_type)))
+
+    def addTransactionFullName(self):
+        update = ''' 
+            UPDATE camp_fin_transaction SET
+              full_name = s.full_name
+            FROM (
+              SELECT
+                CASE WHEN 
+                  company_name IS NULL OR TRIM(company_name) = ''
+                THEN
+                  TRIM(concat_ws(' ', 
+                                 name_prefix,
+                                 first_name,
+                                 middle_name,
+                                 last_name,
+                                 suffix))
+                ELSE
+                  company_name
+                END AS full_name,
+                id
+              FROM camp_fin_transaction
+            ) AS s
+            WHERE camp_fin_transaction.id = s.id
+        '''
+
+        self.executeTransaction(update)
+
+    def addLoanFullName(self):
+        update = ''' 
+            UPDATE camp_fin_loan SET
+              full_name = s.full_name
+            FROM (
+              SELECT
+                CASE WHEN 
+                  company_name IS NULL OR TRIM(company_name) = ''
+                THEN
+                  TRIM(concat_ws(' ', 
+                                 name_prefix,
+                                 first_name,
+                                 middle_name,
+                                 last_name,
+                                 suffix))
+                ELSE
+                  company_name
+                END AS full_name,
+                id
+              FROM camp_fin_loan
+            ) AS s
+            WHERE camp_fin_loan.id = s.id
+        '''
+
+        self.executeTransaction(update)
+    
+    def addCandidateFullName(self):
+        update = ''' 
+            UPDATE camp_fin_candidate SET
+              full_name = s.full_name
+            FROM (
+              SELECT
+                  TRIM(concat_ws(' ', 
+                                 prefix,
+                                 first_name,
+                                 middle_name,
+                                 last_name,
+                                 suffix)) AS full_name,
+                id
+              FROM camp_fin_candidate
+            ) AS s
+            WHERE camp_fin_candidate.id = s.id
+        '''
+
+        self.executeTransaction(update)
 
 
     def unzipFile(self):
@@ -391,7 +467,7 @@ class Command(BaseCommand):
 
         return import_count.first().count
 
-    def executeTransaction(self, query, raise_exc=False, *args, **kwargs):
+    def executeTransaction(self, query, raise_exc=True, *args, **kwargs):
         trans = self.connection.begin()
 
         try:
@@ -403,7 +479,6 @@ class Command(BaseCommand):
         except sa.exc.ProgrammingError as e:
             # TODO: Make some kind of logger
             # logger.error(e, exc_info=True)
-            print(e)
             trans.rollback()
             if raise_exc:
                 raise e

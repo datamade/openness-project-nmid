@@ -265,26 +265,9 @@ class SearchAPIView(viewsets.ViewSet):
                       o.*, 
                       tt.description AS transaction_type,
                       CASE WHEN 
-                        company_name IS NULL OR TRIM(company_name) = ''
-                      THEN
-                        TRIM(concat_ws(' ', 
-                                       o.name_prefix,
-                                       o.first_name,
-                                       o.middle_name,
-                                       o.last_name,
-                                       o.suffix))
-                      ELSE
-                        company_name
-                      END AS full_name,
-                      CASE WHEN 
                         pac.name IS NULL OR TRIM(pac.name) = ''
                       THEN
-                        TRIM(concat_ws(' ', 
-                                       candidate.prefix,
-                                       candidate.first_name,
-                                       candidate.middle_name,
-                                       candidate.last_name,
-                                       candidate.suffix))
+                        candidate.full_name
                       ELSE pac.name
                       END AS transaction_subject,
                       pac.slug AS pac_slug,
@@ -310,26 +293,9 @@ class SearchAPIView(viewsets.ViewSet):
                       o.*,
                       tt.description AS transaction_type,
                       CASE WHEN 
-                        company_name IS NULL OR TRIM(company_name) = ''
-                      THEN
-                        TRIM(concat_ws(' ', 
-                                       o.name_prefix,
-                                       o.first_name,
-                                       o.middle_name,
-                                       o.last_name,
-                                       o.suffix))
-                      ELSE
-                        company_name
-                      END AS full_name,
-                      CASE WHEN 
                         pac.name IS NULL OR TRIM(pac.name) = ''
                       THEN
-                        TRIM(concat_ws(' ', 
-                                       candidate.prefix,
-                                       candidate.first_name,
-                                       candidate.middle_name,
-                                       candidate.last_name,
-                                       candidate.suffix))
+                        candidate.full_name
                       ELSE pac.name
                       END AS transaction_subject,
                       pac.slug AS pac_slug,
