@@ -22,6 +22,7 @@ class LoanSerializer(serializers.ModelSerializer):
 
 class LoanTransactionSerializer(serializers.ModelSerializer):
     loan = LoanSerializer(read_only=True)
+    transaction_type = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = LoanTransaction
