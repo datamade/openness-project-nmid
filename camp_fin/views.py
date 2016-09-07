@@ -8,8 +8,13 @@ from django.db import transaction, connection
 from rest_framework import serializers, viewsets, filters, generics, metadata
 from rest_framework.response import Response
 
-from .models import Candidate, Office, Transaction, Campaign, Filing, PAC
-from .base_views import PaginatedList
+from .models import Candidate, Office, Transaction, Campaign, Filing, PAC, \
+    LoanTransaction
+from .base_views import PaginatedList, TransactionDetail, TransactionBaseViewSet, \
+    TopMoneyView
+from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer, \
+    TransactionSearchSerializer, CandidateSearchSerializer, PACSearchSerializer, \
+    LoanTransactionSerializer
 
 class IndexView(TemplateView):
     template_name = 'index.html'
@@ -173,34 +178,6 @@ class CommitteeDetail(DetailView):
         
         return context
 
-class TransactionDetail(DetailView):
-    model = Transaction
-    
-    def get_template_name(self, **kwargs):
-        
-        
-        return [template_name]
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        
-        context['entity'] = None
-
-        if context['transaction'].filing.entity.candidate_set.all():
-            context['entity'] = context['transaction'].filing.entity.candidate_set.first()
-            context['office'] = context['transaction'].filing.campaign.office
-        elif context['transaction'].filing.entity.pac_set.all():
-            context['entity'] = context['transaction'].filing.entity.pac_set.first()
-            context['office'] = None
-
-        context['entity_type'] = context['entity']._meta.model_name
-
-        if context['transaction'].transaction_type.description.lower().endswith('contribution'):
-            context['transaction_type'] = 'contribution'
-        else:
-            context['transaction_type'] = 'expenditure'
-
-        return context
 
 class ContributionDetail(TransactionDetail):
     template_name = 'camp_fin/contribution-detail.html'
@@ -208,248 +185,16 @@ class ContributionDetail(TransactionDetail):
 class ExpenditureDetail(TransactionDetail):
     template_name = 'camp_fin/expenditure-detail.html'
 
-class CandidateSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Candidate
-        fields = '__all__'
-
-class PACSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = PAC
-        fields = '__all__'
-
-class EntityField(serializers.RelatedField):
-
-    def to_representation(self, value):
-        
-        try:
-            if value.entity.pac_set.all():
-                serializer = PACSerializer(value.entity.pac_set.first())
-            
-            elif value.entity.candidate_set.all():
-                serializer = CandidateSerializer(value.entity.candidate_set.first())
-
-            return serializer.data
-        except AttributeError:
-            return value
-
-
-class TransactionSerializer(serializers.ModelSerializer):
-    transaction_type = serializers.StringRelatedField(read_only=True)
-    full_name = serializers.StringRelatedField(read_only=True)
-    transaction_subject = EntityField(read_only=True)
-
-    class Meta:
-        model = Transaction
-        
-        fields = (
-            'id',
-            'amount', 
-            'received_date', 
-            'date_added', 
-            'check_number',
-            'memo',
-            'description',
-            'transaction_type',
-            'name_prefix',
-            'first_name',
-            'middle_name',
-            'last_name',
-            'suffix',
-            'company_name',
-            'full_name',
-            'address',
-            'city',
-            'state',
-            'zipcode',
-            'full_address',
-            'country',
-            'occupation',
-            'expenditure_for_certified_candidate',
-            'transaction_subject'
-        )
-
-class TransactionSearchSerializer(TransactionSerializer):
-    pac_slug = serializers.StringRelatedField(read_only=True)
-    candidate_slug = serializers.StringRelatedField(read_only=True)
-    
-    class Meta:
-        model = Transaction
-        
-        fields = (
-            'id',
-            'amount', 
-            'received_date', 
-            'date_added', 
-            'check_number',
-            'memo',
-            'description',
-            'transaction_type',
-            'name_prefix',
-            'first_name',
-            'middle_name',
-            'last_name',
-            'suffix',
-            'company_name',
-            'full_name',
-            'address',
-            'city',
-            'state',
-            'zipcode',
-            'full_address',
-            'country',
-            'occupation',
-            'expenditure_for_certified_candidate',
-            'transaction_subject',
-            'pac_slug',
-            'candidate_slug',
-        )
-
-class TransactionBaseViewSet(viewsets.ModelViewSet):
-    serializer_class = TransactionSerializer
-    default_filter = {}
-    filter_backends = (filters.OrderingFilter,)
-    
-    ordering_fields = ('last_name', 'amount', 'received_date')
-
-    def get_queryset(self):
-
-        if self.default_filter:
-            queryset = Transaction.objects.filter(**self.default_filter)
-        else:
-            queryset = Transaction.objects.all()
-
-        candidate_id = self.request.query_params.get('candidate_id')
-        pac_id = self.request.query_params.get('pac_id')
-        if candidate_id:
-            queryset = queryset.filter(filing__campaign__candidate__id=candidate_id)
-        if pac_id:
-            queryset = queryset.filter(filing__entity__pac__id=pac_id)
-        
-        return queryset
-
 class TransactionViewSet(TransactionBaseViewSet):
     pass
 
 class ContributionViewSet(TransactionBaseViewSet):
     default_filter = {'transaction_type__contribution': True}
-
+    serializer_class = TransactionSerializer
 
 class ExpenditureViewSet(TransactionBaseViewSet):
     default_filter = {'transaction_type__contribution': False}
-
-class TopMoneySerializer(serializers.Serializer):
-    name_prefix = serializers.CharField()
-    first_name = serializers.CharField()
-    middle_name = serializers.CharField()
-    last_name = serializers.CharField()
-    suffix = serializers.CharField()
-    company_name = serializers.CharField()
-    amount = serializers.CharField()
-    last_date = serializers.DateTimeField()
-
-class TopMoneyView(viewsets.ViewSet):
-    
-    def list(self, request):
-        
-        cursor = connection.cursor()
-        
-        query = ''' 
-            SELECT
-              SUM(amount) AS amount,
-              MAX(received_date) AS last_date,
-              name_prefix,
-              first_name,
-              middle_name,
-              last_name,
-              suffix,
-              company_name
-            FROM camp_fin_transaction AS transaction
-            JOIN camp_fin_transactiontype AS type
-              ON transaction.transaction_type_id = type.id
-            WHERE type.contribution = %s
-            GROUP BY 
-              name_prefix,
-              first_name,
-              middle_name,
-              last_name,
-              suffix,
-              company_name
-            ORDER BY amount DESC
-            LIMIT 100
-        '''
-        
-        cursor.execute(query, [self.contribution])
-        
-        columns = [c[0] for c in cursor.description]
-        transaction_tuple = namedtuple('Transaction', columns)
-        
-        objects =  [transaction_tuple(*r) for r in cursor]
-        
-        serializer = TopMoneySerializer(objects, many=True)
-
-        return Response(serializer.data)
-
-    def retrieve(self, request, pk=None):
-        cursor = connection.cursor()
-        
-        query = ''' 
-            SELECT
-              SUM(amount) AS amount,
-              MAX(received_date) AS last_date,
-              name_prefix,
-              first_name,
-              middle_name,
-              last_name,
-              suffix,
-              company_name
-            FROM camp_fin_transaction AS transaction
-            JOIN camp_fin_transactiontype AS type
-              ON transaction.transaction_type_id = type.id
-            JOIN camp_fin_filing AS filing
-              ON transaction.filing_id = filing.id
-            JOIN camp_fin_entity AS entity
-              ON filing.entity_id = entity.id
-            WHERE type.contribution = %s
-            AND entity.id = %s
-            GROUP BY 
-              name_prefix,
-              first_name,
-              middle_name,
-              last_name,
-              suffix,
-              company_name
-            ORDER BY amount DESC
-            LIMIT 25
-        '''
-        
-        entity_type = self.request.query_params.get('entity_type', 'candidate')
-        
-        # TODO: Return 404 if the thing is not found
-        if entity_type == 'candidate':
-            candidate = Candidate.objects.get(id=pk)
-            entity_id = candidate.entity_id
-        elif entity_type == 'pac':
-            pac = PAC.objects.get(id=pk)
-            entity_id = pac.entity_id
-        
-        else:
-            return Response({'error': 'object not found'}, status=404)
-
-
-
-        cursor.execute(query, [self.contribution, entity_id])
-        
-        columns = [c[0] for c in cursor.description]
-        transaction_tuple = namedtuple('Transaction', columns)
-        
-        objects =  [transaction_tuple(*r) for r in cursor]
-        
-        serializer = TopMoneySerializer(objects, many=True)
-
-        return Response(serializer.data)
+    serializer_class = TransactionSerializer
 
 class TopDonorsView(TopMoneyView):
     contribution = True
@@ -457,49 +202,9 @@ class TopDonorsView(TopMoneyView):
 class TopExpensesView(TopMoneyView):
     contribution = False
 
-class CandidateSearchSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Candidate
-        fields = (
-            'id',
-            'prefix',
-            'first_name',
-            'middle_name',
-            'last_name',
-            'full_name',
-            'suffix',
-            'business_phone',
-            'home_phone',
-            'date_added',
-            'email',
-            'date_updated',
-            'deceased',
-            'slug',
-        )
-
-class PACSearchSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = PAC
-        fields = (
-            'id',
-            'name',
-            'acronym',
-            'business_phone',
-            'home_phone',
-            'email',
-            'date_added',
-            'date_updated',
-            'bank_name',
-            'bank_phone',
-            'fax_number',
-            'initial_balance',
-            'initial_balance_from_self',
-            'initial_debt',
-            'initial_debt_from_self',
-            'slug',
-        )
+class LoanViewSet(TransactionBaseViewSet):
+    queryset = LoanTransaction.objects.all()
+    serializer_class = LoanTransactionSerializer
 
 SERIALIZER_LOOKUP = {
     'candidate': CandidateSearchSerializer,
