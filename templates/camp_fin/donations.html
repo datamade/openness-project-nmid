@@ -9,6 +9,9 @@ Donations
     <div class="row">
         <div class="col-md-12">
             <h1><i class='fa fa-fw fa-dollar'></i> Donations</h1>
+            {% for t in transactions %}
+              {{ t.amount }}
+            {% endfor %}
         </div>
     </div>
 </div>
