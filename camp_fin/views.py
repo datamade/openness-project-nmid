@@ -47,23 +47,28 @@ class CandidateList(PaginatedList):
 
         cursor.execute(''' 
             SELECT * FROM (
-              SELECT DISTINCT ON (candidate.id) 
-                candidate.*, 
-                campaign.committee_name,
-                campaign.county_id,
-                campaign.district_id,
-                campaign.division_id,
-                office.description AS office_name,
-                filing.closing_balance, 
-                filing.date_last_amended 
-              FROM camp_fin_candidate AS candidate 
-              JOIN camp_fin_filing AS filing 
-                USING(entity_id)
-              JOIN camp_fin_campaign AS campaign
-                ON filing.campaign_id = campaign.id
-              JOIN camp_fin_office AS office
-                ON campaign.office_id = office.id
-              ORDER BY candidate.id, filing.date_added desc
+              SELECT 
+                rank() OVER (ORDER BY closing_balance DESC) AS rank,
+                candidates.*
+              FROM (
+                SELECT DISTINCT ON (candidate.id) 
+                  candidate.*, 
+                  campaign.committee_name,
+                  campaign.county_id,
+                  campaign.district_id,
+                  campaign.division_id,
+                  office.description AS office_name,
+                  filing.closing_balance, 
+                  filing.date_last_amended 
+                FROM camp_fin_candidate AS candidate 
+                JOIN camp_fin_filing AS filing 
+                  USING(entity_id)
+                JOIN camp_fin_campaign AS campaign
+                  ON filing.campaign_id = campaign.id
+                JOIN camp_fin_office AS office
+                  ON campaign.office_id = office.id
+                ORDER BY candidate.id, filing.date_added desc
+              ) AS candidates
             ) AS s
             ORDER BY {0} {1}
         '''.format(self.order_by, self.sort_order))
@@ -133,14 +138,19 @@ class CommitteeList(PaginatedList):
 
         cursor.execute(''' 
             SELECT * FROM (
-              SELECT DISTINCT ON (pac.id) 
-                pac.*, 
-                filing.closing_balance, 
-                filing.date_added AS filing_date
-              FROM camp_fin_pac AS pac 
-              JOIN camp_fin_filing AS filing 
-                USING(entity_id)
-              ORDER BY pac.id, filing.date_added desc
+              SELECT 
+                rank() OVER (ORDER BY closing_balance DESC) AS rank,
+                pac.*
+              FROM (
+                SELECT DISTINCT ON (pac.id) 
+                  pac.*, 
+                  filing.closing_balance, 
+                  filing.date_added AS filing_date
+                FROM camp_fin_pac AS pac 
+                JOIN camp_fin_filing AS filing 
+                  USING(entity_id)
+                ORDER BY pac.id, filing.date_added desc
+              ) AS pac
             ) AS s
             ORDER BY {0} {1}
         '''.format(self.order_by, self.sort_order))
