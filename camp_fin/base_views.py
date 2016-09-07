@@ -1,15 +1,19 @@
 from collections import namedtuple
+from datetime import datetime
 
 from django.views.generic import ListView, DetailView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.http import JsonResponse
-from django.db import transaction, connection
+from django.db import connection
+from django.utils import timezone
 
 from rest_framework import viewsets, filters
 from rest_framework.response import Response
 
 from camp_fin.models import Transaction, Candidate, PAC
 from camp_fin.api_parts import TransactionSerializer, TopMoneySerializer
+
+TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
 
 class PaginatedList(ListView):
     
@@ -56,6 +60,7 @@ class TransactionDetail(DetailView):
 class TransactionBaseViewSet(viewsets.ModelViewSet):
     serializer_class = TransactionSerializer
     default_filter = {}
+    queryset = Transaction.objects.filter(filing__date_added__gte=TWENTY_TEN)
     filter_backends = (filters.OrderingFilter,)
     
     ordering_fields = ('last_name', 'amount', 'received_date')
@@ -105,6 +110,7 @@ class TopMoneyView(viewsets.ViewSet):
               last_name,
               suffix,
               company_name
+            HAVING(MAX(received_date) >= '01-01-2010')
             ORDER BY amount DESC
             LIMIT 100
         '''
@@ -141,7 +147,7 @@ class TopMoneyView(viewsets.ViewSet):
             JOIN camp_fin_entity AS entity
               ON filing.entity_id = entity.id
             WHERE type.contribution = %s
-            AND entity.id = %s
+              AND entity.id = %s
             GROUP BY 
               name_prefix,
               first_name,
@@ -149,6 +155,7 @@ class TopMoneyView(viewsets.ViewSet):
               last_name,
               suffix,
               company_name
+            HAVING(MAX(received_date) >= '01-01-2010')
             ORDER BY amount DESC
             LIMIT 25
         '''

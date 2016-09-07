@@ -1,9 +1,11 @@
 import itertools
 from collections import namedtuple, OrderedDict
+from datetime import datetime
 
 from django.views.generic import ListView, TemplateView, DetailView
 from django.http import HttpResponseNotFound
 from django.db import transaction, connection
+from django.utils import timezone
 
 from rest_framework import serializers, viewsets, filters, generics, metadata
 from rest_framework.response import Response
@@ -15,6 +17,8 @@ from .base_views import PaginatedList, TransactionDetail, TransactionBaseViewSet
 from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer, \
     TransactionSearchSerializer, CandidateSearchSerializer, PACSearchSerializer, \
     LoanTransactionSerializer
+
+TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
 
 class IndexView(TemplateView):
     template_name = 'index.html'
@@ -99,7 +103,8 @@ class CandidateDetail(DetailView):
         context = super().get_context_data(**kwargs)
         
         all_filings = context['candidate'].entity.filing_set\
-                                            .order_by('filing_period__filing_date')
+                                          .filter(date_added__gte=TWENTY_TEN)\
+                                          .order_by('filing_period__filing_date')
 
 
         balance_trend = [[ f.closing_balance, 
@@ -181,8 +186,9 @@ class CommitteeDetail(DetailView):
         context = super().get_context_data(**kwargs)
         
         latest_filing = context['pac'].entity.filing_set\
-                                            .order_by('-filing_period__filing_date')\
-                                            .first()
+                                             .filter(date_added__gte=TWENTY_TEN)\
+                                             .order_by('-filing_period__filing_date')\
+                                             .first()
         
         context['latest_filing'] = latest_filing
         
@@ -199,11 +205,17 @@ class TransactionViewSet(TransactionBaseViewSet):
     pass
 
 class ContributionViewSet(TransactionBaseViewSet):
-    default_filter = {'transaction_type__contribution': True}
+    default_filter = {
+        'transaction_type__contribution': True,
+        'filing__date_added__gte': TWENTY_TEN
+    }
     serializer_class = TransactionSerializer
 
 class ExpenditureViewSet(TransactionBaseViewSet):
-    default_filter = {'transaction_type__contribution': False}
+    default_filter = {
+        'transaction_type__contribution': False,
+        'filing__date_added__gte': TWENTY_TEN
+    }
     serializer_class = TransactionSerializer
 
 class TopDonorsView(TopMoneyView):
@@ -213,7 +225,7 @@ class TopExpensesView(TopMoneyView):
     contribution = False
 
 class LoanViewSet(TransactionBaseViewSet):
-    queryset = LoanTransaction.objects.all()
+    queryset = LoanTransaction.objects.filter(transaction_date__gte=TWENTY_TEN)
     serializer_class = LoanTransactionSerializer
 
 SERIALIZER_LOOKUP = {
@@ -290,6 +302,7 @@ class SearchAPIView(viewsets.ViewSet):
                       ON entity.id = candidate.entity_id
                     WHERE o.search_name @@ plainto_tsquery('english', %s)
                       AND tt.contribution = TRUE
+                      AND filing.date_added >= '01-01-2010'
                 '''
             elif table == 'expenditure':
                 query = ''' 
@@ -334,6 +347,7 @@ class SearchAPIView(viewsets.ViewSet):
                       ON entity.id = candidate.entity_id
                     WHERE o.search_name @@ plainto_tsquery('english', %s)
                       AND tt.contribution = FALSE
+                      AND filing.date_added >= '01-01-2010'
                 '''
 
             serializer = SERIALIZER_LOOKUP[table]
