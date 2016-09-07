@@ -461,7 +461,7 @@ class Command(BaseCommand):
         
         self.executeTransaction('''
             ALTER TABLE raw_{0} ADD PRIMARY KEY ("{1}")
-        '''.format(self.entity_type, self.raw_pk_col))
+        '''.format(self.entity_type, self.raw_pk_col), raise_exc=False)
         
         import_count = self.connection.execute('SELECT COUNT(*) AS count FROM raw_{}'.format(self.entity_type))
 
