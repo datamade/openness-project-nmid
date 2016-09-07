@@ -13,6 +13,7 @@
             <table class="table table-striped" id="candidate-list">
                 <thead>
                     <tr>
+                        <th>Rank</th>
                         <th>
                             <a href="{% url 'candidate-list' %}?{% query_transform request order_by='last_name' sort_order=toggle_order %}">
                                 Candidate
@@ -51,6 +52,7 @@
                 <tbody>
                     {% for candidate in object_list %}
                         <tr>
+                            <td>{{ candidate.rank }}</td>
                             <td>
                                 <a href="{% url 'candidate-detail' candidate.slug %}">
                                     {% spaceless %}

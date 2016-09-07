@@ -32,11 +32,11 @@
                     {% for transaction in object_list %}
                     <tr>
                         <td>
-                          {{ transaction }}
+                            {{ transaction }}
                         </td>
-                        <td>{{ transaction.amount|format_money }}</td>
+                        <td>{{transaction.transaction_type.description|get_transaction_verb }} {{ transaction.amount|format_money }}</td>
                         <td>
-                            <!-- Link to search -->
+                            {{ transaction.filing.entity}}
                         </td>
                         <td>{{ transaction.received_date|date:"M d, Y" }}</td>
                     </tr>

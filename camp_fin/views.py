@@ -1,9 +1,11 @@
 import itertools
 from collections import namedtuple, OrderedDict
+from datetime import datetime
 
 from django.views.generic import ListView, TemplateView, DetailView
 from django.http import HttpResponseNotFound
 from django.db import transaction, connection
+from django.utils import timezone
 
 from rest_framework import serializers, viewsets, filters, generics, metadata
 from rest_framework.response import Response
@@ -16,6 +18,8 @@ from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer
     TransactionSearchSerializer, CandidateSearchSerializer, PACSearchSerializer, \
     LoanTransactionSerializer
 
+TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
+
 class IndexView(TemplateView):
     template_name = 'index.html'
 
@@ -23,7 +27,55 @@ class DonationsView(PaginatedList):
     model = Transaction
     template_name = 'camp_fin/donations.html'
 
-    queryset = Transaction.objects.order_by('-received_date')
+    # queryset = Transaction.objects.filter(transaction_type__contribution=True).order_by('-received_date')
+
+    def get_queryset(self):
+        cursor = connection.cursor()
+
+        query = '''
+            SELECT
+              o.*,
+              tt.description AS transaction_type,
+              CASE WHEN
+                company_name IS NULL OR TRIM(company_name) = ''
+              THEN
+                TRIM(concat_ws(' ',
+                               o.name_prefix,
+                               o.first_name,
+                               o.middle_name,
+                               o.last_name,
+                               o.suffix))
+              ELSE
+                company_name
+              END AS full_name,
+              CASE WHEN
+                pac.name IS NULL OR TRIM(pac.name) = ''
+              THEN
+                TRIM(concat_ws(' ',
+                               candidate.prefix,
+                               candidate.first_name,
+                               candidate.middle_name,
+                               candidate.last_name,
+                               candidate.suffix))
+              ELSE pac.name
+              END AS transaction_subject,
+              pac.slug AS pac_slug,
+              candidate.slug AS candidate_slug
+            FROM camp_fin_transaction AS o
+            JOIN camp_fin_transactiontype AS tt
+              ON o.transaction_type_id = tt.id
+            JOIN camp_fin_filing AS filing
+              ON o.filing_id = filing.id
+            JOIN camp_fin_entity AS entity
+              ON filing.entity_id = entity.id
+            LEFT JOIN camp_fin_pac AS pac
+              ON entity.id = pac.entity_id
+            LEFT JOIN camp_fin_candidate AS candidate
+              ON entity.id = candidate.entity_id
+            ORDER BY o.received_date DESC;
+        '''
+
+        cursor.execute(query)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -55,23 +107,28 @@ class CandidateList(PaginatedList):
 
         cursor.execute('''
             SELECT * FROM (
-              SELECT DISTINCT ON (candidate.id)
-                candidate.*,
-                campaign.committee_name,
-                campaign.county_id,
-                campaign.district_id,
-                campaign.division_id,
-                office.description AS office_name,
-                filing.closing_balance,
-                filing.date_last_amended
-              FROM camp_fin_candidate AS candidate
-              JOIN camp_fin_filing AS filing
-                USING(entity_id)
-              JOIN camp_fin_campaign AS campaign
-                ON filing.campaign_id = campaign.id
-              JOIN camp_fin_office AS office
-                ON campaign.office_id = office.id
-              ORDER BY candidate.id, filing.date_added desc
+              SELECT
+                rank() OVER (ORDER BY closing_balance DESC) AS rank,
+                candidates.*
+              FROM (
+                SELECT DISTINCT ON (candidate.id)
+                  candidate.*,
+                  campaign.committee_name,
+                  campaign.county_id,
+                  campaign.district_id,
+                  campaign.division_id,
+                  office.description AS office_name,
+                  filing.closing_balance,
+                  filing.date_last_amended
+                FROM camp_fin_candidate AS candidate
+                JOIN camp_fin_filing AS filing
+                  USING(entity_id)
+                JOIN camp_fin_campaign AS campaign
+                  ON filing.campaign_id = campaign.id
+                JOIN camp_fin_office AS office
+                  ON campaign.office_id = office.id
+                ORDER BY candidate.id, filing.date_added desc
+              ) AS candidates
             ) AS s
             ORDER BY {0} {1}
         '''.format(self.order_by, self.sort_order))
@@ -102,7 +159,8 @@ class CandidateDetail(DetailView):
         context = super().get_context_data(**kwargs)
 
         all_filings = context['candidate'].entity.filing_set\
-                                            .order_by('filing_period__filing_date')
+                                          .filter(date_added__gte=TWENTY_TEN)\
+                                          .order_by('filing_period__filing_date')
 
 
         balance_trend = [[ f.closing_balance,
@@ -141,14 +199,19 @@ class CommitteeList(PaginatedList):
 
         cursor.execute('''
             SELECT * FROM (
-              SELECT DISTINCT ON (pac.id)
-                pac.*,
-                filing.closing_balance,
-                filing.date_added AS filing_date
-              FROM camp_fin_pac AS pac
-              JOIN camp_fin_filing AS filing
-                USING(entity_id)
-              ORDER BY pac.id, filing.date_added desc
+              SELECT
+                rank() OVER (ORDER BY closing_balance DESC) AS rank,
+                pac.*
+              FROM (
+                SELECT DISTINCT ON (pac.id)
+                  pac.*,
+                  filing.closing_balance,
+                  filing.date_added AS filing_date
+                FROM camp_fin_pac AS pac
+                JOIN camp_fin_filing AS filing
+                  USING(entity_id)
+                ORDER BY pac.id, filing.date_added desc
+              ) AS pac
             ) AS s
             ORDER BY {0} {1}
         '''.format(self.order_by, self.sort_order))
@@ -179,8 +242,9 @@ class CommitteeDetail(DetailView):
         context = super().get_context_data(**kwargs)
 
         latest_filing = context['pac'].entity.filing_set\
-                                            .order_by('-filing_period__filing_date')\
-                                            .first()
+                                             .filter(date_added__gte=TWENTY_TEN)\
+                                             .order_by('-filing_period__filing_date')\
+                                             .first()
 
         context['latest_filing'] = latest_filing
 
@@ -197,11 +261,17 @@ class TransactionViewSet(TransactionBaseViewSet):
     pass
 
 class ContributionViewSet(TransactionBaseViewSet):
-    default_filter = {'transaction_type__contribution': True}
+    default_filter = {
+        'transaction_type__contribution': True,
+        'filing__date_added__gte': TWENTY_TEN
+    }
     serializer_class = TransactionSerializer
 
 class ExpenditureViewSet(TransactionBaseViewSet):
-    default_filter = {'transaction_type__contribution': False}
+    default_filter = {
+        'transaction_type__contribution': False,
+        'filing__date_added__gte': TWENTY_TEN
+    }
     serializer_class = TransactionSerializer
 
 class TopDonorsView(TopMoneyView):
@@ -211,7 +281,7 @@ class TopExpensesView(TopMoneyView):
     contribution = False
 
 class LoanViewSet(TransactionBaseViewSet):
-    queryset = LoanTransaction.objects.all()
+    queryset = LoanTransaction.objects.filter(transaction_date__gte=TWENTY_TEN)
     serializer_class = LoanTransactionSerializer
 
 SERIALIZER_LOOKUP = {
@@ -288,6 +358,7 @@ class SearchAPIView(viewsets.ViewSet):
                       ON entity.id = candidate.entity_id
                     WHERE o.search_name @@ plainto_tsquery('english', %s)
                       AND tt.contribution = TRUE
+                      AND filing.date_added >= '01-01-2010'
                 '''
             elif table == 'expenditure':
                 query = '''
@@ -332,6 +403,7 @@ class SearchAPIView(viewsets.ViewSet):
                       ON entity.id = candidate.entity_id
                     WHERE o.search_name @@ plainto_tsquery('english', %s)
                       AND tt.contribution = FALSE
+                      AND filing.date_added >= '01-01-2010'
                 '''
 
             serializer = SERIALIZER_LOOKUP[table]
