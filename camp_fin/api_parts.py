@@ -167,5 +167,5 @@ class TopMoneySerializer(serializers.Serializer):
     suffix = serializers.CharField()
     company_name = serializers.CharField()
     amount = serializers.CharField()
-    last_date = serializers.DateTimeField()
-
+    year = serializers.CharField()
+    rank = serializers.CharField()
