@@ -6,12 +6,25 @@
 {% block full_content %}
 <div class="container">
     <div class="row">
+        <div class="col-md-6"><h1><i class='fa fa-fw fa-dollar'></i> Donations</h1></div>
+        <div class="col-md-6">
+            <form action='/donations' method='GET' class='col-sm-12'>
+                <div class="input-group input-group-xs">
+                    <input type="text" id="from" name="from" class="form-control date-filter" placeholder="Select start date..." name="date">
+                    <input type="text" id="to" name="to" class="form-control date-filter" placeholder="Select end date..." name="date">
+                    <span class="input-group-btn">
+                        <button class="btn btn-default btn-date" type="submit"><i class="fa fa-search" aria-hidden="true"></i> Search</button>
+                    </span>
+                </div>
+            </form>
+        </div>
         <div class="col-md-12">
-            <h1><i class='fa fa-fw fa-dollar'></i> Donations</h1>
-
             <table class="table table-striped" id="candidate-list">
                 <thead>
                     <tr>
+                        <th>
+                            Rank
+                        </th>
                         <th>
                             Donor
                         </th>
@@ -29,27 +42,34 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for transaction in object_list %}
-                    <tr>
-                        <td>
-                            {{ transaction.full_name }}
-                        </td>
-                        <td>
-                            {{transaction.transaction_type|get_transaction_verb }} <strong>{{ transaction.amount|format_money }}</strong> to
-                        </td>
-                        <td>
-                            {% if transaction.pac_slug %}
-                              <a href="{% url 'committee-detail' transaction.pac_slug %}">{{ transaction.transaction_subject }}</a>
-                            {% endif %}
-                            {% if transaction.candidate_slug %}
-                              <a href="{% url 'candidate-detail' transaction.candidate_slug %}">{{ transaction.transaction_subject }}</a>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {{ transaction.received_date|date:"M d, Y" }}
-                        </td>
-                    </tr>
-                    {% endfor %}
+                    {% if object_list %}
+                        {% for transaction in object_list %}
+                        <tr>
+                            <td>
+                                {{ transaction.rank }}
+                            </td>
+                            <td>
+                                {{ transaction.full_name }}
+                            </td>
+                            <td>
+                                {{transaction.transaction_type|get_transaction_verb }} <strong>{{ transaction.amount|format_money }}</strong> to
+                            </td>
+                            <td>
+                                {% if transaction.pac_slug %}
+                                  <a href="{% url 'committee-detail' transaction.pac_slug %}">{{ transaction.transaction_subject }}</a>
+                                {% endif %}
+                                {% if transaction.candidate_slug %}
+                                  <a href="{% url 'candidate-detail' transaction.candidate_slug %}">{{ transaction.transaction_subject }}</a>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ transaction.received_date|date:"M d, Y" }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td>No results. Considering broadening your search.</td></tr>
+                    {% endif %}
                 </tbody>
             </table>
             {% bootstrap_paginate object_list range=10 %}
@@ -57,4 +77,48 @@
     </div>
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>
+    <script type="text/javascript">
+    $(document).ready(function(){
+      var dateFormat = "mm/dd/yy",
+      from = $( "#from" )
+        .datepicker({
+            dayNamesMin: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+            prevText: '',
+            nextText: '',
+            dateFormat: "yy-mm-dd",
+            maxDate: new Date(),
+            minDate: new Date( 1994, 0, 1)
+        })
+        .on( "change", function() {
+          to.datepicker( "option", "minDate", getDate( this ) );
+        }),
+      to = $( "#to" ).datepicker({
+            dayNamesMin: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+            prevText: '',
+            nextText: '',
+            dateFormat: "yy-mm-dd",
+            maxDate: new Date(),
+            minDate: new Date( 1994, 0, 1)
+      })
+      .on( "change", function() {
+        from.datepicker( "option", "maxDate", getDate( this ) );
+      });
+
+    function getDate( element ) {
+      var date;
+      try {
+        date = $.datepicker.parseDate( dateFormat, element.value );
+      } catch( error ) {
+        date = null;
+      }
+
+      return date;
+    }
+    });
+    </script>
 {% endblock %}

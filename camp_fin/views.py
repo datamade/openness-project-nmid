@@ -112,7 +112,7 @@ class IndexView(TemplateView):
                   ON filing.campaign_id = campaign.id
                 JOIN camp_fin_office AS office
                   ON campaign.office_id = office.id
-                ORDER BY candidate.id, filing.date_added desc
+                ORDER BY candidate.id, filing.date_added DESC
               ) AS candidates
             ) AS s
             ORDER BY {0} {1}
@@ -136,44 +136,58 @@ class DonationsView(PaginatedList):
         cursor = connection.cursor()
 
         query = '''
+        SELECT * FROM (
             SELECT
-              o.*,
-              tt.description AS transaction_type,
-              CASE WHEN
-                pac.name IS NULL OR TRIM(pac.name) = ''
-              THEN
-                candidate.full_name
-              ELSE pac.name
-              END AS transaction_subject,
-              pac.slug AS pac_slug,
-              candidate.slug AS candidate_slug
-            FROM camp_fin_transaction AS o
-            JOIN camp_fin_transactiontype AS tt
-              ON o.transaction_type_id = tt.id
-            JOIN camp_fin_filing AS filing
-              ON o.filing_id = filing.id
-            JOIN camp_fin_entity AS entity
-              ON filing.entity_id = entity.id
-            LEFT JOIN camp_fin_pac AS pac
-              ON entity.id = pac.entity_id
-            LEFT JOIN camp_fin_candidate AS candidate
-              ON entity.id = candidate.entity_id
-            WHERE tt.contribution = TRUE
-            AND o.received_date BETWEEN %s and %s
-            ORDER BY o.received_date DESC;
+                DENSE_RANK() OVER (ORDER BY amount DESC) AS rank,
+                o.*,
+                tt.description AS transaction_type,
+                CASE WHEN
+                  pac.name IS NULL OR TRIM(pac.name) = ''
+                THEN
+                  candidate.full_name
+                ELSE pac.name
+                END AS transaction_subject,
+                pac.slug AS pac_slug,
+                candidate.slug AS candidate_slug
+              FROM camp_fin_transaction AS o
+              JOIN camp_fin_transactiontype AS tt
+                ON o.transaction_type_id = tt.id
+              JOIN camp_fin_filing AS filing
+                ON o.filing_id = filing.id
+              JOIN camp_fin_entity AS entity
+                ON filing.entity_id = entity.id
+              LEFT JOIN camp_fin_pac AS pac
+                ON entity.id = pac.entity_id
+              LEFT JOIN camp_fin_candidate AS candidate
+                ON entity.id = candidate.entity_id
+              WHERE tt.contribution = TRUE
+              AND o.received_date BETWEEN %s and %s
+              ORDER BY o.received_date ASC
+          ) as z;
         '''
 
         days_donations = []
-        date = datetime.now().date()
-        start_date = (date - timedelta(days=7))
 
-        while len(days_donations) == 0:
-            end_date = date
+        if ('from' in self.request.GET) and ('to' in self.request.GET):
+            start_date_str = self.request.GET.get('from')
+            start_date = datetime.strptime(start_date_str , '%Y-%m-%d') + timedelta(days=1)
+
+            end_date_str = self.request.GET.get('to')
+            end_date = datetime.strptime(end_date_str , '%Y-%m-%d') + timedelta(days=1)
+
             cursor.execute(query, [start_date, end_date])
             days_donations = list(cursor)
 
-            date = date - timedelta(days=1)
-            start_date = (date - timedelta(days=7))
+        else:
+            end_date = datetime.now().date()
+            start_date = (end_date - timedelta(days=7))
+
+            while len(days_donations) == 0:
+                cursor.execute(query, [start_date, end_date])
+                days_donations = list(cursor)
+
+                end_date = end_date - timedelta(days=1)
+                start_date = (end_date - timedelta(days=7))
 
         columns = [c[0] for c in cursor.description]
         result_tuple = namedtuple('Transaction', columns)

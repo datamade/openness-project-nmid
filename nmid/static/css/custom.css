@@ -24,10 +24,102 @@ a:hover, a:active { color: #8C0012; }
 
 th a { color: #333333; }
 
-.nav-pills > li.active > a, 
-.nav-pills > li.active > a:hover, 
+.nav-pills > li.active > a,
+.nav-pills > li.active > a:hover,
 .nav-pills > li.active > a:focus {
     background-color: #8C0012;
 }
 
 #net-funds-chart { height: 200px; }
+
+.ui-datepicker {
+  width: 216px;
+  height: auto;
+  margin: 5px auto 0;
+  -webkit-box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, .5);
+  -moz-box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, .5);
+  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, .5);
+}
+
+.ui-datepicker table {
+  width: 100%;
+  background-color: #fff;
+}
+
+.ui-datepicker-header {
+  font-weight: bold;
+  line-height: 30px;
+}
+
+.ui-datepicker-title {
+  text-align: center;
+  background-color: #DDDDDD;
+  color: #666666;
+  font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+
+.ui-datepicker th {
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 6pt;
+  padding: 4px;
+  color: #666666;
+}
+
+.ui-datepicker tbody td {
+  text-align: center;
+  padding: 4px;
+  border-bottom: 1px solid #bbb;
+}
+
+.ui-datepicker-prev {
+    float: left;
+}
+
+.ui-datepicker-next {
+    float: right;
+    margin-right: 5px;
+}
+
+.ui-datepicker-next:after {
+    content: "";
+    border-color: rgba(0,0,0,0) rgba(0, 0, 0, 0) rgba(0, 0, 0, 0) #333;
+    border-image: none;
+    border-style: solid;
+    border-width: 9px;
+    display: block;
+    height: 0;
+    margin-top: 5px;
+    width: 0;
+}
+
+.ui-datepicker-prev:before {
+    content: "";
+    border-color: rgba(0,0,0,0) #333 rgba(0, 0, 0, 0) rgba(0, 0, 0, 0);
+    border-image: none;
+    border-style: solid;
+    border-width: 9px;
+    display: block;
+    height: 0;
+    margin-top: 5px;
+    width: 0;
+}
+
+.input-group { margin-top: 34px; }
+
+.input-group .form-control {
+  width: 11em;
+  height: 2em;
+  font-size: 12px;
+  margin-right: 1em;
+}
+
+.date-filter {
+  float: right;
+}
+
+.input-group .form-control:last-child, .input-group-addon:last-child, .input-group-btn:last-child>.btn, .input-group-btn:last-child>.btn-group>.btn, .input-group-btn:last-child>.dropdown-toggle, .input-group-btn:first-child>.btn:not(:first-child), .input-group-btn:first-child>.btn-group:not(:first-child)>.btn {
+  border-radius: 25px;
+  float: right;
+  margin-bottom: 10px;
+}
