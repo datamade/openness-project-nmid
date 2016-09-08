@@ -1,6 +1,6 @@
 import itertools
 from collections import namedtuple, OrderedDict
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.views.generic import ListView, TemplateView, DetailView
 from django.http import HttpResponseNotFound
@@ -23,8 +23,65 @@ TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
 class IndexView(TemplateView):
     template_name = 'index.html'
 
-class DonationsView(TemplateView):
+class DonationsView(PaginatedList):
+    model = Transaction
     template_name = 'camp_fin/donations.html'
+
+    # queryset = Transaction.objects.filter(transaction_type__contribution=True).order_by('-received_date')
+
+    def get_queryset(self):
+        cursor = connection.cursor()
+
+        query = '''
+            SELECT
+              o.*,
+              tt.description AS transaction_type,
+              CASE WHEN
+                pac.name IS NULL OR TRIM(pac.name) = ''
+              THEN
+                candidate.full_name
+              ELSE pac.name
+              END AS transaction_subject,
+              pac.slug AS pac_slug,
+              candidate.slug AS candidate_slug
+            FROM camp_fin_transaction AS o
+            JOIN camp_fin_transactiontype AS tt
+              ON o.transaction_type_id = tt.id
+            JOIN camp_fin_filing AS filing
+              ON o.filing_id = filing.id
+            JOIN camp_fin_entity AS entity
+              ON filing.entity_id = entity.id
+            LEFT JOIN camp_fin_pac AS pac
+              ON entity.id = pac.entity_id
+            LEFT JOIN camp_fin_candidate AS candidate
+              ON entity.id = candidate.entity_id
+            WHERE tt.contribution = TRUE
+            AND o.received_date BETWEEN %s and %s
+            ORDER BY o.received_date DESC LIMIT 100;
+        '''
+
+        days_donations = []
+        date = datetime.now().date()
+        start_date = (date - timedelta(days=7))
+
+        while len(days_donations) == 0:
+            end_date = date
+            cursor.execute(query, [start_date, end_date])
+            days_donations = list(cursor)
+
+            date = date - timedelta(days=1)
+            start_date = (date - timedelta(days=7))
+
+        columns = [c[0] for c in cursor.description]
+        result_tuple = namedtuple('Transaction', columns)
+        objects = [result_tuple(*r) for r in days_donations]
+
+        return objects
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Possibily add content here.
+        return context
 
 class AboutView(TemplateView):
     template_name = 'about.html'
@@ -45,27 +102,27 @@ class CandidateList(PaginatedList):
 
     def get_queryset(self, **kwargs):
         cursor = connection.cursor()
-        
+
         self.order_by = self.request.GET.get('order_by', 'closing_balance')
         self.sort_order = self.request.GET.get('sort_order', 'desc')
 
-        cursor.execute(''' 
+        cursor.execute('''
             SELECT * FROM (
-              SELECT 
+              SELECT
                 rank() OVER (ORDER BY closing_balance DESC) AS rank,
                 candidates.*
               FROM (
-                SELECT DISTINCT ON (candidate.id) 
-                  candidate.*, 
+                SELECT DISTINCT ON (candidate.id)
+                  candidate.*,
                   campaign.committee_name,
                   campaign.county_id,
                   campaign.district_id,
                   campaign.division_id,
                   office.description AS office_name,
-                  filing.closing_balance, 
-                  filing.date_last_amended 
-                FROM camp_fin_candidate AS candidate 
-                JOIN camp_fin_filing AS filing 
+                  filing.closing_balance,
+                  filing.date_last_amended
+                FROM camp_fin_candidate AS candidate
+                JOIN camp_fin_filing AS filing
                   USING(entity_id)
                 JOIN camp_fin_campaign AS campaign
                   ON filing.campaign_id = campaign.id
@@ -76,17 +133,17 @@ class CandidateList(PaginatedList):
             ) AS s
             ORDER BY {0} {1}
         '''.format(self.order_by, self.sort_order))
-        
+
         columns = [c[0] for c in cursor.description]
         candidate_tuple = namedtuple('Candidate', columns)
 
         return [candidate_tuple(*r) for r in cursor]
-        
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         context['sort_order'] = self.sort_order
-        
+
         context['toggle_order'] = 'desc'
         if self.sort_order.lower() == 'desc':
             context['toggle_order'] = 'asc'
@@ -101,35 +158,35 @@ class CandidateDetail(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         all_filings = context['candidate'].entity.filing_set\
                                           .filter(date_added__gte=TWENTY_TEN)\
                                           .order_by('filing_period__filing_date')
 
 
-        balance_trend = [[ f.closing_balance, 
+        balance_trend = [[ f.closing_balance,
                            f.filing_period.filing_date.year,
                            f.filing_period.filing_date.month,
-                           f.filing_period.filing_date.day] 
+                           f.filing_period.filing_date.day]
                            for f in all_filings]
 
-        donation_trend = [[f.total_contributions, 
+        donation_trend = [[f.total_contributions,
                            f.filing_period.filing_date.year,
                            f.filing_period.filing_date.month,
-                           f.filing_period.filing_date.day] 
+                           f.filing_period.filing_date.day]
                            for f in all_filings]
 
-        expend_trend = [[  (-1*f.total_expenditures), 
+        expend_trend = [[  (-1*f.total_expenditures),
                            f.filing_period.filing_date.year,
                            f.filing_period.filing_date.month,
-                           f.filing_period.filing_date.day] 
+                           f.filing_period.filing_date.day]
                            for f in all_filings]
-        
+
         context['latest_filing'] = all_filings.last()
         context['balance_trend'] = balance_trend
         context['donation_trend'] = donation_trend
         context['expend_trend'] = expend_trend
-        
+
         return context
 
 class CommitteeList(PaginatedList):
@@ -137,39 +194,39 @@ class CommitteeList(PaginatedList):
 
     def get_queryset(self, **kwargs):
         cursor = connection.cursor()
-        
+
         self.order_by = self.request.GET.get('order_by', 'closing_balance')
         self.sort_order = self.request.GET.get('sort_order', 'desc')
 
-        cursor.execute(''' 
+        cursor.execute('''
             SELECT * FROM (
-              SELECT 
+              SELECT
                 rank() OVER (ORDER BY closing_balance DESC) AS rank,
                 pac.*
               FROM (
-                SELECT DISTINCT ON (pac.id) 
-                  pac.*, 
-                  filing.closing_balance, 
+                SELECT DISTINCT ON (pac.id)
+                  pac.*,
+                  filing.closing_balance,
                   filing.date_added AS filing_date
-                FROM camp_fin_pac AS pac 
-                JOIN camp_fin_filing AS filing 
+                FROM camp_fin_pac AS pac
+                JOIN camp_fin_filing AS filing
                   USING(entity_id)
                 ORDER BY pac.id, filing.date_added desc
               ) AS pac
             ) AS s
             ORDER BY {0} {1}
         '''.format(self.order_by, self.sort_order))
-        
+
         columns = [c[0] for c in cursor.description]
         pac_tuple = namedtuple('PAC', columns)
 
         return [pac_tuple(*r) for r in cursor]
-        
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         context['sort_order'] = self.sort_order
-        
+
         context['toggle_order'] = 'desc'
         if self.sort_order.lower() == 'desc':
             context['toggle_order'] = 'asc'
@@ -184,14 +241,14 @@ class CommitteeDetail(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         latest_filing = context['pac'].entity.filing_set\
                                              .filter(date_added__gte=TWENTY_TEN)\
                                              .order_by('-filing_period__filing_date')\
                                              .first()
-        
+
         context['latest_filing'] = latest_filing
-        
+
         return context
 
 
@@ -242,29 +299,29 @@ class SearchAPIView(viewsets.ViewSet):
 
         if not term:
             return Response({'error': 'term is required'}, status=400)
-        
+
         if not table_names:
             table_names = [
-                'candidate', 
-                'pac', 
-                'contribution', 
+                'candidate',
+                'pac',
+                'contribution',
                 'expenditure'
             ]
 
         response = {}
 
         for table in table_names:
-            query = ''' 
+            query = '''
                 SELECT * FROM camp_fin_{}
                 WHERE search_name @@ plainto_tsquery('english', %s)
             '''.format(table)
-            
+
             if table == 'contribution':
-                query = ''' 
-                    SELECT 
-                      o.*, 
+                query = '''
+                    SELECT
+                      o.*,
                       tt.description AS transaction_type,
-                      CASE WHEN 
+                      CASE WHEN
                         pac.name IS NULL OR TRIM(pac.name) = ''
                       THEN
                         candidate.full_name
@@ -275,7 +332,7 @@ class SearchAPIView(viewsets.ViewSet):
                     FROM camp_fin_transaction AS o
                     JOIN camp_fin_transactiontype AS tt
                       ON o.transaction_type_id = tt.id
-                    JOIN camp_fin_filing AS filing 
+                    JOIN camp_fin_filing AS filing
                       ON o.filing_id = filing.id
                     JOIN camp_fin_entity AS entity
                       ON filing.entity_id = entity.id
@@ -288,11 +345,11 @@ class SearchAPIView(viewsets.ViewSet):
                       AND filing.date_added >= '01-01-2010'
                 '''
             elif table == 'expenditure':
-                query = ''' 
-                    SELECT 
+                query = '''
+                    SELECT
                       o.*,
                       tt.description AS transaction_type,
-                      CASE WHEN 
+                      CASE WHEN
                         pac.name IS NULL OR TRIM(pac.name) = ''
                       THEN
                         candidate.full_name
@@ -303,7 +360,7 @@ class SearchAPIView(viewsets.ViewSet):
                     FROM camp_fin_transaction AS o
                     JOIN camp_fin_transactiontype AS tt
                       ON o.transaction_type_id = tt.id
-                    JOIN camp_fin_filing AS filing 
+                    JOIN camp_fin_filing AS filing
                       ON o.filing_id = filing.id
                     JOIN camp_fin_entity AS entity
                       ON filing.entity_id = entity.id
@@ -320,12 +377,12 @@ class SearchAPIView(viewsets.ViewSet):
 
             cursor = connection.cursor()
             cursor.execute(query, [term])
-            
+
             columns = [c[0] for c in cursor.description]
             result_tuple = namedtuple(table, columns)
-            
+
             objects =  [result_tuple(*r) for r in cursor]
-            
+
             serializer = serializer(objects, many=True)
 
             response[table] = serializer.data

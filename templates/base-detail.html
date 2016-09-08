@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load helpers %}
+{% load staticfiles %}
+{% block title %}{% endblock %}
+{% block full_content %}
+
+<div class="container">
+
+    {% block header %}{% endblock %}
+
+    <div class='row'>
+        <div class="col-sm-6">
+            <h4>{{ latest_filing.filing_period.description }} Report <small>{{latest_filing.filing_period.filing_date | date:"M d, Y"}}</small></h4>
+            <table class="table table-striped">
+                <tbody>
+                    <tr>
+                        <td>Opening balance</td>
+                        <td class='text-right'>{{ latest_filing.opening_balance|format_money }}</td>
+                    </tr>
+                    <tr>
+                        <td>Total contributions</td>
+                        <td class='text-right'>{{ latest_filing.total_contributions|format_money }}</td>
+                    </tr>
+                    <tr>
+                        <td>Total in-kind contributions</td>
+                        <td class='text-right'>{{ latest_filing.total_inkind|format_money }}</td>
+                    </tr>
+                    <tr>
+                        <td>Total expenditures</td>
+                        <td class='text-right'>{{ latest_filing.total_expenditures|format_money }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Closing balance</strong></td>
+                        <td class='text-right'><strong>{{ latest_filing.closing_balance|format_money }}</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+            {% block charts %}{% endblock %}
+        </div>
+        {% block contact %}{% endblock %}
+        {% block campaigns %}{% endblock %}
+    </div>
+    <hr />
+    <div class="row">
+        <div class="col-md-12">
+            <ul class="nav nav-pills">
+                <li role="presentation" class="active"><a class="transactions" href="javascript://" data-table_type="top-donors">Top 25 donors</a></li>
+                <li role="presentation"><a class="transactions" href="javascript://" data-table_type="top-expenses">Top 25 expenses</a></li>
+                <li role="presentation"><a class="transactions" href="javascript://" data-table_type="largest-contributions">Largest donations</a></li>
+                <li role="presentation"><a class="transactions" href="javascript://" data-table_type="largest-expenditures">Largest expenditures</a></li>
+                <li role="presentation"><a class="transactions" href="javascript://" data-table_type="contributions">All donations</a></li>
+                <li role="presentation"><a class="transactions" href="javascript://" data-table_type="expenditures">All expenditures</a></li>
+            </ul>
+            <div id='money-table-guts'>
+                <h1><i class='fa fa-spin fa-refresh'></i></h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+
