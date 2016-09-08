@@ -16,7 +16,7 @@ from .table_mappers import CANDIDATE, PAC, FILING, FILING_PERIOD, CONTRIB_EXP, \
     CONTRIB_EXP_TYPE, CAMPAIGN, OFFICE_TYPE, OFFICE, CAMPAIGN_STATUS, COUNTY, \
     DISTRICT, ELECTION_SEASON, ENTITY, ENTITY_TYPE, FILING_TYPE, LOAN, \
     LOAN_TRANSACTION, LOAN_TRANSACTION_TYPE, POLITICAL_PARTY, SPECIAL_EVENT, \
-    TREASURER, DIVISION
+    TREASURER, DIVISION, ADDRESS, CONTACT_TYPE, CONTACT
 
 DB_CONN = 'postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}'
 
@@ -48,6 +48,9 @@ MAPPER_LOOKUP = {
     'politicalparty': POLITICAL_PARTY,
     'specialevent': SPECIAL_EVENT,
     'treasurer': TREASURER,
+    'address': ADDRESS,
+    'contacttype': CONTACT_TYPE,
+    'contact': CONTACT,
 }
 
 FILE_LOOKUP = {
@@ -74,6 +77,9 @@ FILE_LOOKUP = {
     'politicalparty': 'Cam_PoliticalParty.xlsx',
     'specialevent': 'Cam_SpecialEvent.xlsx',
     'treasurer': 'Cam_Treasurer.xlsx',
+    'address': 'Cam_Address.csv',
+    'contacttype': 'Cam_ContactType.xlsx',
+    'contact': 'Cam_Contact.csv',
 }
 
 class Command(BaseCommand):
@@ -105,7 +111,7 @@ class Command(BaseCommand):
                 self.file_path = 'data/{}'.format(file_name)
 
                 self.encoding = 'utf-8'
-                if entity_type == 'transaction':
+                if entity_type in ['transaction', 'address', 'contact']:
                     self.encoding = 'windows-1252'
 
                 if self.file_path.endswith('xlsx'):
@@ -157,6 +163,7 @@ class Command(BaseCommand):
         self.addTransactionFullName()
         self.addLoanFullName()
         self.addCandidateFullName()
+        self.addContactFullName()
 
         self.stdout.write(self.style.SUCCESS('Import complete!'.format(self.entity_type)))
 
@@ -228,6 +235,26 @@ class Command(BaseCommand):
               FROM camp_fin_candidate
             ) AS s
             WHERE camp_fin_candidate.id = s.id
+        '''
+
+        self.executeTransaction(update)
+    
+    def addContactFullName(self):
+        update = ''' 
+            UPDATE camp_fin_contact SET
+              full_name = s.full_name
+            FROM (
+              SELECT
+                  TRIM(concat_ws(' ', 
+                                 prefix,
+                                 first_name,
+                                 middle_name,
+                                 last_name,
+                                 suffix)) AS full_name,
+                id
+              FROM camp_fin_contact
+            ) AS s
+            WHERE camp_fin_contact.id = s.id
         '''
 
         self.executeTransaction(update)
