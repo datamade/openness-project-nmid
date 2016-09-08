@@ -32,6 +32,9 @@ Keep an eye on money in New Mexico politics
                 <thead>
                     <tr>
                         <th>
+                            Rank
+                        </th>
+                        <th>
                             Donor
                         </th>
 
@@ -48,33 +51,79 @@ Keep an eye on money in New Mexico politics
                     </tr>
                 </thead>
                 <tbody>
-
+                    {% for transaction in transaction_objects %}
+                    <tr>
+                        <td>
+                            {{ transaction.rank }}
+                        </td>
+                        <td>
+                            {{ transaction.full_name }}
+                        </td>
+                        <td>
+                            {{transaction.transaction_type|get_transaction_verb }} <strong>{{ transaction.amount|format_money }}</strong> to
+                        </td>
+                        <td>
+                            {% if transaction.pac_slug %}
+                              <a href="{% url 'committee-detail' transaction.pac_slug %}">{{ transaction.transaction_subject }}</a>
+                            {% endif %}
+                            {% if transaction.candidate_slug %}
+                              <a href="{% url 'candidate-detail' transaction.candidate_slug %}">{{ transaction.transaction_subject }}</a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ transaction.received_date|date:"M d, Y" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
 
             <h2><a href='/candidates/'><i class='fa fa-fw fa-user'></i> Top candidates</a></h2>
             <table class='table table-bordered'>
-                <tbody><tr><td>Coming soon!</td></tr></tbody>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Candidate</th>
+                        <th>Office</th>
+                        <th>Committee</th>
+                        <th class='text-right'>Current balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for candidate in candidate_objects %}
+                    <tr>
+                        <td>{{ candidate.rank }}</td>
+                        <td><a href="{% url 'candidate-detail' candidate.slug %}">{{ candidate.full_name }}</a></td>
+                        <td>{{ candidate.office_name }} {{ candidate.office_type }}</td>
+                        <td>{{ candidate.committee_name|default_if_none:"" }}</td>
+                        <td class='text-right'>{{ candidate.closing_balance|format_money }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
             </table>
 
             <h2><a href='/committees/'><i class='fa fa-fw fa-group'></i> Committees</a></h2>
             <table class='table table-bordered'>
                 <thead>
                     <tr>
-                        <th>Committee</th>
+                        <th>Rank</th>
+                        <th>PAC</th>
                         <th>Latest report</th>
                         <th class='text-right'>Current balance</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for pac in object_list %}
+                    {% for pac in pac_objects %}
                     <tr>
-                        <td>{{ pac.name }}</td>
+                        <td>{{ pac.rank }}</td>
+                        <td><a href="{% url 'committee-detail' pac.slug %}">{{ pac.name }}</a></td>
                         <td>{{ pac.filing_date | date:'M d, Y'}}</td>
                         <td class='text-right'>{{ pac.closing_balance|format_money }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
+
             </table>
 
             <h2><a href='/donations/'><i class='fa fa-fw fa-info-circle'></i> About</a></h2>

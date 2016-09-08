@@ -24,34 +24,37 @@ TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
 class IndexView(TemplateView):
     template_name = 'index.html'
 
-    def get_queryset(self):
+    def get_context_data(self, **kwargs):
         cursor = connection.cursor()
 
         query = '''
+          SELECT * FROM (
             SELECT
-              o.*,
-              tt.description AS transaction_type,
-              CASE WHEN
-                pac.name IS NULL OR TRIM(pac.name) = ''
-              THEN
-                candidate.full_name
-              ELSE pac.name
-              END AS transaction_subject,
-              pac.slug AS pac_slug,
-              candidate.slug AS candidate_slug
-            FROM camp_fin_transaction AS o
-            JOIN camp_fin_transactiontype AS tt
-              ON o.transaction_type_id = tt.id
-            JOIN camp_fin_filing AS filing
-              ON o.filing_id = filing.id
-            JOIN camp_fin_entity AS entity
-              ON filing.entity_id = entity.id
-            LEFT JOIN camp_fin_pac AS pac
-              ON entity.id = pac.entity_id
-            LEFT JOIN camp_fin_candidate AS candidate
-              ON entity.id = candidate.entity_id
-            WHERE tt.contribution = TRUE
-            ORDER BY o.amount DESC LIMIT 10;
+                DENSE_RANK() OVER (ORDER BY amount DESC) AS rank,
+                o.*,
+                tt.description AS transaction_type,
+                CASE WHEN
+                  pac.name IS NULL OR TRIM(pac.name) = ''
+                THEN
+                  candidate.full_name
+                ELSE pac.name
+                END AS transaction_subject,
+                pac.slug AS pac_slug,
+                candidate.slug AS candidate_slug
+              FROM camp_fin_transaction AS o
+              JOIN camp_fin_transactiontype AS tt
+                ON o.transaction_type_id = tt.id
+              JOIN camp_fin_filing AS filing
+                ON o.filing_id = filing.id
+              JOIN camp_fin_entity AS entity
+                ON filing.entity_id = entity.id
+              LEFT JOIN camp_fin_pac AS pac
+                ON entity.id = pac.entity_id
+              LEFT JOIN camp_fin_candidate AS candidate
+                ON entity.id = candidate.entity_id
+              WHERE tt.contribution = TRUE
+              ORDER BY o.amount DESC LIMIT 10
+          ) AS x;
         '''
 
         cursor.execute(query)
@@ -59,10 +62,6 @@ class IndexView(TemplateView):
         columns = [c[0] for c in cursor.description]
         transaction_tuple = namedtuple('Transaction', columns)
         transaction_objects = [transaction_tuple(*r) for r in cursor]
-
-        # return transaction_objects
-
-
 
         cursor = connection.cursor()
 
@@ -72,7 +71,7 @@ class IndexView(TemplateView):
         cursor.execute('''
             SELECT * FROM (
               SELECT
-                rank() OVER (ORDER BY closing_balance DESC) AS rank,
+                DENSE_RANK() OVER (ORDER BY closing_balance DESC) AS rank,
                 pac.*
               FROM (
                 SELECT DISTINCT ON (pac.id)
@@ -92,13 +91,51 @@ class IndexView(TemplateView):
         columns = [c[0] for c in cursor.description]
         pac_tuple = namedtuple('PAC', columns)
 
-        return [pac_tuple(*r) for r in cursor]
+        pac_objects = [pac_tuple(*r) for r in cursor]
 
+        cursor = connection.cursor()
 
+        self.order_by = self.request.GET.get('order_by', 'closing_balance')
+        self.sort_order = self.request.GET.get('sort_order', 'desc')
 
-    def get_context_data(self, **kwargs):
+        cursor.execute('''
+            SELECT * FROM (
+              SELECT
+                DENSE_RANK() OVER (ORDER BY closing_balance DESC) AS rank,
+                candidates.*
+              FROM (
+                SELECT DISTINCT ON (candidate.id)
+                  candidate.*,
+                  campaign.committee_name,
+                  campaign.county_id,
+                  campaign.district_id,
+                  campaign.division_id,
+                  office.description AS office_name,
+                  filing.closing_balance,
+                  filing.date_last_amended
+                FROM camp_fin_candidate AS candidate
+                JOIN camp_fin_filing AS filing
+                  USING(entity_id)
+                JOIN camp_fin_campaign AS campaign
+                  ON filing.campaign_id = campaign.id
+                JOIN camp_fin_office AS office
+                  ON campaign.office_id = office.id
+                ORDER BY candidate.id, filing.date_added desc
+              ) AS candidates
+            ) AS s
+            ORDER BY {0} {1}
+            LIMIT 10
+        '''.format(self.order_by, self.sort_order))
+
+        columns = [c[0] for c in cursor.description]
+        candidate_tuple = namedtuple('Candidate', columns)
+
+        candidate_objects = [candidate_tuple(*r) for r in cursor]
+
         context = super().get_context_data(**kwargs)
-        context['object_list'] = self.get_queryset()
+        context['transaction_objects'] = transaction_objects
+        context['pac_objects'] = pac_objects
+        context['candidate_objects'] = candidate_objects
         return context
 
 class DonationsView(PaginatedList):
@@ -186,7 +223,7 @@ class CandidateList(PaginatedList):
         cursor.execute('''
             SELECT * FROM (
               SELECT
-                rank() OVER (ORDER BY closing_balance DESC) AS rank,
+                DENSE_RANK() OVER (ORDER BY closing_balance DESC) AS rank,
                 candidates.*
               FROM (
                 SELECT DISTINCT ON (candidate.id)
@@ -278,7 +315,7 @@ class CommitteeList(PaginatedList):
         cursor.execute('''
             SELECT * FROM (
               SELECT
-                rank() OVER (ORDER BY closing_balance DESC) AS rank,
+                DENSE_RANK() OVER (ORDER BY closing_balance DESC) AS rank,
                 pac.*
               FROM (
                 SELECT DISTINCT ON (pac.id)
