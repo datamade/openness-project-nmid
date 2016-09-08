@@ -445,26 +445,16 @@ class Command(BaseCommand):
         self.executeTransaction(create)
 
     def makeRawTable(self):
+        
+        columns = []
+        for column_name, definition in self.table_mapper.items():
+            columns.append('{0} {1}'.format(column_name, definition['data_type']))
 
-        try:
-            sql_table = sa.Table('raw_{0}'.format(self.entity_type), 
-                                 sa.MetaData(),
-                                 autoload=True,
-                                 autoload_with=self.connection.engine)
-        
-        except sa.exc.NoSuchTableError:
-            inferer = TypeInferer(self.file_path, encoding=self.encoding)
-            inferer.infer()
-            
-            sql_table = sa.Table('raw_{0}'.format(self.entity_type), 
-                                 sa.MetaData())
-        
-            for column_name, column_type in inferer.types.items():
-                sql_table.append_column(sa.Column(column_name.lower().replace('"', ''), column_type()))
-        
-        dialect = sa.dialects.postgresql.dialect()
-        create_table = str(sa.schema.CreateTable(sql_table)\
-                           .compile(dialect=dialect)).strip(';')
+        create_table = ''' 
+            CREATE TABLE raw_{0} (
+                {1}
+            )
+        '''.format(self.entity_type, ', '.join(columns))
         
         self.executeTransaction('DROP TABLE IF EXISTS raw_{0}'.format(self.entity_type))
         self.executeTransaction(create_table)
