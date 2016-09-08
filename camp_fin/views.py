@@ -26,8 +26,7 @@ class IndexView(TemplateView):
 
     def get_context_data(self, **kwargs):
         cursor = connection.cursor()
-
-        query = '''
+        cursor.execute('''
           SELECT * FROM (
             SELECT
                 DENSE_RANK() OVER (ORDER BY amount DESC) AS rank,
@@ -55,19 +54,15 @@ class IndexView(TemplateView):
               WHERE tt.contribution = TRUE
               ORDER BY o.amount DESC LIMIT 10
           ) AS x;
-        '''
-
-        cursor.execute(query)
+        ''')
 
         columns = [c[0] for c in cursor.description]
         transaction_tuple = namedtuple('Transaction', columns)
         transaction_objects = [transaction_tuple(*r) for r in cursor]
 
         cursor = connection.cursor()
-
         self.order_by = self.request.GET.get('order_by', 'closing_balance')
         self.sort_order = self.request.GET.get('sort_order', 'desc')
-
         cursor.execute('''
             SELECT * FROM (
               SELECT
@@ -90,14 +85,11 @@ class IndexView(TemplateView):
 
         columns = [c[0] for c in cursor.description]
         pac_tuple = namedtuple('PAC', columns)
-
         pac_objects = [pac_tuple(*r) for r in cursor]
 
         cursor = connection.cursor()
-
         self.order_by = self.request.GET.get('order_by', 'closing_balance')
         self.sort_order = self.request.GET.get('sort_order', 'desc')
-
         cursor.execute('''
             SELECT * FROM (
               SELECT
@@ -129,7 +121,6 @@ class IndexView(TemplateView):
 
         columns = [c[0] for c in cursor.description]
         candidate_tuple = namedtuple('Candidate', columns)
-
         candidate_objects = [candidate_tuple(*r) for r in cursor]
 
         context = super().get_context_data(**kwargs)
@@ -140,8 +131,6 @@ class IndexView(TemplateView):
 
 class DonationsView(PaginatedList):
     template_name = 'camp_fin/donations.html'
-
-    # queryset = Transaction.objects.filter(transaction_type__contribution=True).order_by('-received_date')
 
     def get_queryset(self):
         cursor = connection.cursor()
@@ -191,11 +180,6 @@ class DonationsView(PaginatedList):
         objects = [result_tuple(*r) for r in days_donations]
 
         return objects
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        # Possibily add content here.
-        return context
 
 class AboutView(TemplateView):
     template_name = 'about.html'

@@ -55,13 +55,7 @@
                             <td>{{ candidate.rank }}</td>
                             <td>
                                 <a href="{% url 'candidate-detail' candidate.slug %}">
-                                    {% spaceless %}
-                                    {{ candidate.prefix|default_if_none:"" }}
-                                    {{ candidate.first_name|default_if_none:"" }}
-                                    {{ candidate.middle_name|default_if_none:"" }}
-                                    {{ candidate.last_name|default_if_none:"" }}
-                                    {{ candidate.suffix|default_if_none:"" }}
-                                    {% endspaceless %}
+                                    {{ candidate.full_name }}
                                 </a>
                             </td>
                             <td>
