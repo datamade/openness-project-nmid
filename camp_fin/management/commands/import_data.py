@@ -11,12 +11,11 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.utils.text import slugify
 
-from nmid.typeinferer import TypeInferer
 from .table_mappers import CANDIDATE, PAC, FILING, FILING_PERIOD, CONTRIB_EXP, \
     CONTRIB_EXP_TYPE, CAMPAIGN, OFFICE_TYPE, OFFICE, CAMPAIGN_STATUS, COUNTY, \
     DISTRICT, ELECTION_SEASON, ENTITY, ENTITY_TYPE, FILING_TYPE, LOAN, \
     LOAN_TRANSACTION, LOAN_TRANSACTION_TYPE, POLITICAL_PARTY, SPECIAL_EVENT, \
-    TREASURER, DIVISION
+    TREASURER, DIVISION, ADDRESS, CONTACT_TYPE, CONTACT
 
 DB_CONN = 'postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}'
 
@@ -48,6 +47,9 @@ MAPPER_LOOKUP = {
     'politicalparty': POLITICAL_PARTY,
     'specialevent': SPECIAL_EVENT,
     'treasurer': TREASURER,
+    'address': ADDRESS,
+    'contacttype': CONTACT_TYPE,
+    'contact': CONTACT,
 }
 
 FILE_LOOKUP = {
@@ -74,6 +76,9 @@ FILE_LOOKUP = {
     'politicalparty': 'Cam_PoliticalParty.xlsx',
     'specialevent': 'Cam_SpecialEvent.xlsx',
     'treasurer': 'Cam_Treasurer.xlsx',
+    'address': 'Cam_Address.csv',
+    'contacttype': 'Cam_ContactType.xlsx',
+    'contact': 'Cam_Contact.csv',
 }
 
 class Command(BaseCommand):
@@ -105,7 +110,7 @@ class Command(BaseCommand):
                 self.file_path = 'data/{}'.format(file_name)
 
                 self.encoding = 'utf-8'
-                if entity_type == 'transaction':
+                if entity_type in ['transaction', 'address', 'contact']:
                     self.encoding = 'windows-1252'
 
                 if self.file_path.endswith('xlsx'):
@@ -157,6 +162,7 @@ class Command(BaseCommand):
         self.addTransactionFullName()
         self.addLoanFullName()
         self.addCandidateFullName()
+        self.addContactFullName()
 
         self.stdout.write(self.style.SUCCESS('Import complete!'.format(self.entity_type)))
 
@@ -228,6 +234,26 @@ class Command(BaseCommand):
               FROM camp_fin_candidate
             ) AS s
             WHERE camp_fin_candidate.id = s.id
+        '''
+
+        self.executeTransaction(update)
+    
+    def addContactFullName(self):
+        update = ''' 
+            UPDATE camp_fin_contact SET
+              full_name = s.full_name
+            FROM (
+              SELECT
+                  TRIM(concat_ws(' ', 
+                                 prefix,
+                                 first_name,
+                                 middle_name,
+                                 last_name,
+                                 suffix)) AS full_name,
+                id
+              FROM camp_fin_contact
+            ) AS s
+            WHERE camp_fin_contact.id = s.id
         '''
 
         self.executeTransaction(update)
@@ -418,26 +444,16 @@ class Command(BaseCommand):
         self.executeTransaction(create)
 
     def makeRawTable(self):
+        
+        columns = []
+        for column_name, definition in self.table_mapper.items():
+            columns.append('{0} {1}'.format(column_name, definition['data_type']))
 
-        try:
-            sql_table = sa.Table('raw_{0}'.format(self.entity_type), 
-                                 sa.MetaData(),
-                                 autoload=True,
-                                 autoload_with=self.connection.engine)
-        
-        except sa.exc.NoSuchTableError:
-            inferer = TypeInferer(self.file_path, encoding=self.encoding)
-            inferer.infer()
-            
-            sql_table = sa.Table('raw_{0}'.format(self.entity_type), 
-                                 sa.MetaData())
-        
-            for column_name, column_type in inferer.types.items():
-                sql_table.append_column(sa.Column(column_name.lower().replace('"', ''), column_type()))
-        
-        dialect = sa.dialects.postgresql.dialect()
-        create_table = str(sa.schema.CreateTable(sql_table)\
-                           .compile(dialect=dialect)).strip(';')
+        create_table = ''' 
+            CREATE TABLE raw_{0} (
+                {1}
+            )
+        '''.format(self.entity_type, ', '.join(columns))
         
         self.executeTransaction('DROP TABLE IF EXISTS raw_{0}'.format(self.entity_type))
         self.executeTransaction(create_table)
