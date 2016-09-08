@@ -3,6 +3,7 @@ from collections import namedtuple, OrderedDict
 from datetime import datetime, timedelta
 
 from django.views.generic import ListView, TemplateView, DetailView
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.http import HttpResponseNotFound
 from django.db import transaction, connection
 from django.utils import timezone
@@ -23,8 +24,84 @@ TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
 class IndexView(TemplateView):
     template_name = 'index.html'
 
+    def get_queryset(self):
+        cursor = connection.cursor()
+
+        query = '''
+            SELECT
+              o.*,
+              tt.description AS transaction_type,
+              CASE WHEN
+                pac.name IS NULL OR TRIM(pac.name) = ''
+              THEN
+                candidate.full_name
+              ELSE pac.name
+              END AS transaction_subject,
+              pac.slug AS pac_slug,
+              candidate.slug AS candidate_slug
+            FROM camp_fin_transaction AS o
+            JOIN camp_fin_transactiontype AS tt
+              ON o.transaction_type_id = tt.id
+            JOIN camp_fin_filing AS filing
+              ON o.filing_id = filing.id
+            JOIN camp_fin_entity AS entity
+              ON filing.entity_id = entity.id
+            LEFT JOIN camp_fin_pac AS pac
+              ON entity.id = pac.entity_id
+            LEFT JOIN camp_fin_candidate AS candidate
+              ON entity.id = candidate.entity_id
+            WHERE tt.contribution = TRUE
+            ORDER BY o.amount DESC LIMIT 10;
+        '''
+
+        cursor.execute(query)
+
+        columns = [c[0] for c in cursor.description]
+        transaction_tuple = namedtuple('Transaction', columns)
+        transaction_objects = [transaction_tuple(*r) for r in cursor]
+
+        # return transaction_objects
+
+
+
+        cursor = connection.cursor()
+
+        self.order_by = self.request.GET.get('order_by', 'closing_balance')
+        self.sort_order = self.request.GET.get('sort_order', 'desc')
+
+        cursor.execute('''
+            SELECT * FROM (
+              SELECT
+                rank() OVER (ORDER BY closing_balance DESC) AS rank,
+                pac.*
+              FROM (
+                SELECT DISTINCT ON (pac.id)
+                  pac.*,
+                  filing.closing_balance,
+                  filing.date_added AS filing_date
+                FROM camp_fin_pac AS pac
+                JOIN camp_fin_filing AS filing
+                  USING(entity_id)
+                ORDER BY pac.id, filing.date_added desc
+              ) AS pac
+            ) AS s
+            ORDER BY {0} {1}
+            LIMIT 10
+        '''.format(self.order_by, self.sort_order))
+
+        columns = [c[0] for c in cursor.description]
+        pac_tuple = namedtuple('PAC', columns)
+
+        return [pac_tuple(*r) for r in cursor]
+
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['object_list'] = self.get_queryset()
+        return context
+
 class DonationsView(PaginatedList):
-    model = Transaction
     template_name = 'camp_fin/donations.html'
 
     # queryset = Transaction.objects.filter(transaction_type__contribution=True).order_by('-received_date')
@@ -57,7 +134,7 @@ class DonationsView(PaginatedList):
               ON entity.id = candidate.entity_id
             WHERE tt.contribution = TRUE
             AND o.received_date BETWEEN %s and %s
-            ORDER BY o.received_date DESC LIMIT 100;
+            ORDER BY o.received_date DESC;
         '''
 
         days_donations = []

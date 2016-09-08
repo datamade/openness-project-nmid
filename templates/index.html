@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
-
+{% load helpers %}
 {% block title %}
 Keep an eye on money in New Mexico politics
 {% endblock %}
 
 {% block full_content %}
 <div class="container">
-  
+
     <div class='row'>
         <div class='col-sm-12'>
             <div class='jumbotron'>
@@ -29,7 +29,27 @@ Keep an eye on money in New Mexico politics
 
             <h2><a href='/donations/'><i class='fa fa-fw fa-dollar'></i> Largest donations</a></h2>
             <table class='table table-bordered'>
-                <tbody><tr><td>Coming soon!</td></tr></tbody>
+                <thead>
+                    <tr>
+                        <th>
+                            Donor
+                        </th>
+
+                        <th>
+                            Amount
+                            {{ sort_order|get_sort_icon|safe }}
+                        </th>
+                        <th>
+                            Recipient
+                        </th>
+                        <th>
+                            Date
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
             </table>
 
             <h2><a href='/candidates/'><i class='fa fa-fw fa-user'></i> Top candidates</a></h2>
@@ -39,7 +59,22 @@ Keep an eye on money in New Mexico politics
 
             <h2><a href='/committees/'><i class='fa fa-fw fa-group'></i> Committees</a></h2>
             <table class='table table-bordered'>
-                <tbody><tr><td>Coming soon!</td></tr></tbody>
+                <thead>
+                    <tr>
+                        <th>Committee</th>
+                        <th>Latest report</th>
+                        <th class='text-right'>Current balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pac in object_list %}
+                    <tr>
+                        <td>{{ pac.name }}</td>
+                        <td>{{ pac.filing_date | date:'M d, Y'}}</td>
+                        <td class='text-right'>{{ pac.closing_balance|format_money }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
             </table>
 
             <h2><a href='/donations/'><i class='fa fa-fw fa-info-circle'></i> About</a></h2>
