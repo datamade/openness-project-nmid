@@ -40,7 +40,7 @@ To import the New Mexico campaign finance data into your database, run the `impo
 python manage.py import_data
 ```
 
-Then, run the 'make_search_index' command.
+Then, run the `make_search_index` command.
 
 ```
 python manage.py make_search_index
