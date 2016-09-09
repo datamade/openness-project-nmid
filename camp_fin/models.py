@@ -435,7 +435,7 @@ class Treasurer(models.Model):
     status = models.ForeignKey('Status', db_constraint=False)
     olddb_entity_id = models.IntegerField(null=True)
 
-    full_name = models.CharField(max_length=500)
+    full_name = models.CharField(max_length=500, null=True)
     
     def __str__(self):
         return self.full_name

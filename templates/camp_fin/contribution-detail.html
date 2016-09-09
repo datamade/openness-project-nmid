@@ -28,6 +28,12 @@
                         <td>Address</td>
                         <td>{{ transaction.full_address }}</td>
                     </tr>
+                    {% if transaction.memo %}
+                    <tr>
+                        <td>Memo</td>
+                        <td>{{ transaction.memo }}</td>
+                    </tr>
+                    {% endif %}
                 </tbody>
             </table>
             <div class="row">
@@ -37,15 +43,10 @@
                         <h1>
                             <label class="label label-success">{{ transaction.amount|format_money }}</label>
                         </h1>
-                        {% if transaction.description %}
                         <br>
+                        {% if transaction.description %}
                             <p>
                             {{transaction.description}}
-                            </p>
-                        {% elif transaction.memo %}
-                        <br>
-                            <p>
-                            {{transaction.memo}}
                             </p>
                         {% endif %}
                     </div>
