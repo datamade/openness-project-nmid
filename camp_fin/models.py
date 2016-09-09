@@ -159,7 +159,7 @@ class Transaction(models.Model):
     occupation = models.CharField(max_length=255, null=True)
     expenditure_for_certified_candidate = models.NullBooleanField()
     
-    full_name = models.CharField(max_length=500)
+    full_name = models.CharField(max_length=500, null=True)
 
     def __str__(self):
         return self.full_name
@@ -230,7 +230,7 @@ class Loan(models.Model):
     loan_transfer_date = models.DateTimeField(null=True)
     from_file_id = models.IntegerField(null=True)
     
-    full_name = models.CharField(max_length=500)
+    full_name = models.CharField(max_length=500, null=True)
 
     def __str__(self):
         return self.full_name
