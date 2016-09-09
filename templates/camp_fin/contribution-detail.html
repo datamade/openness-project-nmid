@@ -26,8 +26,14 @@
                     </tr>
                     <tr>
                         <td>Address</td>
-                        <td>{{ transaction.full_address }}</td>
+                        <td>{{ transaction.contact.address|default:transaction.full_address }}</td>
                     </tr>
+                    {% if transaction.contact.contact_type %}
+                        <tr>
+                            <td>Donor type</td>
+                            <td>{{ transaction.contact.contact_type }}</td>
+                        </tr>
+                    {% endif %}
                     {% if transaction.memo %}
                     <tr>
                         <td>Memo</td>

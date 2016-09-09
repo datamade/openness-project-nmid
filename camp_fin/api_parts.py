@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from camp_fin.models import Candidate, PAC, Transaction, LoanTransaction, Loan
+from camp_fin.models import Candidate, PAC, Transaction, LoanTransaction, Loan, Treasurer
 
 class CandidateSerializer(serializers.ModelSerializer):
 
@@ -114,6 +114,15 @@ class TransactionSearchSerializer(TransactionSerializer):
             'pac_slug',
             'candidate_slug',
         )
+
+class TreasurerSearchSerializer(serializers.Serializer):
+    full_name = serializers.CharField()
+    street = serializers.CharField()
+    city = serializers.CharField()
+    state = serializers.CharField()
+    zipcode = serializers.CharField()
+    related_entity_name = serializers.CharField()
+    related_entity_url = serializers.CharField()
 
 class CandidateSearchSerializer(serializers.ModelSerializer):
 

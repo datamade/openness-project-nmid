@@ -338,9 +338,12 @@ class Filing(models.Model):
     regenerate = models.NullBooleanField()
     
     def __str__(self):
-        return '{0} {1} {2}'.format(self.campaign.candidate.first_name,
-                                      self.campaign.candidate.last_name,
-                                      self.filing_period)
+        if self.campaign:
+            return '{0} {1} {2}'.format(self.campaign.candidate.first_name,
+                                        self.campaign.candidate.last_name,
+                                        self.filing_period)
+        else:
+            return self.entity.pac_set.first().name
 
 class FilingPeriod(models.Model):
     filing_date = models.DateTimeField()
@@ -374,8 +377,9 @@ class Address(models.Model):
     from_file_id = models.IntegerField(null=True)
 
     def __str__(self):
-        address = '{0}, {1}, {2}'.format(self.street,
+        address = '{0} {1}, {2} {3}'.format(self.street,
                                          self.city,
+                                         self.state,
                                          self.zipcode)
         return address
 
@@ -439,7 +443,7 @@ class Treasurer(models.Model):
     
     def __str__(self):
         return self.full_name
-    
+
 class Contact(models.Model):
     prefix = models.CharField(max_length=10, null=True)
     first_name = models.CharField(max_length=50, null=True)
@@ -470,6 +474,11 @@ class ContactType(models.Model):
     def __str__(self):
         return self.description
 
+class State(models.Model):
+    postal_code = models.CharField(max_length=2, null=True)
+    
+    def __str__(self):
+        return self.postal_code
 ######################################################################
 ### Below here are normalized tables that we may or may not end up ###
 ### getting. Just stubbing them out in case we do                  ###
@@ -479,9 +488,6 @@ class RegularFilingPeriod(models.Model):
     pass
 
 class Status(models.Model):
-    pass
-
-class State(models.Model):
     pass
 
 class AddressType(models.Model):

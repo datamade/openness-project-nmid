@@ -37,8 +37,20 @@
                     {% endif %}
                     <tr>
                         <td>Address</td>
-                        <td>{{ entity.address }} (placeholder until we get actual addresses)</td>
+                        <td>{{ entity.address }}</td>
                     </tr>
+                    {% if transaction.contact.contact_type %}
+                        <tr>
+                            <td>Exepense type</td>
+                            <td>{{ transaction.contact.contact_type }}</td>
+                        </tr>
+                    {% endif %}
+                    {% if transaction.memo %}
+                    <tr>
+                        <td>Memo</td>
+                        <td>{{ transaction.memo }}</td>
+                    </tr>
+                    {% endif %}
                 </tbody>
             </table>
             <div class="row">
@@ -52,11 +64,6 @@
                         <br>
                             <p>
                             {{transaction.description}}
-                            </p>
-                        {% elif transaction.memo %}
-                        <br>
-                            <p>
-                            {{transaction.memo}}
                             </p>
                         {% endif %}
                     </div>

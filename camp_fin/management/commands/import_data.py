@@ -16,7 +16,7 @@ from .table_mappers import CANDIDATE, PAC, FILING, FILING_PERIOD, CONTRIB_EXP, \
     CONTRIB_EXP_TYPE, CAMPAIGN, OFFICE_TYPE, OFFICE, CAMPAIGN_STATUS, COUNTY, \
     DISTRICT, ELECTION_SEASON, ENTITY, ENTITY_TYPE, FILING_TYPE, LOAN, \
     LOAN_TRANSACTION, LOAN_TRANSACTION_TYPE, POLITICAL_PARTY, SPECIAL_EVENT, \
-    TREASURER, DIVISION, ADDRESS, CONTACT_TYPE, CONTACT
+    TREASURER, DIVISION, ADDRESS, CONTACT_TYPE, CONTACT, STATE
 
 DB_CONN = 'postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}'
 
@@ -51,6 +51,7 @@ MAPPER_LOOKUP = {
     'address': ADDRESS,
     'contacttype': CONTACT_TYPE,
     'contact': CONTACT,
+    'state': STATE,
 }
 
 FILE_LOOKUP = {
@@ -80,6 +81,7 @@ FILE_LOOKUP = {
     'address': 'Cam_Address.csv',
     'contacttype': 'Cam_ContactType.xlsx',
     'contact': 'Cam_Contact.csv',
+    'state': 'States.csv',
 }
 
 class Command(BaseCommand):
@@ -164,6 +166,7 @@ class Command(BaseCommand):
         self.addLoanFullName()
         self.addCandidateFullName()
         self.addContactFullName()
+        self.addTreasurerFullName()
 
         self.stdout.write(self.style.SUCCESS('Import complete!'.format(self.entity_type)))
 
@@ -219,6 +222,26 @@ class Command(BaseCommand):
 
         self.executeTransaction(update)
     
+    def addTreasurerFullName(self):
+        update = ''' 
+            UPDATE camp_fin_treasurer SET
+              full_name = s.full_name
+            FROM (
+              SELECT
+                  TRIM(concat_ws(' ', 
+                                 prefix,
+                                 first_name,
+                                 middle_name,
+                                 last_name,
+                                 suffix)) AS full_name,
+                id
+              FROM camp_fin_treasurer
+            ) AS s
+            WHERE camp_fin_treasurer.id = s.id
+        '''
+
+        self.executeTransaction(update)
+    
     def addCandidateFullName(self):
         update = ''' 
             UPDATE camp_fin_candidate SET
@@ -245,13 +268,18 @@ class Command(BaseCommand):
               full_name = s.full_name
             FROM (
               SELECT
+                CASE WHEN 
+                  company_name IS NULL OR TRIM(company_name) = ''
+                THEN
                   TRIM(concat_ws(' ', 
                                  prefix,
                                  first_name,
                                  middle_name,
                                  last_name,
-                                 suffix)) AS full_name,
-                id
+                                 suffix))
+                ELSE
+                  company_name
+                END AS full_name, id
               FROM camp_fin_contact
             ) AS s
             WHERE camp_fin_contact.id = s.id
