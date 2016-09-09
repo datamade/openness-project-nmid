@@ -60,9 +60,9 @@
                     <tr>
                         <td>Recipient</td>
                         {% if entity_type == 'candidate' %}
-                            <td><a href="{% url 'candidate-detail' entity.id %}">{{ entity.full_name }}</a></td>
+                            <td><a href="{% url 'candidate-detail' entity.slug %}">{{ entity.full_name }}</a></td>
                         {% else %}
-                            <td><a href="{% url 'committee-detail' entity.id %}">{{ entity.full_name }}</a></td>
+                            <td><a href="{% url 'committee-detail' entity.slug %}">{{ entity.full_name }}</a></td>
                         {% endif %}
                     </tr>
                     {% if office %}
@@ -73,7 +73,7 @@
                     {% endif %}
                     <tr>
                         <td>Address</td>
-                        <td>{{ entity.address }} (placeholder until we get actual addresses)</td>
+                        <td>{{ entity.address }}</td>
                     </tr>
                 </tbody>
             </table>
