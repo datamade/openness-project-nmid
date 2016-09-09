@@ -11,6 +11,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.utils.text import slugify
 
+from nmid.typeinferer import TypeInferer
 from .table_mappers import CANDIDATE, PAC, FILING, FILING_PERIOD, CONTRIB_EXP, \
     CONTRIB_EXP_TYPE, CAMPAIGN, OFFICE_TYPE, OFFICE, CAMPAIGN_STATUS, COUNTY, \
     DISTRICT, ELECTION_SEASON, ENTITY, ENTITY_TYPE, FILING_TYPE, LOAN, \
