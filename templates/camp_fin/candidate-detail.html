@@ -66,7 +66,7 @@
                         <tr>
                             <td>{{ campaign.office.description }}</td>
                             <td>{{ campaign.committee_name|default_if_none:"" }}</td>
-                            <td>{{ campaign.election_season_id }}</td>
+                            <td>{{ campaign.election_season.year }}</td>
                             <td>{{ campaign.primary_election_winner_status|default_if_none:"" }}</td>
                             <td>{{ campaign.general_election_winner_status|default_if_none:"" }}</td>
                         </tr>
@@ -217,6 +217,7 @@
         <table class="table table-striped">
             <thead>
                 <tr>
+                    <th>Rank</th>
                     <% if(transaction_type == 'top-donors'){ %>
                         <th>Donor</th>
                         <th>Total donated</th>
@@ -224,7 +225,7 @@
                         <th>Recipient</th>
                         <th>Total received</th>
                     <% } %>
-                    <th>Latest date</th>
+                    <th>Election year</th>
                 </tr>
             </thead>
             <tbody>
@@ -235,6 +236,7 @@
                         <% var full_name = getPersonName(transaction) %>
                     <% }%>
                     <tr>
+                        <td><%= transaction.rank %></td>
                         <td>
                             <a href='/search/?term=<%= full_name %>'>
                                 <%= full_name %>
@@ -243,9 +245,7 @@
                         <td class='nowrap'>
                             <%= accounting.formatMoney(transaction.amount) %>
                         </td>
-                        <td class='nowrap'>
-                            <%= moment(transaction.last_date).format('MMM DD, YYYY') %>
-                        </td>
+                        <td><%= transaction.year %></td>
                     </tr>
                 <% }) %>
             </tbody>

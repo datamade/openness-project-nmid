@@ -90,29 +90,47 @@ class TopMoneyView(viewsets.ViewSet):
         cursor = connection.cursor()
         
         query = ''' 
-            SELECT
-              SUM(amount) AS amount,
-              MAX(received_date) AS last_date,
-              name_prefix,
-              first_name,
-              middle_name,
-              last_name,
-              suffix,
-              company_name
-            FROM camp_fin_transaction AS transaction
-            JOIN camp_fin_transactiontype AS type
-              ON transaction.transaction_type_id = type.id
-            WHERE type.contribution = %s
-            GROUP BY 
-              name_prefix,
-              first_name,
-              middle_name,
-              last_name,
-              suffix,
-              company_name
-            HAVING(MAX(received_date) >= '01-01-2010')
-            ORDER BY amount DESC
-            LIMIT 100
+            SELECT * FROM (
+              SELECT 
+                DENSE_RANK() 
+                  OVER (
+                    PARTITION BY year 
+                    ORDER BY amount DESC
+                  ) AS rank, *
+              FROM (
+                SELECT 
+                  SUM(transaction.amount) AS amount, 
+                  transaction.name_prefix, 
+                  transaction.first_name, 
+                  transaction.middle_name, 
+                  transaction.last_name,
+                  transaction.suffix,
+                  transaction.company_name,
+                  election_season.year 
+                FROM camp_fin_transaction AS transaction 
+                JOIN camp_fin_transactiontype AS tt 
+                  ON transaction.transaction_type_id = tt.id 
+                JOIN camp_fin_filing AS f 
+                  ON transaction.filing_id = f.id 
+                JOIN camp_fin_campaign AS c 
+                  ON f.campaign_id = c.id 
+                JOIN camp_fin_electionseason AS election_season
+                  ON c.election_season_id = election_season.id
+                WHERE tt.contribution = %s 
+                  AND year >= '2010' 
+                GROUP BY 
+                  transaction.name_prefix, 
+                  transaction.first_name, 
+                  transaction.middle_name, 
+                  transaction.last_name,
+                  transaction.suffix,
+                  transaction.company_name,
+                  year 
+                ORDER BY SUM(amount) DESC
+              ) AS ranked_list 
+              ORDER BY year DESC, amount DESC
+            ) AS election_groups 
+            WHERE rank < 11
         '''
         
         cursor.execute(query, [self.contribution])
@@ -130,52 +148,53 @@ class TopMoneyView(viewsets.ViewSet):
         cursor = connection.cursor()
         
         query = ''' 
-            SELECT
-              SUM(amount) AS amount,
-              MAX(received_date) AS last_date,
-              name_prefix,
-              first_name,
-              middle_name,
-              last_name,
-              suffix,
-              company_name
-            FROM camp_fin_transaction AS transaction
-            JOIN camp_fin_transactiontype AS type
-              ON transaction.transaction_type_id = type.id
-            JOIN camp_fin_filing AS filing
-              ON transaction.filing_id = filing.id
-            JOIN camp_fin_entity AS entity
-              ON filing.entity_id = entity.id
-            WHERE type.contribution = %s
-              AND entity.id = %s
-            GROUP BY 
-              name_prefix,
-              first_name,
-              middle_name,
-              last_name,
-              suffix,
-              company_name
-            HAVING(MAX(received_date) >= '01-01-2010')
-            ORDER BY amount DESC
-            LIMIT 25
+            SELECT * FROM (
+              SELECT 
+                DENSE_RANK() 
+                  OVER (
+                    PARTITION BY year 
+                    ORDER BY amount DESC
+                  ) AS rank, *
+              FROM (
+                SELECT 
+                  SUM(transaction.amount) AS amount, 
+                  transaction.name_prefix, 
+                  transaction.first_name, 
+                  transaction.middle_name, 
+                  transaction.last_name,
+                  transaction.suffix,
+                  transaction.company_name,
+                  election_season.year 
+                FROM camp_fin_transaction AS transaction 
+                JOIN camp_fin_transactiontype AS tt 
+                  ON transaction.transaction_type_id = tt.id 
+                JOIN camp_fin_filing AS f 
+                  ON transaction.filing_id = f.id 
+                JOIN camp_fin_campaign AS c 
+                  ON f.campaign_id = c.id 
+                JOIN camp_fin_candidate as candidate
+                  ON c.candidate_id = candidate.id
+                JOIN camp_fin_electionseason AS election_season
+                  ON c.election_season_id = election_season.id
+                WHERE tt.contribution = %s 
+                  AND candidate.id = %s
+                  AND transaction.received_date >= '2010-01-01' 
+                GROUP BY 
+                  transaction.name_prefix, 
+                  transaction.first_name, 
+                  transaction.middle_name, 
+                  transaction.last_name,
+                  transaction.suffix,
+                  transaction.company_name,
+                  election_season.year 
+                ORDER BY SUM(amount) DESC
+              ) AS ranked_list 
+              ORDER BY year DESC, amount DESC
+            ) AS election_groups 
+            WHERE rank < 11
         '''
         
-        entity_type = self.request.query_params.get('entity_type', 'candidate')
-        
-        # TODO: Return 404 if the thing is not found
-        if entity_type == 'candidate':
-            candidate = Candidate.objects.get(id=pk)
-            entity_id = candidate.entity_id
-        elif entity_type == 'pac':
-            pac = PAC.objects.get(id=pk)
-            entity_id = pac.entity_id
-        
-        else:
-            return Response({'error': 'object not found'}, status=404)
-
-
-
-        cursor.execute(query, [self.contribution, entity_id])
+        cursor.execute(query, [self.contribution, pk])
         
         columns = [c[0] for c in cursor.description]
         transaction_tuple = namedtuple('Transaction', columns)
