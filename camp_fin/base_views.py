@@ -99,7 +99,8 @@ class TopMoneyView(viewsets.ViewSet):
                   ) AS rank, *
               FROM (
                 SELECT 
-                  SUM(transaction.amount) AS amount, 
+                  SUM(transaction.amount) AS amount,
+                  NULL AS latest_date,
                   transaction.name_prefix, 
                   transaction.first_name, 
                   transaction.middle_name, 
@@ -133,6 +134,44 @@ class TopMoneyView(viewsets.ViewSet):
             WHERE rank < 11
         '''
         
+        if self.request.GET.get('entity_type') == 'pac':
+            query = ''' 
+                SELECT *, NULL AS year FROM (
+                  SELECT 
+                    DENSE_RANK() 
+                      OVER (
+                        ORDER BY amount DESC
+                      ) AS rank, *
+                  FROM (
+                    SELECT 
+                      SUM(transaction.amount) AS amount, 
+                      MAX(transaction.received_date) AS latest_date,
+                      transaction.name_prefix, 
+                      transaction.first_name, 
+                      transaction.middle_name, 
+                      transaction.last_name,
+                      transaction.suffix,
+                      transaction.company_name
+                    FROM camp_fin_transaction AS transaction 
+                    JOIN camp_fin_transactiontype AS tt 
+                      ON transaction.transaction_type_id = tt.id 
+                    JOIN camp_fin_filing AS f 
+                      ON transaction.filing_id = f.id 
+                    WHERE tt.contribution = %s 
+                    GROUP BY 
+                      transaction.name_prefix, 
+                      transaction.first_name, 
+                      transaction.middle_name, 
+                      transaction.last_name,
+                      transaction.suffix,
+                      transaction.company_name
+                    ORDER BY SUM(amount) DESC
+                  ) AS ranked_list 
+                  ORDER BY amount DESC
+                ) AS election_groups 
+                WHERE rank < 11
+            '''
+
         cursor.execute(query, [self.contribution])
         
         columns = [c[0] for c in cursor.description]
@@ -158,6 +197,7 @@ class TopMoneyView(viewsets.ViewSet):
               FROM (
                 SELECT 
                   SUM(transaction.amount) AS amount, 
+                  NULL AS latest_date,
                   transaction.name_prefix, 
                   transaction.first_name, 
                   transaction.middle_name, 
@@ -193,6 +233,46 @@ class TopMoneyView(viewsets.ViewSet):
             ) AS election_groups 
             WHERE rank < 11
         '''
+        if self.request.GET.get('entity_type') == 'pac':
+            query = ''' 
+                SELECT *, NULL AS year FROM (
+                  SELECT 
+                    DENSE_RANK() 
+                      OVER (
+                        ORDER BY amount DESC
+                      ) AS rank, *
+                  FROM (
+                    SELECT 
+                      SUM(transaction.amount) AS amount, 
+                      MAX(transaction.received_date) AS latest_date,
+                      transaction.name_prefix, 
+                      transaction.first_name, 
+                      transaction.middle_name, 
+                      transaction.last_name,
+                      transaction.suffix,
+                      transaction.company_name
+                    FROM camp_fin_transaction AS transaction 
+                    JOIN camp_fin_transactiontype AS tt 
+                      ON transaction.transaction_type_id = tt.id 
+                    JOIN camp_fin_filing AS f 
+                      ON transaction.filing_id = f.id 
+                    JOIN camp_fin_pac AS pac
+                      ON f.entity_id = pac.entity_id
+                    WHERE tt.contribution = %s 
+                      AND pac.id = %s
+                    GROUP BY 
+                      transaction.name_prefix, 
+                      transaction.first_name, 
+                      transaction.middle_name, 
+                      transaction.last_name,
+                      transaction.suffix,
+                      transaction.company_name
+                    ORDER BY SUM(amount) DESC
+                  ) AS ranked_list 
+                  ORDER BY amount DESC
+                ) AS election_groups 
+                WHERE rank < 11
+            '''
         
         cursor.execute(query, [self.contribution, pk])
         

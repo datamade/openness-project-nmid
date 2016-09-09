@@ -169,3 +169,4 @@ class TopMoneySerializer(serializers.Serializer):
     amount = serializers.CharField()
     year = serializers.CharField()
     rank = serializers.CharField()
+    latest_date = serializers.DateTimeField()
