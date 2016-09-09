@@ -1,55 +1,101 @@
 {% extends 'base.html' %}
+{% load staticfiles %}
 {% load bootstrap_pagination %}
+{% load humanize %}
 {% load helpers %}
+{% block extra_css %}<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">{% endblock %}
 {% block title %}Donations{% endblock %}
 
 {% block full_content %}
 <div class="container">
     <div class="row">
+        <div class="col-md-6">
+          <h1><i class='fa fa-fw fa-dollar'></i> Donations</h1>
+        </div>
+        <div class="col-md-6">
+            <form action='/donations' method='GET' class='col-sm-12'>
+              <div class="input-group" id="date-search">
+                  <span class="input-group-addon" id="sizing-addon3"><i class="fa fa-calendar" aria-hidden="true"></i></span>
+                  <input type="text" id="from" name="from" class="form-control date-filter" placeholder="Select start date..." value='{{ start_date|date:"Y-m-d" }}'>
+                  <input type="text" id="to" name="to" class="form-control date-filter" placeholder="Select end date..." value='{{ end_date|date:"Y-m-d" }}'>
+                  <span class="input-group-btn">
+                      <button class="btn btn-default btn-date" id="btn-search" type="submit"><i class="fa fa-search" aria-hidden="true"></i> Search</button>
+                  </span>
+              </div>
+            </form>
+        </div>
         <div class="col-md-12">
-            <h1><i class='fa fa-fw fa-dollar'></i> Donations</h1>
-
-            <table class="table table-striped" id="candidate-list">
+          <h4><strong>{{ donation_count|intcomma }}</strong> donations from <strong>{{ start_date|date:'F j, Y'}}</strong> to <strong>{{ end_date|date:'F j, Y'}}</strong> totaling <strong>{{ donation_sum|format_money }}</strong></h4>
+        </div>
+        <div class="col-md-12">
+            <table class="table table-striped" id="donations-list">
                 <thead>
                     <tr>
+                        <th class="no-wrap">
+                            <a href="{% url 'donations' %}?{% query_transform request order_by='rank' sort_order=toggle_order %}">
+                            Rank
+                            {% if order_by == 'rank' %}
+                                {{ sort_order|get_sort_icon|safe }}
+                            {% endif %}
+                        </th>
                         <th>
+                            <a href="{% url 'donations' %}?{% query_transform request order_by='full_name' sort_order=toggle_order %}">
                             Donor
+                            {% if order_by == 'full_name' %}
+                                {{ sort_order|get_sort_icon|safe }}
+                            {% endif %}
                         </th>
 
                         <th>
-                            Amount
+                            <a href="{% url 'donations' %}?{% query_transform request order_by='amount' sort_order=toggle_order %}">
+                              Amount
+                            </a>
+                            {% if order_by == 'amount' %}
+                                {{ sort_order|get_sort_icon|safe }}
+                            {% endif %}
                         </th>
                         <th>
                             Recipient
                         </th>
                         <th>
+                            <a href="{% url 'donations' %}?{% query_transform request order_by='received_date' sort_order=toggle_order %}">
                             Date
-                            {{ sort_order|get_sort_icon|safe }}
+                            </a>
+                            {% if order_by == 'received_date' %}
+                                {{ sort_order|get_sort_icon|safe }}
+                            {% endif %}
                         </th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for transaction in object_list %}
-                    <tr>
-                        <td>
-                            {{ transaction.full_name }}
-                        </td>
-                        <td>
-                            {{transaction.transaction_type|get_transaction_verb }} <strong>{{ transaction.amount|format_money }}</strong> to
-                        </td>
-                        <td>
-                            {% if transaction.pac_slug %}
-                              <a href="{% url 'committee-detail' transaction.pac_slug %}">{{ transaction.transaction_subject }}</a>
-                            {% endif %}
-                            {% if transaction.candidate_slug %}
-                              <a href="{% url 'candidate-detail' transaction.candidate_slug %}">{{ transaction.transaction_subject }}</a>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {{ transaction.received_date|date:"M d, Y" }}
-                        </td>
-                    </tr>
-                    {% endfor %}
+                    {% if object_list %}
+                        {% for transaction in object_list %}
+                        <tr>
+                            <td>
+                                {{ transaction.rank }}
+                            </td>
+                            <td>
+                                {{ transaction.full_name }}
+                            </td>
+                            <td class="no-wrap">
+                                {{transaction.transaction_type|get_transaction_verb }} <strong>{{ transaction.amount|format_money }}</strong> to
+                            </td>
+                            <td>
+                                {% if transaction.pac_slug %}
+                                  <a href="{% url 'committee-detail' transaction.pac_slug %}">{{ transaction.transaction_subject }}</a>
+                                {% endif %}
+                                {% if transaction.candidate_slug %}
+                                  <a href="{% url 'candidate-detail' transaction.candidate_slug %}">{{ transaction.transaction_subject }}</a>
+                                {% endif %}
+                            </td>
+                            <td class="no-wrap">
+                                {{ transaction.received_date|date:"M j, Y" }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td>No results. Considering broadening your search.</td></tr>
+                    {% endif %}
                 </tbody>
             </table>
             {% bootstrap_paginate object_list range=10 %}
@@ -57,4 +103,55 @@
     </div>
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>
+    <script src="{% static 'js/jquery.dataTables.min.js' %}"></script>
+    <script type="text/javascript">
+    $(document).ready(function(){
+      var dateFormat = "mm/dd/yy",
+      from = $( "#from" )
+        .datepicker({
+            dayNamesMin: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+            prevText: '',
+            nextText: '',
+            dateFormat: "yy-mm-dd",
+            maxDate: new Date(),
+            minDate: new Date( 1994, 0, 1)
+        })
+        .on( "change", function() {
+          to.datepicker( "option", "minDate", getDate( this ) );
+        }),
+      to = $( "#to" ).datepicker({
+            dayNamesMin: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+            prevText: '',
+            nextText: '',
+            dateFormat: "yy-mm-dd",
+            maxDate: new Date(),
+            minDate: new Date( 1994, 0, 1)
+      })
+      .on( "change", function() {
+        from.datepicker( "option", "maxDate", getDate( this ) );
+      });
+
+    function getDate( element ) {
+      var date;
+      try {
+        date = $.datepicker.parseDate( dateFormat, element.value );
+      } catch( error ) {
+        date = null;
+      }
+
+      return date;
+    }
+    });
+
+    // $('#donations-list').DataTable( {
+    //   "order": [[ 4, "asc" ]],
+    //   "info": false,
+    //   "bFilter": false
+    // });
+    </script>
 {% endblock %}
