@@ -1,25 +1,33 @@
 {% extends 'base.html' %}
+{% load staticfiles %}
 {% load bootstrap_pagination %}
+{% load humanize %}
 {% load helpers %}
+{% block extra_css %}<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">{% endblock %}
 {% block title %}Donations{% endblock %}
 
 {% block full_content %}
 <div class="container">
     <div class="row">
-        <div class="col-md-6"><h1><i class='fa fa-fw fa-dollar'></i> Donations</h1></div>
+        <div class="col-md-6">
+          <h1><i class='fa fa-fw fa-dollar'></i> Donations</h1>
+        </div>
         <div class="col-md-6">
             <form action='/donations' method='GET' class='col-sm-12'>
-                <div class="input-group input-group-xs">
-                    <input type="text" id="from" name="from" class="form-control date-filter" placeholder="Select start date..." value='{{ start_date|date:"Y-d-d" }}'>
-                    <input type="text" id="to" name="to" class="form-control date-filter" placeholder="Select end date..." value='{{ end_date|date:"Y-m-d" }}'>
-                    <span class="input-group-btn">
-                        <button class="btn btn-default btn-date" type="submit"><i class="fa fa-search" aria-hidden="true"></i> Search</button>
-                    </span>
-                </div>
+              <div class="input-group" id="date-search">
+                  <input type="text" id="from" name="from" class="form-control date-filter" placeholder="Select start date..." value='{{ start_date|date:"Y-m-d" }}'>
+                  <input type="text" id="to" name="to" class="form-control date-filter" placeholder="Select end date..." value='{{ end_date|date:"Y-m-d" }}'>
+                  <span class="input-group-btn">
+                      <button class="btn btn-default btn-date" type="submit"><i class="fa fa-search" aria-hidden="true"></i> Search</button>
+                  </span>
+              </div>
             </form>
         </div>
         <div class="col-md-12">
-            <table class="table table-striped" id="candidate-list">
+          <h4>{{ donation_count|intcomma }} donations from {{ start_date|date:'F j, Y'}} to {{ end_date|date:'F j, Y'}}</h4>
+        </div>
+        <div class="col-md-12">
+            <table class="table table-striped" id="donations-list">
                 <thead>
                     <tr>
                         <th>
@@ -37,7 +45,6 @@
                         </th>
                         <th>
                             Date
-                            {{ sort_order|get_sort_icon|safe }}
                         </th>
                     </tr>
                 </thead>
@@ -82,6 +89,7 @@
 {% block extra_js %}
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
     <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>
+    <script src="{% static 'js/jquery.dataTables.min.js' %}"></script>
     <script type="text/javascript">
     $(document).ready(function(){
       var dateFormat = "mm/dd/yy",
@@ -119,6 +127,13 @@
 
       return date;
     }
+    });
+
+    $('#donations-list').DataTable( {
+      "order": [[ 4, "desc" ]],
+      "paging": false,
+      "info": false,
+      "bFilter": false
     });
     </script>
 {% endblock %}

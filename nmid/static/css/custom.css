@@ -105,26 +105,15 @@ th a { color: #333333; }
     width: 0;
 }
 
-/*.input-group { margin-top: 34px; }
-
-.input-group .form-control {
-  width: 13em;
-  height: 2em;
-  font-size: 12px;
-  margin-right: 1em;
-  font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
-}*/
-
-.date-filter {
-  float: right;
+#date-search .form-control {
+  width: 45%;
+  margin: 2%;
 }
 
-/*.input-group .form-control:last-child, .input-group-addon:last-child, .input-group-btn:last-child>.btn, .input-group-btn:last-child>.btn-group>.btn, .input-group-btn:last-child>.dropdown-toggle, .input-group-btn:first-child>.btn:not(:first-child), .input-group-btn:first-child>.btn-group:not(:first-child)>.btn {
-  border-radius: 12px;
-  float: right;
-  margin-top: -0.5em;
-  font-size: 12px;
-  font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
-}*/
+table#donations-list thead th, table#donations-list thead td {
+  border-bottom: 1px solid #dddddd;
+}
+
+table#donations-list.no-footer { border-bottom: 0px; }
 
 .no-wrap { white-space: nowrap; }
