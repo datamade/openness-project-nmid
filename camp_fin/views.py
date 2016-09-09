@@ -7,6 +7,7 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.http import HttpResponseNotFound
 from django.db import transaction, connection
 from django.utils import timezone
+from django.core.urlresolvers import reverse_lazy
 
 from rest_framework import serializers, viewsets, filters, generics, metadata
 from rest_framework.response import Response
@@ -17,7 +18,7 @@ from .base_views import PaginatedList, TransactionDetail, TransactionBaseViewSet
     TopMoneyView
 from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer, \
     TransactionSearchSerializer, CandidateSearchSerializer, PACSearchSerializer, \
-    LoanTransactionSerializer
+    LoanTransactionSerializer, TreasurerSearchSerializer
 
 TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
 
@@ -311,16 +312,14 @@ class CandidateList(PaginatedList):
 
         return context
 
-class CandidateDetail(DetailView):
-    template_name = "camp_fin/candidate-detail.html"
-    model = Candidate
-
+class CommitteeDetailBaseView(DetailView):
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        all_filings = context['candidate'].entity.filing_set\
-                                          .filter(date_added__gte=TWENTY_TEN)\
-                                          .order_by('filing_period__filing_date')
+        all_filings = context['object'].entity.filing_set\
+                                       .filter(date_added__gte=TWENTY_TEN)\
+                                       .order_by('filing_period__filing_date')
 
 
         balance_trend = [[ f.closing_balance,
@@ -340,13 +339,22 @@ class CandidateDetail(DetailView):
                            f.filing_period.filing_date.month,
                            f.filing_period.filing_date.day]
                            for f in all_filings]
-
+    
         context['latest_filing'] = all_filings.last()
         context['balance_trend'] = balance_trend
         context['donation_trend'] = donation_trend
         context['expend_trend'] = expend_trend
-
+    
         return context
+
+
+class CandidateDetail(CommitteeDetailBaseView):
+    template_name = "camp_fin/candidate-detail.html"
+    model = Candidate
+    
+class CommitteeDetail(CommitteeDetailBaseView):
+    template_name = "camp_fin/committee-detail.html"
+    model = PAC
 
 class CommitteeList(PaginatedList):
     template_name = 'camp_fin/committee-list.html'
@@ -394,21 +402,6 @@ class CommitteeList(PaginatedList):
 
         return context
 
-class CommitteeDetail(DetailView):
-    template_name = "camp_fin/committee-detail.html"
-    model = PAC
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        latest_filing = context['pac'].entity.filing_set\
-                                             .filter(date_added__gte=TWENTY_TEN)\
-                                             .order_by('-filing_period__filing_date')\
-                                             .first()
-
-        context['latest_filing'] = latest_filing
-
-        return context
 
 
 class ContributionDetail(TransactionDetail):
@@ -449,6 +442,7 @@ SERIALIZER_LOOKUP = {
     'pac': PACSearchSerializer,
     'contribution': TransactionSearchSerializer,
     'expenditure': TransactionSearchSerializer,
+    'treasurer': TreasurerSearchSerializer,
 }
 
 class SearchAPIView(viewsets.ViewSet):
@@ -464,7 +458,8 @@ class SearchAPIView(viewsets.ViewSet):
                 'candidate',
                 'pac',
                 'contribution',
-                'expenditure'
+                'expenditure',
+                'treasurer',
             ]
 
         response = {}
@@ -531,6 +526,42 @@ class SearchAPIView(viewsets.ViewSet):
                       AND tt.contribution = FALSE
                       AND filing.date_added >= '01-01-2010'
                 '''
+            
+            elif table == 'treasurer':
+                query = ''' 
+                    SELECT 
+                      t.full_name,
+                      a.street,
+                      a.city,
+                      s.postal_code AS state,
+                      a.zipcode,
+                      CASE WHEN 
+                        p.name = '' OR p.name IS NULL
+                      THEN
+                        d.full_name
+                      ELSE
+                        p.name
+                      END AS related_entity_name,
+                      CASE WHEN
+                        p.id IS NULL
+                      THEN
+                        '{0}' || d.slug || '/'
+                      ELSE
+                        '{1}' || p.slug || '/'
+                      END AS related_entity_url
+                    FROM camp_fin_treasurer AS t
+                    JOIN camp_fin_address AS a
+                      ON t.address_id = a.id
+                    JOIN camp_fin_state AS s
+                      ON a.state_id = s.id
+                    LEFT JOIN camp_fin_campaign AS m
+                      ON t.id = m.treasurer_id
+                    LEFT JOIN camp_fin_candidate AS d
+                      ON m.candidate_id = d.id
+                    LEFT JOIN camp_fin_pac AS p
+                      ON t.id = p.treasurer_id
+                    WHERE t.search_name @@ plainto_tsquery('english', %s)
+                '''.format(reverse_lazy('candidate-list'), reverse_lazy('committee-list'))
 
             serializer = SERIALIZER_LOOKUP[table]
 

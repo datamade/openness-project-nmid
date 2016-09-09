@@ -225,6 +225,11 @@ FILING_TYPE = OrderedDict([
     ("description",{'field': 'description', 'data_type': 'varchar'}),
 ])
 
+STATE = OrderedDict([
+    ("id",{'field': 'id', 'data_type': 'bigint'}),
+    ("postal_code",{'field': 'postal_code', 'data_type': 'varchar'}),
+])
+
 LOAN = OrderedDict([
     ("loanid",{'field': 'id', 'data_type': 'bigint'}),
     ("contactid",{'field': 'contact_id', 'data_type': 'bigint'}),

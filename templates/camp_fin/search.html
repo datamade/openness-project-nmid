@@ -33,6 +33,9 @@
                             <label data-title='Expenditures' data-content='Any person or organization who was given money by a political committee'>
                                 <input type="checkbox" name="table_name" value="expenditure" {% if 'expenditure' in table_name %}checked='checked'{% endif %}> Expenditures by committees
                             </label>
+                            <label data-title='Treasurers' data-content='Treasurers for political organizations'>
+                                <input type="checkbox" name="table_name" value="treasurer" {% if 'treasurer' in table_name %}checked='checked'{% endif %}> Committee treasurers
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -125,6 +128,44 @@
                         <a href="/candidates/<%= row.slug %>/">
                             <%= row.prefix %> <%= row.first_name %> <%= row.middle_name %><%= row.last_name %><%= row.suffix %>
                         </a>
+                    </td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+</script>
+<script type="text/EJS" id="treasurer-template">
+    <h3>Treasurers</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Address</th>
+                <th>PAC or candidate</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% $.each(rows, function(i, row){ %>
+                <tr>
+                    <td>
+                        <%= row.full_name %>
+                    </td>
+                    <td>
+                        <% if (row.street){ %>
+                            <%= row.street %>&nbsp;
+                        <% } %>
+                        <% if (row.city){ %>
+                            <%= row.city %>,&nbsp;
+                        <% } %>
+                        <% if (row.state){ %>
+                            <%= row.state %>&nbsp;
+                        <% } %>
+                        <% if (row.zipcode){ %>
+                            <%= row.zipcode %>
+                        <% } %>
+                    </td>
+                    <td>
+                        <a href="<%= row.related_entity_url %>"><%= row.related_entity_name %></a>
                     </td>
                 </tr>
             <% }) %>

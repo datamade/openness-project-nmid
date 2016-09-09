@@ -7,44 +7,121 @@
     <p><a href='/committees'>&laquo; Committees</a></p>
     <h1>{{ pac.name }}</h1>
 {% endblock %}
+{% block charts %}
+    <h3>Net funds over time</h3>
+    <div id='net-funds-chart'></div>
+
+    <h3>Donations and expenditures over time</h3>
+    <div id='expend-chart'></div>
+{% endblock %}
 
 {% block contact %}
-    <div class='col-sm-4 col-sm-offset-2'>
-        <h4>Contact information</h4>
-        <table class="table table-striped">
-            <tbody>
-            {% if pac.business_phone %}
-                <tr>
-                    <td>
-                        <i class="fa fa-fw fa-phone" aria-hidden="true"></i>
-                        {{ pac.business_phone}}
-                    </td>
-                </tr>
-            {% endif %}
-            {% if pac.home_phone %}
-                <tr>
-                    <td>
-                        <i class="fa fa-fw fa-phone" aria-hidden="true"></i>
-                        {{ pac.home_phone }}
-                    </td>
-                </tr>
-            {% endif %}
-            {% if pac.email %}
-                <tr>
-                    <td>
-                        <i class="fa fa-fw fa-envelope-o" aria-hidden="true"></i> <a href='mailto:{{pac.email}}'>{{ pac.email }}</a>
-                    </td>
-                </tr>
-            {% endif %}
-            </tbody>
-        </table>
+    <div class="col-sm-5 col-sm-offset-1">
+        <div class="well">
+            <h4>Contact information</h4>
+            <table class="table table-condensed">
+                <tbody>
+                    <tr>
+                        <td>
+                            Phone
+                        </td>
+                        <td>{{ pac.contact.phone|default:pac.business_phone|default:pac.home_phone }}</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Email
+                        </td>
+                        <td>
+                            <a href="mailto:{{ pac.contact.email|default:pac.email }}">
+                                {{ pac.contact.email|default:pac.email }}
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Address
+                        </td>
+                        <td>
+                            {{ pac.contact.address|default:pac.address }}
+                        </td>
+                    </tr>
+                    {% if pac.contact.occupation %}
+                        <tr>
+                            <td>
+                                Occupation
+                            </td>
+                            <td>
+                                {{ pac.contact.occupation }}
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            <h4>Treasurer</h4>
+            <table class="table table-condensed">
+                <tbody>
+                    {% if pac.treasurer.full_name %}
+                    <tr>
+                        <td>
+                            Name
+                        </td>
+                        <td>
+                            <a href="{% url 'search' %}?term={{ pac.treasurer.full_name }}">
+                                {{ pac.treasurer.full_name}}
+                            </a>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% if pac.treasurer.business_phone %}
+                    <tr>
+                        <td>
+                            Phone
+                        </td>
+                        <td>{{ pac.treasurer.business_phone }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if pac.treasurer.alt_phone %}
+                    <tr>
+                        <td>
+                            Alternantive Phone
+                        </td>
+                        <td>{{ pac.treasurer.alt_phone }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if pac.treasurer.email %}
+                    <tr>
+                        <td>
+                            Email
+                        </td>
+                        <td>
+                            <a href="mailto:{{ pac.treasurer.email }}">
+                                {{ pac.treasurer.email }}
+                            </a>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% if pac.treasurer.address %}
+                    <tr>
+                        <td>
+                            Address
+                        </td>
+                        <td>
+                            {{ pac.treasurer.address }}
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
     </div>
 {% endblock %}
 
 {% block extra_js %}
+    <script src="{% static 'js/highcharts.js' %}"></script>
     <script src="{% static 'js/ejs_production.js' %}"></script>
     <script src="{% static 'js/accounting.min.js' %}"></script>
     <script src="{% static 'js/moment.min.js' %}"></script>
+    <script src="{% static 'js/chart_helper.js' %}"></script>
     <script>
         function transaction_verb(transaction_type){
             var verbs = {
@@ -56,6 +133,37 @@
             }
             return verbs[transaction_type];
         }
+
+        //render net balance chart
+        var balance_trend = {{balance_trend}};
+        var balance_trend_f = [];
+
+        // format investments
+        for (i = 0; i < balance_trend.length; i++) {
+            balance_trend_f.push([Date.UTC(balance_trend[i][1],balance_trend[i][2]-1,balance_trend[i][3]), balance_trend[i][0]]);
+        }
+
+        ChartHelper.netfunds('net-funds-chart', 'Net funds over time', '', 'Funds', balance_trend_f);
+
+
+        //render donation/expenditure chart
+        var expend_trend = {{expend_trend}};
+        var expend_trend_f = [];
+
+        var donation_trend = {{donation_trend}};
+        var donation_trend_f = [];
+
+        // format donations
+        for (i = 0; i < donation_trend.length; i++) {
+            donation_trend_f.push([Date.UTC(donation_trend[i][1],donation_trend[i][2]-1,donation_trend[i][3]), donation_trend[i][0]]);
+        }
+
+        // format expenditures
+        for (i = 0; i < expend_trend.length; i++) {
+            expend_trend_f.push([Date.UTC(expend_trend[i][1],expend_trend[i][2]-1,expend_trend[i][3]), expend_trend[i][0]]);
+        }
+
+        ChartHelper.donation_expenditure('expend-chart', 'Donations and expenditures over time', '', 'Money', [donation_trend_f, expend_trend_f]);
     </script>
     <script type="text/EJS" id="transaction-table-guts">
 
@@ -69,6 +177,7 @@
                     <% } %>
                     <th class="text-right nowrap">Amount</th>
                     <th>Date</th>
+                    <th>Description</th>
                 </tr>
             </thead>
             <tbody>
@@ -105,6 +214,7 @@
                         <td class='nowrap'>
                             on <%= moment(transaction.received_date).format('MMMM DD, YYYY') %>
                         </td>
+                        <td><%= transaction.description %></td>
                     </tr>
                 <% }) %>
             </tbody>
