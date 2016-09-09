@@ -133,76 +133,99 @@ class DonationsView(PaginatedList):
     template_name = 'camp_fin/donations.html'
 
     def get_queryset(self, **kwargs):
-        cursor = connection.cursor()
+        with connection.cursor() as cursor:
+            today = datetime.now().date()
 
-        query = '''
-        SELECT * FROM (
-            SELECT
-                DENSE_RANK() OVER (ORDER BY amount DESC) AS rank,
-                o.*,
-                tt.description AS transaction_type,
-                CASE WHEN
-                  pac.name IS NULL OR TRIM(pac.name) = ''
-                THEN
-                  candidate.full_name
-                ELSE pac.name
-                END AS transaction_subject,
-                pac.slug AS pac_slug,
-                candidate.slug AS candidate_slug
-              FROM camp_fin_transaction AS o
-              JOIN camp_fin_transactiontype AS tt
-                ON o.transaction_type_id = tt.id
-              JOIN camp_fin_filing AS filing
-                ON o.filing_id = filing.id
-              JOIN camp_fin_entity AS entity
-                ON filing.entity_id = entity.id
-              LEFT JOIN camp_fin_pac AS pac
-                ON entity.id = pac.entity_id
-              LEFT JOIN camp_fin_candidate AS candidate
-                ON entity.id = candidate.entity_id
-              WHERE tt.contribution = TRUE
-              AND o.received_date BETWEEN %s and %s
-              ORDER BY o.received_date ASC
-          ) as z;
-        '''
+            count_query = '''
+            SELECT MAX(o.received_date)
+            FROM camp_fin_transaction AS o
+            JOIN camp_fin_transactiontype AS tt
+            ON o.transaction_type_id = tt.id
+            JOIN camp_fin_filing AS filing
+            ON o.filing_id = filing.id
+            WHERE tt.contribution = TRUE
+            AND o.received_date <= '$[today]';
+            '''
+            cursor.execute(count_query)
+            row = cursor.fetchone()
+            max_date = row[0].date()
 
-        days_donations = []
+            query = '''
+            SELECT * FROM (
+                SELECT
+                    DENSE_RANK() OVER (ORDER BY amount DESC) AS rank,
+                    o.*,
+                    tt.description AS transaction_type,
+                    CASE WHEN
+                      pac.name IS NULL OR TRIM(pac.name) = ''
+                    THEN
+                      candidate.full_name
+                    ELSE pac.name
+                    END AS transaction_subject,
+                    pac.slug AS pac_slug,
+                    candidate.slug AS candidate_slug
+                  FROM camp_fin_transaction AS o
+                  JOIN camp_fin_transactiontype AS tt
+                    ON o.transaction_type_id = tt.id
+                  JOIN camp_fin_filing AS filing
+                    ON o.filing_id = filing.id
+                  JOIN camp_fin_entity AS entity
+                    ON filing.entity_id = entity.id
+                  LEFT JOIN camp_fin_pac AS pac
+                    ON entity.id = pac.entity_id
+                  LEFT JOIN camp_fin_candidate AS candidate
+                    ON entity.id = candidate.entity_id
+                  WHERE tt.contribution = TRUE
+                  AND o.received_date BETWEEN %s and %s
+                  ORDER BY o.received_date ASC
+              ) as z;
+            '''
 
-        if ('from' in self.request.GET) and ('to' in self.request.GET):
-            start_date_str = self.request.GET.get('from')
-            self.start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() + timedelta(days=1)
+            days_donations = []
 
-            end_date_str = self.request.GET.get('to')
-            self.end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() + timedelta(days=2)
+            if ('from' in self.request.GET) and ('to' in self.request.GET):
+                start_date_str = self.request.GET.get('from')
+                self.start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() + timedelta(days=1)
 
-            cursor.execute(query, [self.start_date, self.end_date])
-            days_donations = list(cursor)
+                end_date_str = self.request.GET.get('to')
+                self.end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() + timedelta(days=2)
 
-            # Reset variables.
-            self.start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-            self.end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+                print(self.start_date)
+                print(self.end_date)
 
-        else:
-            self.end_date = datetime.now().date()
-            self.start_date = (self.end_date - timedelta(days=7))
-
-            while len(days_donations) == 0:
                 cursor.execute(query, [self.start_date, self.end_date])
                 days_donations = list(cursor)
 
-                self.end_date = self.end_date - timedelta(days=1)
-                self.start_date = self.end_date - timedelta(days=7)
+                # Reset variables.
+                self.start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                self.end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
 
-            self.end_date = self.start_date
+            else:
+                self.end_date = max_date + timedelta(days=2)
+                self.start_date = max_date + timedelta(days=1)
 
-        columns = [c[0] for c in cursor.description]
-        result_tuple = namedtuple('Transaction', columns)
-        donation_objects = [result_tuple(*r) for r in days_donations]
+                # Find dates for main query.
+                while len(days_donations) == 0:
+                    cursor.execute(count_query, [self.start_date, self.end_date])
+                    days_donations = list(cursor)
 
-        self.donation_count = len(donation_objects)
-        self.donation_sum = sum([d.amount for d in donation_objects])
+                    self.end_date = self.end_date - timedelta(days=1)
+                    self.start_date = self.start_date - timedelta(days=1)
 
-        return donation_objects
+                # Run main query.
+                cursor.execute(query, [self.start_date, self.end_date])
+                days_donations = list(cursor)
+
+                self.start_date = self.start_date - timedelta(days=1)
+                self.end_date = self.start_date
+
+            columns = [c[0] for c in cursor.description]
+            result_tuple = namedtuple('Transaction', columns)
+            donation_objects = [result_tuple(*r) for r in days_donations]
+
+            self.donation_count = len(donation_objects)
+            self.donation_sum = sum([d.amount for d in donation_objects])
+            return donation_objects
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
