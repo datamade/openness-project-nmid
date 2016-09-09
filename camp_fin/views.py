@@ -61,8 +61,6 @@ class IndexView(TemplateView):
             transaction_tuple = namedtuple('Transaction', columns)
             transaction_objects = [transaction_tuple(*r) for r in cursor]
 
-            self.order_by = self.request.GET.get('order_by', 'closing_balance')
-            self.sort_order = self.request.GET.get('sort_order', 'desc')
             cursor.execute('''
                 SELECT * FROM (
                   SELECT
@@ -79,16 +77,14 @@ class IndexView(TemplateView):
                     ORDER BY pac.id, filing.date_added desc
                   ) AS pac
                 ) AS s
-                ORDER BY {0} {1}
+                ORDER BY closing_balance DESC
                 LIMIT 10
-            '''.format(self.order_by, self.sort_order))
+            ''')
 
             columns = [c[0] for c in cursor.description]
             pac_tuple = namedtuple('PAC', columns)
             pac_objects = [pac_tuple(*r) for r in cursor]
 
-            self.order_by = self.request.GET.get('order_by', 'closing_balance')
-            self.sort_order = self.request.GET.get('sort_order', 'desc')
             cursor.execute('''
                 SELECT * FROM (
                   SELECT
@@ -114,9 +110,8 @@ class IndexView(TemplateView):
                     ORDER BY candidate.id, filing.date_added DESC
                   ) AS candidates
                 ) AS s
-                ORDER BY {0} {1}
                 LIMIT 10
-            '''.format(self.order_by, self.sort_order))
+            ''')
 
             columns = [c[0] for c in cursor.description]
             candidate_tuple = namedtuple('Candidate', columns)
