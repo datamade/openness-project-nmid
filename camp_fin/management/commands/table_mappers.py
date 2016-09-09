@@ -323,3 +323,43 @@ TREASURER = OrderedDict([
     ('statusid', {'field': 'status_id', 'data_type': 'bigint'}),
     ('olddbentityid', {'field': 'olddb_entity_id', 'data_type': 'bigint'}),
 ])
+
+ADDRESS = OrderedDict([
+    ('addressid', {'field': 'id', 'data_type': 'bigint'}),
+    ("address",{'field': 'street', 'data_type': 'varchar'}),
+    ("city",{'field': 'city', 'data_type': 'varchar'}),
+    ("zip",{'field': 'zipcode', 'data_type': 'varchar'}),
+    ("stateid",{'field': 'state_id', 'data_type': 'bigint'}),
+    ("countyid",{'field': 'county_id', 'data_type': 'bigint'}),
+    ("country",{'field': 'country', 'data_type': 'varchar'}),
+    ("fromfileid", {'field': 'from_file_id', 'data_type': 'bigint'}),
+    ("addresstypeid", {'field': 'address_type_id', 'data_type': 'bigint'}),
+    ("olddbaddressid", {'field': 'olddb_id', 'data_type': 'bigint'}),
+    ("dateadded", {'field': 'date_added', 'data_type': 'timestamp with time zone'}),
+])
+
+CONTACT_TYPE = OrderedDict([
+    ("contacttypeid",{'field': 'id', 'data_type': 'bigint'}),
+    ("description",{'field': 'description', 'data_type': 'varchar'}),
+])
+
+CONTACT = OrderedDict([
+    ('contactid', {'field': 'id', 'data_type': 'bigint'}),
+    ('prefix', {'field': 'prefix', 'data_type': 'varchar'}),
+    ('firstname', {'field': 'first_name', 'data_type': 'varchar'}),
+    ('lastname', {'field': 'last_name', 'data_type': 'varchar'}),
+    ('middlename', {'field': 'middle_name', 'data_type': 'varchar'}),
+    ('suffix', {'field': 'suffix', 'data_type': 'varchar'}),
+    ('addressid', {'field': 'address_id', 'data_type': 'bigint'}),
+    ('phone', {'field': 'phone', 'data_type': 'varchar'}),
+    ('emailaccount', {'field': 'email', 'data_type': 'varchar'}),
+    ('memo', {'field': 'memo', 'data_type': 'text'}),
+    ('companyname', {'field': 'company_name', 'data_type': 'varchar'}),
+    ('contacttypeid', {'field': 'contact_type_id', 'data_type': 'bigint'}),
+    ('statusid', {'field': 'status_id', 'data_type': 'bigint'}),
+    ('oldcontactid', {'field': 'olddb_id', 'data_type': 'bigint'}),
+    ('entityid', {'field': 'entity_id', 'data_type': 'bigint'}),
+    ('fromfileid', {'field': 'from_file_id', 'data_type': 'bigint'}),
+    ('occupation', {'field': 'occupation', 'data_type': 'varchar'}),
+    
+])

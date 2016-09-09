@@ -159,7 +159,7 @@ class Transaction(models.Model):
     occupation = models.CharField(max_length=255, null=True)
     expenditure_for_certified_candidate = models.NullBooleanField()
     
-    full_name = models.CharField(max_length=500)
+    full_name = models.CharField(max_length=500, null=True)
 
     def __str__(self):
         return self.full_name
@@ -230,7 +230,7 @@ class Loan(models.Model):
     loan_transfer_date = models.DateTimeField(null=True)
     from_file_id = models.IntegerField(null=True)
     
-    full_name = models.CharField(max_length=500)
+    full_name = models.CharField(max_length=500, null=True)
 
     def __str__(self):
         return self.full_name
@@ -364,14 +364,19 @@ class FilingPeriod(models.Model):
 class Address(models.Model):
     street = models.CharField(null=True, max_length=100)
     city = models.CharField(null=True, max_length=50)
-    state = models.CharField(null=True, max_length=50)
-    zip_code = models.CharField(null=True, max_length=10)
+    state = models.ForeignKey('State', null=True, db_constraint=False)
+    zipcode = models.CharField(null=True, max_length=10)
+    county = models.ForeignKey('County', null=True, db_constraint=False)
+    country = models.CharField(max_length=50, null=True)
+    address_type = models.ForeignKey('AddressType', null=True, db_constraint=False)
+    olddb_id = models.IntegerField(null=True)
+    date_added = models.DateTimeField(null=True)
+    from_file_id = models.IntegerField(null=True)
 
     def __str__(self):
-        address = '{0}, {1}, {2}, {3}'.format(self.street,
-                                              self.city,
-                                              self.state,
-                                              self.zip_code)
+        address = '{0}, {1}, {2}'.format(self.street,
+                                         self.city,
+                                         self.zipcode)
         return address
 
 class CampaignStatus(models.Model):
@@ -430,11 +435,40 @@ class Treasurer(models.Model):
     status = models.ForeignKey('Status', db_constraint=False)
     olddb_entity_id = models.IntegerField(null=True)
 
-    full_name = models.CharField(max_length=500)
+    full_name = models.CharField(max_length=500, null=True)
     
     def __str__(self):
         return self.full_name
     
+class Contact(models.Model):
+    prefix = models.CharField(max_length=10, null=True)
+    first_name = models.CharField(max_length=50, null=True)
+    middle_name = models.CharField(max_length=50, null=True)
+    last_name = models.CharField(max_length=50, null=True)
+    suffix = models.CharField(max_length=10, null=True)
+    occupation = models.CharField(max_length=100, null=True)
+    address = models.ForeignKey('Address', db_constraint=False)
+    phone = models.CharField(max_length=30, null=True)
+    email = models.CharField(max_length=100, null=True)
+    memo = models.TextField(null=True)
+    company_name = models.CharField(max_length=255, null=True)
+    contact_type = models.ForeignKey('ContactType', db_constraint=False)
+    status = models.ForeignKey('Status', db_constraint=False)
+    olddb_id = models.IntegerField(null=True)
+    date_added = models.DateTimeField(null=True)
+    entity = models.ForeignKey('Entity', db_constraint=False)
+    from_file_id = models.IntegerField(null=True)
+
+    full_name = models.CharField(max_length=500, null=True)
+    
+    def __str__(self):
+        return self.full_name
+
+class ContactType(models.Model):
+    description = models.CharField(max_length=100)
+    
+    def __str__(self):
+        return self.description
 
 ######################################################################
 ### Below here are normalized tables that we may or may not end up ###
@@ -444,16 +478,11 @@ class Treasurer(models.Model):
 class RegularFilingPeriod(models.Model):
     pass
 
-
-
 class Status(models.Model):
     pass
 
-class Contact(models.Model):
+class State(models.Model):
     pass
 
-class ContactType(models.Model):
+class AddressType(models.Model):
     pass
-
-
-

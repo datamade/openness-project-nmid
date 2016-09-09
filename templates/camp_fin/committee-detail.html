@@ -176,7 +176,7 @@
                             </a>
                         </td>
                         <td class='nowrap'>
-                            <%= moment(transaction.last_date).format('MMM DD, YYYY') %>
+                            <%= moment(transaction.latest_date).format('MMM DD, YYYY') %>
                         </td>
                         <td class='text-right nowrap'>
                             <%= accounting.formatMoney(transaction.amount) %>
