@@ -49,7 +49,7 @@
                                     {{ committee.name }}
                                 </a>
                             </td>
-                            <td>{{ committee.filing_date | date:'M d, Y'}}</td>
+                            <td>{{ committee.filing_date | date:'M j, Y'}}</td>
                             <td class='text-right'>{{ committee.closing_balance|format_money }}</td>
                         </tr>
                     {% endfor %}

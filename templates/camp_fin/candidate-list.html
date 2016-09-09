@@ -39,7 +39,7 @@
                                 {{ sort_order|get_sort_icon|safe }}
                             {% endif %}
                         </th>
-                        <th class='text-right'>
+                        <th class='text-right no-wrap'>
                             <a href="{% url 'candidate-list' %}?{% query_transform request order_by='closing_balance' sort_order=toggle_order %}">
                                 Current balance
                             </a>

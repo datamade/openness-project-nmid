@@ -132,7 +132,7 @@ class IndexView(TemplateView):
 class DonationsView(PaginatedList):
     template_name = 'camp_fin/donations.html'
 
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         cursor = connection.cursor()
 
         query = '''
@@ -170,30 +170,36 @@ class DonationsView(PaginatedList):
 
         if ('from' in self.request.GET) and ('to' in self.request.GET):
             start_date_str = self.request.GET.get('from')
-            start_date = datetime.strptime(start_date_str , '%Y-%m-%d') + timedelta(days=1)
+            self.start_date = datetime.strptime(start_date_str , '%Y-%m-%d') + timedelta(days=1)
 
             end_date_str = self.request.GET.get('to')
-            end_date = datetime.strptime(end_date_str , '%Y-%m-%d') + timedelta(days=1)
+            self.end_date = datetime.strptime(end_date_str , '%Y-%m-%d') + timedelta(days=1)
 
-            cursor.execute(query, [start_date, end_date])
+            cursor.execute(query, [self.start_date, self.end_date])
             days_donations = list(cursor)
 
         else:
-            end_date = datetime.now().date()
-            start_date = (end_date - timedelta(days=7))
+            self.end_date = datetime.now().date()
+            self.start_date = (self.end_date - timedelta(days=7))
 
             while len(days_donations) == 0:
-                cursor.execute(query, [start_date, end_date])
+                cursor.execute(query, [self.start_date, self.end_date])
                 days_donations = list(cursor)
 
-                end_date = end_date - timedelta(days=1)
-                start_date = (end_date - timedelta(days=7))
+                self.end_date = self.end_date - timedelta(days=1)
+                self.start_date = (self.end_date - timedelta(days=7))
 
         columns = [c[0] for c in cursor.description]
         result_tuple = namedtuple('Transaction', columns)
-        objects = [result_tuple(*r) for r in days_donations]
+        donation_objects = [result_tuple(*r) for r in days_donations]
+        return donation_objects
 
-        return objects
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['start_date'] = self.start_date
+        context['end_date'] = self.end_date
+
+        return context
 
 class AboutView(TemplateView):
     template_name = 'about.html'

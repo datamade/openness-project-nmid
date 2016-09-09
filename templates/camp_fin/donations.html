@@ -10,8 +10,8 @@
         <div class="col-md-6">
             <form action='/donations' method='GET' class='col-sm-12'>
                 <div class="input-group input-group-xs">
-                    <input type="text" id="from" name="from" class="form-control date-filter" placeholder="Select start date..." name="date">
-                    <input type="text" id="to" name="to" class="form-control date-filter" placeholder="Select end date..." name="date">
+                    <input type="text" id="from" name="from" class="form-control date-filter" placeholder="Select start date..." value='{{ start_date|date:"Y-d-d" }}'>
+                    <input type="text" id="to" name="to" class="form-control date-filter" placeholder="Select end date..." value='{{ end_date|date:"Y-m-d" }}'>
                     <span class="input-group-btn">
                         <button class="btn btn-default btn-date" type="submit"><i class="fa fa-search" aria-hidden="true"></i> Search</button>
                     </span>
@@ -51,7 +51,7 @@
                             <td>
                                 {{ transaction.full_name }}
                             </td>
-                            <td>
+                            <td class="no-wrap">
                                 {{transaction.transaction_type|get_transaction_verb }} <strong>{{ transaction.amount|format_money }}</strong> to
                             </td>
                             <td>
@@ -62,8 +62,8 @@
                                   <a href="{% url 'candidate-detail' transaction.candidate_slug %}">{{ transaction.transaction_subject }}</a>
                                 {% endif %}
                             </td>
-                            <td>
-                                {{ transaction.received_date|date:"M d, Y" }}
+                            <td class="no-wrap">
+                                {{ transaction.received_date|date:"M j, Y" }}
                             </td>
                         </tr>
                         {% endfor %}
