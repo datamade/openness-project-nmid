@@ -142,11 +142,14 @@ class DonationsView(PaginatedList):
             JOIN camp_fin_filing AS filing
             ON o.filing_id = filing.id
             WHERE tt.contribution = TRUE
-            AND o.received_date <= '$[today]';
+            AND o.received_date <= '$[today]'
             '''
             cursor.execute(count_query)
             row = cursor.fetchone()
             max_date = row[0].date()
+
+            self.order_by = self.request.GET.get('order_by', 'received_date')
+            self.sort_order = self.request.GET.get('sort_order', 'asc')
 
             query = '''
             SELECT * FROM (
@@ -175,9 +178,9 @@ class DonationsView(PaginatedList):
                     ON entity.id = candidate.entity_id
                   WHERE tt.contribution = TRUE
                   AND o.received_date BETWEEN %s and %s
-                  ORDER BY o.received_date ASC
-              ) as z;
-            '''
+                  ORDER BY {0} {1}
+              ) as z
+            '''.format(self.order_by, self.sort_order)
 
             days_donations = []
 
@@ -187,9 +190,6 @@ class DonationsView(PaginatedList):
 
                 end_date_str = self.request.GET.get('to')
                 self.end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() + timedelta(days=2)
-
-                print(self.start_date)
-                print(self.end_date)
 
                 cursor.execute(query, [self.start_date, self.end_date])
                 days_donations = list(cursor)
@@ -227,6 +227,15 @@ class DonationsView(PaginatedList):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        context['sort_order'] = self.sort_order
+        context['toggle_order'] = 'desc'
+
+        if self.sort_order.lower() == 'desc':
+            context['toggle_order'] = 'asc'
+
+        context['order_by'] = self.order_by
+
         context['start_date'] = self.start_date
         context['end_date'] = self.end_date
         context['donation_count'] = self.donation_count

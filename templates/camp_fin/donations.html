@@ -32,20 +32,38 @@
                 <thead>
                     <tr>
                         <th>
+                            <a href="{% url 'donations' %}?{% query_transform request order_by='rank' sort_order=toggle_order %}">
                             Rank
+                            {% if order_by == 'rank' %}
+                                {{ sort_order|get_sort_icon|safe }}
+                            {% endif %}
                         </th>
                         <th>
+                            <a href="{% url 'donations' %}?{% query_transform request order_by='full_name' sort_order=toggle_order %}">
                             Donor
+                            {% if order_by == 'full_name' %}
+                                {{ sort_order|get_sort_icon|safe }}
+                            {% endif %}
                         </th>
 
                         <th>
-                            Amount
+                            <a href="{% url 'donations' %}?{% query_transform request order_by='amount' sort_order=toggle_order %}">
+                              Amount
+                            </a>
+                            {% if order_by == 'amount' %}
+                                {{ sort_order|get_sort_icon|safe }}
+                            {% endif %}
                         </th>
                         <th>
                             Recipient
                         </th>
                         <th>
+                            <a href="{% url 'donations' %}?{% query_transform request order_by='received_date' sort_order=toggle_order %}">
                             Date
+                            </a>
+                            {% if order_by == 'received_date' %}
+                                {{ sort_order|get_sort_icon|safe }}
+                            {% endif %}
                         </th>
                     </tr>
                 </thead>
@@ -130,11 +148,10 @@
     }
     });
 
-    $('#donations-list').DataTable( {
-      "order": [[ 4, "desc" ]],
-      "paging": false,
-      "info": false,
-      "bFilter": false
-    });
+    // $('#donations-list').DataTable( {
+    //   "order": [[ 4, "asc" ]],
+    //   "info": false,
+    //   "bFilter": false
+    // });
     </script>
 {% endblock %}
