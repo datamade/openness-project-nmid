@@ -173,7 +173,7 @@ class DonationsView(PaginatedList):
             self.start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() + timedelta(days=1)
 
             end_date_str = self.request.GET.get('to')
-            self.end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() + timedelta(days=1)
+            self.end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() + timedelta(days=2)
 
             cursor.execute(query, [self.start_date, self.end_date])
             days_donations = list(cursor)
@@ -185,9 +185,6 @@ class DonationsView(PaginatedList):
         else:
             self.end_date = datetime.now().date()
             self.start_date = (self.end_date - timedelta(days=7))
-
-            print(self.end_date)
-            print(self.start_date)
 
             while len(days_donations) == 0:
                 cursor.execute(query, [self.start_date, self.end_date])
@@ -201,7 +198,10 @@ class DonationsView(PaginatedList):
         columns = [c[0] for c in cursor.description]
         result_tuple = namedtuple('Transaction', columns)
         donation_objects = [result_tuple(*r) for r in days_donations]
+
         self.donation_count = len(donation_objects)
+        self.donation_sum = sum([d.amount for d in donation_objects])
+
         return donation_objects
 
     def get_context_data(self, **kwargs):
@@ -209,6 +209,7 @@ class DonationsView(PaginatedList):
         context['start_date'] = self.start_date
         context['end_date'] = self.end_date
         context['donation_count'] = self.donation_count
+        context['donation_sum'] = self.donation_sum
         return context
 
 class AboutView(TemplateView):

@@ -32,6 +32,19 @@ th a { color: #333333; }
 
 #net-funds-chart { height: 200px; }
 
+#date-search .form-control { width: 48%; }
+
+#date-search { margin-top: 21px; }
+
+table#donations-list thead th, table#donations-list thead td {
+  border-bottom: 1px solid #dddddd;
+}
+
+table#donations-list.no-footer { border-bottom: 0px; }
+
+.no-wrap { white-space: nowrap; }
+
+/* Styles for calendar pop-up. */
 .ui-datepicker {
   width: 216px;
   height: auto;
@@ -105,15 +118,4 @@ th a { color: #333333; }
     width: 0;
 }
 
-#date-search .form-control {
-  width: 45%;
-  margin: 2%;
-}
-
-table#donations-list thead th, table#donations-list thead td {
-  border-bottom: 1px solid #dddddd;
-}
-
-table#donations-list.no-footer { border-bottom: 0px; }
-
-.no-wrap { white-space: nowrap; }
+button#btn-search { border-radius: 5px; }
