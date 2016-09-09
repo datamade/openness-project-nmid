@@ -31,7 +31,7 @@
             <table class="table table-striped" id="donations-list">
                 <thead>
                     <tr>
-                        <th>
+                        <th class="no-wrap">
                             <a href="{% url 'donations' %}?{% query_transform request order_by='rank' sort_order=toggle_order %}">
                             Rank
                             {% if order_by == 'rank' %}
