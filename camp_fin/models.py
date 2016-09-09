@@ -374,10 +374,9 @@ class Address(models.Model):
     from_file_id = models.IntegerField(null=True)
 
     def __str__(self):
-        address = '{0}, {1}, {2}, {3}'.format(self.street,
-                                              self.city,
-                                              self.state,
-                                              self.zip_code)
+        address = '{0}, {1}, {2}'.format(self.street,
+                                         self.city,
+                                         self.zipcode)
         return address
 
 class CampaignStatus(models.Model):
