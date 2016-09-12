@@ -43,7 +43,26 @@
         </div>
     </div>
     <div class="row">
-        <div id="search-results" class="col-md-12"></div>
+        <div id="candidate-search-results" class="col-md-12">
+            <h3>Candidates</h3>
+            <h1><i class='fa fa-spin fa-refresh'></i></h1>
+        </div>
+        <div id="pac-search-results" class="col-md-12">
+            <h3>PACs</h3>
+            <h1><i class='fa fa-spin fa-refresh'></i></h1>
+        </div>
+        <div id="treasurer-search-results" class="col-md-12">
+            <h3>Treasurers</h3>
+            <h1><i class='fa fa-spin fa-refresh'></i></h1>
+        </div>
+        <div id="contribution-search-results" class="col-md-12">
+            <h3>Contributions</h3>
+            <h1><i class='fa fa-spin fa-refresh'></i></h1>
+        </div>
+        <div id="expenditure-search-results" class="col-md-12">
+            <h3>Expenditures</h3>
+            <h1><i class='fa fa-spin fa-refresh'></i></h1>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -217,9 +236,13 @@
         $.when($.getJSON('/api/search/', term)).then(
             function(data){
                 $.each(data, function(table, rows){
+                    var selector = '#' + table + '-search-results';
                     if(rows.length > 0){
                         var template = new EJS({'text': $('#' + table + '-template').html()});
-                        $('#search-results').append(template.render({'rows': rows}));
+                        $(selector).html(template.render({'rows': rows}));
+                    } else {
+                        $(selector + ' h1').remove();
+                        $(selector).append('<strong>No results found</strong>');
                     }
                 })
             }
