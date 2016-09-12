@@ -445,7 +445,24 @@ class SearchAPIView(viewsets.ViewSet):
     def list(self, request):
         table_names = request.GET.getlist('table_name')
         term = request.GET.get('term')
+        limit = request.GET.get('limit', 50)
+        offset = request.GET.get('offset', 0)
+        datatype = request.GET.get('datatype')
+        order_by_col = None
+        sort_order = 'ASC'
 
+        if request.GET.get('length'):
+            limit = request.GET['length']
+        
+        if request.GET.get('start'):
+            offset = request.GET['start']
+        
+        if request.GET.get('order[0][column]'):
+            col_idx = request.GET['order[0][column]']
+            order_by_col = request.GET['columns[' + str(col_idx) + '][data]']
+            
+            sort_order = request.GET['order[0][dir]']
+        
         if not term:
             return Response({'error': 'term is required'}, status=400)
 
@@ -558,6 +575,19 @@ class SearchAPIView(viewsets.ViewSet):
                       ON t.id = p.treasurer_id
                     WHERE t.search_name @@ plainto_tsquery('english', %s)
                 '''.format(reverse_lazy('candidate-list'), reverse_lazy('committee-list'))
+            
+            if order_by_col:
+                query = ''' 
+                    {0} ORDER BY {1} {2}
+                '''.format(query, order_by_col, sort_order)
+
+            query = '''
+                {query} 
+                LIMIT {limit} 
+                OFFSET {offset}
+            '''.format(query=query,
+                       limit=limit,
+                       offset=offset)
 
             serializer = SERIALIZER_LOOKUP[table]
 

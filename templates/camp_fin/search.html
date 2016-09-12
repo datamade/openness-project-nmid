@@ -232,8 +232,45 @@
     </table>
 </script>
 <script type="text/javascript">
-    function do_query(term){
-        $.when($.getJSON('/api/search/', term)).then(
+    function do_query(query){
+
+        var term = query['term'];
+        var table_names = [];
+
+        if(typeof query.table_name === 'string'){
+            table_names = [query.table_name];
+        } else if (typeof query.table_name === 'undefined'){
+            table_names = ['pac', 'contribution', 'expenditure', 'candidate', 'treasurer'];
+        } else {
+            table_names = query.table_name;
+        }
+
+        if(table_names.indexOf('pac') >= 0){
+            var columns = [];
+            init_datatable(term, 'pac', columns)
+        }
+
+        if(table_names.indexOf('contribution') >= 0){
+            var columns = [];
+            init_datatable(term, 'contribution', columns)
+        }
+
+        if(table_names.indexOf('expenditure') >= 0){
+            var columns = [];
+            init_datatable(term, 'expenditure', columns)
+        }
+
+        if(table_names.indexOf('candidate') >= 0){
+            var columns = [];
+            init_datatable(term, 'candidate', columns)
+        }
+
+        if(table_names.indexOf('treasurer') >= 0){
+            var columns = [];
+            init_datatable(term, 'treasurer', columns)
+        }
+
+        $.when($.getJSON('/api/search/', query)).then(
             function(data){
                 $.each(data, function(table, rows){
                     var selector = '#' + table + '-search-results';
@@ -248,6 +285,77 @@
             }
         )
     }
+
+    function init_datatable(term, table_name, columns, order){
+        if (typeof order === 'undefined'){
+            var order = [[0, 'asc']]
+        }
+
+        $('#' + table_name + '-search-results').show();
+
+        var params = {
+            'term': term,
+            'table_name': table_name,
+        };
+
+        var language_opts = {
+            'paginate': {
+                'first': '&laquo;',
+                'last': '&raquo;',
+                'previous': '&lt;',
+                'next': '&gt;'
+            },
+            'zeroRecords': 'No results found'
+        }
+
+        var opts = {
+            "info": false,
+            "searching": false,
+            "bLengthChange": false,
+            "processing": true,
+            "serverSide": true,
+            "ajax": {
+                "url": "/api/search/?" + params,
+                "dataSrc": table_name
+            },
+            "columns": columns,
+            "language": {
+                'paginate': {
+                    'first': '&laquo;',
+                    'last': '&raquo;',
+                    'previous': '&lt;',
+                    'next': '&gt;'
+                },
+                'zeroRecords': 'No results found',
+                'processing': "<h1><i class='fa fa-spin fa-sun-o'></i></h1>"
+            },
+            "initComplete": function(settings, data){
+                if(data['objects'][table_name].length == 0){
+                    $('#' + table_name + '-results').hide();
+                    $('#download-results').hide();
+                    $('#no-results').show();
+                }
+                else {
+                    $('#' + table_name + '-results h3 small').html(data['meta'].total_rows + " found");
+                    $('#download-results').show();
+                    // var query = window.location.search;
+                    // $('#download-results-link').attr('href', '/api/advanced-search/' + query + '&datatype=csv')
+                    setTimeout(function(){ $('#no-results').hide(); }, 500);
+                }
+            },
+            "drawCallback": function(settings){
+                var display_count = parseInt(settings._iDisplayLength);
+                var record_count = parseInt(settings['json']['meta']['total_rows']);
+                // console.log(display_count, record_count);
+                if (record_count <= display_count){
+                    $('#' + table_name + '-table_paginate').hide();
+                }
+            },
+            "order": order
+        }
+        var table = $('#' + table_name + '-search-results').DataTable(opts);
+    }
+
     $(document).ready(function(){
         {% if term != None %}
             var query = URI(window.location.search).query(true)
