@@ -2,6 +2,7 @@ branches:
   only:
   - "/^v0.*$/"
   - codedeploy
+  - master
 language: python
 python:
 - '3.5'
