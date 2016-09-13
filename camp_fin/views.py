@@ -18,7 +18,7 @@ from .base_views import PaginatedList, TransactionDetail, TransactionBaseViewSet
     TopMoneyView
 from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer, \
     TransactionSearchSerializer, CandidateSearchSerializer, PACSearchSerializer, \
-    LoanTransactionSerializer, TreasurerSearchSerializer
+    LoanTransactionSerializer, TreasurerSearchSerializer, DataTablesPagination
 
 TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
 
@@ -442,12 +442,16 @@ SERIALIZER_LOOKUP = {
 }
 
 class SearchAPIView(viewsets.ViewSet):
+    
     def list(self, request):
+        
         table_names = request.GET.getlist('table_name')
         term = request.GET.get('term')
+        datatype = request.GET.get('datatype')
+        
         limit = request.GET.get('limit', 50)
         offset = request.GET.get('offset', 0)
-        datatype = request.GET.get('datatype')
+        
         order_by_col = None
         sort_order = 'ASC'
 
@@ -478,10 +482,53 @@ class SearchAPIView(viewsets.ViewSet):
         response = {}
 
         for table in table_names:
-            query = '''
-                SELECT * FROM camp_fin_{}
-                WHERE search_name @@ plainto_tsquery('english', %s)
-            '''.format(table)
+
+            if table == 'pac':
+                query = '''
+                    SELECT 
+                      pac.*, 
+                      treasurer.full_name AS treasurer_name 
+                    FROM camp_fin_pac AS pac
+                    JOIN camp_fin_treasurer AS treasurer
+                      ON pac.treasurer_id = treasurer.id
+                    WHERE pac.search_name @@ plainto_tsquery('english', %s)
+                '''.format(table)
+            
+            if table == 'candidate':
+                # TODO: finish this query
+                query = '''
+                    SELECT * FROM (
+                      SELECT DISTINCT ON (candidate.id)
+                        candidate.*,
+                        campaign.committee_name,
+                        county.name AS county_name,
+                        election.year AS election_year,
+                        party.name AS party_name,
+                        office.description AS office_name,
+                        officetype.description AS office_type,
+                        district.name AS district_name,
+                        division.name AS division_name
+                      FROM camp_fin_candidate AS candidate
+                      JOIN camp_fin_campaign AS campaign
+                        ON candidate.id = campaign.candidate_id
+                      JOIN camp_fin_electionseason AS election
+                        ON campaign.election_season_id = election.id
+                      JOIN camp_fin_politicalparty AS party
+                        ON campaign.political_party_id = party.id
+                      LEFT JOIN camp_fin_county AS county
+                        ON campaign.county_id = county.id
+                      JOIN camp_fin_office AS office
+                        ON campaign.office_id = office.id
+                      JOIN camp_fin_officetype AS officetype
+                        ON office.office_type_id = officetype.id
+                      LEFT JOIN camp_fin_district AS district
+                        ON campaign.district_id = district.id
+                      LEFT JOIN camp_fin_division AS division
+                        ON campaign.division_id = division.id
+                      WHERE candidate.search_name @@ plainto_tsquery('english', %s)
+                      ORDER BY candidate.id, election.year DESC
+                    ) AS s
+                '''.format(table)
 
             if table == 'contribution':
                 query = '''
@@ -542,53 +589,48 @@ class SearchAPIView(viewsets.ViewSet):
             
             elif table == 'treasurer':
                 query = ''' 
-                    SELECT 
-                      t.full_name,
-                      a.street,
-                      a.city,
-                      s.postal_code AS state,
-                      a.zipcode,
-                      CASE WHEN 
-                        p.name = '' OR p.name IS NULL
-                      THEN
-                        d.full_name
-                      ELSE
-                        p.name
-                      END AS related_entity_name,
-                      CASE WHEN
-                        p.id IS NULL
-                      THEN
-                        '{0}' || d.slug || '/'
-                      ELSE
-                        '{1}' || p.slug || '/'
-                      END AS related_entity_url
-                    FROM camp_fin_treasurer AS t
-                    JOIN camp_fin_address AS a
-                      ON t.address_id = a.id
-                    JOIN camp_fin_state AS s
-                      ON a.state_id = s.id
-                    LEFT JOIN camp_fin_campaign AS m
-                      ON t.id = m.treasurer_id
-                    LEFT JOIN camp_fin_candidate AS d
-                      ON m.candidate_id = d.id
-                    LEFT JOIN camp_fin_pac AS p
-                      ON t.id = p.treasurer_id
-                    WHERE t.search_name @@ plainto_tsquery('english', %s)
+                    SELECT * FROM (
+                      SELECT 
+                        t.full_name,
+                        a.street,
+                        a.city,
+                        s.postal_code AS state,
+                        a.zipcode,
+                        CASE WHEN 
+                          p.name = '' OR p.name IS NULL
+                        THEN
+                          d.full_name
+                        ELSE
+                          p.name
+                        END AS related_entity_name,
+                        CASE WHEN
+                          p.id IS NULL
+                        THEN
+                          '{0}' || d.slug || '/'
+                        ELSE
+                          '{1}' || p.slug || '/'
+                        END AS related_entity_url
+                      FROM camp_fin_treasurer AS t
+                      JOIN camp_fin_address AS a
+                        ON t.address_id = a.id
+                      JOIN camp_fin_state AS s
+                        ON a.state_id = s.id
+                      LEFT JOIN camp_fin_campaign AS m
+                        ON t.id = m.treasurer_id
+                      LEFT JOIN camp_fin_candidate AS d
+                        ON m.candidate_id = d.id
+                      LEFT JOIN camp_fin_pac AS p
+                        ON t.id = p.treasurer_id
+                      WHERE t.search_name @@ plainto_tsquery('english', %s)
+                    ) AS s
+                    WHERE related_entity_name IS NOT NULL
                 '''.format(reverse_lazy('candidate-list'), reverse_lazy('committee-list'))
             
             if order_by_col:
                 query = ''' 
                     {0} ORDER BY {1} {2}
                 '''.format(query, order_by_col, sort_order)
-
-            query = '''
-                {query} 
-                LIMIT {limit} 
-                OFFSET {offset}
-            '''.format(query=query,
-                       limit=limit,
-                       offset=offset)
-
+            
             serializer = SERIALIZER_LOOKUP[table]
 
             cursor = connection.cursor()
@@ -596,11 +638,27 @@ class SearchAPIView(viewsets.ViewSet):
 
             columns = [c[0] for c in cursor.description]
             result_tuple = namedtuple(table, columns)
-
+            
             objects =  [result_tuple(*r) for r in cursor]
+            
+            paginator = DataTablesPagination()
 
-            serializer = serializer(objects, many=True)
+            page = paginator.paginate_queryset(objects, self.request, view=self)
+            
+            serializer = serializer(page, many=True)
+            
+            meta = OrderedDict([
+                ('total_rows', paginator.count),
+                ('limit', limit),
+                ('offset', offset),
+                ('recordsTotal', paginator.count),
+                ('recordsFiltered', limit),
+                ('draw', request.GET.get('draw', 0))
+            ])
 
-            response[table] = serializer.data
-
+            response[table] = OrderedDict([
+                ('meta', meta),
+                ('objects', serializer.data),
+            ])
+        
         return Response(response)

@@ -1,4 +1,4 @@
-from rest_framework import serializers
+from rest_framework import serializers, pagination
 
 from camp_fin.models import Candidate, PAC, Transaction, LoanTransaction, Loan, Treasurer
 
@@ -125,6 +125,14 @@ class TreasurerSearchSerializer(serializers.Serializer):
     related_entity_url = serializers.CharField()
 
 class CandidateSearchSerializer(serializers.ModelSerializer):
+    county_name = serializers.StringRelatedField(read_only=True)
+    election_year = serializers.StringRelatedField(read_only=True)
+    party_name = serializers.StringRelatedField(read_only=True)
+    office_name = serializers.StringRelatedField(read_only=True)
+    office_type = serializers.StringRelatedField(read_only=True)
+    district_name = serializers.StringRelatedField(read_only=True)
+    division_name = serializers.StringRelatedField(read_only=True)
+    committee_name = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = Candidate
@@ -143,9 +151,18 @@ class CandidateSearchSerializer(serializers.ModelSerializer):
             'date_updated',
             'deceased',
             'slug',
+            'county_name',
+            'election_year',
+            'party_name',
+            'office_name',
+            'office_type',
+            'district_name',
+            'division_name',
+            'committee_name',
         )
 
 class PACSearchSerializer(serializers.ModelSerializer):
+    treasurer_name = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = PAC
@@ -166,6 +183,7 @@ class PACSearchSerializer(serializers.ModelSerializer):
             'initial_debt',
             'initial_debt_from_self',
             'slug',
+            'treasurer_name',
         )
 
 class TopMoneySerializer(serializers.Serializer):
@@ -179,3 +197,7 @@ class TopMoneySerializer(serializers.Serializer):
     year = serializers.CharField()
     rank = serializers.CharField()
     latest_date = serializers.DateTimeField()
+
+class DataTablesPagination(pagination.LimitOffsetPagination):
+    limit_query_param = 'length'
+    offset_query_param = 'start'
