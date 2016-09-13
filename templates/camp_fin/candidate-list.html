@@ -13,6 +13,7 @@
             <table class="table table-striped" id="candidate-list">
                 <thead>
                     <tr>
+                        <th>Rank</th>
                         <th>
                             <a href="{% url 'candidate-list' %}?{% query_transform request order_by='last_name' sort_order=toggle_order %}">
                                 Candidate
@@ -38,7 +39,7 @@
                                 {{ sort_order|get_sort_icon|safe }}
                             {% endif %}
                         </th>
-                        <th class='text-right'>
+                        <th class='text-right no-wrap'>
                             <a href="{% url 'candidate-list' %}?{% query_transform request order_by='closing_balance' sort_order=toggle_order %}">
                                 Current balance
                             </a>
@@ -51,15 +52,10 @@
                 <tbody>
                     {% for candidate in object_list %}
                         <tr>
+                            <td>{{ candidate.rank }}</td>
                             <td>
                                 <a href="{% url 'candidate-detail' candidate.slug %}">
-                                    {% spaceless %}
-                                    {{ candidate.prefix|default_if_none:"" }}
-                                    {{ candidate.first_name|default_if_none:"" }}
-                                    {{ candidate.middle_name|default_if_none:"" }}
-                                    {{ candidate.last_name|default_if_none:"" }}
-                                    {{ candidate.suffix|default_if_none:"" }}
-                                    {% endspaceless %}
+                                    {{ candidate.full_name }}
                                 </a>
                             </td>
                             <td>

@@ -13,6 +13,7 @@
             <table class="table table-striped" id="committee-list">
                 <thead>
                     <tr>
+                        <th>Rank</th>
                         <th>
                             <a href="{% url 'committee-list' %}?{% query_transform request order_by='name' sort_order=toggle_order %}">
                                 Committee
@@ -42,12 +43,13 @@
                 <tbody>
                     {% for committee in object_list %}
                         <tr>
+                            <td>{{ committee.rank }}</td>
                             <td>
                                 <a href="{% url 'committee-detail' committee.slug %}">
                                     {{ committee.name }}
                                 </a>
                             </td>
-                            <td>{{ committee.filing_date | date:'M d, Y'}}</td>
+                            <td>{{ committee.filing_date | date:'M j, Y'}}</td>
                             <td class='text-right'>{{ committee.closing_balance|format_money }}</td>
                         </tr>
                     {% endfor %}

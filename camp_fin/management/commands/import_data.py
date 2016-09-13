@@ -13,25 +13,16 @@ from django.utils.text import slugify
 
 from nmid.typeinferer import TypeInferer
 from .table_mappers import CANDIDATE, PAC, FILING, FILING_PERIOD, CONTRIB_EXP, \
-    CONTRIB_EXP_TYPE, CAMPAIGN, OFFICE_TYPE, OFFICE
+    CONTRIB_EXP_TYPE, CAMPAIGN, OFFICE_TYPE, OFFICE, CAMPAIGN_STATUS, COUNTY, \
+    DISTRICT, ELECTION_SEASON, ENTITY, ENTITY_TYPE, FILING_TYPE, LOAN, \
+    LOAN_TRANSACTION, LOAN_TRANSACTION_TYPE, POLITICAL_PARTY, SPECIAL_EVENT, \
+    TREASURER, DIVISION, ADDRESS, CONTACT_TYPE, CONTACT, STATE
 
 DB_CONN = 'postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}'
 
 engine = sa.create_engine(DB_CONN.format(**settings.DATABASES['default']),
                           convert_unicode=True,
                           server_side_cursors=True)
-
-RAW_PK_LOOKUP = {
-    'candidate': 'candidateid',
-    'pac': 'politicalactioncommitteeid',
-    'filing': 'reportid',
-    'filingperiod': 'filingperiodid',
-    'transaction': 'contribexpenditureid',
-    'transactiontype': 'contribexpendituretypeid',
-    'campaign': 'campaignid',
-    'officetype': 'officetypeid',
-    'office': 'electionofficeid',
-}
 
 MAPPER_LOOKUP = {
     'candidate': CANDIDATE,
@@ -43,6 +34,24 @@ MAPPER_LOOKUP = {
     'campaign': CAMPAIGN,
     'officetype': OFFICE_TYPE,
     'office': OFFICE,
+    'campaignstatus': CAMPAIGN_STATUS,
+    'county': COUNTY,
+    'district': DISTRICT,
+    'division': DIVISION,
+    'electionseason': ELECTION_SEASON,
+    'entity': ENTITY,
+    'entitytype': ENTITY_TYPE,
+    'filingtype': FILING_TYPE,
+    'loan': LOAN,
+    'loantransaction': LOAN_TRANSACTION,
+    'loantransactiontype': LOAN_TRANSACTION_TYPE,
+    'politicalparty': POLITICAL_PARTY,
+    'specialevent': SPECIAL_EVENT,
+    'treasurer': TREASURER,
+    'address': ADDRESS,
+    'contacttype': CONTACT_TYPE,
+    'contact': CONTACT,
+    'state': STATE,
 }
 
 FILE_LOOKUP = {
@@ -53,8 +62,26 @@ FILE_LOOKUP = {
     'filingperiod': 'Cam_FilingPeriod.xlsx',
     'officetype': 'Cam_OfficeType.xlsx',
     'filing': 'Cam_Report.csv',
-    'candidate': 'Candidates.xlsx',
-    'pac': 'PACs.xlsx',
+    'candidate': 'Candidates.csv',
+    'pac': 'PACs.csv',
+    'campaignstatus': 'Cam_CampaignStatus.xlsx',
+    'county': 'Cam_County.xlsx',
+    'district': 'Cam_District.xlsx',
+    'division': 'Cam_Division.xlsx',
+    'electionseason': 'Cam_ElectionSeason.xlsx',
+    'entity': 'Cam_Entity.xlsx',
+    'entitytype': 'Cam_EntityType.xlsx',
+    'filingtype': 'Cam_FilingPeriodType.xlsx',
+    'loan': 'Cam_Loan.xlsx',
+    'loantransaction': 'Cam_LoanTransaction.xlsx',
+    'loantransactiontype': 'Cam_LoanTransactionType.xlsx',
+    'politicalparty': 'Cam_PoliticalParty.xlsx',
+    'specialevent': 'Cam_SpecialEvent.xlsx',
+    'treasurer': 'Cam_Treasurer.xlsx',
+    'address': 'Cam_Address.csv',
+    'contacttype': 'Cam_ContactType.xlsx',
+    'contact': 'Cam_Contact.csv',
+    'state': 'States.csv',
 }
 
 class Command(BaseCommand):
@@ -86,7 +113,7 @@ class Command(BaseCommand):
                 self.file_path = 'data/{}'.format(file_name)
 
                 self.encoding = 'utf-8'
-                if entity_type == 'transaction':
+                if entity_type in ['transaction', 'address', 'contact']:
                     self.encoding = 'windows-1252'
 
                 if self.file_path.endswith('xlsx'):
@@ -94,11 +121,13 @@ class Command(BaseCommand):
                 
                 if self.file_path.endswith('zip'):
                     self.unzipFile()
-
-                self.django_table = 'camp_fin_{}'.format(self.entity_type)
-                self.raw_pk_col = RAW_PK_LOOKUP[self.entity_type]
                 
                 self.table_mapper = MAPPER_LOOKUP[self.entity_type]
+
+                self.django_table = 'camp_fin_{}'.format(self.entity_type)
+                self.raw_pk_col = [k for k, v in self.table_mapper.items() \
+                                       if v['field'] == 'id'][0]
+                
 
                 self.connection = engine.connect()
                 
@@ -132,8 +161,131 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(self.style.ERROR('"{}" is not a valid entity'.format(self.entity_type)))
                 self.stdout.write(self.style.SUCCESS('\n'))
-                
+            
+        self.addTransactionFullName()
+        self.addLoanFullName()
+        self.addCandidateFullName()
+        self.addContactFullName()
+        self.addTreasurerFullName()
+
         self.stdout.write(self.style.SUCCESS('Import complete!'.format(self.entity_type)))
+
+    def addTransactionFullName(self):
+        update = ''' 
+            UPDATE camp_fin_transaction SET
+              full_name = s.full_name
+            FROM (
+              SELECT
+                CASE WHEN 
+                  company_name IS NULL OR TRIM(company_name) = ''
+                THEN
+                  TRIM(concat_ws(' ', 
+                                 name_prefix,
+                                 first_name,
+                                 middle_name,
+                                 last_name,
+                                 suffix))
+                ELSE
+                  company_name
+                END AS full_name,
+                id
+              FROM camp_fin_transaction
+            ) AS s
+            WHERE camp_fin_transaction.id = s.id
+        '''
+
+        self.executeTransaction(update)
+
+    def addLoanFullName(self):
+        update = ''' 
+            UPDATE camp_fin_loan SET
+              full_name = s.full_name
+            FROM (
+              SELECT
+                CASE WHEN 
+                  company_name IS NULL OR TRIM(company_name) = ''
+                THEN
+                  TRIM(concat_ws(' ', 
+                                 name_prefix,
+                                 first_name,
+                                 middle_name,
+                                 last_name,
+                                 suffix))
+                ELSE
+                  company_name
+                END AS full_name,
+                id
+              FROM camp_fin_loan
+            ) AS s
+            WHERE camp_fin_loan.id = s.id
+        '''
+
+        self.executeTransaction(update)
+    
+    def addTreasurerFullName(self):
+        update = ''' 
+            UPDATE camp_fin_treasurer SET
+              full_name = s.full_name
+            FROM (
+              SELECT
+                  TRIM(concat_ws(' ', 
+                                 prefix,
+                                 first_name,
+                                 middle_name,
+                                 last_name,
+                                 suffix)) AS full_name,
+                id
+              FROM camp_fin_treasurer
+            ) AS s
+            WHERE camp_fin_treasurer.id = s.id
+        '''
+
+        self.executeTransaction(update)
+    
+    def addCandidateFullName(self):
+        update = ''' 
+            UPDATE camp_fin_candidate SET
+              full_name = s.full_name
+            FROM (
+              SELECT
+                  TRIM(concat_ws(' ', 
+                                 prefix,
+                                 first_name,
+                                 middle_name,
+                                 last_name,
+                                 suffix)) AS full_name,
+                id
+              FROM camp_fin_candidate
+            ) AS s
+            WHERE camp_fin_candidate.id = s.id
+        '''
+
+        self.executeTransaction(update)
+    
+    def addContactFullName(self):
+        update = ''' 
+            UPDATE camp_fin_contact SET
+              full_name = s.full_name
+            FROM (
+              SELECT
+                CASE WHEN 
+                  company_name IS NULL OR TRIM(company_name) = ''
+                THEN
+                  TRIM(concat_ws(' ', 
+                                 prefix,
+                                 first_name,
+                                 middle_name,
+                                 last_name,
+                                 suffix))
+                ELSE
+                  company_name
+                END AS full_name, id
+              FROM camp_fin_contact
+            ) AS s
+            WHERE camp_fin_contact.id = s.id
+        '''
+
+        self.executeTransaction(update)
 
 
     def unzipFile(self):
@@ -364,13 +516,13 @@ class Command(BaseCommand):
         
         self.executeTransaction('''
             ALTER TABLE raw_{0} ADD PRIMARY KEY ("{1}")
-        '''.format(self.entity_type, self.raw_pk_col))
+        '''.format(self.entity_type, self.raw_pk_col), raise_exc=False)
         
         import_count = self.connection.execute('SELECT COUNT(*) AS count FROM raw_{}'.format(self.entity_type))
 
         return import_count.first().count
 
-    def executeTransaction(self, query, raise_exc=False, *args, **kwargs):
+    def executeTransaction(self, query, raise_exc=True, *args, **kwargs):
         trans = self.connection.begin()
 
         try:

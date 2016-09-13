@@ -6,7 +6,10 @@ register = Library()
 def format_money(s):
     import locale
     locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-    return locale.currency(s, grouping=True)
+    if s:
+        s = float(s)
+        return locale.currency(s, grouping=True)
+    return '$0.00'
 
 @register.simple_tag
 def query_transform(request, **kwargs):

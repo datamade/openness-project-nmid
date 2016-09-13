@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
-
+{% load helpers %}
 {% block title %}
 Keep an eye on money in New Mexico politics
 {% endblock %}
 
 {% block full_content %}
 <div class="container">
-  
+
     <div class='row'>
         <div class='col-sm-12'>
             <div class='jumbotron'>
@@ -15,11 +15,11 @@ Keep an eye on money in New Mexico politics
                 <form action='/search' method='GET'>
                     <div class="input-group input-group-lg">
                         <input type="text" class="form-control" placeholder="Search for names of candidates, committees and donors in New Mexico" name="term">
-                        <input type='hidden' name='table_name' value='candidates' />
-                        <input type='hidden' name='table_name' value='committees' />
-                        <input type='hidden' name='table_name' value='officers' />
-                        <input type='hidden' name='table_name' value='receipts' />
-                        <input type='hidden' name='table_name' value='expenditures' />
+                        <input type='hidden' name='table_name' value='candidate' />
+                        <input type='hidden' name='table_name' value='pac' />
+                        <input type='hidden' name='table_name' value='treasurer' />
+                        <input type='hidden' name='table_name' value='contribution' />
+                        <input type='hidden' name='table_name' value='expenditure' />
                         <span class="input-group-btn">
                             <button class="btn btn-default" type="submit"><i class='fa fa-search'></i> Search</button>
                         </span>
@@ -28,18 +28,101 @@ Keep an eye on money in New Mexico politics
             </div>
 
             <h2><a href='/donations/'><i class='fa fa-fw fa-dollar'></i> Largest donations</a></h2>
-            <table class='table table-bordered'>
-                <tbody><tr><td>Coming soon!</td></tr></tbody>
+            <table class='table table-condensed'>
+                <thead>
+                    <tr>
+                        <th>
+                            Rank
+                        </th>
+                        <th>
+                            Donor
+                        </th>
+
+                        <th>
+                            Amount {{ sort_order|get_sort_icon|safe }}
+                        </th>
+                        <th>
+                            Recipient
+                        </th>
+                        <th>
+                            Date
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in transaction_objects %}
+                    <tr>
+                        <td>
+                            {{ transaction.rank }}
+                        </td>
+                        <td>
+                            {{ transaction.full_name }}
+                        </td>
+                        <td class='no-wrap'>
+                            {{transaction.transaction_type|get_transaction_verb }} <strong>{{ transaction.amount|format_money }}</strong> to
+                        </td>
+                        <td>
+                            {% if transaction.pac_slug %}
+                              <a href="{% url 'committee-detail' transaction.pac_slug %}">{{ transaction.transaction_subject }}</a>
+                            {% endif %}
+                            {% if transaction.candidate_slug %}
+                              <a href="{% url 'candidate-detail' transaction.candidate_slug %}">{{ transaction.transaction_subject }}</a>
+                            {% endif %}
+                        </td>
+                        <td class='no-wrap'>
+                            {{ transaction.received_date|date:"M j, Y" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
             </table>
 
             <h2><a href='/candidates/'><i class='fa fa-fw fa-user'></i> Top candidates</a></h2>
-            <table class='table table-bordered'>
-                <tbody><tr><td>Coming soon!</td></tr></tbody>
+            <table class='table table-condensed'>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Candidate</th>
+                        <th>Office</th>
+                        <th>Committee</th>
+                        <th class='text-right no-wrap'>Current balance {{ sort_order|get_sort_icon|safe }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for candidate in candidate_objects %}
+                    <tr>
+                        <td>{{ candidate.rank }}</td>
+                        <td><a href="{% url 'candidate-detail' candidate.slug %}">{{ candidate.full_name }}</a></td>
+                        <td>{{ candidate.office_name }} {{ candidate.office_type }}</td>
+                        <td>{{ candidate.committee_name|default_if_none:"" }}</td>
+                        <td class='text-right'>{{ candidate.closing_balance|format_money }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
             </table>
 
             <h2><a href='/committees/'><i class='fa fa-fw fa-group'></i> Committees</a></h2>
-            <table class='table table-bordered'>
-                <tbody><tr><td>Coming soon!</td></tr></tbody>
+            <table class='table table-condensed'>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>PAC</th>
+                        <th>Latest report</th>
+                        <th class='text-right no-wrap'>Current balance {{ sort_order|get_sort_icon|safe }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pac in pac_objects %}
+                    <tr>
+                        <td>{{ pac.rank }}</td>
+                        <td><a href="{% url 'committee-detail' pac.slug %}">{{ pac.name }}</a></td>
+                        <td>{{ pac.filing_date | date:'M j, Y'}}</td>
+                        <td class='text-right'>{{ pac.closing_balance|format_money }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
             </table>
 
             <h2><a href='/donations/'><i class='fa fa-fw fa-info-circle'></i> About</a></h2>

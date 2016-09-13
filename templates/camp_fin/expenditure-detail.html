@@ -23,10 +23,10 @@
                     <tr>
                         {% if entity_type == 'candidate' %}
                             <td>Candidate</td>
-                            <td><a href="{% url 'candidate-detail' entity.id %}">{{ entity.full_name }}</a></td>
+                            <td><a href="{% url 'candidate-detail' entity.slug %}">{{ entity.full_name }}</a></td>
                         {% else %}
                             <td>Committee</td>
-                            <td><a href="{% url 'committee-detail' entity.id %}">{{ entity.full_name }}</a></td>
+                            <td><a href="{% url 'committee-detail' entity.slug %}">{{ entity.full_name }}</a></td>
                         {% endif %}
                     </tr>
                     {% if office %}
@@ -37,8 +37,20 @@
                     {% endif %}
                     <tr>
                         <td>Address</td>
-                        <td>{{ entity.address }} (placeholder until we get actual addresses)</td>
+                        <td>{{ entity.address }}</td>
                     </tr>
+                    {% if transaction.contact.contact_type %}
+                        <tr>
+                            <td>Exepense type</td>
+                            <td>{{ transaction.contact.contact_type }}</td>
+                        </tr>
+                    {% endif %}
+                    {% if transaction.memo %}
+                    <tr>
+                        <td>Memo</td>
+                        <td>{{ transaction.memo }}</td>
+                    </tr>
+                    {% endif %}
                 </tbody>
             </table>
             <div class="row">
@@ -52,11 +64,6 @@
                         <br>
                             <p>
                             {{transaction.description}}
-                            </p>
-                        {% elif transaction.memo %}
-                        <br>
-                            <p>
-                            {{transaction.memo}}
                             </p>
                         {% endif %}
                     </div>

@@ -26,8 +26,20 @@
                     </tr>
                     <tr>
                         <td>Address</td>
-                        <td>{{ transaction.full_address }}</td>
+                        <td>{{ transaction.contact.address|default:transaction.full_address }}</td>
                     </tr>
+                    {% if transaction.contact.contact_type %}
+                        <tr>
+                            <td>Donor type</td>
+                            <td>{{ transaction.contact.contact_type }}</td>
+                        </tr>
+                    {% endif %}
+                    {% if transaction.memo %}
+                    <tr>
+                        <td>Memo</td>
+                        <td>{{ transaction.memo }}</td>
+                    </tr>
+                    {% endif %}
                 </tbody>
             </table>
             <div class="row">
@@ -37,15 +49,10 @@
                         <h1>
                             <label class="label label-success">{{ transaction.amount|format_money }}</label>
                         </h1>
-                        {% if transaction.description %}
                         <br>
+                        {% if transaction.description %}
                             <p>
                             {{transaction.description}}
-                            </p>
-                        {% elif transaction.memo %}
-                        <br>
-                            <p>
-                            {{transaction.memo}}
                             </p>
                         {% endif %}
                     </div>
@@ -59,9 +66,9 @@
                     <tr>
                         <td>Recipient</td>
                         {% if entity_type == 'candidate' %}
-                            <td><a href="{% url 'candidate-detail' entity.id %}">{{ entity.full_name }}</a></td>
+                            <td><a href="{% url 'candidate-detail' entity.slug %}">{{ entity.full_name }}</a></td>
                         {% else %}
-                            <td><a href="{% url 'committee-detail' entity.id %}">{{ entity.full_name }}</a></td>
+                            <td><a href="{% url 'committee-detail' entity.slug %}">{{ entity.full_name }}</a></td>
                         {% endif %}
                     </tr>
                     {% if office %}
@@ -72,7 +79,7 @@
                     {% endif %}
                     <tr>
                         <td>Address</td>
-                        <td>{{ entity.address }} (placeholder until we get actual addresses)</td>
+                        <td>{{ entity.address }}</td>
                     </tr>
                 </tbody>
             </table>
