@@ -2,4 +2,6 @@
 settings_local.py
 *.pyc
 /static
-*.csv
+*.csv/keyrings/live/pubring.gpg~
+/keyrings/live/pubring.kbx~
+/keyrings/live/secring.gpg
