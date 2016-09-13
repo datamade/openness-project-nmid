@@ -407,7 +407,7 @@ class ElectionSeason(models.Model):
 
 class Entity(models.Model):
     user_id = models.IntegerField(null=True)
-    entity_type = models.ForeignKey('EntityType', db_constraint=False)
+    entity_type = models.ForeignKey('EntityType', db_constraint=False, null=True)
     olddb_id = models.IntegerField(null=True)
     
     def __str__(self):
