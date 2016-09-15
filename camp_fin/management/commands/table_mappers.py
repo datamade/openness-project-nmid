@@ -17,7 +17,7 @@ CANDIDATE = OrderedDict([
     ('emailaccount', {'field': 'email', 'data_type': 'varchar'}),
     ('datelastupdated', {'field': 'date_updated', 'data_type': 'timestamp with time zone'}),
     ('qualcandidateid', {'field': 'qual_candidate_id', 'data_type': 'bigint'}),
-    ('deceased', {'field': 'deceased', 'data_type': 'boolean'}),
+    ('deceased', {'field': 'deceased', 'data_type': 'varchar'}),
 ])
 
 PAC = OrderedDict([
@@ -71,7 +71,7 @@ FILING = OrderedDict([
     ("isstatementnoactivity",{'field': 'no_activity', 'data_type': 'boolean'}),
     ("supplementalordinalnumber",{'field': 'supplement_count', 'data_type': 'int'}),
     ("totalsupplementalcontributions",{'field': 'total_supplemental_contributions', 'data_type': 'money::numeric::double precision'}),
-    ("beenedited",{'field': 'edited', 'data_type': 'boolean'}),
+    ("beenedited",{'field': 'edited', 'data_type': 'varchar'}),
     ("regenerate",{'field': 'regenerate', 'data_type': 'boolean'}),
 ])
 
@@ -127,8 +127,8 @@ CONTRIB_EXP = OrderedDict([
 CONTRIB_EXP_TYPE = OrderedDict([
     ("contribexpendituretypeid",{'field': 'id', 'data_type': 'bigint'}),
     ("description",{'field': 'description', 'data_type': 'varchar'}),
-    ("iscontribution",{'field': 'contribution', 'data_type': 'boolean'}),
-    ("isanonymous", {'field': 'anonymous', 'data_type': 'boolean'}),
+    ("iscontribution",{'field': 'contribution', 'data_type': 'int::boolean'}),
+    ("isanonymous", {'field': 'anonymous', 'data_type': 'int::boolean'}),
 ])
 
 CAMPAIGN = OrderedDict([
