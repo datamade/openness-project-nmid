@@ -75,6 +75,7 @@ class IndexView(TemplateView):
                     FROM camp_fin_pac AS pac
                     JOIN camp_fin_filing AS filing
                       USING(entity_id)
+                    WHERE filing.date_added >= '2010-01-01'
                     ORDER BY pac.id, filing.date_added desc
                   ) AS pac
                 ) AS s
@@ -108,6 +109,7 @@ class IndexView(TemplateView):
                       ON filing.campaign_id = campaign.id
                     JOIN camp_fin_office AS office
                       ON campaign.office_id = office.id
+                    WHERE filing.date_added >= '2010-01-01'
                     ORDER BY candidate.id, filing.date_added DESC
                   ) AS candidates
                 ) AS s
@@ -482,13 +484,19 @@ class SearchAPIView(viewsets.ViewSet):
 
             if table == 'pac':
                 query = '''
-                    SELECT 
-                      pac.*, 
-                      treasurer.full_name AS treasurer_name 
-                    FROM camp_fin_pac AS pac
-                    JOIN camp_fin_treasurer AS treasurer
-                      ON pac.treasurer_id = treasurer.id
-                    WHERE pac.search_name @@ plainto_tsquery('english', %s)
+                    SELECT * FROM (
+                      SELECT DISTINCT ON (pac.id)
+                        pac.*, 
+                        treasurer.full_name AS treasurer_name 
+                      FROM camp_fin_pac AS pac
+                      JOIN camp_fin_treasurer AS treasurer
+                        ON pac.treasurer_id = treasurer.id
+                      JOIN camp_fin_filing AS filing
+                        ON filing.entity_id = pac.entity_id
+                      WHERE pac.search_name @@ plainto_tsquery('english', %s)
+                        AND filing.date_added >= '2010-01-01'
+                      ORDER BY pac.id
+                    ) AS s
                 '''.format(table)
             
             if table == 'candidate':
@@ -523,6 +531,7 @@ class SearchAPIView(viewsets.ViewSet):
                       LEFT JOIN camp_fin_division AS division
                         ON campaign.division_id = division.id
                       WHERE candidate.search_name @@ plainto_tsquery('english', %s)
+                        AND campaign.date_added >= '2010-01-01'
                       ORDER BY candidate.id, election.year DESC
                     ) AS s
                 '''.format(table)
@@ -619,6 +628,7 @@ class SearchAPIView(viewsets.ViewSet):
                       LEFT JOIN camp_fin_pac AS p
                         ON t.id = p.treasurer_id
                       WHERE t.search_name @@ plainto_tsquery('english', %s)
+                        AND m.date_added >= '2010-01-01'
                     ) AS s
                     WHERE related_entity_name IS NOT NULL
                 '''.format(reverse_lazy('candidate-list'), reverse_lazy('committee-list'))
