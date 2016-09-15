@@ -61,7 +61,7 @@ FILE_LOOKUP = {
     'office': 'Cam_ElectionOffice.xlsx',
     'filingperiod': 'Cam_FilingPeriod.xlsx',
     'officetype': 'Cam_OfficeType.xlsx',
-    'filing': 'Cam_Report.csv',
+    'filing': 'Cam_Report.xlsx',
     'candidate': 'Candidates.csv',
     'pac': 'PACs.csv',
     'campaignstatus': 'Cam_CampaignStatus.xlsx',
