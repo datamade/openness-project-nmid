@@ -316,6 +316,7 @@ class CommitteeDetailBaseView(DetailView):
                                        .filter(date_added__gte=TWENTY_TEN)\
                                        .filter(final=False)\
                                        .filter(filing_period__exclude_from_cascading=False)\
+                                       .filter(filing_period__regular_filing_period_id=None)\
                                        .order_by('filing_period__filing_date')
 
 
