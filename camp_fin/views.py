@@ -239,9 +239,6 @@ class DonationsView(PaginatedList):
         context['donation_sum'] = self.donation_sum
         return context
 
-class AboutView(TemplateView):
-    template_name = 'about.html'
-
 class SearchView(TemplateView):
     template_name = 'camp_fin/search.html'
 
