@@ -21,8 +21,10 @@ from rest_framework import routers
 from camp_fin.views import IndexView, CandidateList, CandidateDetail, \
     ContributionViewSet, ExpenditureViewSet, TransactionViewSet, TopDonorsView, \
     TopExpensesView, CommitteeList, CommitteeDetail, ContributionDetail, \
-    ExpenditureDetail, SearchView, SearchAPIView, AboutView, DonationsView, \
+    ExpenditureDetail, SearchView, SearchAPIView, DonationsView, \
     LoanViewSet
+
+from pages.views import PagesView
 
 router = routers.DefaultRouter()
 router.register(r'contributions', ContributionViewSet, base_name='contributions')
@@ -36,7 +38,7 @@ router.register(r'loans', LoanViewSet, base_name='loan')
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^$', IndexView.as_view(), name='index'),
-    url(r'^about', AboutView.as_view(), name='about'),
+    url(r'^about', PagesView.as_view(), name='about'),
     url(r'^donations', DonationsView.as_view(), name='donations'),
     url(r'^search/$', SearchView.as_view(), name='search'),
     url(r'^candidates/$', CandidateList.as_view(), name='candidate-list'),
@@ -46,5 +48,6 @@ urlpatterns = [
     url(r'^committees/$', CommitteeList.as_view(), name='committee-list'),
     url(r'^committees/(?P<slug>[\w-]+)/$', CommitteeDetail.as_view(), name='committee-detail'),
     url(r'^api/', include(router.urls)),
-    url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework'))
+    url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    url(r'^ckeditor/', include('ckeditor_uploader.urls')),
 ]
