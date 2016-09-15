@@ -562,7 +562,7 @@ class SearchAPIView(viewsets.ViewSet):
                       ON entity.id = candidate.entity_id
                     WHERE o.search_name @@ plainto_tsquery('english', %s)
                       AND tt.contribution = TRUE
-                      AND filing.date_added >= '01-01-2010'
+                      AND o.received_date >= '2010-01-01'
                 '''
             elif table == 'expenditure':
                 query = '''
@@ -590,7 +590,7 @@ class SearchAPIView(viewsets.ViewSet):
                       ON entity.id = candidate.entity_id
                     WHERE o.search_name @@ plainto_tsquery('english', %s)
                       AND tt.contribution = FALSE
-                      AND filing.date_added >= '01-01-2010'
+                      AND o.received_date >= '2010-01-01'
                 '''
             
             elif table == 'treasurer':
