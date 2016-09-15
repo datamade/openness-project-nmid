@@ -132,7 +132,7 @@ class PoliticalParty(models.Model):
 class Transaction(models.Model):
     contact = models.ForeignKey('Contact', db_constraint=False, null=True)
     amount = models.FloatField(db_index=True)
-    received_date = models.DateTimeField()
+    received_date = models.DateTimeField(db_index=True)
     date_added = models.DateTimeField()
     check_number = models.CharField(max_length=50, null=True)
     memo = models.TextField(null=True)

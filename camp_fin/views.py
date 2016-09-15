@@ -132,14 +132,12 @@ class DonationsView(PaginatedList):
             today = datetime.now().date()
 
             count_query = '''
-            SELECT MAX(o.received_date)
-            FROM camp_fin_transaction AS o
+            SELECT MAX(t.received_date)
+            FROM camp_fin_transaction AS t
             JOIN camp_fin_transactiontype AS tt
-            ON o.transaction_type_id = tt.id
-            JOIN camp_fin_filing AS filing
-            ON o.filing_id = filing.id
+              ON t.transaction_type_id = tt.id
             WHERE tt.contribution = TRUE
-            AND o.received_date <= '$[today]'
+              AND t.received_date <= NOW()
             '''
             cursor.execute(count_query)
             row = cursor.fetchone()
@@ -281,6 +279,7 @@ class CandidateList(PaginatedList):
                   ON filing.campaign_id = campaign.id
                 JOIN camp_fin_office AS office
                   ON campaign.office_id = office.id
+                WHERE filing.date_added >= '2010-01-01'
                 ORDER BY candidate.id, filing.date_added desc
               ) AS candidates
             ) AS s
@@ -371,6 +370,7 @@ class CommitteeList(PaginatedList):
                 FROM camp_fin_pac AS pac
                 JOIN camp_fin_filing AS filing
                   USING(entity_id)
+                WHERE filing.date_added >= '2010-01-01'
                 ORDER BY pac.id, filing.date_added desc
               ) AS pac
             ) AS s

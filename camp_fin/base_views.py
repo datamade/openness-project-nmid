@@ -81,7 +81,7 @@ class TransactionBaseViewSet(viewsets.ModelViewSet):
         if pac_id:
             queryset = queryset.filter(filing__entity__pac__id=pac_id)
         
-        return queryset
+        return queryset.order_by('-received_date')
 
 class TopMoneyView(viewsets.ViewSet):
     
@@ -158,6 +158,7 @@ class TopMoneyView(viewsets.ViewSet):
                     JOIN camp_fin_filing AS f 
                       ON transaction.filing_id = f.id 
                     WHERE tt.contribution = %s 
+                      AND transaction.received_date >= '2010-01-01'
                     GROUP BY 
                       transaction.name_prefix, 
                       transaction.first_name, 
@@ -260,6 +261,7 @@ class TopMoneyView(viewsets.ViewSet):
                       ON f.entity_id = pac.entity_id
                     WHERE tt.contribution = %s 
                       AND pac.id = %s
+                      AND transaction.received_date >= '2010-01-01' 
                     GROUP BY 
                       transaction.name_prefix, 
                       transaction.first_name, 
