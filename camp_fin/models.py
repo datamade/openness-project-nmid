@@ -17,7 +17,7 @@ class Candidate(models.Model):
     email = models.CharField(max_length=50, null=True)
     date_updated = models.DateTimeField(null=True)
     qual_candidate_id = models.IntegerField(null=True)
-    deceased = models.BooleanField()
+    deceased = models.CharField(max_length=3)
     
     full_name = models.CharField(max_length=500)
     
@@ -334,7 +334,7 @@ class Filing(models.Model):
     no_activity = models.BooleanField()
     supplement_count = models.IntegerField(null=True)
     total_supplemental_contributions = models.FloatField(null=True)
-    edited = models.BooleanField()
+    edited = models.CharField(max_length=3)
     regenerate = models.NullBooleanField()
     
     def __str__(self):

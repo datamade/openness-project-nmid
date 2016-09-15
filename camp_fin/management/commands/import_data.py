@@ -13,7 +13,6 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.utils.text import slugify
 
-from nmid.typeinferer import TypeInferer
 from .table_mappers import CANDIDATE, PAC, FILING, FILING_PERIOD, CONTRIB_EXP, \
     CONTRIB_EXP_TYPE, CAMPAIGN, OFFICE_TYPE, OFFICE, CAMPAIGN_STATUS, COUNTY, \
     DISTRICT, ELECTION_SEASON, ENTITY, ENTITY_TYPE, FILING_TYPE, LOAN, \
@@ -520,26 +519,24 @@ class Command(BaseCommand):
         self.executeTransaction(create)
 
     def makeRawTable(self):
+        
+        with open(self.file_path, 'r', encoding=self.encoding) as f:
+            reader = csv.reader(f)
+            fields = next(reader)
+        
+        fields = ', '.join(['"{}" VARCHAR'.format(f.lower()) for f in fields \
+                                if f.lower() != self.raw_pk_col])
 
-        try:
-            sql_table = sa.Table('raw_{0}'.format(self.entity_type), 
-                                 sa.MetaData(),
-                                 autoload=True,
-                                 autoload_with=self.connection.engine)
-        
-        except sa.exc.NoSuchTableError:
-            inferer = TypeInferer(self.file_path, encoding=self.encoding)
-            inferer.infer()
-            
-            sql_table = sa.Table('raw_{0}'.format(self.entity_type), 
-                                 sa.MetaData())
-        
-            for column_name, column_type in inferer.types.items():
-                sql_table.append_column(sa.Column(column_name.lower().replace('"', ''), column_type()))
-        
-        dialect = sa.dialects.postgresql.dialect()
-        create_table = str(sa.schema.CreateTable(sql_table)\
-                           .compile(dialect=dialect)).strip(';')
+        create_table = ''' 
+            CREATE TABLE raw_{0} (
+                {1} BIGINT,
+                {2},
+                PRIMARY KEY ({1})
+            )
+        '''.format(self.entity_type,
+                   self.raw_pk_col,
+                   fields)
+
         
         self.executeTransaction('DROP TABLE IF EXISTS raw_{0}'.format(self.entity_type))
         self.executeTransaction(create_table)
