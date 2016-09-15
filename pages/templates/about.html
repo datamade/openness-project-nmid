@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}About{% endblock %}
+
+{% block full_content %}
+<div class="container">
+
+    <div class='row'>
+        <div class='col-sm-8 col-sm-offset-2'>
+            <h1><i class='fa fa-fw fa-info-circle'></i>About</h1>
+            {{ page.text|safe }}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

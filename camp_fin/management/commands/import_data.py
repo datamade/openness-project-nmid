@@ -1,14 +1,13 @@
 import csv
 import zipfile
-from datetime import datetime, timedelta
 
 import sqlalchemy as sa
 
 import psycopg2
 
-import pytz
-
 from openpyxl import load_workbook
+
+import pytz
 
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
@@ -19,7 +18,7 @@ from .table_mappers import CANDIDATE, PAC, FILING, FILING_PERIOD, CONTRIB_EXP, \
     CONTRIB_EXP_TYPE, CAMPAIGN, OFFICE_TYPE, OFFICE, CAMPAIGN_STATUS, COUNTY, \
     DISTRICT, ELECTION_SEASON, ENTITY, ENTITY_TYPE, FILING_TYPE, LOAN, \
     LOAN_TRANSACTION, LOAN_TRANSACTION_TYPE, POLITICAL_PARTY, SPECIAL_EVENT, \
-    TREASURER, DIVISION
+    TREASURER, DIVISION, ADDRESS, CONTACT_TYPE, CONTACT, STATE
 
 DB_CONN = 'postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}'
 
@@ -51,6 +50,10 @@ MAPPER_LOOKUP = {
     'politicalparty': POLITICAL_PARTY,
     'specialevent': SPECIAL_EVENT,
     'treasurer': TREASURER,
+    'address': ADDRESS,
+    'contacttype': CONTACT_TYPE,
+    'contact': CONTACT,
+    'state': STATE,
 }
 
 FILE_LOOKUP = {
@@ -60,9 +63,9 @@ FILE_LOOKUP = {
     'office': 'Cam_ElectionOffice.xlsx',
     'filingperiod': 'Cam_FilingPeriod.xlsx',
     'officetype': 'Cam_OfficeType.xlsx',
-    'filing': 'Cam_Report.csv',
-    'candidate': 'Candidates.xlsx',
-    'pac': 'PACs.xlsx',
+    'filing': 'Cam_Report.xlsx',
+    'candidate': 'Candidates.csv',
+    'pac': 'PACs.csv',
     'campaignstatus': 'Cam_CampaignStatus.xlsx',
     'county': 'Cam_County.xlsx',
     'district': 'Cam_District.xlsx',
@@ -77,11 +80,15 @@ FILE_LOOKUP = {
     'politicalparty': 'Cam_PoliticalParty.xlsx',
     'specialevent': 'Cam_SpecialEvent.xlsx',
     'treasurer': 'Cam_Treasurer.xlsx',
+    'address': 'Cam_Address.csv',
+    'contacttype': 'Cam_ContactType.xlsx',
+    'contact': 'Cam_Contact.csv',
+    'state': 'States.csv',
 }
 
 class Command(BaseCommand):
     help = 'Import New Mexico Campaign Finance data'
-    
+
     def add_arguments(self, parser):
         parser.add_argument(
             '--entity-types',
@@ -96,19 +103,52 @@ class Command(BaseCommand):
         
         if entity_types == ['all']:
             entity_types = FILE_LOOKUP.keys()
-        
-        self.connection = engine.connect()
-
-        self.makeETLTracker()
 
         for entity_type in entity_types:
             self.entity_type = entity_type
-            self.file_name = FILE_LOOKUP.get(entity_type)
+            file_name = FILE_LOOKUP.get(entity_type)
 
-            if self.file_name:
+            if file_name:
                 
-                self.doETL()
+                self.stdout.write(self.style.SUCCESS('Importing {}'.format(file_name)))
 
+                self.file_path = 'data/{}'.format(file_name)
+
+                self.encoding = 'utf-8'
+                if entity_type in ['transaction', 'address', 'contact']:
+                    self.encoding = 'windows-1252'
+
+                if self.file_path.endswith('xlsx'):
+                    self.convertXLSX()
+                
+                if self.file_path.endswith('zip'):
+                    self.unzipFile()
+                
+                self.table_mapper = MAPPER_LOOKUP[self.entity_type]
+
+                self.django_table = 'camp_fin_{}'.format(self.entity_type)
+                self.raw_pk_col = [k for k, v in self.table_mapper.items() \
+                                       if v['field'] == 'id'][0]
+                
+
+                self.connection = engine.connect()
+                
+                self.makeRawTable()
+                count = self.importRawData()
+                
+                self.stdout.write(self.style.SUCCESS('Found {0} records in {1}'.format(count, file_name)))
+
+                count = self.updateExistingRecords()
+                
+                self.stdout.write(self.style.SUCCESS('Updated {0} records in {1}'.format(count, self.django_table)))
+
+                self.makeNewTable()
+                count = self.findNewRecords()
+                
+                self.addNewRecords()
+                
+                self.stdout.write(self.style.SUCCESS('Inserted {0} new records into {1}'.format(count, self.django_table)))
+                
                 # This should only be necessary until we get the actual entity table
                 
                 if self.entity_type in ['candidate', 'pac', 'filing']:
@@ -122,102 +162,20 @@ class Command(BaseCommand):
                 if self.entity_type == 'loan':
                     self.makeLoanBalanceView()
                     self.stdout.write(self.style.SUCCESS('Made loan balance view'))
-
-
+                
                 self.stdout.write(self.style.SUCCESS('\n'))
+
             else:
                 self.stdout.write(self.style.ERROR('"{}" is not a valid entity'.format(self.entity_type)))
                 self.stdout.write(self.style.SUCCESS('\n'))
-                
+            
+        self.addTransactionFullName()
+        self.addLoanFullName()
+        self.addCandidateFullName()
+        self.addContactFullName()
+        self.addTreasurerFullName()
+
         self.stdout.write(self.style.SUCCESS('Import complete!'.format(self.entity_type)))
-    
-    def makeETLTracker(self):
-        create = ''' 
-            CREATE TABLE IF NOT EXISTS etl_tracker (
-              id SERIAL,
-              entity_type VARCHAR,
-              last_update timestamp with time zone,
-              PRIMARY KEY (id)
-            )
-        '''
-        self.executeTransaction(create)
-    
-    def updateTracker(self):
-        update = ''' 
-            INSERT INTO etl_tracker (
-              entity_type,
-              last_update
-            ) VALUES (
-              :entity_type,
-              NOW()
-            )
-        '''
-        self.executeTransaction(sa.text(update), 
-                                entity_type=self.entity_type)
-
-    def doETL(self):
-
-        self.stdout.write(self.style.SUCCESS('Importing {}'.format(self.file_name)))
-
-        self.file_path = 'data/{}'.format(self.file_name)
-
-        self.encoding = 'utf-8'
-        if self.entity_type == 'transaction':
-            self.encoding = 'windows-1252'
-
-        if self.file_path.endswith('xlsx'):
-            self.convertXLSX()
-        
-        if self.file_path.endswith('zip'):
-            self.unzipFile()
-        
-        self.table_mapper = MAPPER_LOOKUP[self.entity_type]
-
-        self.django_table = 'camp_fin_{}'.format(self.entity_type)
-        self.raw_pk_col = [k for k, v in self.table_mapper.items() \
-                                       if v['field'] == 'id'][0]
-        self.makeRawTable()
-        count = self.importRawData()
-        
-        self.stdout.write(self.style.SUCCESS('Found {0} records in {1}'.format(count, self.file_name)))
-
-        count = self.updateExistingRecords()
-        
-        self.stdout.write(self.style.SUCCESS('Updated {0} records in {1}'.format(count, self.django_table)))
-
-        self.makeNewTable()
-        count = self.findNewRecords()
-        
-        self.addNewRecords()
-        
-        self.updateTracker()
-
-        self.stdout.write(self.style.SUCCESS('Inserted {0} new records into {1}'.format(count, self.django_table)))
-
-    def unzipFile(self):
-        file_name = self.file_path.split('/')[1].rsplit('.', 1)[0]
-        file_name = '{}.csv'.format(file_name)
-        with zipfile.ZipFile(self.file_path) as zf:
-            zf.extract(file_name, path='data')
-        
-        self.file_path = 'data/{}'.format(file_name)
-
-    def convertXLSX(self):
-        wb = load_workbook(self.file_path)
-        sheet = wb.get_active_sheet()
-        
-        header = [r.value for r in sheet.rows[0]]
-        
-        csv_path = '{}.csv'.format(self.file_path.rsplit('.', 1)[0])
-        
-        with open(csv_path, 'w') as f:
-            writer = csv.writer(f)
-            writer.writerow(header)
-            for row in sheet.rows[1:]:
-                row_values = [r.value for r in row]
-                writer.writerow(row_values)
-        
-        self.file_path = csv_path
     
     def makeLoanBalanceView(self):
         timezone = pytz.timezone(settings.TIME_ZONE)
@@ -258,6 +216,149 @@ class Command(BaseCommand):
                   HAVING ((MAX(loan.amount::numeric::money) - SUM(loantrans.amount::numeric::money)) > 0::money)
                 )
             ''')
+
+    def addTransactionFullName(self):
+        update = ''' 
+            UPDATE camp_fin_transaction SET
+              full_name = s.full_name
+            FROM (
+              SELECT
+                CASE WHEN 
+                  company_name IS NULL OR TRIM(company_name) = ''
+                THEN
+                  TRIM(concat_ws(' ', 
+                                 name_prefix,
+                                 first_name,
+                                 middle_name,
+                                 last_name,
+                                 suffix))
+                ELSE
+                  company_name
+                END AS full_name,
+                id
+              FROM camp_fin_transaction
+            ) AS s
+            WHERE camp_fin_transaction.id = s.id
+        '''
+
+        self.executeTransaction(update)
+
+    def addLoanFullName(self):
+        update = ''' 
+            UPDATE camp_fin_loan SET
+              full_name = s.full_name
+            FROM (
+              SELECT
+                CASE WHEN 
+                  company_name IS NULL OR TRIM(company_name) = ''
+                THEN
+                  TRIM(concat_ws(' ', 
+                                 name_prefix,
+                                 first_name,
+                                 middle_name,
+                                 last_name,
+                                 suffix))
+                ELSE
+                  company_name
+                END AS full_name,
+                id
+              FROM camp_fin_loan
+            ) AS s
+            WHERE camp_fin_loan.id = s.id
+        '''
+
+        self.executeTransaction(update)
+    
+    def addTreasurerFullName(self):
+        update = ''' 
+            UPDATE camp_fin_treasurer SET
+              full_name = s.full_name
+            FROM (
+              SELECT
+                  TRIM(concat_ws(' ', 
+                                 prefix,
+                                 first_name,
+                                 middle_name,
+                                 last_name,
+                                 suffix)) AS full_name,
+                id
+              FROM camp_fin_treasurer
+            ) AS s
+            WHERE camp_fin_treasurer.id = s.id
+        '''
+
+        self.executeTransaction(update)
+    
+    def addCandidateFullName(self):
+        update = ''' 
+            UPDATE camp_fin_candidate SET
+              full_name = s.full_name
+            FROM (
+              SELECT
+                  TRIM(concat_ws(' ', 
+                                 prefix,
+                                 first_name,
+                                 middle_name,
+                                 last_name,
+                                 suffix)) AS full_name,
+                id
+              FROM camp_fin_candidate
+            ) AS s
+            WHERE camp_fin_candidate.id = s.id
+        '''
+
+        self.executeTransaction(update)
+    
+    def addContactFullName(self):
+        update = ''' 
+            UPDATE camp_fin_contact SET
+              full_name = s.full_name
+            FROM (
+              SELECT
+                CASE WHEN 
+                  company_name IS NULL OR TRIM(company_name) = ''
+                THEN
+                  TRIM(concat_ws(' ', 
+                                 prefix,
+                                 first_name,
+                                 middle_name,
+                                 last_name,
+                                 suffix))
+                ELSE
+                  company_name
+                END AS full_name, id
+              FROM camp_fin_contact
+            ) AS s
+            WHERE camp_fin_contact.id = s.id
+        '''
+
+        self.executeTransaction(update)
+
+
+    def unzipFile(self):
+        file_name = self.file_path.split('/')[1].rsplit('.', 1)[0]
+        file_name = '{}.csv'.format(file_name)
+        with zipfile.ZipFile(self.file_path) as zf:
+            zf.extract(file_name, path='data')
+        
+        self.file_path = 'data/{}'.format(file_name)
+
+    def convertXLSX(self):
+        wb = load_workbook(self.file_path)
+        sheet = wb.get_active_sheet()
+        
+        header = [r.value for r in sheet.rows[0]]
+        
+        csv_path = '{}.csv'.format(self.file_path.rsplit('.', 1)[0])
+        
+        with open(csv_path, 'w') as f:
+            writer = csv.writer(f)
+            writer.writerow(header)
+            for row in sheet.rows[1:]:
+                row_values = [r.value for r in row]
+                writer.writerow(row_values)
+        
+        self.file_path = csv_path
 
     def populateEntityTable(self):
         entities = ''' 
@@ -462,13 +563,13 @@ class Command(BaseCommand):
         
         self.executeTransaction('''
             ALTER TABLE raw_{0} ADD PRIMARY KEY ("{1}")
-        '''.format(self.entity_type, self.raw_pk_col))
+        '''.format(self.entity_type, self.raw_pk_col), raise_exc=False)
         
         import_count = self.connection.execute('SELECT COUNT(*) AS count FROM raw_{}'.format(self.entity_type))
 
         return import_count.first().count
 
-    def executeTransaction(self, query, raise_exc=False, *args, **kwargs):
+    def executeTransaction(self, query, raise_exc=True, *args, **kwargs):
         trans = self.connection.begin()
 
         try:
@@ -480,7 +581,6 @@ class Command(BaseCommand):
         except sa.exc.ProgrammingError as e:
             # TODO: Make some kind of logger
             # logger.error(e, exc_info=True)
-            print(e)
             trans.rollback()
             if raise_exc:
                 raise e

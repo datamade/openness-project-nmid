@@ -19,32 +19,13 @@ class Candidate(models.Model):
     qual_candidate_id = models.IntegerField(null=True)
     deceased = models.BooleanField()
     
+    full_name = models.CharField(max_length=500)
+    
     slug = models.CharField(max_length=500, null=True)
 
     def __str__(self):
         return self.full_name
     
-    @property
-    def full_name(self):
-        full_name = ''
-        
-        if self.prefix:
-            full_name = '{}'.format(self.prefix)
-        
-        if self.first_name:
-            full_name = '{0} {1}'.format(full_name, self.first_name)
-
-        if self.middle_name:
-            full_name = '{0} {1}'.format(full_name, self.middle_name)
-
-        if self.last_name:
-            full_name = '{0} {1}'.format(full_name, self.last_name)
-
-        if self.suffix:
-            full_name = '{0} {1}'.format(full_name, self.suffix)
-
-        return full_name.strip()
-
 class PAC(models.Model):
     entity = models.ForeignKey("Entity", db_constraint=False)
     name = models.CharField(max_length=100)
@@ -150,8 +131,8 @@ class PoliticalParty(models.Model):
 
 class Transaction(models.Model):
     contact = models.ForeignKey('Contact', db_constraint=False, null=True)
-    amount = models.FloatField()
-    received_date = models.DateTimeField()
+    amount = models.FloatField(db_index=True)
+    received_date = models.DateTimeField(db_index=True)
     date_added = models.DateTimeField()
     check_number = models.CharField(max_length=50, null=True)
     memo = models.TextField(null=True)
@@ -177,10 +158,10 @@ class Transaction(models.Model):
     contact_type_other = models.CharField(max_length=25, null=True)
     occupation = models.CharField(max_length=255, null=True)
     expenditure_for_certified_candidate = models.NullBooleanField()
+    
+    full_name = models.CharField(max_length=500, null=True)
 
     def __str__(self):
-        if self.company_name:
-            return self.company_name
         return self.full_name
     
     @property
@@ -188,27 +169,6 @@ class Transaction(models.Model):
         # This is here so that the API key makes a little more sense
         return self.filing
 
-    @property
-    def full_name(self):
-        full_name = ''
-        
-        if self.name_prefix:
-            full_name = '{}'.format(self.name_prefix)
-        
-        if self.first_name:
-            full_name = '{0} {1}'.format(full_name, self.first_name)
-
-        if self.middle_name:
-            full_name = '{0} {1}'.format(full_name, self.middle_name)
-
-        if self.last_name:
-            full_name = '{0} {1}'.format(full_name, self.last_name)
-
-        if self.suffix:
-            full_name = '{0} {1}'.format(full_name, self.suffix)
-
-        return full_name.strip()
-    
     @property
     def full_address(self):
         full_address = ''
@@ -269,32 +229,11 @@ class Loan(models.Model):
     occupation = models.CharField(max_length=255, null=True)
     loan_transfer_date = models.DateTimeField(null=True)
     from_file_id = models.IntegerField(null=True)
+    
+    full_name = models.CharField(max_length=500, null=True)
 
     def __str__(self):
-        if self.company_name:
-            return self.company_name
         return self.full_name
-    
-    @property
-    def full_name(self):
-        full_name = ''
-        
-        if self.name_prefix:
-            full_name = '{}'.format(self.name_prefix)
-        
-        if self.first_name:
-            full_name = '{0} {1}'.format(full_name, self.first_name)
-
-        if self.middle_name:
-            full_name = '{0} {1}'.format(full_name, self.middle_name)
-
-        if self.last_name:
-            full_name = '{0} {1}'.format(full_name, self.last_name)
-
-        if self.suffix:
-            full_name = '{0} {1}'.format(full_name, self.suffix)
-
-        return full_name.strip()
     
     @property
     def full_address(self):
@@ -399,9 +338,12 @@ class Filing(models.Model):
     regenerate = models.NullBooleanField()
     
     def __str__(self):
-        return '{0} {1} {2}'.format(self.campaign.candidate.first_name,
-                                      self.campaign.candidate.last_name,
-                                      self.filing_period)
+        if self.campaign:
+            return '{0} {1} {2}'.format(self.campaign.candidate.first_name,
+                                        self.campaign.candidate.last_name,
+                                        self.filing_period)
+        else:
+            return self.entity.pac_set.first().name
 
 class FilingPeriod(models.Model):
     filing_date = models.DateTimeField()
@@ -425,14 +367,20 @@ class FilingPeriod(models.Model):
 class Address(models.Model):
     street = models.CharField(null=True, max_length=100)
     city = models.CharField(null=True, max_length=50)
-    state = models.CharField(null=True, max_length=50)
-    zip_code = models.CharField(null=True, max_length=10)
+    state = models.ForeignKey('State', null=True, db_constraint=False)
+    zipcode = models.CharField(null=True, max_length=10)
+    county = models.ForeignKey('County', null=True, db_constraint=False)
+    country = models.CharField(max_length=50, null=True)
+    address_type = models.ForeignKey('AddressType', null=True, db_constraint=False)
+    olddb_id = models.IntegerField(null=True)
+    date_added = models.DateTimeField(null=True)
+    from_file_id = models.IntegerField(null=True)
 
     def __str__(self):
-        address = '{0}, {1}, {2}, {3}'.format(self.street,
-                                              self.city,
-                                              self.state,
-                                              self.zip_code)
+        address = '{0} {1}, {2} {3}'.format(self.street,
+                                         self.city,
+                                         self.state,
+                                         self.zipcode)
         return address
 
 class CampaignStatus(models.Model):
@@ -459,7 +407,7 @@ class ElectionSeason(models.Model):
 
 class Entity(models.Model):
     user_id = models.IntegerField(null=True)
-    entity_type = models.ForeignKey('EntityType', db_constraint=False)
+    entity_type = models.ForeignKey('EntityType', db_constraint=False, null=True)
     olddb_id = models.IntegerField(null=True)
     
     def __str__(self):
@@ -491,31 +439,46 @@ class Treasurer(models.Model):
     status = models.ForeignKey('Status', db_constraint=False)
     olddb_entity_id = models.IntegerField(null=True)
 
+    full_name = models.CharField(max_length=500, null=True)
+    
     def __str__(self):
         return self.full_name
+
+class Contact(models.Model):
+    prefix = models.CharField(max_length=10, null=True)
+    first_name = models.CharField(max_length=50, null=True)
+    middle_name = models.CharField(max_length=50, null=True)
+    last_name = models.CharField(max_length=50, null=True)
+    suffix = models.CharField(max_length=10, null=True)
+    occupation = models.CharField(max_length=100, null=True)
+    address = models.ForeignKey('Address', db_constraint=False)
+    phone = models.CharField(max_length=30, null=True)
+    email = models.CharField(max_length=100, null=True)
+    memo = models.TextField(null=True)
+    company_name = models.CharField(max_length=255, null=True)
+    contact_type = models.ForeignKey('ContactType', db_constraint=False)
+    status = models.ForeignKey('Status', db_constraint=False)
+    olddb_id = models.IntegerField(null=True)
+    date_added = models.DateTimeField(null=True)
+    entity = models.ForeignKey('Entity', db_constraint=False)
+    from_file_id = models.IntegerField(null=True)
+
+    full_name = models.CharField(max_length=500, null=True)
     
-    @property
-    def full_name(self):
-        full_name = ''
-        
-        if self.prefix:
-            full_name = '{}'.format(self.prefix)
-        
-        if self.first_name:
-            full_name = '{0} {1}'.format(full_name, self.first_name)
+    def __str__(self):
+        return self.full_name
 
-        if self.middle_name:
-            full_name = '{0} {1}'.format(full_name, self.middle_name)
+class ContactType(models.Model):
+    description = models.CharField(max_length=100)
+    
+    def __str__(self):
+        return self.description
 
-        if self.last_name:
-            full_name = '{0} {1}'.format(full_name, self.last_name)
-
-        if self.suffix:
-            full_name = '{0} {1}'.format(full_name, self.suffix)
-
-        return full_name.strip()
-
-
+class State(models.Model):
+    postal_code = models.CharField(max_length=2, null=True)
+    
+    def __str__(self):
+        return self.postal_code
 ######################################################################
 ### Below here are normalized tables that we may or may not end up ###
 ### getting. Just stubbing them out in case we do                  ###
@@ -524,16 +487,8 @@ class Treasurer(models.Model):
 class RegularFilingPeriod(models.Model):
     pass
 
-
-
 class Status(models.Model):
     pass
 
-class Contact(models.Model):
+class AddressType(models.Model):
     pass
-
-class ContactType(models.Model):
-    pass
-
-
-

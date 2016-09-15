@@ -45,6 +45,7 @@ class Command(BaseCommand):
         self.makeCandidateIndex()
         self.makePACIndex()
         self.makeTransactionIndex()
+        self.makeTreasurerIndex()
 
         self.stdout.write(self.style.SUCCESS('Worked'))
         
@@ -72,6 +73,32 @@ class Command(BaseCommand):
             ''')
 
             cursor.execute(self.create_trigger.format('candidate', 
+                                                      ','.join(index_fields)))
+    
+    def makeTreasurerIndex(self):
+        index_fields = [
+            'prefix',
+            'first_name',
+            'middle_name',
+            'last_name',
+            'suffix'
+        ]
+
+        vector = "concat_ws(' ', {})".format(', '.join(index_fields))
+
+        with transaction.atomic():
+            cursor = connection.cursor()
+            cursor.execute(self.drop_vector.format('treasurer'))
+            cursor.execute(self.add_vector.format('treasurer'))
+            cursor.execute(self.populate_vector.format('treasurer', vector))
+            cursor.execute(self.add_index.format('treasurer'))
+            
+            cursor.execute(''' 
+                DROP TRIGGER IF EXISTS treasurer_search_update 
+                ON camp_fin_treasurer
+            ''')
+
+            cursor.execute(self.create_trigger.format('treasurer', 
                                                       ','.join(index_fields)))
 
     def makePACIndex(self):

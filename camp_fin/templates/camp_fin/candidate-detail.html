@@ -1,0 +1,476 @@
+{% extends 'base-detail.html' %}
+{% load helpers %}
+{% load staticfiles %}
+{% block title %}{{ candidate.full_name }}{% endblock %}
+
+{% block header %}
+    <p><a href='/candidates'>&laquo; Candidates</a></p>
+    <h1>{{ candidate.full_name }}</h1>
+{% endblock %}
+
+{% block charts %}
+    <h3>Net funds over time</h3>
+    <div id='net-funds-chart'></div>
+
+    <h3>Donations and expenditures over time</h3>
+    <div id='expend-chart'></div>
+{% endblock %}
+
+{% block contact %}
+    <div class="col-sm-5 col-sm-offset-1">
+        <div class="well">
+            <h4>Contact information</h4>
+            <table class="table table-condensed">
+                <tbody>
+                    <tr>
+                        <td>
+                            Phone
+                        </td>
+                        <td>{{ candidate.contact.phone|default:candidate.business_phone|default:candidate.home_phone }}</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Email
+                        </td>
+                        <td>
+                            <a href="mailto:{{ candidate.contact.email|default:candidate.email }}">
+                                {{ candidate.contact.email|default:candidate.email }}
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Address
+                        </td>
+                        <td>
+                            {{ candidate.contact.address|default:candidate.address }}
+                        </td>
+                    </tr>
+                    {% if candidate.contact.occupation %}
+                        <tr>
+                            <td>
+                                Occupation
+                            </td>
+                            <td>
+                                {{ candidate.contact.occupation }}
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            <h4>Treasurer{% if candidate.campaign_set.all|length > 1 %}s{% endif %} <small>{{ latest_filing.campaign.committee_name|default:""}}</small></h4>
+            {% with treasurer=latest_filing.campaign.treasurer %}
+            <table class="table table-condensed">
+                <tbody>
+                    {% if treasurer.full_name %}
+                    <tr>
+                        <td>
+                            Name
+                        </td>
+                        <td>
+                            <a href="{% url 'search' %}?term={{ treasurer.full_name }}">
+                                {{ treasurer.full_name}}
+                            </a>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% if treasurer.business_phone %}
+                    <tr>
+                        <td>
+                            Phone
+                        </td>
+                        <td>{{ treasurer.business_phone }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if treasurer.alt_phone %}
+                    <tr>
+                        <td>
+                            Alternantive Phone
+                        </td>
+                        <td>{{ treasurer.alt_phone }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if treasurer.email %}
+                    <tr>
+                        <td>
+                            Email
+                        </td>
+                        <td>
+                            <a href="mailto:{{ treasurer.email }}">
+                                {{ treasurer.email }}
+                            </a>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% if treasurer.address %}
+                    <tr>
+                        <td>
+                            Address
+                        </td>
+                        <td>
+                            {{ treasurer.address }}
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            {% endwith %}
+            {% for campaign in candidate.campaign_set.all %}
+                <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+                {% if campaign.treasurer != latest_filing.campaign.treasurer %}
+                        <div class="panel panel-default">
+                            <div class="panel-heading" role="tab" id="heading{{ forloop.counter }}">
+                                <h5 class="panel-title">
+                                    <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse{{ forloop.counter }}" aria-expanded="true" aria-controls="collapse{{ forloop.counter }}">
+                                        {{ campaign.treasurer.full_name }}</a>
+                                    <small>
+                                        {% if campaign.committee_name %}
+                                            <br />{{ campaign.committee_name }} ({{campaign.election_season.year}})
+                                        {% else %}
+                                            ({{ campaign.election_season.year }})
+                                        {% endif %}
+                                    </small>
+                                </h5>
+                            </div>
+                            <div id="collapse{{ forloop.counter }}" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading{{ forloop.counter }}">
+                                <div class="panel-body">
+                                    <table class="table table-condensed">
+                                        <tbody>
+                                            <tr>
+                                                <td>
+                                                    Name
+                                                </td>
+                                                <td>
+                                                    <a href="{% url 'search' %}?term={{ campaign.treasurer.full_name }}">
+                                                        {{ campaign.treasurer.full_name}}
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% if campaign.treasurer.business_phone %}
+                                            <tr>
+                                                <td>
+                                                    Phone
+                                                </td>
+                                                <td>{{ campaign.treasurer.business_phone }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if campaign.treasurer.alt_phone %}
+                                            <tr>
+                                                <td>
+                                                    Alternantive Phone
+                                                </td>
+                                                <td>{{ campaign.treasurer.alt_phone }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if campaign.treasurer.email %}
+                                            <tr>
+                                                <td>
+                                                    Email
+                                                </td>
+                                                <td>
+                                                    <a href="mailto:{{ campaign.treasurer.email }}">
+                                                        {{ campaign.treasurer.email }}
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                            {% if campaign.treasurer.address %}
+                                            <tr>
+                                                <td>
+                                                    Address
+                                                </td>
+                                                <td>
+                                                    {{ campaign.treasurer.address }}
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block campaigns %}
+    <div class="row">
+        <div class="col-md-12">
+            <h3>Campaigns</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Office (Party)</th>
+                        <th>Committee</th>
+                        <th>Election year</th>
+                        <th>Won primary?</th>
+                        <th>Won general?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for campaign in candidate.campaign_set.all %}
+                        <tr>
+                            <td>{{ campaign.office.description }} ({{ campaign.political_party }})</td>
+                            <td>{{ campaign.committee_name|default_if_none:"" }}</td>
+                            <td>{{ campaign.election_season.year }}</td>
+                            <td>{{ campaign.primary_election_winner_status|default_if_none:"" }}</td>
+                            <td>{{ campaign.general_election_winner_status|default_if_none:"" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/highcharts.js' %}"></script>
+    <script src="{% static 'js/ejs_production.js' %}"></script>
+    <script src="{% static 'js/accounting.min.js' %}"></script>
+    <script src="{% static 'js/moment.min.js' %}"></script>
+    <script src="{% static 'js/chart_helper.js' %}"></script>
+    <script>
+        function transaction_verb(transaction_type){
+            var verbs = {
+                'Monetary contribution': 'donated',
+                'In Kind contribution': 'donated in-kind',
+                'Anonymous Contribution': 'anonymously donated',
+                'Refund monetary  (NOT BEING USED)': 'was refunded',
+                'Monetary Expenditure': 'received'
+            }
+            return verbs[transaction_type];
+        }
+
+        //render net balance chart
+        var balance_trend = {{balance_trend}};
+        var balance_trend_f = [];
+
+        // format investments
+        for (i = 0; i < balance_trend.length; i++) {
+            balance_trend_f.push([Date.UTC(balance_trend[i][1],balance_trend[i][2]-1,balance_trend[i][3]), balance_trend[i][0]]);
+        }
+
+        ChartHelper.netfunds('net-funds-chart', 'Net funds over time', '', 'Funds', balance_trend_f);
+
+
+        //render donation/expenditure chart
+        var expend_trend = {{expend_trend}};
+        var expend_trend_f = [];
+
+        var donation_trend = {{donation_trend}};
+        var donation_trend_f = [];
+
+        // format donations
+        for (i = 0; i < donation_trend.length; i++) {
+            donation_trend_f.push([Date.UTC(donation_trend[i][1],donation_trend[i][2]-1,donation_trend[i][3]), donation_trend[i][0]]);
+        }
+
+        // format expenditures
+        for (i = 0; i < expend_trend.length; i++) {
+            expend_trend_f.push([Date.UTC(expend_trend[i][1],expend_trend[i][2]-1,expend_trend[i][3]), expend_trend[i][0]]);
+        }
+
+        ChartHelper.donation_expenditure('expend-chart', 'Donations and expenditures over time', '', 'Money', [donation_trend_f, expend_trend_f]);
+
+    </script>
+    <script type="text/EJS" id="transaction-table-guts">
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Donor</th>
+                    <th class="text-right nowrap">Amount</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% $.each(results, function(i, transaction){ %>
+                    <tr>
+                        <td>
+                            <% if (transaction.full_name){ %>
+                                <a href='/search/?term=<%= transaction.full_name %>'>
+                                    <%= transaction.full_name %>
+                                </a>
+                            <% } else { %>
+                                <a href='/search/?term=<%= transaction.company_name %>'>
+                                    <%= transaction.company_name %>
+                                </a>
+                            <% } %>
+                        </td>
+                        <td class="text-right nowrap">
+                            <% if (transaction.transaction_type.toLowerCase().endsWith('contribution')){ %>
+                                <a href="/contributions/<%= transaction.id %>/">
+                                    <%= transaction_verb(transaction.transaction_type) %>
+                                    <strong>
+                                        <%= accounting.formatMoney(transaction.amount) %>
+                                    </strong>
+                                </a>
+                            <% } else { %>
+                                <a href="/expenditures/<%= transaction.id %>/">
+                                    <%= transaction_verb(transaction.transaction_type) %>
+                                    <strong>
+                                        <%= accounting.formatMoney(transaction.amount) %>
+                                    </strong>
+                                </a>
+                            <% } %>
+                        </td>
+                        <td class='nowrap'>
+                            on <%= moment(transaction.received_date).format('MMMM DD, YYYY') %>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+        <p>
+            <% if ( previous ){ %>
+                <a href='javascript://' class='btn btn-sm btn-primary page-link' data-page_link="<%= previous %>">
+                    &laquo; Previous page
+                </a>
+            <% } %>
+            <% if ( next ){ %>
+                <a href='javascript://' class='btn btn-sm btn-primary page-link' data-page_link="<%= next %>">
+                    Next page &raquo;
+                </a>
+            <% } %>
+        </p>
+    </script>
+    <script type="text/javascript">
+        function getPersonName(object){
+            var person_name = '';
+            if (object.name_prefix){
+                person_name += object.name_prefix + ' ';
+            }
+            if (object.prefix){
+                person_name += object.prefix + ' ';
+            }
+            if (object.first_name){
+                person_name += object.first_name + ' ';
+            }
+            if (object.middle_name){
+                person_name += object.middle_name + ' ';
+            }
+            if (object.last_name){
+                person_name += object.last_name + ' ';
+            }
+            if (object.suffix){
+                person_name += object.suffix + ' ';
+            }
+            return person_name
+        }
+    </script>
+
+    <script type="text/EJS" id="top-money-table-guts">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <% if(transaction_type == 'top-donors'){ %>
+                        <th>Donor</th>
+                        <th>Total donated</th>
+                    <% } else { %>
+                        <th>Recipient</th>
+                        <th>Total received</th>
+                    <% } %>
+                    <th>Election year</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% $.each(transactions, function(i, transaction){ %>
+                    <% if (transaction.company_name && transaction.company_name != 'N/A'){ %>
+                        <% var full_name = transaction.company_name %>
+                    <% } else { %>
+                        <% var full_name = getPersonName(transaction) %>
+                    <% }%>
+                    <tr>
+                        <td><%= transaction.rank %></td>
+                        <td>
+                            <a href='/search/?term=<%= full_name %>'>
+                                <%= full_name %>
+                            </a>
+                        </td>
+                        <td class='nowrap'>
+                            <%= accounting.formatMoney(transaction.amount) %>
+                        </td>
+                        <td><%= transaction.year %></td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </script>
+
+    <script type="text/javascript">
+
+        function getPage(e){
+            var page_link = $(e.target).data('page_link');
+            $.when($.getJSON(page_link)).then(
+                function(data){
+                    var template = new EJS({'text': $('#transaction-table-guts').html()});
+                    $('#money-table-guts').html(template.render(data));
+                    $('.page-link').off('click');
+                    $('.page-link').on('click', getPage);
+                }
+            )
+        }
+
+        function displayTopMoneyTable(transaction_type){
+            var url = '/api/' + transaction_type + '/' + '{{ candidate.id }}' + '/';
+            $.when($.getJSON(url)).then(function(data){
+                var template = new EJS({'text': $('#top-money-table-guts').html()});
+                var context = {
+                    'transactions': data,
+                    'transaction_type': transaction_type
+                };
+                $('#money-table-guts').html(template.render(context));
+            })
+        }
+
+        function displayTransactionTable(transaction_type, sort_order){
+            if(transaction_type.endsWith('contributions')){
+                var url = '/api/contributions/';
+            } else if (transaction_type.endsWith('expenditures')){
+                var url = '/api/expenditures/';
+            }
+            var params = {
+                'candidate_id': '{{ candidate.id }}',
+                'limit': 25,
+            }
+            if (sort_order){
+                params['ordering'] = sort_order;
+            }
+            $.when($.getJSON(url, params)).then(
+                function(data){
+                    var template = new EJS({'text': $('#transaction-table-guts').html()});
+                    $('#money-table-guts').html(template.render(data));
+                    $('.page-link').off('click');
+                    $('.page-link').on('click', getPage);
+                }
+            )
+        }
+        $(document).ready(function(){
+
+            displayTopMoneyTable('top-donors');
+
+            $('.transactions').on('click', function(e){
+                $('#money-table-guts').html("<h1><i class='fa fa-spin fa-refresh'></i></h1>");
+                if(!$(this).parent().hasClass('active')){
+                    $('li[role="presentation"]').removeClass('active');
+                    $(this).parent().addClass('active');
+                }
+                var transaction_type = $(this).data('table_type');
+                if (transaction_type.startsWith('top')){
+                    displayTopMoneyTable(transaction_type);
+                } else {
+                    var sort_order = null;
+                    if (transaction_type.startsWith('largest')){
+                        sort_order = '-amount';
+                    }
+                    displayTransactionTable(transaction_type, sort_order);
+                }
+            })
+        })
+    </script>
+
+{% endblock %}

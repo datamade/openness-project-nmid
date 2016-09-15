@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load helpers %}
+{% load staticfiles %}
+
+{% block full_content %}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h3>
+                <strong>{{ transaction }}</strong>
+                {{ transaction.transaction_type.description|get_transaction_verb }}
+                <strong>{{ transaction.amount|format_money }}</strong>
+                to <strong>{{ entity.full_name }}</strong>
+                on {{ transaction.received_date|date:"F j, o" }}
+            </h3>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-8">
+            <table class="table table-hover">
+                <tbody>
+                    <tr>
+                        <td>Donor</td>
+                        <td><a href="/search/?term={{ transaction }}">{{ transaction }}</a></td>
+                    </tr>
+                    <tr>
+                        <td>Address</td>
+                        <td>{{ transaction.contact.address|default:transaction.full_address }}</td>
+                    </tr>
+                    {% if transaction.contact.contact_type %}
+                        <tr>
+                            <td>Donor type</td>
+                            <td>{{ transaction.contact.contact_type }}</td>
+                        </tr>
+                    {% endif %}
+                    {% if transaction.memo %}
+                    <tr>
+                        <td>Memo</td>
+                        <td>{{ transaction.memo }}</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            <div class="row">
+                <div class="col-md-6 col-md-offset-3">
+                    <div class="text-center well">
+                        <p>{{ transaction.transaction_type.description|get_transaction_verb }}</p>
+                        <h1>
+                            <label class="label label-success">{{ transaction.amount|format_money }}</label>
+                        </h1>
+                        <br>
+                        {% if transaction.description %}
+                            <p>
+                            {{transaction.description}}
+                            </p>
+                        {% endif %}
+                    </div>
+                    <div class="text-center">
+                        <h1><i class="fa fa-fw fa-chevron-down"></i></h1>
+                    </div>
+                </div>
+            </div>
+            <table class="table table-hover">
+                <tbody>
+                    <tr>
+                        <td>Recipient</td>
+                        {% if entity_type == 'candidate' %}
+                            <td><a href="{% url 'candidate-detail' entity.slug %}">{{ entity.full_name }}</a></td>
+                        {% else %}
+                            <td><a href="{% url 'committee-detail' entity.slug %}">{{ entity.full_name }}</a></td>
+                        {% endif %}
+                    </tr>
+                    {% if office %}
+                    <tr>
+                        <td>Office sought</td>
+                        <td>{{ office.description }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <td>Address</td>
+                        <td>{{ entity.address }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="col-md-4"></div>
+    </div>
+</div>
+
+{% endblock %}
+

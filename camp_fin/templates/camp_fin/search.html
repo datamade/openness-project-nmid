@@ -1,0 +1,358 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+
+{% block title %}Search{% endblock %}
+
+{% block full_content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <form method='GET'>
+                <div class="input-group input-group-lg">
+                    <input type="text" class="form-control" placeholder="Search for candidates, committees and donors in New Mexico" id="term" name="term" {% if term %}value="{{term}}"{% endif %}>
+                    <span class="input-group-btn">
+                        <button class="btn btn-default" type="submit"><i class='fa fa-search'></i> Search</button>
+                    </span>
+                </div>
+                <div class="form-group" id='filter-results'>
+                    <br />
+                    <div class="row">
+                        <div class="col-md-2">
+                            <span>Search for</span>
+                        </div>
+                        <div class="col-md-10">
+                            <label data-title='Candidates' data-content='Any person who seeks nomination for election, election to, or retention in public office'>
+                                <input type="checkbox" name="table_name" value="candidate" {% if 'candidate' in table_name %}checked='checked'{% endif %}> Candidates
+                            </label>
+                            <label data-title='Committees' data-content='Includes committees for political candidates, political parties, political action committees (PACs), and ballot initiatives'>
+                                <input type="checkbox" name="table_name" value="pac" {% if 'pac' in table_name %}checked='checked'{% endif %}> Committees
+                            </label>
+                            <label data-title='Donations' data-content='Any person or organization who has given to a political committee'>
+                                <input type="checkbox" name="table_name" value="contribution" {% if 'contribution' in table_name %}checked='checked'{% endif %}> Donations to committees
+                            </label>
+                            <label data-title='Expenditures' data-content='Any person or organization who was given money by a political committee'>
+                                <input type="checkbox" name="table_name" value="expenditure" {% if 'expenditure' in table_name %}checked='checked'{% endif %}> Expenditures by committees
+                            </label>
+                            <label data-title='Treasurers' data-content='Treasurers for political organizations'>
+                                <input type="checkbox" name="table_name" value="treasurer" {% if 'treasurer' in table_name %}checked='checked'{% endif %}> Committee treasurers
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="row">
+        <div id="candidate-search-results" class="col-md-12" style="display:none;">
+            <h3>Candidates <small></small></h3>
+            <table class="table table-hover" id="candidate-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Party</th>
+                        <th>Office</th>
+                        <th>Committee name</th>
+                        <th>Last election year</th>
+                    </tr>
+                </thead>
+            </table>
+            <hr />
+        </div>
+        <div id="pac-search-results" class="col-md-12" style="display:none;">
+            <h3>PACs <small></small></h3>
+            <table class="table table-hover" id="pac-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Treasurer</th>
+                    </tr>
+                </thead>
+                <tbody>
+            </table>
+            <hr />
+        </div>
+        <div id="treasurer-search-results" class="col-md-12" style="display:none;">
+            <h3>Treasurers <small></small></h3>
+            <table class="table table-hover" id="treasurer-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Committee name</th>
+                    </tr>
+                </thead>
+                <tbody>
+            </table>
+            <hr />
+        </div>
+        <div id="contribution-search-results" class="col-md-12" style="display:none;">
+            <h3>Contributions <small></small></h3>
+            <table class="table table-hover" id="contribution-table">
+                <thead>
+                    <tr>
+                        <th>Donor name</th>
+                        <th>Recipient name</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+            </table>
+            <hr />
+        </div>
+        <div id="expenditure-search-results" class="col-md-12" style="display:none;">
+            <h3>Expenditures <small></small></h3>
+            <table class="table table-hover" id="expenditure-table">
+                <thead>
+                    <tr>
+                        <th>Expense name</th>
+                        <th>Spender name</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+            </table>
+            <hr />
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'js/jquery.dataTables.sorting.js' %}"></script>
+<script src="{% static 'js/dataTables.bootstrap.js' %}"></script>
+<script src="{% static 'js/URI.min.js' %}"></script>
+<script src="{% static 'js/ejs_production.js' %}"></script>
+<script src="{% static 'js/accounting.min.js' %}"></script>
+<script src="{% static 'js/moment.min.js' %}"></script>
+<script type="text/javascript">
+    function do_query(query){
+
+        var term = query['term'];
+        var table_names = [];
+
+        if(typeof query.table_name === 'string'){
+            table_names = [query.table_name];
+        } else if (typeof query.table_name === 'undefined'){
+            table_names = ['pac', 'contribution', 'expenditure', 'candidate', 'treasurer'];
+        } else {
+            table_names = query.table_name;
+        }
+
+        if(table_names.indexOf('pac') >= 0){
+            var columns = [
+                {
+                    'data': 'name',
+                    'render': function(data, type, full, meta){
+                        return '<a href="/committees/' + full['slug'] + '/">' + full['name'] + '</a>';
+                    }
+                },
+                {
+                    'data': 'treasurer_name',
+                    'render': function(data, type, full, meta){
+                        return '<a href="/search/?term=' + full['treasurer_name'] + '">' + full['treasurer_name'] + '</a>';
+                    }
+                }
+            ];
+            init_datatable(term, 'pac', columns)
+        }
+
+        if(table_names.indexOf('candidate') >= 0){
+            var columns = [
+                {
+                    'data': 'full_name',
+                    'render': function(data, type, full, meta){
+                        return '<a href="/candidates/' + full['slug'] + '/">' + full['full_name'] + '</a>';
+                    }
+                },
+                {'data': 'party_name'},
+                {
+                    'data': 'office_name',
+                    'render': function(data, type, full, meta){
+                        var name = full['office_name'];
+                        if (full['county_name'] != '' && full['county_name'] != 'ALL'){
+                            name += ' ' + full['county_name'] + ' County';
+                        }
+                        if (full['district_name']){
+                            name += ' ' + full['district_name'];
+                        }
+                        if (full['division_name']){
+                            name += ' ' + full['division_name'];
+                        }
+                        return name;
+                    }
+                },
+                {'data': 'committee_name'},
+                {'data': 'election_year'}
+            ];
+            init_datatable(term, 'candidate', columns)
+        }
+
+        if(table_names.indexOf('expenditure') >= 0){
+            var columns = [
+                {
+                    'data': 'full_name',
+                    'render': function(data, type, full, meta){
+                        return '<a href="/search/?term=' + full['full_name'] + '">' + full['full_name'] + '</a>';
+                    },
+                },
+                {
+                    'data': 'transaction_subject',
+                    'render': function(data, type, full, meta){
+                        if(full['pac_slug']){
+                            return '<a href="/committees/' + full['pac_slug'] + '/">' + full['transaction_subject'] + '</a>';
+                        } else {
+                            return '<a href="/candidates/' + full['candidate_slug'] + '/">' + full['transaction_subject'] + '</a>';
+                        }
+                    }
+                },
+                {
+                    'data': 'received_date',
+                    'render': function(data, type, full, meta){
+                        return moment(data).format('MMM DD, YYYY');
+                    }
+                },
+                {
+                    'data': 'amount',
+                    'render': function(data, type, full, meta){
+                        return '<a href="/expenditures/' + full['id'] + '/">' + accounting.formatMoney(data) + '</a>';
+                    }
+                },
+                {'data': 'description'}
+            ];
+            var order = [[2, 'desc']];
+            init_datatable(term, 'expenditure', columns, order)
+        }
+
+        if(table_names.indexOf('contribution') >= 0){
+            var columns = [
+                {
+                    'data': 'full_name',
+                    'render': function(data, type, full, meta){
+                        return '<a href="/search/?term=' + full['full_name'] + '">' + full['full_name'] + '</a>';
+                    },
+                },
+                {
+                    'data': 'transaction_subject',
+                    'render': function(data, type, full, meta){
+                        if(full['pac_slug']){
+                            return '<a href="/committees/' + full['pac_slug'] + '/">' + full['transaction_subject'] + '</a>';
+                        } else {
+                            return '<a href="/candidates/' + full['candidate_slug'] + '/">' + full['transaction_subject'] + '</a>';
+                        }
+                    }
+                },
+                {
+                    'data': 'received_date',
+                    'render': function(data, type, full, meta){
+                        return moment(data).format('MMM DD, YYYY');
+                    }
+                },
+                {
+                    'data': 'amount',
+                    'render': function(data, type, full, meta){
+                        return '<a href="/contributions/' + full['id'] + '/">' + accounting.formatMoney(data) + '</a>';
+                    }
+                },
+                {'data': 'description'}
+            ];
+            var order = [[2, 'desc']];
+            init_datatable(term, 'contribution', columns, order)
+        }
+
+        if(table_names.indexOf('treasurer') >= 0){
+            var columns = [
+                {
+                    'data': 'full_name',
+                    'render': function(data, type, full, meta){
+                        return '<a href="/search/?term=' + full['full_name'] + '">' + full['full_name'] + '</a>';
+                    }
+                },
+                {
+                    'data': 'related_entity_name',
+                    'render': function(data, type, full, meta){
+                        return '<a href="' + full['related_entity_url'] + '">' + full['related_entity_name'] + '</a>';
+                    }
+                }
+            ];
+            init_datatable(term, 'treasurer', columns)
+        }
+
+    }
+
+    function init_datatable(term, table_name, columns, order){
+        if (typeof order === 'undefined'){
+            var order = [[0, 'asc']]
+        }
+
+        $('#' + table_name + '-search-results').show();
+
+        var params = {
+            'term': term,
+            'table_name': table_name,
+        };
+
+        params = $.param(params);
+
+        var opts = {
+            "info": false,
+            "searching": false,
+            "bLengthChange": false,
+            "processing": true,
+            "paging": true,
+            "pageLength": 10,
+            "serverSide": true,
+            "ajax": {
+                "url": "/api/search/?" + params,
+                "dataSrc": table_name + '.objects'
+            },
+            "columns": columns,
+            "language": {
+                'paginate': {
+                    'first': '&laquo;',
+                    'last': '&raquo;',
+                    'previous': '&lt;',
+                    'next': '&gt;'
+                },
+                'zeroRecords': 'No results found',
+                'processing': "<h1><i class='fa fa-spin fa-refresh-o'></i></h1>"
+            },
+            "initComplete": function(settings, data){
+                var meta = data[table_name]['meta']
+                if(data[table_name].length == 0){
+                    $('#' + table_name + '-results').hide();
+                    $('#download-results').hide();
+                    $('#no-results').show();
+                }
+                else {
+                    $('#' + table_name + '-search-results h3 small').html(meta.total_rows + " found");
+                    $('#download-results').show();
+                    // var query = window.location.search;
+                    // $('#download-results-link').attr('href', '/api/advanced-search/' + query + '&datatype=csv')
+                    setTimeout(function(){ $('#no-results').hide(); }, 500);
+                }
+            },
+            "drawCallback": function(settings){
+                var display_count = parseInt(settings._iDisplayLength);
+                var record_count = parseInt(settings['json'][table_name]['meta']['total_rows']);
+                if (record_count <= display_count){
+                    $('#' + table_name + '-table_paginate').hide();
+                }
+            },
+            "order": order
+        }
+        var table = $('#' + table_name + '-table').DataTable(opts);
+    }
+
+    $(document).ready(function(){
+        {% if term != None %}
+            var query = URI(window.location.search).query(true)
+            do_query(query);
+        {% endif %}
+    })
+
+</script>
+{% endblock %}
+
