@@ -1,6 +1,7 @@
 import itertools
 from collections import namedtuple, OrderedDict
 from datetime import datetime, timedelta
+import time
 
 from django.views.generic import ListView, TemplateView, DetailView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
@@ -313,6 +314,9 @@ class CommitteeDetailBaseView(DetailView):
 
         all_filings = context['object'].entity.filing_set\
                                        .filter(date_added__gte=TWENTY_TEN)\
+                                       .filter(final=False)\
+                                       .filter(filing_period__exclude_from_cascading=False)\
+                                       .filter(filing_period__regular_filing_period_id=None)\
                                        .order_by('filing_period__filing_date')
 
 
@@ -321,13 +325,13 @@ class CommitteeDetailBaseView(DetailView):
                            f.filing_period.filing_date.month,
                            f.filing_period.filing_date.day]
                            for f in all_filings]
-
+        
         donation_trend = [[f.total_contributions,
                            f.filing_period.filing_date.year,
                            f.filing_period.filing_date.month,
                            f.filing_period.filing_date.day]
                            for f in all_filings]
-
+        
         expend_trend = [[  (-1*f.total_expenditures),
                            f.filing_period.filing_date.year,
                            f.filing_period.filing_date.month,
@@ -338,7 +342,7 @@ class CommitteeDetailBaseView(DetailView):
         context['balance_trend'] = balance_trend
         context['donation_trend'] = donation_trend
         context['expend_trend'] = expend_trend
-    
+        
         return context
 
 

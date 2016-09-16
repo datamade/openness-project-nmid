@@ -15,7 +15,7 @@ ChartHelper.donations = function(el, title, sourceTxt, yaxisLabel, data, pointIn
   // console.log(selected);
 
   var color = '#007F00';
-  
+
   var seriesData = [{
       color: color,
       data: data,
@@ -38,8 +38,8 @@ ChartHelper.donations = function(el, title, sourceTxt, yaxisLabel, data, pointIn
         floating: true,
         verticalAlign: "top"
       },
-      credits: { 
-        enabled: false 
+      credits: {
+        enabled: false
       },
       title: null,
       xAxis: {
@@ -98,7 +98,7 @@ ChartHelper.donations = function(el, title, sourceTxt, yaxisLabel, data, pointIn
 
 ChartHelper.netfunds = function(el, title, sourceTxt, yaxisLabel, data) {
   var color = '#007F00';
-  
+
   var seriesData = [{
           color: color,
           data: data,
@@ -120,8 +120,8 @@ ChartHelper.netfunds = function(el, title, sourceTxt, yaxisLabel, data) {
         floating: true,
         verticalAlign: "top"
       },
-      credits: { 
-        enabled: false 
+      credits: {
+        enabled: false
       },
       title: null,
       xAxis: {
@@ -152,7 +152,7 @@ ChartHelper.netfunds = function(el, title, sourceTxt, yaxisLabel, data) {
       tooltip: {
           crosshairs: true,
           formatter: function() {
-            var s = "<strong>" + ChartHelper.toolTipDateFormat("quarter", this.x) + "</strong>";
+            var s = "<strong>" + ChartHelper.toolTipDateFormat("day", this.x) + "</strong>";
             $.each(this.points, function(i, point) {
               s += "<br /><span style='color: " + point.series.color + "'>" + point.series.name + ":</span> $" + Highcharts.numberFormat(point.y, 0, '.', ',');
             });
@@ -166,7 +166,7 @@ ChartHelper.netfunds = function(el, title, sourceTxt, yaxisLabel, data) {
 
 ChartHelper.donation_expenditure = function(el, title, sourceTxt, yaxisLabel, data) {
   var color = '#007F00';
-  
+
   var seriesData = [{
           color: color,
           data: data[0],
@@ -192,8 +192,8 @@ ChartHelper.donation_expenditure = function(el, title, sourceTxt, yaxisLabel, da
         floating: true,
         verticalAlign: "top"
       },
-      credits: { 
-        enabled: false 
+      credits: {
+        enabled: false
       },
       title: null,
       xAxis: {
@@ -224,7 +224,7 @@ ChartHelper.donation_expenditure = function(el, title, sourceTxt, yaxisLabel, da
       tooltip: {
           crosshairs: true,
           formatter: function() {
-            var s = "<strong>" + ChartHelper.toolTipDateFormat("quarter", this.x) + "</strong>";
+            var s = "<strong>" + ChartHelper.toolTipDateFormat("day", this.x) + "</strong>";
             $.each(this.points, function(i, point) {
               s += "<br /><span style='color: " + point.series.color + "'>" + point.series.name + ":</span> $" + Highcharts.numberFormat(point.y, 0, '.', ',');
             });
@@ -266,7 +266,7 @@ ChartHelper.initQualityChart = function(el) {
               stacking: 'true',
               events: {
                 legendItemClick: function () {
-                  return false; 
+                  return false;
               }
             }
           }
@@ -293,7 +293,7 @@ ChartHelper.initQualityChart = function(el) {
           name: '1994 - 1999: Manually entered',
           data: [ 5 ],
           color: "#43ac6a"
-        }, 
+        },
         {
           name: '1989 - 1994: Bad entries',
           data: [ 1994 ],
