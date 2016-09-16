@@ -207,7 +207,7 @@ class Command(BaseCommand):
         self.executeTransaction(sa.text(update), 
                                 entity_type=entity_type)
 
-    def makeLoanBalanceView(self):
+    def loadLoanTransactions(self):
         timezone = pytz.timezone(settings.TIME_ZONE)
         
         transactions_updated = self.connection.execute(''' 
@@ -222,6 +222,40 @@ class Command(BaseCommand):
                 self.doETL('loantransaction')
         else:
             self.doETL('loantransaction')
+
+    def makeAllExpenditureView(self):
+        self.loadLoanTransactions()
+        
+        view = ''' 
+            SELECT 
+              transaction.filing_id, 
+              transaction.id, 
+              transaction.amount, 
+              transaction.full_name, 
+              transaction_type.description, 
+              transaction_type.contribution 
+            FROM camp_fin_transaction AS transaction 
+            JOIN camp_fin_transactiontype AS transaction_type 
+              ON transaction.transaction_type_id = transaction_type.id 
+            WHERE transaction_type.contribution = FALSE 
+            UNION 
+            SELECT 
+              loan_transaction.filing_id, 
+              loan_transaction.id, 
+              loan_transaction.amount, 
+              loan.full_name, 
+              loan_transaction_type.description, 
+              FALSE as contribution 
+            FROM camp_fin_loantransaction AS loan_transaction 
+            JOIN camp_fin_loantransactiontype AS loan_transaction_type 
+              ON loan_transaction.transaction_type_id = loan_transaction_type.id 
+            JOIN camp_fin_loan AS loan 
+              ON loan_transaction.loan_id = loan.id 
+            WHERE loan_transaction_type.description = 'Payment'
+        '''
+        
+    def makeLoanBalanceView(self):
+        self.loadLoanTransactions()
         
         try:
             self.executeTransaction(''' 
