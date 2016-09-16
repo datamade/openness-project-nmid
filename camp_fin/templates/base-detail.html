@@ -21,6 +21,24 @@
                         <td>Total contributions</td>
                         <td class='text-right'>{{ latest_filing.total_contributions|format_money }}</td>
                     </tr>
+                    {% if lastest_filing.total_loans > 0 %}
+                        <tr>
+                            <td>Total loans</td>
+                            <td class='text-right'>{{ latest_filing.total_loans|format_money }}</td>
+                        </tr>
+                    {% endif %}
+                    {% if latest_filing.total_debt_carried_forward > 0 %}
+                        <tr>
+                            <td>Total debt</td>
+                            <td class='text-right'>{{ latest_filing.total_debt_carried_forward|format_money }}</td>
+                        </tr>
+                    {% endif %}
+                    {% if latest_filing.total_debt_paid > 0 %}
+                        <tr>
+                            <td>Total debt paid</td>
+                            <td class='text-right'>{{ latest_filing.total_debt_paid|format_money }}</td>
+                        </tr>
+                    {% endif %}
                     <tr>
                         <td>Total in-kind contributions</td>
                         <td class='text-right'>{{ latest_filing.total_inkind|format_money }}</td>

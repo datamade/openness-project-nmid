@@ -1,11 +1,14 @@
 import csv
 import zipfile
+from datetime import datetime, timedelta
 
 import sqlalchemy as sa
 
 import psycopg2
 
 from openpyxl import load_workbook
+
+import pytz
 
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
@@ -100,67 +103,16 @@ class Command(BaseCommand):
         
         if entity_types == ['all']:
             entity_types = FILE_LOOKUP.keys()
+        
+        self.connection = engine.connect()
+        
+        self.makeETLTracker()
 
         for entity_type in entity_types:
-            self.entity_type = entity_type
-            file_name = FILE_LOOKUP.get(entity_type)
-
-            if file_name:
-                
-                self.stdout.write(self.style.SUCCESS('Importing {}'.format(file_name)))
-
-                self.file_path = 'data/{}'.format(file_name)
-
-                self.encoding = 'utf-8'
-                if entity_type in ['transaction', 'address', 'contact']:
-                    self.encoding = 'windows-1252'
-
-                if self.file_path.endswith('xlsx'):
-                    self.convertXLSX()
-                
-                if self.file_path.endswith('zip'):
-                    self.unzipFile()
-                
-                self.table_mapper = MAPPER_LOOKUP[self.entity_type]
-
-                self.django_table = 'camp_fin_{}'.format(self.entity_type)
-                self.raw_pk_col = [k for k, v in self.table_mapper.items() \
-                                       if v['field'] == 'id'][0]
-                
-
-                self.connection = engine.connect()
-                
-                self.makeRawTable()
-                count = self.importRawData()
-                
-                self.stdout.write(self.style.SUCCESS('Found {0} records in {1}'.format(count, file_name)))
-
-                count = self.updateExistingRecords()
-                
-                self.stdout.write(self.style.SUCCESS('Updated {0} records in {1}'.format(count, self.django_table)))
-
-                self.makeNewTable()
-                count = self.findNewRecords()
-                
-                self.addNewRecords()
-                
-                self.stdout.write(self.style.SUCCESS('Inserted {0} new records into {1}'.format(count, self.django_table)))
-                
-                # This should only be necessary until we get the actual entity table
-                
-                if self.entity_type in ['candidate', 'pac', 'filing']:
-                    self.populateEntityTable()
-                    self.stdout.write(self.style.SUCCESS('Populated entity table for {}'.format(self.entity_type)))
-
-                if self.entity_type in ['candidate', 'pac']:
-                    self.populateSlugField()
-                    self.stdout.write(self.style.SUCCESS('Populated slug fields for {}'.format(self.entity_type)))
-                
-                self.stdout.write(self.style.SUCCESS('\n'))
-            else:
-                self.stdout.write(self.style.ERROR('"{}" is not a valid entity'.format(self.entity_type)))
-                self.stdout.write(self.style.SUCCESS('\n'))
+            self.doETL(entity_type)
             
+            self.updateTracker(entity_type)
+
         self.addTransactionFullName()
         self.addLoanFullName()
         self.addCandidateFullName()
@@ -168,6 +120,128 @@ class Command(BaseCommand):
         self.addTreasurerFullName()
 
         self.stdout.write(self.style.SUCCESS('Import complete!'.format(self.entity_type)))
+    
+    def doETL(self, entity_type):
+        self.entity_type = entity_type
+        file_name = FILE_LOOKUP.get(entity_type)
+
+        if file_name:
+            
+            self.stdout.write(self.style.SUCCESS('Importing {}'.format(file_name)))
+
+            self.file_path = 'data/{}'.format(file_name)
+
+            self.encoding = 'utf-8'
+            if entity_type in ['transaction', 'address', 'contact']:
+                self.encoding = 'windows-1252'
+
+            if self.file_path.endswith('xlsx'):
+                self.convertXLSX()
+            
+            if self.file_path.endswith('zip'):
+                self.unzipFile()
+            
+            self.table_mapper = MAPPER_LOOKUP[self.entity_type]
+
+            self.django_table = 'camp_fin_{}'.format(self.entity_type)
+            self.raw_pk_col = [k for k, v in self.table_mapper.items() \
+                                   if v['field'] == 'id'][0]
+            
+            self.makeRawTable()
+            count = self.importRawData()
+            
+            self.stdout.write(self.style.SUCCESS('Found {0} records in {1}'.format(count, file_name)))
+
+            count = self.updateExistingRecords()
+            
+            self.stdout.write(self.style.SUCCESS('Updated {0} records in {1}'.format(count, self.django_table)))
+
+            self.makeNewTable()
+            count = self.findNewRecords()
+            
+            self.addNewRecords()
+            
+            self.stdout.write(self.style.SUCCESS('Inserted {0} new records into {1}'.format(count, self.django_table)))
+            
+            # This should only be necessary until we get the actual entity table
+            
+            if self.entity_type in ['candidate', 'pac', 'filing']:
+                self.populateEntityTable()
+                self.stdout.write(self.style.SUCCESS('Populated entity table for {}'.format(self.entity_type)))
+
+            if self.entity_type in ['candidate', 'pac']:
+                self.populateSlugField()
+                self.stdout.write(self.style.SUCCESS('Populated slug fields for {}'.format(self.entity_type)))
+            
+            if self.entity_type == 'loan':
+                self.makeLoanBalanceView()
+                self.stdout.write(self.style.SUCCESS('Made loan balance view'))
+            
+            self.stdout.write(self.style.SUCCESS('\n'))
+
+        else:
+            self.stdout.write(self.style.ERROR('"{}" is not a valid entity'.format(self.entity_type)))
+            self.stdout.write(self.style.SUCCESS('\n'))
+    
+    def makeETLTracker(self):
+        create = ''' 
+            CREATE TABLE IF NOT EXISTS etl_tracker (
+              id SERIAL,
+              entity_type VARCHAR,
+              last_update timestamp with time zone,
+              PRIMARY KEY (id)
+            )
+        '''
+        self.executeTransaction(create)
+    
+    def updateTracker(self, entity_type):
+        update = ''' 
+            INSERT INTO etl_tracker (
+              entity_type,
+              last_update
+            ) VALUES (
+              :entity_type,
+              NOW()
+            )
+        '''
+        self.executeTransaction(sa.text(update), 
+                                entity_type=entity_type)
+
+    def makeLoanBalanceView(self):
+        timezone = pytz.timezone(settings.TIME_ZONE)
+        
+        transactions_updated = self.connection.execute(''' 
+            SELECT MAX(last_update) AS last_update
+            FROM etl_tracker
+            WHERE entity_type = 'loantransaction'
+        ''').first().last_update
+
+        if transactions_updated:
+            an_hour_ago = timezone.localize(datetime.now()) - timedelta(hours=1)
+            if transactions_updated < an_hour_ago:
+                self.doETL('loantransaction')
+        else:
+            self.doETL('loantransaction')
+        
+        try:
+            self.executeTransaction(''' 
+                REFRESH MATERIALIZED VIEW current_loan_status
+            ''', raise_exc=True)
+        except sa.exc.ProgrammingError:
+            self.executeTransaction(''' 
+                CREATE MATERIALIZED VIEW current_loan_status AS (
+                  SELECT
+                    loan.id AS loan_id,
+                    MAX(loan.amount) AS loan_amount,
+                    SUM(loantrans.amount) AS payments_made,
+                    (MAX(loan.amount) - SUM(loantrans.amount)) AS outstanding_balance
+                  FROM camp_fin_loan AS loan
+                  JOIN camp_fin_loantransaction AS loantrans
+                    ON loan.id = loantrans.loan_id
+                  GROUP BY loan.id
+                  HAVING ((MAX(loan.amount::numeric::money) - SUM(loantrans.amount::numeric::money)) > 0::money)
+                )
+            ''')
 
     def addTransactionFullName(self):
         update = ''' 
@@ -187,8 +261,14 @@ class Command(BaseCommand):
                 ELSE
                   company_name
                 END AS full_name,
-                id
-              FROM camp_fin_transaction
+                t.id
+              FROM camp_fin_transaction AS t
+              LEFT JOIN change_transaction AS c
+                ON t.id = c.id
+              LEFT JOIN new_transaction AS n
+                ON t.id = n.id
+              WHERE c.id IS NOT NULL
+                OR n.id IS NOT NULL
             ) AS s
             WHERE camp_fin_transaction.id = s.id
         '''
@@ -213,8 +293,14 @@ class Command(BaseCommand):
                 ELSE
                   company_name
                 END AS full_name,
-                id
-              FROM camp_fin_loan
+                t.id
+              FROM camp_fin_loan AS t
+              LEFT JOIN change_loan AS c
+                ON t.id = c.id
+              LEFT JOIN new_loan AS n
+                ON t.id = n.id
+              WHERE c.id IS NOT NULL
+                OR n.id IS NOT NULL
             ) AS s
             WHERE camp_fin_loan.id = s.id
         '''
@@ -233,8 +319,14 @@ class Command(BaseCommand):
                                  middle_name,
                                  last_name,
                                  suffix)) AS full_name,
-                id
-              FROM camp_fin_treasurer
+                t.id
+              FROM camp_fin_treasurer AS t
+              LEFT JOIN change_treasurer AS c
+                ON t.id = c.id
+              LEFT JOIN new_treasurer AS n
+                ON t.id = n.id
+              WHERE c.id IS NOT NULL
+                OR n.id IS NOT NULL
             ) AS s
             WHERE camp_fin_treasurer.id = s.id
         '''
@@ -253,8 +345,14 @@ class Command(BaseCommand):
                                  middle_name,
                                  last_name,
                                  suffix)) AS full_name,
-                id
-              FROM camp_fin_candidate
+                t.id
+              FROM camp_fin_candidate AS t
+              LEFT JOIN change_candidate AS c
+                ON t.id = c.id
+              LEFT JOIN new_candidate AS n
+                ON t.id = n.id
+              WHERE c.id IS NOT NULL
+                OR n.id IS NOT NULL
             ) AS s
             WHERE camp_fin_candidate.id = s.id
         '''
@@ -278,8 +376,15 @@ class Command(BaseCommand):
                                  suffix))
                 ELSE
                   company_name
-                END AS full_name, id
-              FROM camp_fin_contact
+                END AS full_name, 
+                t.id
+              FROM camp_fin_contact AS t
+              LEFT JOIN change_contact AS c
+                ON t.id = c.id
+              LEFT JOIN new_contact AS n
+                ON t.id = n.id
+              WHERE c.id IS NOT NULL
+                OR n.id IS NOT NULL
             ) AS s
             WHERE camp_fin_contact.id = s.id
         '''

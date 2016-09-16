@@ -7,5 +7,6 @@ markdown==2.6.6
 django-filter==0.14.0
 csvkit==0.9.1
 gunicorn==19.6.0
+pytz==2016.6.1
 django-ckeditor==5.1.1
 Pillow==3.3.1
