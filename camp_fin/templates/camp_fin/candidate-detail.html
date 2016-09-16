@@ -9,47 +9,6 @@
 {% endblock %}
 
 {% block charts %}
-    {% if loans %}
-        <div class="panel-group" id="loan-accordion" role="tablist" aria-multiselectable="true">
-            <div class="panel panel-default">
-                <div class="panel-heading" role="tab" id="loan-heading">
-                    <h4>
-                        <a role="button" data-toggle="collapse" data-parent="#loan-accordion" href="#loan-collapse" aria-expanded="true" aria-controls="loan-collapse">
-                            Outstanding loans
-                        </a>
-                    </h4>
-                </div>
-                <div id="loan-collapse" class="panel-collapse collapse" role="tabpanel" aria-labelledby="loan-heading">
-                    <div class="panel-body">
-                        {% for loan in loans %}
-                            <table class="table table-striped">
-                                <tbody>
-                                    <tr>
-                                        <td>Loaner</td>
-                                        <td class="text-right">{{ loan.full_name }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Amount</td>
-                                        <td class="text-right">{{ loan.amount|format_money }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Payments made</td>
-                                        <td class="text-right">{{ loan.payments_made|format_money }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Outstanding balance</strong></td>
-                                        <td class="text-right"><strong>{{ loan.outstanding_balance|format_money }}</strong></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            {% if not forloop.last %}<hr />{% endif %}
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    {% endif %}
-
     <h3>Net funds over time</h3>
     <div id='net-funds-chart'></div>
 

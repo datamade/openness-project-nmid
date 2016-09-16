@@ -27,16 +27,22 @@
                             <td class='text-right'>{{ latest_filing.total_loans|format_money }}</td>
                         </tr>
                     {% endif %}
-                    {% if latest_filing.total_debt_carried_forward > 0 %}
+                    {% if latest_filing.total_unpaid_debt > 0 %}
                         <tr>
                             <td>Total debt</td>
-                            <td class='text-right'>{{ latest_filing.total_debt_carried_forward|format_money }}</td>
+                            <td class='text-right'>{{ latest_filing.total_unpaid_debt|format_money }}</td>
                         </tr>
                     {% endif %}
                     {% if latest_filing.total_debt_paid > 0 %}
                         <tr>
                             <td>Total debt paid</td>
                             <td class='text-right'>{{ latest_filing.total_debt_paid|format_money }}</td>
+                        </tr>
+                    {% endif %}
+                    {% if latest_filing.total_loans_forgiven > 0 %}
+                        <tr>
+                            <td>Total loans forgiven</td>
+                            <td class='text-right'>{{ latest_filing.total_loans_forgiven|format_money }}</td>
                         </tr>
                     {% endif %}
                     <tr>
