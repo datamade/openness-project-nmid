@@ -101,8 +101,12 @@ ChartHelper.netfunds = function(el, title, sourceTxt, yaxisLabel, data) {
 
   var seriesData = [{
           color: color,
-          data: data,
+          data: data[0],
           name: "Funds available"
+        },{
+          color: "#cc0000",
+          data: data[1],
+          name: "Debts"
         }
       ]
 

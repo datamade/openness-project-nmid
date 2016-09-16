@@ -337,12 +337,19 @@ class CommitteeDetailBaseView(DetailView):
                            f.filing_period.filing_date.month,
                            f.filing_period.filing_date.day]
                            for f in all_filings]
-    
+        
+        debt_trend = [[(-1 * f.total_debt_carried_forward),
+                       f.filing_period.filing_date.year,
+                       f.filing_period.filing_date.month,
+                       f.filing_period.filing_date.day] 
+                       for f in all_filings]
+
         context['latest_filing'] = all_filings.last()
         context['balance_trend'] = balance_trend
         context['donation_trend'] = donation_trend
         context['expend_trend'] = expend_trend
-        
+        context['debt_trend'] = debt_trend
+
         return context
 
 
@@ -350,6 +357,34 @@ class CandidateDetail(CommitteeDetailBaseView):
     template_name = "camp_fin/candidate-detail.html"
     model = Candidate
     
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        current_loans = ''' 
+            SELECT 
+              loan.*,
+              status.*
+            FROM camp_fin_candidate AS c
+            JOIN camp_fin_filing AS f
+              USING(entity_id)
+            JOIN camp_fin_loan AS loan
+              ON f.id = loan.filing_id
+            JOIN current_loan_status AS status
+              ON loan.id = status.loan_id
+            WHERE c.id = %s
+        '''
+        
+        cursor = connection.cursor()
+        
+        cursor.execute(current_loans, [context['object'].id])
+        
+        columns = [c[0] for c in cursor.description]
+        loan_tuple = namedtuple('Loans', columns)
+        
+        context['loans'] = [loan_tuple(*r) for r in cursor]
+        
+        return context
+
 class CommitteeDetail(CommitteeDetailBaseView):
     template_name = "camp_fin/committee-detail.html"
     model = PAC
