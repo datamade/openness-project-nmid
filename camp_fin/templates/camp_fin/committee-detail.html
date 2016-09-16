@@ -137,13 +137,20 @@
         //render net balance chart
         var balance_trend = {{balance_trend}};
         var balance_trend_f = [];
+        var debt_trend = {{debt_trend}};
+        var debt_trend_f = [];
 
-        // format investments
+        // format balances
         for (i = 0; i < balance_trend.length; i++) {
             balance_trend_f.push([Date.UTC(balance_trend[i][1],balance_trend[i][2]-1,balance_trend[i][3]), balance_trend[i][0]]);
         }
 
-        ChartHelper.netfunds('net-funds-chart', 'Net funds over time', '', 'Funds', balance_trend_f);
+        // format debt
+        for (i = 0; i < debt_trend.length; i++) {
+            debt_trend_f.push([Date.UTC(debt_trend[i][1],debt_trend[i][2]-1,debt_trend[i][3]), debt_trend[i][0]]);
+        }
+
+        ChartHelper.netfunds('net-funds-chart', 'Net funds over time', '', 'Funds', [balance_trend_f, debt_trend_f]);
 
 
         //render donation/expenditure chart
