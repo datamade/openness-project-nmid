@@ -319,30 +319,30 @@ class CommitteeDetailBaseView(DetailView):
                                        .filter(filing_period__regular_filing_period_id=None)\
                                        .order_by('filing_period__filing_date')
 
+        balance_trend = []
+        donation_trend = []
+        expend_trend = []
+        debt_trend = []
 
-        balance_trend = [[ f.closing_balance,
-                           f.filing_period.filing_date.year,
-                           f.filing_period.filing_date.month,
-                           f.filing_period.filing_date.day]
-                           for f in all_filings]
-        
-        donation_trend = [[(f.total_contributions - f.total_loans),
-                           f.filing_period.filing_date.year,
-                           f.filing_period.filing_date.month,
-                           f.filing_period.filing_date.day]
-                           for f in all_filings]
-        
-        expend_trend = [[  (-1*f.total_expenditures),
-                           f.filing_period.filing_date.year,
-                           f.filing_period.filing_date.month,
-                           f.filing_period.filing_date.day]
-                           for f in all_filings]
-        
-        debt_trend = [[(-1 * f.total_unpaid_debts),
-                       f.filing_period.filing_date.year,
-                       f.filing_period.filing_date.month,
-                       f.filing_period.filing_date.day] 
-                       for f in all_filings]
+        for filing in all_filings:
+            filing_date = filing.filing_period.filing_date
+            
+            date_array = [filing_date.year, filing_date.month, filing_date.day]
+
+            contributions = filing.total_contributions - filing.total_loans
+            expenditures = (-1 * filing.total_expenditures)
+            debts = (-1 * filing.total_unpaid_debts)
+
+            if filing.total_supplemental_contributions:
+                contributions += filing.total_supplemental_contributions
+
+            balance_trend.append([filing.closing_balance, *date_array])
+            
+            donation_trend.append([contributions, *date_array])
+            
+            expend_trend.append([expenditures, *date_array])
+
+            debt_trend.append([debts, *date_array])
 
         context['latest_filing'] = all_filings.last()
         context['balance_trend'] = balance_trend
