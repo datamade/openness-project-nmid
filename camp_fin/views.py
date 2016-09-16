@@ -326,7 +326,7 @@ class CommitteeDetailBaseView(DetailView):
                            f.filing_period.filing_date.day]
                            for f in all_filings]
         
-        donation_trend = [[f.total_contributions,
+        donation_trend = [[(f.total_contributions - f.total_loans),
                            f.filing_period.filing_date.year,
                            f.filing_period.filing_date.month,
                            f.filing_period.filing_date.day]
@@ -338,7 +338,7 @@ class CommitteeDetailBaseView(DetailView):
                            f.filing_period.filing_date.day]
                            for f in all_filings]
         
-        debt_trend = [[(-1 * f.total_debt_carried_forward),
+        debt_trend = [[(-1 * f.total_unpaid_debts),
                        f.filing_period.filing_date.year,
                        f.filing_period.filing_date.month,
                        f.filing_period.filing_date.day] 
