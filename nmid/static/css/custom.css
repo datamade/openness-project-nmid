@@ -24,6 +24,15 @@ a:hover, a:active { color: #8C0012; }
 
 th a { color: #333333; }
 
+.navbar {
+  font-size: 15px;
+  text-shadow: #333 0 1px 1px;
+}
+
+.navbar-default {
+  background-color: #04A5AA;
+}
+
 .nav-pills > li.active > a,
 .nav-pills > li.active > a:hover,
 .nav-pills > li.active > a:focus {
