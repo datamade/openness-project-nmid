@@ -425,12 +425,16 @@
         function displayTopMoneyTable(transaction_type){
             var url = '/api/' + transaction_type + '/' + '{{ candidate.id }}' + '/';
             $.when($.getJSON(url)).then(function(data){
-                var template = new EJS({'text': $('#top-money-table-guts').html()});
-                var context = {
-                    'transactions': data,
-                    'transaction_type': transaction_type
-                };
-                $('#money-table-guts').html(template.render(context));
+                if (data.length > 0){
+                    var template = new EJS({'text': $('#top-money-table-guts').html()});
+                    var context = {
+                        'transactions': data,
+                        'transaction_type': transaction_type
+                    };
+                    $('#money-table-guts').html(template.render(context));
+                } else {
+                    $('#money-table-guts').html('<h4>No results</h4>')
+                }
             })
         }
 
@@ -449,10 +453,14 @@
             }
             $.when($.getJSON(url, params)).then(
                 function(data){
-                    var template = new EJS({'text': $('#transaction-table-guts').html()});
-                    $('#money-table-guts').html(template.render(data));
-                    $('.page-link').off('click');
-                    $('.page-link').on('click', getPage);
+                    if (data.results.length > 0){
+                        var template = new EJS({'text': $('#transaction-table-guts').html()});
+                        $('#money-table-guts').html(template.render(data));
+                        $('.page-link').off('click');
+                        $('.page-link').on('click', getPage);
+                    } else {
+                        $('#money-table-guts').html('<h4>No results</h4>')
+                    }
                 }
             )
         }
