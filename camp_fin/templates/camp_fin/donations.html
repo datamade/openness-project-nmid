@@ -75,7 +75,9 @@
                                 {{ transaction.rank }}
                             </td>
                             <td>
-                                {{ transaction.full_name }}
+                                <a href="{% url 'search' %}?term={{ transaction.full_name }}">
+                                    {{ transaction.full_name }}
+                                </a>
                             </td>
                             <td class="no-wrap">
                                 {{transaction.transaction_type|get_transaction_verb }} <strong>{{ transaction.amount|format_money }}</strong> to
