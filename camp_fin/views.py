@@ -274,7 +274,7 @@ class CandidateList(PaginatedList):
                   campaign.division_id,
                   office.description AS office_name,
                   filing.closing_balance,
-                  filing.date_last_amended
+                  period.filing_date
                 FROM camp_fin_candidate AS candidate
                 JOIN camp_fin_filing AS filing
                   USING(entity_id)
