@@ -278,12 +278,16 @@ class CandidateList(PaginatedList):
                 FROM camp_fin_candidate AS candidate
                 JOIN camp_fin_filing AS filing
                   USING(entity_id)
+                JOIN camp_fin_filingperiod AS period
+                  ON filing.filing_period_id = period.id
                 JOIN camp_fin_campaign AS campaign
                   ON filing.campaign_id = campaign.id
                 JOIN camp_fin_office AS office
                   ON campaign.office_id = office.id
                 WHERE filing.date_added >= '2010-01-01'
-                ORDER BY candidate.id, filing.date_added desc
+                  AND period.exclude_from_cascading = FALSE
+                  AND period.regular_filing_period_id IS NULL
+                ORDER BY candidate.id, period.filing_date DESC
               ) AS candidates
             ) AS s
             ORDER BY {0} {1}
@@ -406,12 +410,16 @@ class CommitteeList(PaginatedList):
                 SELECT DISTINCT ON (pac.id)
                   pac.*,
                   filing.closing_balance,
-                  filing.date_added AS filing_date
+                  period.filing_date
                 FROM camp_fin_pac AS pac
                 JOIN camp_fin_filing AS filing
                   USING(entity_id)
+                JOIN camp_fin_filingperiod AS period
+                  ON filing.filing_period_id = period.id
                 WHERE filing.date_added >= '2010-01-01'
-                ORDER BY pac.id, filing.date_added desc
+                  AND period.exclude_from_cascading = FALSE
+                  AND period.regular_filing_period_id IS NULL
+                ORDER BY pac.id, period.filing_date DESC
               ) AS pac
             ) AS s
             ORDER BY {0} {1}
