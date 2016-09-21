@@ -313,11 +313,11 @@ class CommitteeDetailBaseView(DetailView):
         context = super().get_context_data(**kwargs)
 
         all_filings = context['object'].entity.filing_set\
-                                       .filter(date_added__gte=TWENTY_TEN)\
+                                       .filter(filing_period__filing_date__gte=TWENTY_TEN)\
                                        .filter(filing_period__exclude_from_cascading=False)\
                                        .filter(filing_period__regular_filing_period_id=None)\
                                        .order_by('filing_period__filing_date')
-
+        
         balance_trend = []
         donation_trend = []
         expend_trend = []
