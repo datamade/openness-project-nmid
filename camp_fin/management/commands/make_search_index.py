@@ -4,14 +4,6 @@ from django.db import transaction, connection
 class Command(BaseCommand):
     help = 'Create search index for New Mexico Campaign Finance data'
 
-    # def add_arguments(self, parser):
-    #     parser.add_argument(
-    #         '--entity-types',
-    #         dest='entity_types',
-    #         default='all',
-    #         help='Comma separated list of entity types to import'
-    #     )
-
     def handle(self, *args, **options):
         
         self.drop_vector = ''' 

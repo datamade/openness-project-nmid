@@ -640,41 +640,45 @@ class SearchAPIView(viewsets.ViewSet):
                 query = ''' 
                     SELECT * FROM (
                       SELECT 
-                        t.full_name,
-                        a.street,
-                        a.city,
-                        s.postal_code AS state,
-                        a.zipcode,
-                        CASE WHEN 
-                          p.name = '' OR p.name IS NULL
-                        THEN
-                          d.full_name
-                        ELSE
-                          p.name
-                        END AS related_entity_name,
-                        CASE WHEN
-                          p.id IS NULL
-                        THEN
-                          '{0}' || d.slug || '/'
-                        ELSE
-                          '{1}' || p.slug || '/'
-                        END AS related_entity_url
-                      FROM camp_fin_treasurer AS t
-                      JOIN camp_fin_address AS a
-                        ON t.address_id = a.id
-                      JOIN camp_fin_state AS s
-                        ON a.state_id = s.id
-                      LEFT JOIN camp_fin_campaign AS m
-                        ON t.id = m.treasurer_id
-                      LEFT JOIN camp_fin_candidate AS d
-                        ON m.candidate_id = d.id
-                      LEFT JOIN camp_fin_pac AS p
+                        t.full_name, 
+                        a.street, 
+                        a.city, 
+                        s.postal_code AS state, 
+                        a.zipcode, 
+                        d.full_name AS related_entity_name, 
+                        '/candidates/' || d.slug || '/' AS related_entity_url, 
+                        t.search_name 
+                      FROM camp_fin_treasurer AS t 
+                      JOIN camp_fin_address AS a 
+                        ON t.address_id = a.id 
+                      JOIN camp_fin_state AS s 
+                        ON a.state_id = s.id 
+                      JOIN camp_fin_campaign AS m 
+                        ON t.id = m.treasurer_id 
+                      JOIN camp_fin_candidate AS d 
+                        ON m.candidate_id = d.id 
+                      
+                      UNION 
+                      
+                      SELECT 
+                        t.full_name, 
+                        a.street, 
+                        a.city, 
+                        s.postal_code AS state, 
+                        a.zipcode, 
+                        p.name AS related_entity_name, 
+                        '/committees/' || p.slug || '/' AS related_entity_url, 
+                        t.search_name 
+                      FROM camp_fin_treasurer AS t 
+                      JOIN camp_fin_address AS a 
+                        ON t.address_id = a.id 
+                      JOIN camp_fin_state AS s 
+                        ON a.state_id = s.id 
+                      JOIN camp_fin_pac AS p 
                         ON t.id = p.treasurer_id
-                      WHERE t.search_name @@ plainto_tsquery('english', %s)
-                        AND m.date_added >= '2010-01-01'
-                    ) AS s
-                    WHERE related_entity_name IS NOT NULL
-                '''.format(reverse_lazy('candidate-list'), reverse_lazy('committee-list'))
+                    ) AS s 
+                    WHERE search_name @@ plainto_tsquery('english', %s)
+                '''
             
             if order_by_col:
                 query = ''' 
