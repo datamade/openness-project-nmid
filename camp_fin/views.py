@@ -324,7 +324,8 @@ class CommitteeDetailBaseView(DetailView):
               SUM(COALESCE(f.total_loans, 0)) AS total_loans,
               SUM(COALESCE(f.total_unpaid_debts, 0)) AS total_unpaid_debts,
               SUM(f.closing_balance) AS closing_balance,
-              fp.filing_date
+              fp.filing_date::date, 
+              MIN(fp.initial_date) AS initial_date
             FROM camp_fin_filing AS f
             JOIN camp_fin_filingperiod AS fp
               ON f.filing_period_id = fp.id
@@ -352,20 +353,24 @@ class CommitteeDetailBaseView(DetailView):
 
         for filing in all_filings:
             filing_date = filing.filing_date
-            
             date_array = [filing_date.year, filing_date.month, filing_date.day]
-
-            contributions = filing.total_contributions - filing.total_loans
-            expenditures = (-1 * filing.total_expenditures)
             debts = (-1 * filing.total_unpaid_debts)
-            
             balance_trend.append([filing.closing_balance, *date_array])
-            
-            donation_trend.append([contributions, *date_array])
-            
-            expend_trend.append([expenditures, *date_array])
-
             debt_trend.append([debts, *date_array])
+        
+        for filing in all_filings:
+            filing_duration = (filing.filing_date - filing.initial_date).total_seconds() / (7 * 24 * 60 * 60)
+            donation_rate = (filing.total_contributions - filing.total_loans) / filing_duration
+            expenditure_rate = (-1 * filing.total_expenditures) / filing_duration
+            
+            begin_date_array = [filing.initial_date.year, filing.initial_date.month, filing.initial_date.day]
+            end_date_array = [filing.filing_date.year, filing.filing_date.month, filing.filing_date.day]
+            
+            donation_trend.append([donation_rate, *begin_date_array])
+            donation_trend.append([donation_rate, *end_date_array])
+            
+            expend_trend.append([expenditure_rate, *begin_date_array])
+            expend_trend.append([expenditure_rate, *end_date_array])
 
         context['latest_filing'] = all_filings[-1]
         context['balance_trend'] = balance_trend
