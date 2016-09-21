@@ -378,9 +378,9 @@ class Address(models.Model):
 
     def __str__(self):
         address = '{0} {1}, {2} {3}'.format(self.street,
-                                         self.city,
-                                         self.state,
-                                         self.zipcode)
+                                            self.city,
+                                            self.state,
+                                            self.zipcode)
         return address
 
 class CampaignStatus(models.Model):
@@ -478,7 +478,9 @@ class State(models.Model):
     postal_code = models.CharField(max_length=2, null=True)
     
     def __str__(self):
-        return self.postal_code
+        if self.postal_code:
+            return self.postal_code
+        return ''
 ######################################################################
 ### Below here are normalized tables that we may or may not end up ###
 ### getting. Just stubbing them out in case we do                  ###
