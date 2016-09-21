@@ -460,10 +460,10 @@ class ExpenditureViewSet(TransactionBaseViewSet):
     }
     serializer_class = TransactionSerializer
     
-    def get_queryset(self):
-        transactions = ''' 
-            select c.full_name, c.id, s.* from camp_fin_filing as f join (select t.filing_id, t.id, amount, full_name, tt.description, tt.contribution from camp_fin_transaction as t join camp_fin_transactiontype as tt on t.transaction_type_id = tt.id union select lt.filing_id, lt.id, lt.amount, l.full_name, ltt.description, FALSE as contribution from camp_fin_loantransaction as lt join camp_fin_loantransactiontype as ltt on lt.transaction_type_id = ltt.id join camp_fin_loan as l on lt.loan_id = l.id where ltt.description = 'Payment') as s on f.id = s.filing_id join camp_fin_candidate as c on f.entity_id = c.entity_id where c.id = 815 and s.contribution = FALSE;
-        '''
+    # def get_queryset(self):
+    #     transactions = ''' 
+    #         select c.full_name, c.id, s.* from camp_fin_filing as f join (select t.filing_id, t.id, amount, full_name, tt.description, tt.contribution from camp_fin_transaction as t join camp_fin_transactiontype as tt on t.transaction_type_id = tt.id union select lt.filing_id, lt.id, lt.amount, l.full_name, ltt.description, FALSE as contribution from camp_fin_loantransaction as lt join camp_fin_loantransactiontype as ltt on lt.transaction_type_id = ltt.id join camp_fin_loan as l on lt.loan_id = l.id where ltt.description = 'Payment') as s on f.id = s.filing_id join camp_fin_candidate as c on f.entity_id = c.entity_id where c.id = 815 and s.contribution = FALSE;
+    #     '''
 
 class TopDonorsView(TopMoneyView):
     contribution = True
