@@ -367,12 +367,28 @@ class CommitteeDetailBaseView(DetailView):
 
             debt_trend.append([debts, *date_array])
 
-        context['latest_filing'] = all_filings[-1]
         context['balance_trend'] = balance_trend
         context['donation_trend'] = donation_trend
         context['expend_trend'] = expend_trend
         context['debt_trend'] = debt_trend
+        
+        ''' 
+        If there is more than one filing for a reporting period, show all of them.
+        Also show all non-final committees.
+        '''
 
+        latest_filing = ''' 
+            SELECT DISTINCT ON (filing_period.filing_date)
+              filing.*,
+              filing_period.description,
+              filing_period.filing_date
+            FROM camp_fin_filing AS filing
+            JOIN camp_fin_filingperiod AS filing_period
+              ON filing.filing_period_id = filing_period.id
+            WHERE filing.entity_id = %s
+            ORDER BY filing_period.filing_date, filing.final
+        '''
+        
         return context
 
 
