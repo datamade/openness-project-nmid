@@ -366,13 +366,20 @@ class CommitteeDetailBaseView(DetailView):
               f.total_unpaid_debts,
               f.closing_balance,
               f.opening_balance,
+              f.campaign_id,
+              f.final,
               fp.filing_date::date, 
               fp.initial_date,
-              f.campaign_id,
-              fp.due_date::date
+              fp.due_date::date,
+              fp.description,
+              COALESCE(camp.committee_name, pac.name) AS committee_name
             FROM camp_fin_filing AS f
             JOIN camp_fin_filingperiod AS fp
               ON f.filing_period_id = fp.id
+            LEFT JOIN camp_fin_campaign AS camp
+              ON f.campaign_id = camp.id
+            LEFT JOIN camp_fin_pac AS pac
+              ON f.entity_id = pac.entity_id
             WHERE f.entity_id = %s
               AND fp.exclude_from_cascading = FALSE
               AND fp.regular_filing_period_id IS NULL
@@ -392,11 +399,19 @@ class CommitteeDetailBaseView(DetailView):
         
         donation_trend = []
         expend_trend = []
-        
+        latest_filings = []
+
         for campaign_id, filings in itertools.groupby(sorted_filings, key=grouper):
             
             filings = list(filings)
             
+            most_recent = sorted(filings, 
+                                 key=lambda x: x.filing_date, 
+                                 reverse=True)
+            
+            if not most_recent[-1].final:
+                latest_filings.append(most_recent[-1])
+
             for index, filing in enumerate(filings):
                 filing_duration = (filing.filing_date - filing.initial_date).days / 7 
                 donation_rate = (filing.total_contributions - filing.total_loans) / filing_duration
@@ -419,7 +434,7 @@ class CommitteeDetailBaseView(DetailView):
         donation_trend = self.stackTrends(donation_trend)
         expend_trend = self.stackTrends(expend_trend)
         
-        context['latest_filing'] = all_filings[-1]
+        context['latest_filings'] = latest_filings
         context['balance_trend'] = balance_trend
         context['donation_trend'] = donation_trend
         context['expend_trend'] = expend_trend
