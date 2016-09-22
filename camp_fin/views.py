@@ -315,8 +315,10 @@ class CommitteeDetailBaseView(DetailView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        all_filings = ''' 
+        
+        entity_id = context['object'].entity_id
+        
+        summed_filings = ''' 
             SELECT 
               SUM(f.total_contributions) + \
                 SUM(COALESCE(f.total_supplemental_contributions, 0)) AS total_contributions,
@@ -324,8 +326,7 @@ class CommitteeDetailBaseView(DetailView):
               SUM(COALESCE(f.total_loans, 0)) AS total_loans,
               SUM(COALESCE(f.total_unpaid_debts, 0)) AS total_unpaid_debts,
               SUM(f.closing_balance) AS closing_balance,
-              fp.filing_date::date, 
-              MIN(fp.initial_date) AS initial_date
+              fp.filing_date
             FROM camp_fin_filing AS f
             JOIN camp_fin_filingperiod AS fp
               ON f.filing_period_id = fp.id
@@ -339,38 +340,83 @@ class CommitteeDetailBaseView(DetailView):
 
         cursor = connection.cursor()
         
-        cursor.execute(all_filings, [context['object'].entity_id])
+        cursor.execute(summed_filings, [entity_id])
         
         columns = [c[0] for c in cursor.description]
         filing_tuple = namedtuple('Filings', columns)
         
-        all_filings = [filing_tuple(*r) for r in cursor]
+        summed_filings = [filing_tuple(*r) for r in cursor]
 
         balance_trend = []
-        donation_trend = []
-        expend_trend = []
         debt_trend = []
 
-        for filing in all_filings:
+        for filing in summed_filings:
             filing_date = filing.filing_date
             date_array = [filing_date.year, filing_date.month, filing_date.day]
             debts = (-1 * filing.total_unpaid_debts)
             balance_trend.append([filing.closing_balance, *date_array])
             debt_trend.append([debts, *date_array])
         
-        for filing in all_filings:
-            filing_duration = (filing.filing_date - filing.initial_date).total_seconds() / (7 * 24 * 60 * 60)
-            donation_rate = (filing.total_contributions - filing.total_loans) / filing_duration
-            expenditure_rate = (-1 * filing.total_expenditures) / filing_duration
+        all_filings = ''' 
+            SELECT 
+              f.total_contributions + \
+                COALESCE(f.total_supplemental_contributions, 0) AS total_contributions,
+              f.total_expenditures,
+              f.total_loans,
+              f.total_unpaid_debts,
+              f.closing_balance,
+              fp.filing_date::date, 
+              fp.initial_date,
+              f.campaign_id,
+              fp.due_date::date
+            FROM camp_fin_filing AS f
+            JOIN camp_fin_filingperiod AS fp
+              ON f.filing_period_id = fp.id
+            WHERE f.entity_id = %s
+              AND fp.exclude_from_cascading = FALSE
+              AND fp.regular_filing_period_id IS NULL
+              AND fp.filing_date >= '2010-01-01'
+            ORDER BY fp.filing_date
+        '''
+        
+        cursor.execute(all_filings, [entity_id])
+        
+        columns = [c[0] for c in cursor.description]
+        filing_tuple = namedtuple('Filings', columns)
+        
+        all_filings = [filing_tuple(*r) for r in cursor]
+        
+        grouper = lambda x: x.campaign_id
+        sorted_filings = sorted(all_filings, key=grouper)
+        
+        donation_trend = []
+        expend_trend = []
+        
+        for campaign_id, filings in itertools.groupby(sorted_filings, key=grouper):
             
-            begin_date_array = [filing.initial_date.year, filing.initial_date.month, filing.initial_date.day]
-            end_date_array = [filing.filing_date.year, filing.filing_date.month, filing.filing_date.day]
+            filings = list(filings)
             
-            donation_trend.append([donation_rate, *begin_date_array])
-            donation_trend.append([donation_rate, *end_date_array])
-            
-            expend_trend.append([expenditure_rate, *begin_date_array])
-            expend_trend.append([expenditure_rate, *end_date_array])
+            for index, filing in enumerate(filings):
+                filing_duration = (filing.filing_date - filing.initial_date).days / 7 
+                donation_rate = (filing.total_contributions - filing.total_loans) / filing_duration
+                expenditure_rate = (-1 * filing.total_expenditures) / filing_duration
+                
+                begin_date_array = [filing.initial_date.year, 
+                                    filing.initial_date.month, 
+                                    filing.initial_date.day]
+                
+                end_date_array = [filing.due_date.year,
+                                  filing.due_date.month,
+                                  filing.due_date.day]
+
+                end_date = end_date_array
+                
+                donation_trend.append([begin_date_array, end_date_array, donation_rate])
+                
+                expend_trend.append([begin_date_array, end_date_array, expenditure_rate])
+        
+        donation_trend = self.stackTrends(donation_trend)
+        expend_trend = self.stackTrends(expend_trend)
 
         context['latest_filing'] = all_filings[-1]
         context['balance_trend'] = balance_trend
@@ -379,6 +425,53 @@ class CommitteeDetailBaseView(DetailView):
         context['debt_trend'] = debt_trend
 
         return context
+    
+    def stackTrends(self, trend):
+        trend = sorted(trend)
+        
+        stacked_trend = []
+        for begin, end, rate in trend:
+            if not stacked_trend:
+                stacked_trend.append((rate, begin))
+                stacked_trend.append((rate, end))
+            
+            elif begin == stacked_trend[-1][1]:
+                stacked_trend.append((rate, begin))
+                stacked_trend.append((rate, end))
+            
+            elif begin > stacked_trend[-1][1]:
+                previous_rate, previous_end = stacked_trend[-1]
+                stacked_trend.append((previous_rate, begin))
+                stacked_trend.append((rate, begin))
+                stacked_trend.append((rate, end))
+            
+            elif begin < stacked_trend[-1][1]:
+                previous_rate, previous_end = stacked_trend.pop()
+                stacked_trend.append((previous_rate, begin))
+                stacked_trend.append((rate + previous_rate, begin))
+                
+                if end < previous_end:
+                    stacked_trend.append((rate + previous_rate, end))
+                    stacked_trend.append((previous_rate, end))
+                    stacked_trend.append((previous_rate, previous_end))
+                    
+                elif end > previous_end:
+                    stacked_trend.append((rate + previous_rate, previous_end))
+                    stacked_trend.append((rate, previous_end))
+                    stacked_trend.append((rate, end))
+                else:
+                    stacked_trend.append((rate + previous_rate, end))
+        
+        flattened_trend = []
+        dupe_date_flag = False
+        previous_date = None
+        
+
+        for i, point in enumerate(stacked_trend):
+            rate, date = point
+            flattened_trend.append([rate, *date])
+
+        return flattened_trend
 
 
 class CandidateDetail(CommitteeDetailBaseView):

@@ -236,7 +236,7 @@ ChartHelper.donation_expenditure = function(el, title, sourceTxt, yaxisLabel, da
           },
           shared: true
       },
-      series: ChartHelper.generateSeriesData(seriesData)
+      series: seriesData
     });
   }
 
