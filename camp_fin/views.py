@@ -365,6 +365,7 @@ class CommitteeDetailBaseView(DetailView):
               f.total_loans,
               f.total_unpaid_debts,
               f.closing_balance,
+              f.opening_balance,
               fp.filing_date::date, 
               fp.initial_date,
               f.campaign_id,
@@ -417,7 +418,7 @@ class CommitteeDetailBaseView(DetailView):
         
         donation_trend = self.stackTrends(donation_trend)
         expend_trend = self.stackTrends(expend_trend)
-
+        
         context['latest_filing'] = all_filings[-1]
         context['balance_trend'] = balance_trend
         context['donation_trend'] = donation_trend
