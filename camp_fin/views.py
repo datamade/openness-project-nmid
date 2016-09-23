@@ -366,7 +366,7 @@ class CommitteeDetailBaseView(DetailView):
               f.total_unpaid_debts,
               f.closing_balance,
               f.opening_balance,
-              f.campaign_id,
+              COALESCE(f.campaign_id, pac.id) AS campaign_id,
               f.final,
               fp.filing_date::date, 
               fp.initial_date,
@@ -409,8 +409,8 @@ class CommitteeDetailBaseView(DetailView):
                                  key=lambda x: x.filing_date, 
                                  reverse=True)
             
-            if not most_recent[-1].final:
-                latest_filings.append(most_recent[-1])
+            if not most_recent[0].final:
+                latest_filings.append(most_recent[0])
 
             for index, filing in enumerate(filings):
                 filing_duration = (filing.filing_date - filing.initial_date).days / 7 
