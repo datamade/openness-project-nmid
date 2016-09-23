@@ -10,7 +10,6 @@
 
     <div class='row'>
         <div class="col-sm-6">
-            {% for latest_filing in latest_filings %}
             <h4>{{ latest_filing.committee_name }} <small>{{latest_filing.filing_date | date:"M j, Y"}}</small></h4>
                 <table class="table table-striped">
                     <tbody>
@@ -60,7 +59,6 @@
                         </tr>
                     </tbody>
                 </table>
-            {% endfor %}
             {% block charts %}{% endblock %}
         </div>
         {% block contact %}{% endblock %}

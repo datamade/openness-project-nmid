@@ -399,18 +399,10 @@ class CommitteeDetailBaseView(DetailView):
         
         donation_trend = []
         expend_trend = []
-        latest_filings = []
 
         for campaign_id, filings in itertools.groupby(sorted_filings, key=grouper):
             
             filings = list(filings)
-            
-            most_recent = sorted(filings, 
-                                 key=lambda x: x.filing_date, 
-                                 reverse=True)
-            
-            if not most_recent[0].final:
-                latest_filings.append(most_recent[0])
 
             for index, filing in enumerate(filings):
                 filing_duration = (filing.filing_date - filing.initial_date).days / 7 
@@ -434,7 +426,7 @@ class CommitteeDetailBaseView(DetailView):
         donation_trend = self.stackTrends(donation_trend)
         expend_trend = self.stackTrends(expend_trend)
         
-        context['latest_filings'] = latest_filings
+        context['latest_filing'] = all_filings[-1]
         context['balance_trend'] = balance_trend
         context['donation_trend'] = donation_trend
         context['expend_trend'] = expend_trend
