@@ -356,7 +356,7 @@ class CommitteeDetailBaseView(DetailView):
             debts = (-1 * filing.total_unpaid_debts)
             balance_trend.append([filing.closing_balance, *date_array])
             debt_trend.append([debts, *date_array])
-        
+
         all_filings = ''' 
             SELECT 
               f.total_contributions + \

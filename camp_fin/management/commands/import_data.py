@@ -177,12 +177,60 @@ class Command(BaseCommand):
                 self.makeLoanBalanceView()
                 self.stdout.write(self.style.SUCCESS('Made loan balance view'))
             
+            if self.entity_type == 'transaction':
+                self.makeTransactionAggregates()
+                self.stdout.write(self.style.SUCCESS('Made transaction aggregate views'))
+
             self.stdout.write(self.style.SUCCESS('\n'))
 
         else:
             self.stdout.write(self.style.ERROR('"{}" is not a valid entity'.format(self.entity_type)))
             self.stdout.write(self.style.SUCCESS('\n'))
     
+    def makeTransactionAggregates(self):
+        
+        for interval in ['day', 'week', 'month']:
+            try:
+                self.executeTransaction(''' 
+                    REFRESH MATERIALIZED VIEW contributions_by_{}
+                '''.format(interval))
+            except sa.exc.ProgrammingError:
+                view = ''' 
+                    CREATE MATERIALIZED VIEW contributions_by_{0} AS (
+                      SELECT 
+                        SUM(amount) AS amount, 
+                        entity_id,
+                        {0}
+                      FROM (
+                        SELECT 
+                          SUM(t.amount) AS amount, 
+                          f.entity_id, 
+                          MAX(date_trunc('{0}', t.received_date)) AS {0}
+                        FROM camp_fin_transaction AS t 
+                        JOIN camp_fin_transactiontype AS tt 
+                          ON t.transaction_type_id = tt.id 
+                        JOIN camp_fin_filing AS f 
+                          ON t.filing_id = f.id 
+                        WHERE tt.contribution = TRUE 
+                          AND (tt.description = 'Monetary contribution' or 
+                               tt.description = 'Anonymous Contribution') 
+                        GROUP BY f.entity_id, date_trunc('{0}', t.received_date)
+                        UNION 
+                        SELECT 
+                          SUM(l.amount) AS amount, 
+                          f.entity_id, 
+                          MAX(date_trunc('{0}', l.received_date)) AS {0}
+                        FROM camp_fin_loan AS l 
+                        JOIN camp_fin_filing AS f 
+                          ON l.filing_id = f.id 
+                        GROUP BY f.entity_id, date_trunc('{0}', l.received_date)
+                      ) AS s 
+                      GROUP BY entity_id, {0}
+                    )
+                '''.format(interval)
+                
+                self.executeTransaction(view)
+
     def makeETLTracker(self):
         create = ''' 
             CREATE TABLE IF NOT EXISTS etl_tracker (
