@@ -20,7 +20,7 @@ pip install -r requirements.txt
 Next, change your application settings. Start by copying the example `settings_local_example.py`
 
 ```
-cp openness-project-nmid/settings_local_example.py openness-project-nmid/settings_local.py
+cp nmid/settings_local_example.py nmid/settings_local.py
 ```
 
 Then set your database name, user and password.
@@ -28,7 +28,7 @@ Then set your database name, user and password.
 Next, create a postgres database and run the Django migrations to setup the proper tables.
 
 ```
-createdb openness-project-nmid
+createdb nmid
 python manage.py migrate
 ```
 
