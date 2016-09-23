@@ -19,7 +19,7 @@ class Candidate(models.Model):
     qual_candidate_id = models.IntegerField(null=True)
     deceased = models.CharField(max_length=3)
     
-    full_name = models.CharField(max_length=500)
+    full_name = models.CharField(max_length=500, null=True)
     
     slug = models.CharField(max_length=500, null=True)
 
