@@ -10,6 +10,8 @@ from django.db import transaction, connection
 from django.utils import timezone
 from django.core.urlresolvers import reverse_lazy
 
+from dateutil.rrule import rrule, MONTHLY
+
 from rest_framework import serializers, viewsets, filters, generics, metadata
 from rest_framework.response import Response
 
@@ -358,75 +360,54 @@ class CommitteeDetailBaseView(DetailView):
             debt_trend.append([debts, *date_array])
 
         all_filings = ''' 
-            SELECT 
-              f.total_contributions + \
-                COALESCE(f.total_supplemental_contributions, 0) AS total_contributions,
-              f.total_expenditures,
-              f.total_loans,
-              f.total_unpaid_debts,
-              f.closing_balance,
-              f.opening_balance,
-              COALESCE(f.campaign_id, pac.id) AS campaign_id,
-              f.final,
-              fp.filing_date::date, 
-              fp.initial_date,
-              fp.due_date::date,
-              fp.description,
-              COALESCE(camp.committee_name, pac.name) AS committee_name
-            FROM camp_fin_filing AS f
-            JOIN camp_fin_filingperiod AS fp
-              ON f.filing_period_id = fp.id
-            LEFT JOIN camp_fin_campaign AS camp
-              ON f.campaign_id = camp.id
-            LEFT JOIN camp_fin_pac AS pac
-              ON f.entity_id = pac.entity_id
-            WHERE f.entity_id = %s
-              AND fp.exclude_from_cascading = FALSE
-              AND fp.regular_filing_period_id IS NULL
-              AND fp.filing_date >= '2010-01-01'
-            ORDER BY fp.filing_date
+            SELECT * 
+            FROM contributions_by_month
+            WHERE entity_id = %s
+              AND month >= '2010-01-01'
+            ORDER BY month
         '''
         
         cursor.execute(all_filings, [entity_id])
         
         columns = [c[0] for c in cursor.description]
-        filing_tuple = namedtuple('Filings', columns)
+        contribution_tuple = namedtuple('Contributions', columns)
         
-        all_filings = [filing_tuple(*r) for r in cursor]
+        contributions = [contribution_tuple(*r) for r in cursor]
         
-        grouper = lambda x: x.campaign_id
-        sorted_filings = sorted(all_filings, key=grouper)
+        month_lookup = {r.month.date(): r.amount for r in contributions}
         
+        start_month, end_month = min(month_lookup.keys()), max(month_lookup.keys())
+
         donation_trend = []
         expend_trend = []
-
-        for campaign_id, filings in itertools.groupby(sorted_filings, key=grouper):
+        
+        for month in rrule(freq=MONTHLY, dtstart=start_month, until=end_month):
             
-            filings = list(filings)
+            replacements = {'month': month.month - 1}
 
-            for index, filing in enumerate(filings):
-                filing_duration = (filing.filing_date - filing.initial_date).days / 7 
-                donation_rate = (filing.total_contributions - filing.total_loans) / filing_duration
-                expenditure_rate = (-1 * filing.total_expenditures) / filing_duration
-                
-                begin_date_array = [filing.initial_date.year, 
-                                    filing.initial_date.month, 
-                                    filing.initial_date.day]
-                
-                end_date_array = [filing.due_date.year,
-                                  filing.due_date.month,
-                                  filing.due_date.day]
+            if replacements['month'] < 1:
+                replacements['month'] = 12
+                replacements['year'] = month.year - 1
+            
+            begin_date = month.replace(**replacements)
 
-                end_date = end_date_array
-                
-                donation_trend.append([begin_date_array, end_date_array, donation_rate])
-                
-                expend_trend.append([begin_date_array, end_date_array, expenditure_rate])
+            begin_date_array = [begin_date.year, 
+                                begin_date.month, 
+                                begin_date.day]
+            
+            end_date_array = [month.year,
+                              month.month,
+                              month.day]
+            
+            amount = month_lookup.get(month.date(), 0)
+            donation_trend.append([begin_date_array, end_date_array, amount])
+
+            # expend_trend.append([begin_date_array, end_date_array, expenditure_rate])
         
         donation_trend = self.stackTrends(donation_trend)
-        expend_trend = self.stackTrends(expend_trend)
+        # expend_trend = self.stackTrends(expend_trend)
         
-        context['latest_filing'] = all_filings[-1]
+        context['latest_filing'] = context['object'].entity.filing_set.order_by('-filing_period__filing_date').first()
         context['balance_trend'] = balance_trend
         context['donation_trend'] = donation_trend
         context['expend_trend'] = expend_trend
@@ -435,7 +416,7 @@ class CommitteeDetailBaseView(DetailView):
         return context
     
     def stackTrends(self, trend):
-        trend = sorted(trend)
+        # trend = sorted(trend)
         
         stacked_trend = []
         for begin, end, rate in trend:
@@ -471,9 +452,6 @@ class CommitteeDetailBaseView(DetailView):
                     stacked_trend.append((rate + previous_rate, end))
         
         flattened_trend = []
-        dupe_date_flag = False
-        previous_date = None
-        
 
         for i, point in enumerate(stacked_trend):
             rate, date = point
