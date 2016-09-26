@@ -284,9 +284,21 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>Donor</th>
-                    <th class="text-right nowrap">Amount</th>
-                    <th>Date</th>
+                    <th>
+                        <a href="javascript://" data-ordering="last_name" data-transaction_type="<%= type %>" class="transaction-sort">
+                            Donor
+                        </a>
+                    </th>
+                    <th class="text-right nowrap">
+                        <a href="javascript://" data-ordering="amount" data-transaction_type="<%= type %>" class="transaction-sort">
+                            Amount
+                        </a>
+                    </th>
+                    <th>
+                        <a href="javascript://" data-ordering="received_date" data-transaction_type="<%= type %>" class="transaction-sort">
+                            Date
+                        </a>
+                    </th>
                 </tr>
             </thead>
             <tbody>
@@ -434,6 +446,10 @@
             })
         }
 
+        function sortTransactions(e){
+            console.log($(e.target).data());
+        }
+
         function displayTransactionTable(transaction_type, sort_order){
             if(transaction_type.endsWith('contributions')){
                 var url = '/api/contributions/';
@@ -451,9 +467,12 @@
                 function(data){
                     if (data.results.length > 0){
                         var template = new EJS({'text': $('#transaction-table-guts').html()});
+                        data['type'] = transaction_type;
                         $('#money-table-guts').html(template.render(data));
                         $('.page-link').off('click');
                         $('.page-link').on('click', getPage);
+                        $('.transaction-sort').off('click');
+                        $('.transaction-sort').on('click', sortTransactions);
                     } else {
                         $('#money-table-guts').html('<h4>No results</h4>')
                     }
