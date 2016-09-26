@@ -96,15 +96,27 @@ class Command(BaseCommand):
             default='all',
             help='Comma separated list of entity types to import'
         )
+        
+        parser.add_argument(
+            '--add-aggregates',
+            dest='add_aggregates',
+            action='store_true',
+            help='Just add the aggregates'
+        )
 
     def handle(self, *args, **options):
         
+        self.connection = engine.connect()
+        
+        if options['add_aggregates']:
+            self.makeTransactionAggregates()
+            self.stdout.write(self.style.SUCCESS('Aggregates complete!'))
+            return
+
         entity_types = options['entity_types'].split(',')
         
         if entity_types == ['all']:
             entity_types = FILE_LOOKUP.keys()
-        
-        self.connection = engine.connect()
         
         self.makeETLTracker()
 
