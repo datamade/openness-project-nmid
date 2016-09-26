@@ -361,23 +361,31 @@ class CommitteeDetailBaseView(DetailView):
             debt_trend.append([debts, *date_array])
 
         all_filings = ''' 
-            SELECT * 
-            FROM contributions_by_month
-            WHERE entity_id = %s
-              AND month >= '2010-01-01'
+            SELECT 
+              contributions.amount AS contribution_amount,
+              expenditures.amount AS expenditure_amount,
+              COALESCE(contributions.month, expenditures.month) AS month
+            FROM contributions_by_month AS contributions
+            JOIN expenditures_by_month AS expenditures
+              ON contributions.entity_id = expenditures.entity_id
+              AND contributions.month = expenditures.month
+            WHERE (contributions.entity_id = %s OR expenditures.entity_id = %s)
+              AND (contributions.month >= '2010-01-01' OR expenditures.month >= '2010-01-01')
             ORDER BY month
         '''
         
-        cursor.execute(all_filings, [entity_id])
+        cursor.execute(all_filings, [entity_id, entity_id])
         
         columns = [c[0] for c in cursor.description]
-        contribution_tuple = namedtuple('Contributions', columns)
+        amount_tuple = namedtuple('Amount', columns)
         
-        contributions = [contribution_tuple(*r) for r in cursor]
+        amounts = [amount_tuple(*r) for r in cursor]
         
-        month_lookup = {r.month.date(): r.amount for r in contributions}
+        contributions_lookup = {r.month.date(): r.contribution_amount for r in amounts}
+        expenditures_lookup = {r.month.date(): r.expenditure_amount for r in amounts}
         
-        start_month, end_month = min(month_lookup.keys()), max(month_lookup.keys())
+        all_months = list(contributions_lookup.keys()) + list(expenditures_lookup.keys())
+        start_month, end_month = min(all_months), max(all_months)
 
         donation_trend = []
         expend_trend = []
@@ -400,13 +408,15 @@ class CommitteeDetailBaseView(DetailView):
                               month.month,
                               month.day]
             
-            amount = month_lookup.get(month.date(), 0)
-            donation_trend.append([begin_date_array, end_date_array, amount])
+            contribution_amount = contributions_lookup.get(month.date(), 0)
+            expenditure_amount = expenditures_lookup.get(month.date(), 0)
+            donation_trend.append([begin_date_array, end_date_array, contribution_amount])
 
-            # expend_trend.append([begin_date_array, end_date_array, expenditure_rate])
-        
+            expend_trend.append([begin_date_array, end_date_array, (-1 * expenditure_amount)])
+
+
         donation_trend = self.stackTrends(donation_trend)
-        # expend_trend = self.stackTrends(expend_trend)
+        expend_trend = self.stackTrends(expend_trend)
         
         context['latest_filing'] = context['object'].entity.filing_set.order_by('-filing_period__filing_date').first()
         context['balance_trend'] = balance_trend

@@ -230,6 +230,57 @@ class Command(BaseCommand):
                 '''.format(interval)
                 
                 self.executeTransaction(view)
+            
+            try:
+                self.executeTransaction(''' 
+                    REFRESH MATERIALIZED VIEW expenditures_by_{}
+                '''.format(interval))
+            except sa.exc.ProgrammingError:
+                view = ''' 
+                    CREATE MATERIALIZED VIEW expenditures_by_{0} AS (
+                      SELECT 
+                        entity_id,
+                        SUM(amount) AS amount,
+                        {0}
+                      FROM (
+                        SELECT 
+                          filing.entity_id, 
+                          SUM(e.amount) AS amount,
+                          date_trunc('{0}', e.received_date) AS {0}
+                        FROM camp_fin_transaction AS e 
+                        JOIN camp_fin_transactiontype AS tt 
+                          ON e.transaction_type_id = tt.id 
+                        JOIN camp_fin_filing AS filing 
+                          ON e.filing_id = filing.id 
+                        JOIN camp_fin_filingperiod AS fp 
+                          ON filing.filing_period_id = fp.id 
+                        WHERE tt.contribution = FALSE 
+                          AND fp.filing_date >= '2010-01-01' 
+                        GROUP BY filing.entity_id, date_trunc('{0}', e.received_date) 
+                        
+                        UNION 
+                        
+                        SELECT 
+                          filing.entity_id, 
+                          SUM(lt.amount) AS amount,
+                          date_trunc('{0}', lt.transaction_date) AS {0}
+                        FROM camp_fin_loantransaction AS lt 
+                        JOIN camp_fin_loantransactiontype AS ltt 
+                          ON lt.transaction_type_id = ltt.id 
+                        JOIN camp_fin_filing AS filing 
+                          ON lt.filing_id = filing.id 
+                        JOIN camp_fin_filingperiod AS fp 
+                          ON filing.filing_period_id = fp.id 
+                        WHERE ltt.description = 'Payment' 
+                          AND fp.filing_date >= '2010-01-01' 
+                        GROUP BY filing.entity_id, date_trunc('{0}', lt.transaction_date)
+                      ) AS s
+                      GROUP BY entity_id, {0}
+                    )
+                '''.format(interval)
+                
+                self.executeTransaction(view)
+
 
     def makeETLTracker(self):
         create = ''' 
