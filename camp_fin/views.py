@@ -56,9 +56,10 @@ class IndexView(TemplateView):
                   LEFT JOIN camp_fin_candidate AS candidate
                     ON entity.id = candidate.entity_id
                   WHERE tt.contribution = TRUE
-                    AND o.received_date >= '2010-01-01'
-                  ORDER BY o.amount DESC LIMIT 10
-              ) AS x;
+                    AND o.received_date >= (NOW() - interval '1 year')
+                  ORDER BY o.amount DESC
+              ) AS x
+              WHERE rank <= 5
             ''')
 
             columns = [c[0] for c in cursor.description]
