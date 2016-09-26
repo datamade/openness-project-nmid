@@ -69,7 +69,9 @@ Keep an eye on money in New Mexico politics
                             {{ transaction.full_name }}
                         </td>
                         <td class='no-wrap'>
+                            <a href="{% url 'contribution-detail' transaction.id %}">
                             {{transaction.transaction_type|get_transaction_verb }} <strong>{{ transaction.amount|format_money }}</strong> to
+                            </a>
                         </td>
                         <td>
                             {% if transaction.pac_slug %}
