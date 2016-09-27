@@ -198,7 +198,7 @@ class TopMoneyView(viewsets.ViewSet):
               FROM (
                 SELECT 
                   SUM(transaction.amount) AS amount, 
-                  NULL AS latest_date,
+                  MAX(transaction.received_date) AS latest_date,
                   transaction.name_prefix, 
                   transaction.first_name, 
                   transaction.middle_name, 
