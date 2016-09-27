@@ -22,7 +22,7 @@ from camp_fin.views import IndexView, CandidateList, CandidateDetail, \
     ContributionViewSet, ExpenditureViewSet, TransactionViewSet, TopDonorsView, \
     TopExpensesView, CommitteeList, CommitteeDetail, ContributionDetail, \
     ExpenditureDetail, SearchView, SearchAPIView, DonationsView, \
-    LoanViewSet
+    LoanViewSet, TopEarnersView
 
 from pages.views import PagesView
 
@@ -50,4 +50,5 @@ urlpatterns = [
     url(r'^api/', include(router.urls)),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^ckeditor/', include('ckeditor_uploader.urls')),
+    url(r'^top-earners/$', TopEarnersView.as_view(), name='top-earners'),
 ]

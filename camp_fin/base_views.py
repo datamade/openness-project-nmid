@@ -17,11 +17,12 @@ TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
 
 class PaginatedList(ListView):
     
+    per_page = 25
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        per_page = self.request.GET.get('per_page', '25')
 
-        paginator = Paginator(context['object_list'], per_page)
+        paginator = Paginator(context['object_list'], self.per_page)
 
         page = self.request.GET.get('page')
         try:
