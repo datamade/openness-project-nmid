@@ -63,7 +63,7 @@ class TransactionBaseViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.filter(filing__date_added__gte=TWENTY_TEN)
     filter_backends = (filters.OrderingFilter,)
     
-    ordering_fields = ('last_name', 'amount', 'received_date')
+    ordering_fields = ('last_name', 'amount', 'received_date', 'description')
 
     def get_queryset(self):
         
@@ -198,7 +198,7 @@ class TopMoneyView(viewsets.ViewSet):
               FROM (
                 SELECT 
                   SUM(transaction.amount) AS amount, 
-                  NULL AS latest_date,
+                  MAX(transaction.received_date) AS latest_date,
                   transaction.name_prefix, 
                   transaction.first_name, 
                   transaction.middle_name, 
