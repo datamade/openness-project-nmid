@@ -109,7 +109,7 @@
                     </th>
                     <th>
                         <a id="transaction-date" href="javascript://" data-ordering="received_date" data-transaction_type="<%= type %>" class="transaction-sort">
-                            Date
+                            Date <i class="fa fa-sort-amount-desc"> </i>
                         </a>
                     </th>
                 </tr>
@@ -282,10 +282,17 @@
         }
 
         function sortTransactions(e){
-            var transaction_type = $(e.target).data().transaction_type;
-            var ordering = $(e.target).data().ordering;
+            var element = $(e.target);
+            var transaction_type = element.data().transaction_type;
+            var ordering = element.data().ordering;
 
-            var selector = $(e.target).prop('id');
+            if (!transaction_type && !ordering){
+                element = $(e.target).parent();
+                transaction_type = element.data().transaction_type;
+                ordering = element.data().ordering;
+            }
+
+            var selector = element.prop('id');
 
             displayTransactionTable(transaction_type, ordering, selector);
 
@@ -316,8 +323,6 @@
                         $('#money-table-guts').html(template.render(data));
                         $('.page-link').off('click');
                         $('.page-link').on('click', getPage);
-                        $('.transaction-sort').off('click');
-                        $('.transaction-sort').on('click', sortTransactions);
 
                         var sorter = ''
 
@@ -339,6 +344,9 @@
                         }
                         var text = $('#' + selector).text().trim();
                         $('#' + selector).html(text + icon);
+
+                        $('.transaction-sort').off('click');
+                        $('.transaction-sort').on('click', sortTransactions);
 
                     } else {
                         $('#money-table-guts').html('<h4>No results</h4>')
