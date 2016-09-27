@@ -201,3 +201,4 @@ class TopMoneySerializer(serializers.Serializer):
 class DataTablesPagination(pagination.LimitOffsetPagination):
     limit_query_param = 'length'
     offset_query_param = 'start'
+

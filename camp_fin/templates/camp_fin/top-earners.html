@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load bootstrap_pagination %}
+{% load helpers %}
+{% block title %}Top earners{% endblock %}
+{% block full_content %}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+
+            <h1><i class='fa fa-fw fa-plus-circle'></i> Top earners</h1>
+            <ul class="nav nav-pills">
+                {% if interval == 1 %}
+                    <li role="presentation" class="active"><a href="{% url 'top-earners' %}?interval=1">Yesterday</a></li>
+                {% else %}
+                    <li role="presentation"><a href="{% url 'top-earners' %}?interval=1">Yesterday</a></li>
+                {% endif %}
+
+                {% if interval == 7 %}
+                    <li role="presentation" class="active"><a href="{% url 'top-earners' %}?interval=7">Last week</a></li>
+                {% else %}
+                    <li role="presentation"><a href="{% url 'top-earners' %}?interval=7">Last week</a></li>
+                {% endif %}
+
+                {% if interval == 30 %}
+                    <li role="presentation" class="active"><a href="{% url 'top-earners' %}?interval=30">Last month</a></li>
+                {% else %}
+                    <li role="presentation"><a href="{% url 'top-earners' %}?interval=30">Last month</a></li>
+                {% endif %}
+
+                {% if interval == 365 %}
+                    <li role="presentation" class="active"><a href="{% url 'top-earners' %}?interval=365">Last year</a></li>
+                {% else %}
+                    <li role="presentation"><a href="{% url 'top-earners' %}?interval=365">Last year</a></li>
+                {% endif %}
+
+                {% if interval == 0 %}
+                    <li role="presentation" class="active"><a href="{% url 'top-earners' %}?interval=0">All time</a></li>
+                {% else %}
+                    <li role="presentation"><a href="{% url 'top-earners' %}?interval=0">All time</a></li>
+                {% endif %}
+            </ul>
+            <table class="table table-striped" id="candidate-list">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th class="text-right no-wrap">New funds</th>
+                        <th class='text-right no-wrap'>Current funds</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for earner in object_list %}
+                        <tr>
+                            <td>{{ earner.rank }}</td>
+                            <td>
+                                {% if earner.committee_type == 'PAC' %}
+                                    <a href="{% url 'committee-detail' earner.slug %}">
+                                        {{ earner.name }}
+                                    </a>
+                                {% else %}
+                                    <a href="{% url 'candidate-detail' earner.slug %}">
+                                        {{ earner.name }}
+                                    </a>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ earner.committee_type }}
+                            </td>
+                            <td class="text-right">{{ earner.new_funds|format_money }}</td>
+                            <td class='text-right'>{{ earner.current_funds|format_money }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% bootstrap_paginate object_list range=10 %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+

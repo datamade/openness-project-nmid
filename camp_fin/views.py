@@ -834,3 +834,64 @@ class SearchAPIView(viewsets.ViewSet):
             ])
         
         return Response(response)
+
+
+class TopEarnersView(PaginatedList):
+    template_name = 'camp_fin/top-earners.html'
+    per_page = 100
+
+    def get_queryset(self):
+        
+        interval = self.request.GET.get('interval', 30)
+        
+        if int(interval) > 0:
+            where_clause = "AND t.received_date >= (NOW() - INTERVAL '%s days')"
+        else:
+            where_clause = "AND t.received_date >= '2010-01-01'"
+
+
+        query = ''' 
+            SELECT * FROM (
+              SELECT 
+                dense_rank() OVER (ORDER BY new_funds DESC) AS rank, * 
+              FROM (
+                SELECT 
+                  MAX(COALESCE(c.slug, p.slug)) AS slug, 
+                  MAX(COALESCE(c.full_name, p.name)) AS name, 
+                  SUM(t.amount) AS new_funds, 
+                  MAX(f.closing_balance) AS current_funds, 
+                  CASE WHEN p.id IS NULL 
+                    THEN 'Candidate' 
+                    ELSE 'PAC' 
+                  END AS committee_type 
+                  FROM camp_fin_transaction AS t 
+                  JOIN camp_fin_transactiontype AS tt 
+                    ON t.transaction_type_id = tt.id 
+                  JOIN camp_fin_filing AS f 
+                    ON t.filing_id = f.id 
+                  LEFT JOIN camp_fin_pac AS p 
+                    ON f.entity_id = p.entity_id 
+                  LEFT JOIN camp_fin_candidate AS c 
+                    ON f.entity_id = c.entity_id 
+                  WHERE tt.contribution = TRUE 
+                    {} 
+                  GROUP BY c.id, p.id
+                ) AS s 
+              ORDER BY new_funds DESC
+            ) AS s
+        '''.format(where_clause)
+        
+        cursor = connection.cursor()
+        cursor.execute(query, [int(interval)])
+
+        columns = [c[0] for c in cursor.description]
+        result_tuple = namedtuple('TopEarners', columns)
+        
+        return [result_tuple(*r) for r in cursor]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['interval'] = int(self.request.GET.get('interval', 30))
+
+        return context
