@@ -319,13 +319,26 @@
                         $('.transaction-sort').off('click');
                         $('.transaction-sort').on('click', sortTransactions);
 
+                        var sorter = ''
+
                         if (selector){
                             if(ordering.startsWith('-')){
-                                $('#' + selector).data('ordering', ordering.replace('-', ''));
+                                sorter = ordering.replace('-', '');
+                                $('#' + selector).data('ordering', sorter);
                             } else {
-                                $('#' + selector).data('ordering', '-' + ordering);
+                                sorter = '-' + ordering;
+                                $('#' + selector).data('ordering', sorter);
                             }
                         }
+
+                        var icon = ''
+                        if (sorter.startsWith('-')){
+                            icon = ' <i class="fa fa-sort-amount-asc"> </i>'
+                        } else {
+                            icon = ' <i class="fa fa-sort-amount-desc"> </i>'
+                        }
+                        var text = $('#' + selector).text().trim();
+                        $('#' + selector).html(text + icon);
 
                     } else {
                         $('#money-table-guts').html('<h4>No results</h4>')
