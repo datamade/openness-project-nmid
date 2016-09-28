@@ -10,18 +10,6 @@
 
             <h1><i class='fa fa-fw fa-plus-circle'></i> Top earners</h1>
             <ul class="nav nav-pills">
-                {% if interval == 1 %}
-                    <li role="presentation" class="active"><a href="{% url 'top-earners' %}?interval=1">Yesterday</a></li>
-                {% else %}
-                    <li role="presentation"><a href="{% url 'top-earners' %}?interval=1">Yesterday</a></li>
-                {% endif %}
-
-                {% if interval == 7 %}
-                    <li role="presentation" class="active"><a href="{% url 'top-earners' %}?interval=7">Last week</a></li>
-                {% else %}
-                    <li role="presentation"><a href="{% url 'top-earners' %}?interval=7">Last week</a></li>
-                {% endif %}
-
                 {% if interval == 30 %}
                     <li role="presentation" class="active"><a href="{% url 'top-earners' %}?interval=30">Last month</a></li>
                 {% else %}
