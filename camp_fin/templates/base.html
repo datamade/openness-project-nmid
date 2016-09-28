@@ -25,22 +25,25 @@
             <div class="collapse navbar-collapse pull-right" id="bs-example-navbar-collapse-1">
                 <ul class="nav navbar-nav">
                     <li>
-                        <a href="/"><i class='fa fa-home'></i> Home</a>
+                        <a href="{% url 'index' %}"><i class='fa fa-home'></i> Home</a>
                     </li>
                     <li>
-                        <a href="/search/"><i class='fa fa-search'></i> Search</a>
+                        <a href="{% url 'search' %}"><i class='fa fa-search'></i> Search</a>
                     </li>
                     <li>
-                        <a href='/donations/'><i class='fa fa-dollar'></i> Donations</a>
+                        <a href="{% url 'top-earners' %}"><i class='fa fa-plus-circle'></i> Top earners</a>
                     </li>
                     <li>
-                        <a href='/candidates/'><i class='fa fa-user'></i> Candidates</a>
+                        <a href="{% url 'donations' %}"><i class='fa fa-dollar'></i> Donations</a>
                     </li>
                     <li>
-                        <a href='/committees/'><i class='fa fa-group'></i> Committees</a>
+                        <a href='{% url 'candidate-list' %}'><i class='fa fa-user'></i> Candidates</a>
                     </li>
                     <li>
-                        <a href="/about/"><i class='fa fa-info-circle'></i> About</a>
+                        <a href='{% url 'committee-list' %}'><i class='fa fa-group'></i> Committees</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'about' %}"><i class='fa fa-info-circle'></i> About</a>
                     </li>
                 </ul>
             </div>

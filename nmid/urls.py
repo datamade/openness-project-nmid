@@ -38,8 +38,8 @@ router.register(r'loans', LoanViewSet, base_name='loan')
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^$', IndexView.as_view(), name='index'),
-    url(r'^about', PagesView.as_view(), name='about'),
-    url(r'^donations', DonationsView.as_view(), name='donations'),
+    url(r'^about/$', PagesView.as_view(), name='about'),
+    url(r'^donations/$', DonationsView.as_view(), name='donations'),
     url(r'^search/$', SearchView.as_view(), name='search'),
     url(r'^candidates/$', CandidateList.as_view(), name='candidate-list'),
     url(r'^candidates/(?P<slug>[\w-]+)/$', CandidateDetail.as_view(), name='candidate-detail'),
