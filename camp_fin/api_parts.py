@@ -1,5 +1,6 @@
 import csv
-from io import StringIO
+from io import StringIO, BytesIO
+import zipfile
 
 from rest_framework import serializers, pagination, renderers
 from rest_framework_csv.renderers import CSVStreamingRenderer
@@ -42,6 +43,9 @@ class EntityField(serializers.RelatedField):
             
             elif value.entity.candidate_set.all():
                 serializer = CandidateSerializer(value.entity.candidate_set.first())
+            
+            else:
+                return {}
 
             return serializer.data
         except AttributeError:
@@ -210,3 +214,44 @@ class TransactionCSVRenderer(CSVStreamingRenderer):
     
     def render(self, data, *args, **kwargs):
         return super().render(data['results'], *args, **kwargs)
+
+class SearchCSVRenderer(renderers.BaseRenderer):
+    media_type = 'application/zip'
+    format = 'csv'
+
+    def render(self, data, media_type=None, renderer_context=None):
+        table_names = [
+            'candidate',
+            'pac',
+            'contribution',
+            'expenditure',
+            'treasurer',
+        ]
+        
+        zfoutp = BytesIO()
+
+        with zipfile.ZipFile(zfoutp, 'w') as zf:
+            
+            for table in table_names:
+                
+                if data.get(table):
+
+                    try:
+                        first_record = data[table]['objects'][0]
+                    except IndexError:
+                        continue
+
+                    outp = StringIO()
+                    
+                    fieldnames = first_record._fields 
+                    writer = csv.writer(outp)
+                    
+                    writer.writerow(fieldnames)
+                    writer.writerows(data[table]['objects'])
+                    
+                    outp.seek(0)
+                    zf.writestr('{}.csv'.format(table), outp.getvalue())
+        
+        zfoutp.seek(0)
+
+        return zfoutp.getvalue()

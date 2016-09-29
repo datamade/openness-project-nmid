@@ -80,17 +80,24 @@ class TransactionBaseViewSet(viewsets.ModelViewSet):
         
         if candidate_id:
             queryset = queryset.filter(filing__campaign__candidate__id=candidate_id)
-        if pac_id:
+        elif pac_id:
             queryset = queryset.filter(filing__entity__pac__id=pac_id)
         
+        else:
+            self.entity_name = None
+            return []
+        
+
         if self.request.query_params.get('format') == 'csv':
             
             entity = queryset.first().filing.entity
-
+            
             if entity.candidate_set.first():
                 self.entity_name = entity.candidate_set.first().full_name
-            if pac_id:
+            
+            elif entity.pac_set.first():
                 self.entity_name = entity.pac_set.first().name
+
 
         return queryset.order_by('-received_date')
     
