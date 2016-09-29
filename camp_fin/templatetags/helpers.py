@@ -11,6 +11,15 @@ def format_money(s):
         return locale.currency(s, grouping=True)
     return '$0.00'
 
+@register.filter()
+def format_money_short(n):
+    import math
+    millnames=['','K','M','B']
+    n = float(n)
+    millidx=max(0,min(len(millnames)-1,
+                      int(math.floor(math.log10(abs(n))/3))))
+    return '$%.2f%s'%(n/10**(3*millidx),millnames[millidx])
+
 @register.simple_tag
 def query_transform(request, **kwargs):
     updated = request.GET.copy()
