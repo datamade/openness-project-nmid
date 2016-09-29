@@ -65,6 +65,8 @@ class TransactionBaseViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.OrderingFilter,)
     
     ordering_fields = ('last_name', 'amount', 'received_date', 'description')
+    
+    allowed_methods = ['GET']
 
     def get_queryset(self):
         
@@ -72,17 +74,33 @@ class TransactionBaseViewSet(viewsets.ModelViewSet):
 
         if self.default_filter:
             queryset = queryset.filter(**self.default_filter)
-        else:
-            queryset = queryset.all()
 
         candidate_id = self.request.query_params.get('candidate_id')
         pac_id = self.request.query_params.get('pac_id')
+        
         if candidate_id:
             queryset = queryset.filter(filing__campaign__candidate__id=candidate_id)
-        if pac_id:
+        elif pac_id:
             queryset = queryset.filter(filing__entity__pac__id=pac_id)
         
+        else:
+            self.entity_name = None
+            return []
+        
+
+        if self.request.query_params.get('format') == 'csv':
+            
+            entity = queryset.first().filing.entity
+            
+            if entity.candidate_set.first():
+                self.entity_name = entity.candidate_set.first().full_name
+            
+            elif entity.pac_set.first():
+                self.entity_name = entity.pac_set.first().name
+
+
         return queryset.order_by('-received_date')
+    
 
 class TopMoneyView(viewsets.ViewSet):
     

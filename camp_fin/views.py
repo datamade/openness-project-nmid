@@ -2,17 +2,20 @@ import itertools
 from collections import namedtuple, OrderedDict
 from datetime import datetime, timedelta
 import time
+import csv
 
 from django.views.generic import ListView, TemplateView, DetailView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.http import HttpResponseNotFound
-from django.db import transaction, connection
+from django.http import HttpResponseNotFound, HttpResponse, StreamingHttpResponse
+from django.db import transaction, connection, connections
 from django.utils import timezone
 from django.core.urlresolvers import reverse_lazy
+from django.utils.text import slugify
 
 from dateutil.rrule import rrule, MONTHLY
 
-from rest_framework import serializers, viewsets, filters, generics, metadata
+from rest_framework import serializers, viewsets, filters, generics, metadata, \
+    renderers
 from rest_framework.response import Response
 
 from .models import Candidate, Office, Transaction, Campaign, Filing, PAC, \
@@ -21,7 +24,8 @@ from .base_views import PaginatedList, TransactionDetail, TransactionBaseViewSet
     TopMoneyView
 from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer, \
     TransactionSearchSerializer, CandidateSearchSerializer, PACSearchSerializer, \
-    LoanTransactionSerializer, TreasurerSearchSerializer, DataTablesPagination
+    LoanTransactionSerializer, TreasurerSearchSerializer, DataTablesPagination, \
+    TransactionCSVRenderer, SearchCSVRenderer
 
 TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
 
@@ -558,8 +562,6 @@ class CommitteeList(PaginatedList):
 
         return context
 
-
-
 class ContributionDetail(TransactionDetail):
     template_name = 'camp_fin/contribution-detail.html'
 
@@ -567,21 +569,44 @@ class ExpenditureDetail(TransactionDetail):
     template_name = 'camp_fin/expenditure-detail.html'
 
 class TransactionViewSet(TransactionBaseViewSet):
-    pass
+    serializer_class = TransactionSerializer
+    renderer_classes = (renderers.JSONRenderer, TransactionCSVRenderer)
+    
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super().finalize_response(request, response, *args, **kwargs)
+        
+        if request.GET.get('format') == 'csv':
+            
+            if self.default_filter['transaction_type__contribution']:
+                ttype = 'contributions'
+            else:
+                ttype = 'expenditures'
+            
+            if not self.entity_name:
+                response = HttpResponse('Use /api/bulk/{}/ to get bulk downloads'.format(ttype))
+                response.status_code = 400
 
-class ContributionViewSet(TransactionBaseViewSet):
+            else:
+                filename = '{0}-{1}-{2}.csv'.format(ttype,
+                                                    slugify(self.entity_name), 
+                                                    timezone.now().isoformat())
+                
+                response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
+
+        return response
+
+class ContributionViewSet(TransactionViewSet):
     default_filter = {
         'transaction_type__contribution': True,
         'filing__date_added__gte': TWENTY_TEN
     }
-    serializer_class = TransactionSerializer
 
-class ExpenditureViewSet(TransactionBaseViewSet):
+class ExpenditureViewSet(TransactionViewSet):
     default_filter = {
         'transaction_type__contribution': False,
         'filing__date_added__gte': TWENTY_TEN
     }
-    serializer_class = TransactionSerializer
+
 
 class TopDonorsView(TopMoneyView):
     contribution = True
@@ -602,6 +627,7 @@ SERIALIZER_LOOKUP = {
 }
 
 class SearchAPIView(viewsets.ViewSet):
+    renderer_classes = (renderers.JSONRenderer, SearchCSVRenderer)
     
     def list(self, request):
         
@@ -661,7 +687,6 @@ class SearchAPIView(viewsets.ViewSet):
                 '''.format(table)
             
             if table == 'candidate':
-                # TODO: finish this query
                 query = '''
                     SELECT * FROM (
                       SELECT DISTINCT ON (candidate.id)
@@ -813,27 +838,46 @@ class SearchAPIView(viewsets.ViewSet):
             
             objects =  [result_tuple(*r) for r in cursor]
             
-            paginator = DataTablesPagination()
+            meta = OrderedDict()
 
-            page = paginator.paginate_queryset(objects, self.request, view=self)
-            
-            serializer = serializer(page, many=True)
-            
-            meta = OrderedDict([
-                ('total_rows', paginator.count),
-                ('limit', limit),
-                ('offset', offset),
-                ('recordsTotal', paginator.count),
-                ('recordsFiltered', limit),
-                ('draw', request.GET.get('draw', 0))
-            ])
+            if not request.GET.get('format') == 'csv':
+                paginator = DataTablesPagination()
+
+                page = paginator.paginate_queryset(objects, self.request, view=self)
+                
+                serializer = serializer(page, many=True)
+                
+                objects = serializer.data
+
+                meta = OrderedDict([
+                    ('total_rows', paginator.count),
+                    ('limit', limit),
+                    ('offset', offset),
+                    ('recordsTotal', paginator.count),
+                    ('recordsFiltered', limit),
+                    ('draw', request.GET.get('draw', 0))
+                ])
 
             response[table] = OrderedDict([
                 ('meta', meta),
-                ('objects', serializer.data),
+                ('objects', objects),
             ])
         
         return Response(response)
+    
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super().finalize_response(request, response, *args, **kwargs)
+        
+        if request.GET.get('format') == 'csv':
+            
+            term = request.GET['term']
+
+            filename = '{0}-{1}.zip'.format(slugify(term), 
+                                            timezone.now().isoformat())
+            
+            response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
+
+        return response
 
 
 class TopEarnersView(PaginatedList):
@@ -895,3 +939,173 @@ class TopEarnersView(PaginatedList):
         context['interval'] = int(self.request.GET.get('interval', 30))
 
         return context
+
+class Echo(object):
+    def write(self, value):
+        return value
+
+def iterate_cursor(header, cursor):
+    yield header
+    
+    for row in cursor:
+        yield row
+
+def make_response(query, filename):
+
+    cursor = connection.cursor()
+    cursor.execute(query)
+    header = [c[0] for c in cursor.description]
+    
+    streaming_buffer = Echo()
+    writer = csv.writer(streaming_buffer)
+    writer.writerow(header)
+
+    response = StreamingHttpResponse((writer.writerow(row) for row in iterate_cursor(header, cursor)),
+                                     content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
+
+    return response
+
+def bulk_contributions(request):
+   
+    copy = ''' 
+        SELECT
+          transaction.*, 
+          entity.*
+        FROM camp_fin_transaction AS transaction
+        JOIN camp_fin_transactiontype AS tt
+          ON transaction.transaction_type_id = tt.id
+        JOIN camp_fin_filing AS f
+          ON transaction.filing_id = f.id
+        JOIN camp_fin_filingperiod AS fp
+          ON f.filing_period_id = fp.id
+        JOIN (
+          SELECT 
+            entity_id, 
+            id, 
+            recipient, 
+            type 
+          FROM (
+            SELECT 
+              entity_id, 
+              id, 
+              full_name AS recipient, 
+              'candidate' AS type 
+            FROM camp_fin_candidate 
+            UNION 
+            SELECT 
+              entity_id, 
+              id, 
+              name AS recipient, 
+              'pac' AS type 
+            FROM camp_fin_pac
+          ) AS all_entities
+        ) AS entity
+          ON f.entity_id = entity.entity_id
+        WHERE tt.contribution = TRUE
+          AND fp.filing_date >= '2010-01-01'
+    '''
+
+    filename = 'Contributions_{}.csv'.format(timezone.now().isoformat())
+    
+    return make_response(copy, filename)
+
+def bulk_expenditures(request):
+   
+    copy = ''' 
+        SELECT
+          transaction.*, 
+          entity.*
+        FROM camp_fin_transaction AS transaction
+        JOIN camp_fin_transactiontype AS tt
+          ON transaction.transaction_type_id = tt.id
+        JOIN camp_fin_filing AS f
+          ON transaction.filing_id = f.id
+        JOIN camp_fin_filingperiod AS fp
+          ON f.filing_period_id = fp.id
+        JOIN (
+          SELECT 
+            entity_id, 
+            id, 
+            spender, 
+            type 
+          FROM (
+            SELECT 
+              entity_id, 
+              id, 
+              full_name AS spender, 
+              'candidate' AS type 
+            FROM camp_fin_candidate 
+            UNION 
+            SELECT 
+              entity_id, 
+              id, 
+              name AS spender, 
+              'pac' AS type 
+            FROM camp_fin_pac
+          ) AS all_entities
+        ) AS entity
+          ON f.entity_id = entity.entity_id
+        WHERE tt.contribution = FALSE
+          AND fp.filing_date >= '2010-01-01'
+    '''
+
+    filename = 'Expenditures_{}.csv'.format(timezone.now().isoformat())
+    
+    return make_response(copy, filename)
+
+def bulk_candidates(request):
+    
+    copy = ''' 
+        SELECT DISTINCT ON (candidate.id)
+          candidate.*,
+          campaign.committee_name,
+          county.name AS county_name,
+          election.year AS election_year,
+          party.name AS party_name,
+          office.description AS office_name,
+          officetype.description AS office_type,
+          district.name AS district_name,
+          division.name AS division_name
+        FROM camp_fin_candidate AS candidate
+        JOIN camp_fin_campaign AS campaign
+          ON candidate.id = campaign.candidate_id
+        JOIN camp_fin_electionseason AS election
+          ON campaign.election_season_id = election.id
+        JOIN camp_fin_politicalparty AS party
+          ON campaign.political_party_id = party.id
+        LEFT JOIN camp_fin_county AS county
+          ON campaign.county_id = county.id
+        JOIN camp_fin_office AS office
+          ON campaign.office_id = office.id
+        JOIN camp_fin_officetype AS officetype
+          ON office.office_type_id = officetype.id
+        LEFT JOIN camp_fin_district AS district
+          ON campaign.district_id = district.id
+        LEFT JOIN camp_fin_division AS division
+          ON campaign.division_id = division.id
+        WHERE campaign.date_added >= '2010-01-01'
+        ORDER BY candidate.id, election.year DESC
+    '''
+
+    filename = 'Candidates_{}.csv'.format(timezone.now().isoformat())
+    
+    return make_response(copy, filename)
+
+def bulk_committees(request):
+    copy = ''' 
+        SELECT DISTINCT ON (pac.id)
+          pac.*, 
+          treasurer.full_name AS treasurer_name 
+        FROM camp_fin_pac AS pac
+        JOIN camp_fin_treasurer AS treasurer
+          ON pac.treasurer_id = treasurer.id
+        JOIN camp_fin_filing AS filing
+          ON filing.entity_id = pac.entity_id
+        WHERE filing.date_added >= '2010-01-01'
+        ORDER BY pac.id
+    '''
+
+    filename = 'PACs_{}.csv'.format(timezone.now().isoformat())
+    
+    return make_response(copy, filename)

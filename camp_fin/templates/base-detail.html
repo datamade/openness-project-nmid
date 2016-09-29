@@ -86,6 +86,7 @@
     <script src="{% static 'js/chart_helper.js' %}"></script>
     <script type="text/EJS" id="transaction-table-guts">
 
+        <a href="<%= csv_download %>" class="btn btn-default">Download as CSV</a>
         <table class="table table-striped">
             <thead>
                 <tr>
@@ -316,6 +317,9 @@
                     if (data.results.length > 0){
                         var template = new EJS({'text': $('#transaction-table-guts').html()});
                         data['type'] = transaction_type;
+                        params['limit'] = 1000000;
+                        params['format'] = 'csv'
+                        data['csv_download'] = url + '?' + $.param(params);
                         $('#money-table-guts').html(template.render(data));
                         $('.page-link').off('click');
                         $('.page-link').on('click', getPage);

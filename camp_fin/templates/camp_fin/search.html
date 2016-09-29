@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load staticfiles %}
+{% load helpers %}
 
 {% block title %}Search{% endblock %}
 
@@ -39,6 +40,11 @@
         </div>
     </div>
     <div class="row">
+        <div class="col-md-12">
+            <a href="/api/search/?{% query_transform request format='csv' limit='1000000' %}" class="btn btn-default">
+                Download results as ZIP
+            </a>
+        </div>
         <div id="candidate-search-results" class="col-md-12" style="display:none;">
             <h3>Candidates <small></small></h3>
             <table class="table table-hover" id="candidate-table">
