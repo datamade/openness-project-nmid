@@ -16,103 +16,101 @@
 {% endblock %}
 
 {% block contact %}
-    <div class="col-sm-5 col-sm-offset-1">
-        <div class="well">
-            <h4>Contact information</h4>
-            <table class="table table-condensed">
-                <tbody>
+    <div class="well">
+        <h4>Contact information</h4>
+        <table class="table table-condensed">
+            <tbody>
+                <tr>
+                    <td>
+                        Phone
+                    </td>
+                    <td>{{ pac.contact.phone|default:pac.business_phone|default:pac.home_phone }}</td>
+                </tr>
+                <tr>
+                    <td>
+                        Email
+                    </td>
+                    <td>
+                        <a href="mailto:{{ pac.contact.email|default:pac.email }}">
+                            {{ pac.contact.email|default:pac.email }}
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Address
+                    </td>
+                    <td>
+                        {{ pac.contact.address|default:pac.address }}
+                    </td>
+                </tr>
+                {% if pac.contact.occupation %}
                     <tr>
                         <td>
-                            Phone
-                        </td>
-                        <td>{{ pac.contact.phone|default:pac.business_phone|default:pac.home_phone }}</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            Email
+                            Occupation
                         </td>
                         <td>
-                            <a href="mailto:{{ pac.contact.email|default:pac.email }}">
-                                {{ pac.contact.email|default:pac.email }}
-                            </a>
+                            {{ pac.contact.occupation }}
                         </td>
                     </tr>
-                    <tr>
-                        <td>
-                            Address
-                        </td>
-                        <td>
-                            {{ pac.contact.address|default:pac.address }}
-                        </td>
-                    </tr>
-                    {% if pac.contact.occupation %}
-                        <tr>
-                            <td>
-                                Occupation
-                            </td>
-                            <td>
-                                {{ pac.contact.occupation }}
-                            </td>
-                        </tr>
-                    {% endif %}
-                </tbody>
-            </table>
-            <h4>Treasurer</h4>
-            <table class="table table-condensed">
-                <tbody>
-                    {% if pac.treasurer.full_name %}
-                    <tr>
-                        <td>
-                            Name
-                        </td>
-                        <td>
-                            <a href="{% url 'search' %}?term={{ pac.treasurer.full_name }}">
-                                {{ pac.treasurer.full_name}}
-                            </a>
-                        </td>
-                    </tr>
-                    {% endif %}
-                    {% if pac.treasurer.business_phone %}
-                    <tr>
-                        <td>
-                            Phone
-                        </td>
-                        <td>{{ pac.treasurer.business_phone }}</td>
-                    </tr>
-                    {% endif %}
-                    {% if pac.treasurer.alt_phone %}
-                    <tr>
-                        <td>
-                            Alternantive Phone
-                        </td>
-                        <td>{{ pac.treasurer.alt_phone }}</td>
-                    </tr>
-                    {% endif %}
-                    {% if pac.treasurer.email %}
-                    <tr>
-                        <td>
-                            Email
-                        </td>
-                        <td>
-                            <a href="mailto:{{ pac.treasurer.email }}">
-                                {{ pac.treasurer.email }}
-                            </a>
-                        </td>
-                    </tr>
-                    {% endif %}
-                    {% if pac.treasurer.address %}
-                    <tr>
-                        <td>
-                            Address
-                        </td>
-                        <td>
-                            {{ pac.treasurer.address }}
-                        </td>
-                    </tr>
-                    {% endif %}
-                </tbody>
-            </table>
-        </div>
+                {% endif %}
+            </tbody>
+        </table>
+        <h4>Treasurer</h4>
+        <table class="table table-condensed">
+            <tbody>
+                {% if pac.treasurer.full_name %}
+                <tr>
+                    <td>
+                        Name
+                    </td>
+                    <td>
+                        <a href="{% url 'search' %}?term={{ pac.treasurer.full_name }}">
+                            {{ pac.treasurer.full_name}}
+                        </a>
+                    </td>
+                </tr>
+                {% endif %}
+                {% if pac.treasurer.business_phone %}
+                <tr>
+                    <td>
+                        Phone
+                    </td>
+                    <td>{{ pac.treasurer.business_phone }}</td>
+                </tr>
+                {% endif %}
+                {% if pac.treasurer.alt_phone %}
+                <tr>
+                    <td>
+                        Alternantive Phone
+                    </td>
+                    <td>{{ pac.treasurer.alt_phone }}</td>
+                </tr>
+                {% endif %}
+                {% if pac.treasurer.email %}
+                <tr>
+                    <td>
+                        Email
+                    </td>
+                    <td>
+                        <a href="mailto:{{ pac.treasurer.email }}">
+                            {{ pac.treasurer.email }}
+                        </a>
+                    </td>
+                </tr>
+                {% endif %}
+                {% if pac.treasurer.address %}
+                <tr>
+                    <td>
+                        Address
+                    </td>
+                    <td>
+                        {{ pac.treasurer.address }}
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
     </div>
 {% endblock %}
 {% block js_templates %}
