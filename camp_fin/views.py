@@ -34,6 +34,42 @@ class IndexView(TemplateView):
 
     def get_context_data(self, **kwargs):
         with connection.cursor() as cursor:
+            cursor.execute(''' 
+              SELECT * FROM (
+                SELECT 
+                  dense_rank() OVER (ORDER BY new_funds DESC) AS rank, * 
+                FROM (
+                  SELECT 
+                    MAX(COALESCE(c.slug, p.slug)) AS slug, 
+                    MAX(COALESCE(c.full_name, p.name)) AS name, 
+                    SUM(t.amount) AS new_funds, 
+                    MAX(f.closing_balance) AS current_funds, 
+                    CASE WHEN p.id IS NULL 
+                      THEN 'Candidate' 
+                      ELSE 'PAC' 
+                    END AS committee_type 
+                    FROM camp_fin_transaction AS t 
+                    JOIN camp_fin_transactiontype AS tt 
+                      ON t.transaction_type_id = tt.id 
+                    JOIN camp_fin_filing AS f 
+                      ON t.filing_id = f.id 
+                    LEFT JOIN camp_fin_pac AS p 
+                      ON f.entity_id = p.entity_id 
+                    LEFT JOIN camp_fin_candidate AS c 
+                      ON f.entity_id = c.entity_id 
+                    WHERE tt.contribution = TRUE 
+                      AND t.received_date >= (NOW() - INTERVAL '90 days')
+                    GROUP BY c.id, p.id
+                  ) AS s 
+                ORDER BY new_funds DESC
+                LIMIT 10
+              ) AS s
+            ''')
+
+            columns = [c[0] for c in cursor.description]
+            transaction_tuple = namedtuple('Transaction', columns)
+            top_earners_objects = [transaction_tuple(*r) for r in cursor]
+
             cursor.execute('''
               SELECT * FROM (
                 SELECT
@@ -129,6 +165,7 @@ class IndexView(TemplateView):
             candidate_objects = [candidate_tuple(*r) for r in cursor]
 
             context = super().get_context_data(**kwargs)
+            context['top_earners_objects'] = top_earners_objects
             context['transaction_objects'] = transaction_objects
             context['pac_objects'] = pac_objects
             context['candidate_objects'] = candidate_objects
