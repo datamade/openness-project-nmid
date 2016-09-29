@@ -7,10 +7,18 @@
 
     <div class='row'>
         <div class='col-sm-8 col-sm-offset-2'>
-            <h1><i class='fa fa-fw fa-info-circle'></i>About</h1>
+            <h1><i class='fa fa-fw fa-info-circle'></i> About</h1>
             {{ page.text|safe }}
+            <hr />
+            <h3><i class='fa fa-fw fa-download'></i> Bulk downloads</h3>
+            <p>The data powering The Openness Project is updated regularly and can be downloaded in bulk using these links:</p>
+            <p><a href="/api/bulk/contributions/" class="btn btn-default">Contributions</a></p>
+            <p><a href="/api/bulk/expenditures/" class="btn btn-default">Expenditures</a></p>
+            <p><a href="/api/bulk/candidates/" class="btn btn-default">Candidates</a></p>
+            <p><a href="/api/bulk/committees/" class="btn btn-default">PACs</a></p>
         </div>
     </div>
+
 
 </div>
 {% endblock %}

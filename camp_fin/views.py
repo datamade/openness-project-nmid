@@ -864,6 +864,20 @@ class SearchAPIView(viewsets.ViewSet):
             ])
         
         return Response(response)
+    
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super().finalize_response(request, response, *args, **kwargs)
+        
+        if request.GET.get('format') == 'csv':
+            
+            term = request.GET['term']
+
+            filename = '{0}-{1}.zip'.format(slugify(term), 
+                                            timezone.now().isoformat())
+            
+            response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
+
+        return response
 
 
 class TopEarnersView(PaginatedList):
