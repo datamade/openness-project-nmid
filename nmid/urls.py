@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
+from django.contrib.flatpages import views as flatpage_views
 
 from rest_framework import routers
 
@@ -23,8 +24,6 @@ from camp_fin.views import IndexView, CandidateList, CandidateDetail, \
     TopExpensesView, CommitteeList, CommitteeDetail, ContributionDetail, \
     ExpenditureDetail, SearchView, SearchAPIView, DonationsView, \
     LoanViewSet, TopEarnersView, bulk_contributions, bulk_expenditures
-
-from pages.views import PagesView
 
 router = routers.DefaultRouter()
 router.register(r'contributions', ContributionViewSet, base_name='contributions')
@@ -38,7 +37,7 @@ router.register(r'loans', LoanViewSet, base_name='loan')
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^$', IndexView.as_view(), name='index'),
-    url(r'^about/$', PagesView.as_view(), name='about'),
+    url(r'^about/$', flatpage_views.flatpage, {'url': '/about/'},  name='about'),
     url(r'^donations/$', DonationsView.as_view(), name='donations'),
     url(r'^search/$', SearchView.as_view(), name='search'),
     url(r'^candidates/$', CandidateList.as_view(), name='candidate-list'),
@@ -53,4 +52,5 @@ urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^ckeditor/', include('ckeditor_uploader.urls')),
     url(r'^top-earners/$', TopEarnersView.as_view(), name='top-earners'),
+
 ]
