@@ -42,7 +42,8 @@
     <div class="row">
         <div class="col-md-12">
             <a href="/api/search/?{% query_transform request format='csv' limit='1000000' %}" class="btn btn-default">
-                Download results as ZIP
+                <i class='fa fa-download'></i>
+                Download as a spreadsheet
             </a>
         </div>
         <div id="candidate-search-results" class="col-md-12" style="display:none;">
@@ -51,10 +52,9 @@
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th>Party</th>
                         <th>Office</th>
-                        <th>Committee name</th>
-                        <th>Last election year</th>
+                        <th class='hidden-xs hidden-sm'>Committee name</th>
+                        <th class='hidden-xs hidden-sm'>Last election year</th>
                     </tr>
                 </thead>
             </table>
@@ -93,9 +93,9 @@
                     <tr>
                         <th>Donor name</th>
                         <th>Recipient name</th>
-                        <th>Date</th>
+                        <th class='hidden-xs hidden-sm'>Date</th>
                         <th>Amount</th>
-                        <th>Description</th>
+                        <th class='hidden-xs hidden-sm'>Description</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -109,9 +109,9 @@
                     <tr>
                         <th>Expense name</th>
                         <th>Spender name</th>
-                        <th>Date</th>
+                        <th class='hidden-xs hidden-sm'>Date</th>
                         <th>Amount</th>
-                        <th>Description</th>
+                        <th class='hidden-xs hidden-sm'>Description</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -166,10 +166,9 @@
                 {
                     'data': 'full_name',
                     'render': function(data, type, full, meta){
-                        return '<a href="/candidates/' + full['slug'] + '/">' + full['full_name'] + '</a>';
+                        return '<a href="/candidates/' + full['slug'] + '/">' + full['full_name'] + '</a>' + ' (' + full['party_name'].charAt(0) + ')';
                     }
                 },
-                {'data': 'party_name'},
                 {
                     'data': 'office_name',
                     'render': function(data, type, full, meta){
@@ -186,8 +185,14 @@
                         return name;
                     }
                 },
-                {'data': 'committee_name'},
-                {'data': 'election_year'}
+                {
+                    'data': 'committee_name',
+                    'className': 'hidden-xs hidden-sm'
+                },
+                {
+                    'data': 'election_year',
+                    'className': 'hidden-xs hidden-sm'
+                }
             ];
             init_datatable(term, 'candidate', columns)
         }
@@ -195,10 +200,7 @@
         if(table_names.indexOf('expenditure') >= 0){
             var columns = [
                 {
-                    'data': 'full_name',
-                    'render': function(data, type, full, meta){
-                        return '<a href="/search/?term=' + full['full_name'] + '">' + full['full_name'] + '</a>';
-                    },
+                    'data': 'full_name'
                 },
                 {
                     'data': 'transaction_subject',
@@ -214,7 +216,8 @@
                     'data': 'received_date',
                     'render': function(data, type, full, meta){
                         return moment(data).format('MMM DD, YYYY');
-                    }
+                    },
+                    'className': 'hidden-xs hidden-sm'
                 },
                 {
                     'data': 'amount',
@@ -222,7 +225,10 @@
                         return '<a href="/expenditures/' + full['id'] + '/">' + accounting.formatMoney(data) + '</a>';
                     }
                 },
-                {'data': 'description'}
+                {
+                    'data': 'description',
+                    'className': 'hidden-xs hidden-sm'
+                }
             ];
             var order = [[2, 'desc']];
             init_datatable(term, 'expenditure', columns, order)
@@ -232,9 +238,6 @@
             var columns = [
                 {
                     'data': 'full_name',
-                    'render': function(data, type, full, meta){
-                        return '<a href="/search/?term=' + full['full_name'] + '">' + full['full_name'] + '</a>';
-                    },
                 },
                 {
                     'data': 'transaction_subject',
@@ -250,7 +253,8 @@
                     'data': 'received_date',
                     'render': function(data, type, full, meta){
                         return moment(data).format('MMM DD, YYYY');
-                    }
+                    },
+                    'className': 'hidden-xs hidden-sm'
                 },
                 {
                     'data': 'amount',
@@ -258,7 +262,10 @@
                         return '<a href="/contributions/' + full['id'] + '/">' + accounting.formatMoney(data) + '</a>';
                     }
                 },
-                {'data': 'description'}
+                {
+                    'data': 'description',
+                    'className': 'hidden-xs hidden-sm'
+                }
             ];
             var order = [[2, 'desc']];
             init_datatable(term, 'contribution', columns, order)
@@ -267,10 +274,7 @@
         if(table_names.indexOf('treasurer') >= 0){
             var columns = [
                 {
-                    'data': 'full_name',
-                    'render': function(data, type, full, meta){
-                        return '<a href="/search/?term=' + full['full_name'] + '">' + full['full_name'] + '</a>';
-                    }
+                    'data': 'full_name'
                 },
                 {
                     'data': 'related_entity_name',

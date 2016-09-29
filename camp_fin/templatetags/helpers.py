@@ -18,7 +18,7 @@ def format_money_short(n):
     n = float(n)
     millidx=max(0,min(len(millnames)-1,
                       int(math.floor(math.log10(abs(n))/3))))
-    return '$%.2f%s'%(n/10**(3*millidx),millnames[millidx])
+    return '$%.1f%s'%(n/10**(3*millidx),millnames[millidx])
 
 @register.simple_tag
 def query_transform(request, **kwargs):

@@ -22,7 +22,7 @@
                                 {{ sort_order|get_sort_icon|safe }}
                             {% endif %}
                         </th>
-                        <th>
+                        <th class='hidden-sm hidden-xs'>
                             <a href="{% url 'committee-list' %}?{% query_transform request order_by='filing_date' sort_order=toggle_order %}">
                                 Latest report
                             </a>
@@ -49,8 +49,11 @@
                                     {{ committee.name }}
                                 </a>
                             </td>
-                            <td>{{ committee.filing_date | date:'M j, Y'}}</td>
-                            <td class='text-right'>{{ committee.closing_balance|format_money }}</td>
+                            <td class='hidden-sm hidden-xs'>{{ committee.filing_date | date:'M j, Y'}}</td>
+                            <td class='text-right'>
+                                <span class='hidden-sm hidden-xs'>{{ committee.closing_balance|format_money }}</span>
+                                <span class='visible-sm-block visible-xs-block'>{{ committee.closing_balance|format_money_short }}</span>
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>

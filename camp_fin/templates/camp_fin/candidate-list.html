@@ -23,7 +23,7 @@
                             {% endif %}
                         </th>
 
-                        <th>
+                        <th class='hidden-sm hidden-xs'>
                             <a href="{% url 'candidate-list' %}?{% query_transform request order_by='office_name' sort_order=toggle_order %}">
                                 Office
                             </a>
@@ -31,7 +31,7 @@
                                 {{ sort_order|get_sort_icon|safe }}
                             {% endif %}
                         </th>
-                        <th>
+                        <th class='hidden-sm hidden-xs'>
                             <a href="{% url 'candidate-list' %}?{% query_transform request order_by='committee_name' sort_order=toggle_order %}">
                                 Committee
                             </a>
@@ -41,7 +41,7 @@
                         </th>
                         <th class='text-right no-wrap'>
                             <a href="{% url 'candidate-list' %}?{% query_transform request order_by='closing_balance' sort_order=toggle_order %}">
-                                Current balance
+                                Funds
                             </a>
                             {% if order_by == 'closing_balance' %}
                                 {{ sort_order|get_sort_icon|safe }}
@@ -57,12 +57,16 @@
                                 <a href="{% url 'candidate-detail' candidate.slug %}">
                                     {{ candidate.full_name }}
                                 </a>
+                                <small class='visible-sm-block visible-xs-block'>{{ candidate.office_name }} {{ candidate.office_type }}</small>
                             </td>
-                            <td>
+                            <td class='hidden-sm hidden-xs'>
                                 {{ candidate.office_name }} {{ candidate.office_type }}
                             </td>
-                            <td>{{ candidate.committee_name|default_if_none:"" }}</td>
-                            <td class='text-right'>{{ candidate.closing_balance|format_money }}</td>
+                            <td class='hidden-sm hidden-xs'>{{ candidate.committee_name|default_if_none:"" }}</td>
+                            <td class='text-right'>
+                                <span class='hidden-sm hidden-xs'>{{ candidate.closing_balance|format_money }}</span>
+                                <span class='visible-sm-block visible-xs-block'>{{ candidate.closing_balance|format_money_short }}</span>
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>

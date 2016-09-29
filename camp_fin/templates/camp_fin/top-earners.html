@@ -33,9 +33,9 @@
                     <tr>
                         <th>Rank</th>
                         <th>Name</th>
-                        <th>Type</th>
+                        <th class='hidden-sm hidden-xs'>Type</th>
                         <th class="text-right no-wrap">New funds</th>
-                        <th class='text-right no-wrap'>Current funds</th>
+                        <th class='text-right no-wrap hidden-sm hidden-xs'>Current funds</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -53,11 +53,16 @@
                                     </a>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class='hidden-sm hidden-xs'>
                                 {{ earner.committee_type }}
                             </td>
-                            <td class="text-right">{{ earner.new_funds|format_money }}</td>
-                            <td class='text-right'>{{ earner.current_funds|format_money }}</td>
+                            <td class="text-right no-wrap">
+                                <span class='green hidden-sm hidden-xs'>+{{ earner.new_funds|format_money }}</span> 
+                                <span class='green visible-sm-block visible-xs-block'>+{{ earner.new_funds|format_money_short }}</span>
+                            </td>
+                            <td class='text-right hidden-sm hidden-xs'>
+                                {{ earner.current_funds|format_money }}
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>

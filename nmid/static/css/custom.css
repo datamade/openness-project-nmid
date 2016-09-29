@@ -97,6 +97,8 @@ table#donations-list.no-footer { border-bottom: 0px; }
 
 .no-wrap { white-space: nowrap; }
 
+.green { color: #008600;}
+
 /* Styles for calendar pop-up. */
 .ui-datepicker {
   width: 216px;

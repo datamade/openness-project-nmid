@@ -19,7 +19,7 @@
                   <input type="text" id="from" name="from" class="form-control date-filter" placeholder="Select start date..." value='{{ start_date|date:"Y-m-d" }}'>
                   <input type="text" id="to" name="to" class="form-control date-filter" placeholder="Select end date..." value='{{ end_date|date:"Y-m-d" }}'>
                   <span class="input-group-btn">
-                      <button class="btn btn-default btn-date" id="btn-search" type="submit"><i class="fa fa-search" aria-hidden="true"></i> Search</button>
+                      <button class="btn btn-default btn-date" id="btn-search" type="submit"><i class="fa fa-search" aria-hidden="true"></i> <span class='hidden-sm hidden-xs'>Search</span></button>
                   </span>
               </div>
             </form>
@@ -51,7 +51,7 @@
                         <th>
                             Recipient
                         </th>
-                        <th>
+                        <th class='hidden-sm hidden-xs'>
                             <a href="{% url 'donations' %}?{% query_transform request order_by='received_date' sort_order=toggle_order %}">
                             Date
                             </a>
@@ -66,12 +66,15 @@
                         {% for transaction in object_list %}
                         <tr>
                             <td>
-                                <a href="{% url 'search' %}?term={{ transaction.full_name }}">
-                                    {{ transaction.full_name }}
-                                </a>
+                                {{ transaction.full_name }}
                             </td>
                             <td class="no-wrap">
-                                {{transaction.transaction_type|get_transaction_verb }} <strong>{{ transaction.amount|format_money }}</strong> to
+                                <a href="{% url 'contribution-detail' transaction.id %}">
+                                    <span class='hidden-sm hidden-xs'>{{transaction.transaction_type|get_transaction_verb }}</span>
+                                    <strong class='hidden-sm hidden-xs'>{{ transaction.amount|format_money }}</strong> 
+                                    <strong class='visible-sm-block visible-xs-block'>{{ transaction.amount|format_money_short }}</strong> 
+                                    <span class='hidden-sm hidden-xs'>to</span>
+                                </a>
                             </td>
                             <td>
                                 {% if transaction.pac_slug %}
@@ -81,7 +84,7 @@
                                   <a href="{% url 'candidate-detail' transaction.candidate_slug %}">{{ transaction.transaction_subject }}</a>
                                 {% endif %}
                             </td>
-                            <td class="no-wrap">
+                            <td class="no-wrap hidden-sm hidden-xs">
                                 {{ transaction.received_date|date:"M j, Y" }}
                             </td>
                         </tr>
