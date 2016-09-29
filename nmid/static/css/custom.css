@@ -29,6 +29,11 @@ th a { color: #333333; }
   text-shadow: #333 0 1px 1px;
 }
 
+.navbar-brand a {
+  color: #ffffff;
+  text-shadow: #333 0 1px 1px;
+}
+
 .navbar-default {
   background-color: #04A5AA;
 }
@@ -39,11 +44,33 @@ th a { color: #333333; }
     background-color: #8C0012;
 }
 
+.footer {
+  border-top: 1px solid #e8e8e8;
+  background-color: #fff9ee;
+  padding: 10px 0;
+}
+
+.jumbotron, .well {
+  background-color: #fff9ee;
+}
+
+.jumbotron {
+  border: 1px solid #e8e8e8;
+  border-radius: 0;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,0.05);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.05);
+}
+
 #net-funds-chart { height: 200px; }
 
 #date-search .form-control { width: 48%; }
 
 #date-search { margin-top: 21px; }
+
+#filter-results label {
+  font-size: 1em;
+  margin-left: 10px;
+}
 
 table#donations-list thead th, table#donations-list thead td {
   border-bottom: 1px solid #dddddd;

@@ -31,19 +31,16 @@ Keep an eye on money in New Mexico politics
         </div>
         <div class='col-sm-2 visible-lg-inline visible-md-inline'>
             <p class='text-center'>Brought to you by</p>
-            <a href='http://nmindepth.com'><img src="{% static 'images/nmid-logo-square.jpg' %}" style='height:130px; padding-bottom: 5px;' class='img-responsive center-block' /></a>
+            <a href='http://nmindepth.com'><img src="{% static 'images/nmid-logo-square.png' %}" style='height:130px; padding-bottom: 5px;' class='img-responsive center-block' /></a>
         </div>
     </div>
     <div class='row'>
         <div class='col-sm-12'>
 
             <h2><a href='/donations/'><i class='fa fa-fw fa-dollar'></i> Largest donations</a></h2>
-            <table class='table table-condensed'>
+            <table class='table table-striped'>
                 <thead>
                     <tr>
-                        <th>
-                            Rank
-                        </th>
                         <th>
                             Donor
                         </th>
@@ -62,9 +59,6 @@ Keep an eye on money in New Mexico politics
                 <tbody>
                     {% for transaction in transaction_objects %}
                     <tr>
-                        <td>
-                            {{ transaction.rank }}
-                        </td>
                         <td>
                             {{ transaction.full_name }}
                         </td>
@@ -90,7 +84,7 @@ Keep an eye on money in New Mexico politics
             </table>
 
             <h2><a href='/candidates/'><i class='fa fa-fw fa-user'></i> Top candidates</a></h2>
-            <table class='table table-condensed'>
+            <table class='table table-striped'>
                 <thead>
                     <tr>
                         <th>Rank</th>
@@ -115,7 +109,7 @@ Keep an eye on money in New Mexico politics
             </table>
 
             <h2><a href='/committees/'><i class='fa fa-fw fa-group'></i> Committees</a></h2>
-            <table class='table table-condensed'>
+            <table class='table table-striped'>
                 <thead>
                     <tr>
                         <th>Rank</th>
