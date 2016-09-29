@@ -1,4 +1,8 @@
-from rest_framework import serializers, pagination
+import csv
+from io import StringIO
+
+from rest_framework import serializers, pagination, renderers
+from rest_framework_csv.renderers import CSVStreamingRenderer
 
 from camp_fin.models import Candidate, PAC, Transaction, LoanTransaction, Loan, Treasurer
 
@@ -202,3 +206,7 @@ class DataTablesPagination(pagination.LimitOffsetPagination):
     limit_query_param = 'length'
     offset_query_param = 'start'
 
+class TransactionCSVRenderer(CSVStreamingRenderer):
+
+    def render(self, data, *args, **kwargs):
+        return super().render(data['results'], *args, **kwargs)

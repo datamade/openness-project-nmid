@@ -12,7 +12,8 @@ from django.core.urlresolvers import reverse_lazy
 
 from dateutil.rrule import rrule, MONTHLY
 
-from rest_framework import serializers, viewsets, filters, generics, metadata
+from rest_framework import serializers, viewsets, filters, generics, metadata, \
+    renderers
 from rest_framework.response import Response
 
 from .models import Candidate, Office, Transaction, Campaign, Filing, PAC, \
@@ -21,7 +22,8 @@ from .base_views import PaginatedList, TransactionDetail, TransactionBaseViewSet
     TopMoneyView
 from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer, \
     TransactionSearchSerializer, CandidateSearchSerializer, PACSearchSerializer, \
-    LoanTransactionSerializer, TreasurerSearchSerializer, DataTablesPagination
+    LoanTransactionSerializer, TreasurerSearchSerializer, DataTablesPagination, \
+    TransactionCSVRenderer
 
 TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
 
@@ -558,8 +560,6 @@ class CommitteeList(PaginatedList):
 
         return context
 
-
-
 class ContributionDetail(TransactionDetail):
     template_name = 'camp_fin/contribution-detail.html'
 
@@ -567,21 +567,20 @@ class ExpenditureDetail(TransactionDetail):
     template_name = 'camp_fin/expenditure-detail.html'
 
 class TransactionViewSet(TransactionBaseViewSet):
-    pass
+    serializer_class = TransactionSerializer
+    renderer_classes = (renderers.JSONRenderer, TransactionCSVRenderer)
 
-class ContributionViewSet(TransactionBaseViewSet):
+class ContributionViewSet(TransactionViewSet):
     default_filter = {
         'transaction_type__contribution': True,
         'filing__date_added__gte': TWENTY_TEN
     }
-    serializer_class = TransactionSerializer
 
-class ExpenditureViewSet(TransactionBaseViewSet):
+class ExpenditureViewSet(TransactionViewSet):
     default_filter = {
         'transaction_type__contribution': False,
         'filing__date_added__gte': TWENTY_TEN
     }
-    serializer_class = TransactionSerializer
 
 class TopDonorsView(TopMoneyView):
     contribution = True
