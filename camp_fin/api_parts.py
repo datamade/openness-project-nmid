@@ -207,6 +207,6 @@ class DataTablesPagination(pagination.LimitOffsetPagination):
     offset_query_param = 'start'
 
 class TransactionCSVRenderer(CSVStreamingRenderer):
-
+    
     def render(self, data, *args, **kwargs):
         return super().render(data['results'], *args, **kwargs)

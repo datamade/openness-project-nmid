@@ -9,6 +9,7 @@ from django.http import HttpResponseNotFound
 from django.db import transaction, connection
 from django.utils import timezone
 from django.core.urlresolvers import reverse_lazy
+from django.utils.text import slugify
 
 from dateutil.rrule import rrule, MONTHLY
 
@@ -569,6 +570,23 @@ class ExpenditureDetail(TransactionDetail):
 class TransactionViewSet(TransactionBaseViewSet):
     serializer_class = TransactionSerializer
     renderer_classes = (renderers.JSONRenderer, TransactionCSVRenderer)
+    
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super().finalize_response(request, response, *args, **kwargs)
+        
+        if request.GET.get('format') == 'csv':
+            
+            if self.default_filter['transaction_type__contribution']:
+                ttype = 'contributions'
+            else:
+                ttype = 'expenditures'
+            
+            filename = '{0}-{1}-{2}.csv'.format(ttype,
+                                                slugify(self.entity_name), 
+                                                timezone.now().isoformat())
+            response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
+
+        return response
 
 class ContributionViewSet(TransactionViewSet):
     default_filter = {
@@ -581,6 +599,7 @@ class ExpenditureViewSet(TransactionViewSet):
         'transaction_type__contribution': False,
         'filing__date_added__gte': TWENTY_TEN
     }
+
 
 class TopDonorsView(TopMoneyView):
     contribution = True
