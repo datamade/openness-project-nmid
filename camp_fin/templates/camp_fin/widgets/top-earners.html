@@ -1,0 +1,56 @@
+{% extends 'base-iframe.html' %}
+{% load bootstrap_pagination %}
+{% load helpers %}
+{% block title %}Top earners{% endblock %}
+{% block full_content %}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+
+            <h1><i class='fa fa-fw fa-plus-circle'></i> Top earners</h1>
+            <table class="table table-striped" id="candidate-list">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Name</th>
+                        <th class='hidden-sm hidden-xs'>Type</th>
+                        <th class="text-right no-wrap">New funds</th>
+                        <th class='text-right no-wrap hidden-sm hidden-xs'>Current funds</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for earner in top_earners_objects %}
+                        <tr>
+                            <td>{{ earner.rank }}</td>
+                            <td>
+                                {% if earner.committee_type == 'PAC' %}
+                                    <a href="{% url 'committee-detail' earner.slug %}" target='_blank'>
+                                        {{ earner.name }}
+                                    </a>
+                                {% else %}
+                                    <a href="{% url 'candidate-detail' earner.slug %}" target='_blank'>
+                                        {{ earner.name }}
+                                    </a>
+                                {% endif %}
+                            </td>
+                            <td class='hidden-sm hidden-xs'>
+                                {{ earner.committee_type }}
+                            </td>
+                            <td class="text-right no-wrap">
+                                <span class='green hidden-sm hidden-xs'>+{{ earner.new_funds|format_money }}</span> 
+                                <span class='green visible-sm-block visible-xs-block'>+{{ earner.new_funds|format_money_short }}</span>
+                            </td>
+                            <td class='text-right hidden-sm hidden-xs'>
+                                {{ earner.current_funds|format_money }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
