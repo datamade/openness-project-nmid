@@ -29,6 +29,11 @@ th a { color: #333333; }
   text-shadow: #333 0 1px 1px;
 }
 
+.navbar-brand a {
+  color: #ffffff;
+  text-shadow: #333 0 1px 1px;
+}
+
 .navbar-default {
   background-color: #04A5AA;
 }

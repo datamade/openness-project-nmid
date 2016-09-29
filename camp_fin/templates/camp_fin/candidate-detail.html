@@ -151,7 +151,6 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>Rank</th>
                     <% if(transaction_type == 'top-donors'){ %>
                         <th>Donor</th>
                         <th>Total donated</th>
@@ -170,7 +169,6 @@
                         <% var full_name = getPersonName(transaction) %>
                     <% }%>
                     <tr>
-                        <td><%= transaction.rank %></td>
                         <td>
                             <a href='/search/?term=<%= full_name %>'>
                                 <%= full_name %>

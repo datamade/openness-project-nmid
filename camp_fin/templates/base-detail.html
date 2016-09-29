@@ -3,79 +3,75 @@
 {% load staticfiles %}
 {% block title %}{% endblock %}
 {% block full_content %}
+{% block header %}{% endblock %}
 
-<div class="container">
-
-    {% block header %}{% endblock %}
-
-    <div class='row'>
-        <div class="col-sm-6">
-            <h4>{{ latest_filing.committee_name }} <small>{{latest_filing.filing_date | date:"M j, Y"}}</small></h4>
-                <table class="table table-striped">
-                    <tbody>
+<div class='row'>
+    <div class="col-sm-6">
+        <h4>{{ latest_filing.committee_name }} <small>{{latest_filing.filing_date | date:"M j, Y"}}</small></h4>
+            <table class="table table-striped">
+                <tbody>
+                    <tr>
+                        <td>Opening balance</td>
+                        <td class='text-right'>{{ latest_filing.opening_balance|format_money }}</td>
+                    </tr>
+                    <tr>
+                        <td>Total contributions</td>
+                        <td class='text-right'>{{ latest_filing.total_contributions|format_money }}</td>
+                    </tr>
+                    {% if lastest_filing.total_loans > 0 %}
                         <tr>
-                            <td>Opening balance</td>
-                            <td class='text-right'>{{ latest_filing.opening_balance|format_money }}</td>
+                            <td>Total loans</td>
+                            <td class='text-right'>{{ latest_filing.total_loans|format_money }}</td>
                         </tr>
+                    {% endif %}
+                    {% if latest_filing.total_unpaid_debt > 0 %}
                         <tr>
-                            <td>Total contributions</td>
-                            <td class='text-right'>{{ latest_filing.total_contributions|format_money }}</td>
+                            <td>Total debt</td>
+                            <td class='text-right'>{{ latest_filing.total_unpaid_debt|format_money }}</td>
                         </tr>
-                        {% if lastest_filing.total_loans > 0 %}
-                            <tr>
-                                <td>Total loans</td>
-                                <td class='text-right'>{{ latest_filing.total_loans|format_money }}</td>
-                            </tr>
-                        {% endif %}
-                        {% if latest_filing.total_unpaid_debt > 0 %}
-                            <tr>
-                                <td>Total debt</td>
-                                <td class='text-right'>{{ latest_filing.total_unpaid_debt|format_money }}</td>
-                            </tr>
-                        {% endif %}
-                        {% if latest_filing.total_debt_paid > 0 %}
-                            <tr>
-                                <td>Total debt paid</td>
-                                <td class='text-right'>{{ latest_filing.total_debt_paid|format_money }}</td>
-                            </tr>
-                        {% endif %}
-                        {% if latest_filing.total_loans_forgiven > 0 %}
-                            <tr>
-                                <td>Total loans forgiven</td>
-                                <td class='text-right'>{{ latest_filing.total_loans_forgiven|format_money }}</td>
-                            </tr>
-                        {% endif %}
+                    {% endif %}
+                    {% if latest_filing.total_debt_paid > 0 %}
                         <tr>
-                            <td>Total in-kind contributions</td>
-                            <td class='text-right'>{{ latest_filing.total_inkind|format_money }}</td>
+                            <td>Total debt paid</td>
+                            <td class='text-right'>{{ latest_filing.total_debt_paid|format_money }}</td>
                         </tr>
+                    {% endif %}
+                    {% if latest_filing.total_loans_forgiven > 0 %}
                         <tr>
-                            <td>Total expenditures</td>
-                            <td class='text-right'>{{ latest_filing.total_expenditures|format_money }}</td>
+                            <td>Total loans forgiven</td>
+                            <td class='text-right'>{{ latest_filing.total_loans_forgiven|format_money }}</td>
                         </tr>
-                        <tr>
-                            <td><strong>Closing balance</strong></td>
-                            <td class='text-right'><strong>{{ latest_filing.closing_balance|format_money }}</strong></td>
-                        </tr>
-                    </tbody>
-                </table>
-            {% block charts %}{% endblock %}
-        </div>
-        {% block contact %}{% endblock %}
-        {% block campaigns %}{% endblock %}
+                    {% endif %}
+                    <tr>
+                        <td>Total in-kind contributions</td>
+                        <td class='text-right'>{{ latest_filing.total_inkind|format_money }}</td>
+                    </tr>
+                    <tr>
+                        <td>Total expenditures</td>
+                        <td class='text-right'>{{ latest_filing.total_expenditures|format_money }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Closing balance</strong></td>
+                        <td class='text-right'><strong>{{ latest_filing.closing_balance|format_money }}</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        {% block charts %}{% endblock %}
     </div>
-    <hr />
-    <div class="row">
-        <div class="col-md-12">
-            <ul class="nav nav-pills">
-                <li role="presentation" class="active"><a class="transactions" href="javascript://" data-table_type="top-donors">Top 25 donors</a></li>
-                <li role="presentation"><a class="transactions" href="javascript://" data-table_type="top-expenses">Top 25 expenses</a></li>
-                <li role="presentation"><a class="transactions" href="javascript://" data-table_type="contributions">All donations</a></li>
-                <li role="presentation"><a class="transactions" href="javascript://" data-table_type="expenditures">All expenditures</a></li>
-            </ul>
-            <div id='money-table-guts'>
-                <h1><i class='fa fa-spin fa-refresh'></i></h1>
-            </div>
+    {% block contact %}{% endblock %}
+    {% block campaigns %}{% endblock %}
+</div>
+<hr />
+<div class="row">
+    <div class="col-md-12">
+        <ul class="nav nav-pills">
+            <li role="presentation" class="active"><a class="transactions" href="javascript://" data-table_type="top-donors">Top 25 donors</a></li>
+            <li role="presentation"><a class="transactions" href="javascript://" data-table_type="top-expenses">Top 25 expenses</a></li>
+            <li role="presentation"><a class="transactions" href="javascript://" data-table_type="contributions">All donations</a></li>
+            <li role="presentation"><a class="transactions" href="javascript://" data-table_type="expenditures">All expenditures</a></li>
+        </ul>
+        <div id='money-table-guts'>
+            <h1><i class='fa fa-spin fa-refresh'></i></h1>
         </div>
     </div>
 </div>
