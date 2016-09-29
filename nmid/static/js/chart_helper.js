@@ -97,14 +97,14 @@ ChartHelper.donations = function(el, title, sourceTxt, yaxisLabel, data, pointIn
   }
 
 ChartHelper.netfunds = function(el, title, sourceTxt, yaxisLabel, data) {
-  var color = '#007F00';
+  var color = '#007E85';
 
   var seriesData = [{
           color: color,
           data: data[0],
           name: "Funds available"
         },{
-          color: "#cc0000",
+          color: "#DD0000",
           data: data[1],
           name: "Debts"
         }
@@ -169,14 +169,14 @@ ChartHelper.netfunds = function(el, title, sourceTxt, yaxisLabel, data) {
   }
 
 ChartHelper.donation_expenditure = function(el, title, sourceTxt, yaxisLabel, data) {
-  var color = '#007F00';
+  var color = '#007E85';
 
   var seriesData = [{
           color: color,
           data: data[0],
           name: "Donations"
         },{
-          color: "#cc0000",
+          color: "#DD0000",
           data: data[1],
           name: "Expenditures"
         }
