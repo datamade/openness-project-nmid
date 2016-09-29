@@ -7,39 +7,35 @@
 <div class="container">
     <div class="row">
         <div class="col-md-12">
-            <form method='GET'>
-                <div class="input-group input-group-lg">
-                    <input type="text" class="form-control" placeholder="Search for candidates, committees and donors in New Mexico" id="term" name="term" {% if term %}value="{{term}}"{% endif %}>
-                    <span class="input-group-btn">
-                        <button class="btn btn-default" type="submit"><i class='fa fa-search'></i> Search</button>
-                    </span>
-                </div>
-                <div class="form-group" id='filter-results'>
-                    <br />
-                    <div class="row">
-                        <div class="col-md-2">
-                            <span>Search for</span>
-                        </div>
-                        <div class="col-md-10">
-                            <label data-title='Candidates' data-content='Any person who seeks nomination for election, election to, or retention in public office'>
-                                <input type="checkbox" name="table_name" value="candidate" {% if 'candidate' in table_name %}checked='checked'{% endif %}> Candidates
-                            </label>
-                            <label data-title='Committees' data-content='Includes committees for political candidates, political parties, political action committees (PACs), and ballot initiatives'>
-                                <input type="checkbox" name="table_name" value="pac" {% if 'pac' in table_name %}checked='checked'{% endif %}> Committees
-                            </label>
-                            <label data-title='Donations' data-content='Any person or organization who has given to a political committee'>
-                                <input type="checkbox" name="table_name" value="contribution" {% if 'contribution' in table_name %}checked='checked'{% endif %}> Donations to committees
-                            </label>
-                            <label data-title='Expenditures' data-content='Any person or organization who was given money by a political committee'>
-                                <input type="checkbox" name="table_name" value="expenditure" {% if 'expenditure' in table_name %}checked='checked'{% endif %}> Expenditures by committees
-                            </label>
-                            <label data-title='Treasurers' data-content='Treasurers for political organizations'>
-                                <input type="checkbox" name="table_name" value="treasurer" {% if 'treasurer' in table_name %}checked='checked'{% endif %}> Committee treasurers
-                            </label>
-                        </div>
+            <div class='jumbotron'>
+                <form method='GET'>
+                    <div class="input-group input-group-lg">
+                        <input type="text" class="form-control" placeholder="Search for names of candidates, committees and donors in New Mexico" id="term" name="term" {% if term %}value="{{term}}"{% endif %}>
+                        <span class="input-group-btn">
+                            <button class="btn btn-default" type="submit"><i class='fa fa-search'></i> Search</button>
+                        </span>
                     </div>
-                </div>
-            </form>
+                    <div class="form-group" id='filter-results'>
+                        <br />
+                        <strong>Search for:</strong>
+                        <label data-title='Candidates' data-content='Any person who seeks nomination for election, election to, or retention in public office'>
+                            <input type="checkbox" name="table_name" value="candidate" {% if 'candidate' in table_name %}checked='checked'{% endif %}> Candidates
+                        </label>
+                        <label data-title='Committees' data-content='Includes committees for political candidates, political parties, political action committees (PACs), and ballot initiatives'>
+                            <input type="checkbox" name="table_name" value="pac" {% if 'pac' in table_name %}checked='checked'{% endif %}> Committees
+                        </label>
+                        <label data-title='Donations' data-content='Any person or organization who has given to a political committee'>
+                            <input type="checkbox" name="table_name" value="contribution" {% if 'contribution' in table_name %}checked='checked'{% endif %}> Donations to committees
+                        </label>
+                        <label data-title='Expenditures' data-content='Any person or organization who was given money by a political committee'>
+                            <input type="checkbox" name="table_name" value="expenditure" {% if 'expenditure' in table_name %}checked='checked'{% endif %}> Expenditures by committees
+                        </label>
+                        <label data-title='Treasurers' data-content='Treasurers for political organizations'>
+                            <input type="checkbox" name="table_name" value="treasurer" {% if 'treasurer' in table_name %}checked='checked'{% endif %}> Committee treasurers
+                        </label>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
     <div class="row">
@@ -347,8 +343,12 @@
     }
 
     $(document).ready(function(){
+        var query = URI(window.location.search).query(true)
+        
+        if (typeof query.table_name === 'undefined')
+            $(':checkbox').prop("checked", "checked");
+
         {% if term != None %}
-            var query = URI(window.location.search).query(true)
             do_query(query);
         {% endif %}
     })

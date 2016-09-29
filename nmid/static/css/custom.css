@@ -56,6 +56,11 @@ th a { color: #333333; }
 
 #date-search { margin-top: 21px; }
 
+#filter-results label {
+  font-size: 1em;
+  margin-left: 10px;
+}
+
 table#donations-list thead th, table#donations-list thead td {
   border-bottom: 1px solid #dddddd;
 }
