@@ -34,6 +34,13 @@ Keep an eye on money in New Mexico politics
             <a href='http://nmindepth.com'><img src="{% static 'images/nmid-logo-square.png' %}" style='height:130px; padding-bottom: 5px;' class='img-responsive center-block' /></a>
         </div>
     </div>
+
+    <div class="row">
+        <div class="col-sm-12">
+            {{ page.text|safe }}
+        </div>
+    </div>
+
     <div class='row'>
         <div class='col-sm-12'>
 
@@ -67,7 +74,7 @@ Keep an eye on money in New Mexico politics
                                 {{ earner.committee_type }}
                             </td>
                             <td class="text-right no-wrap">
-                                <span class='green hidden-sm hidden-xs'>+{{ earner.new_funds|format_money }}</span> 
+                                <span class='green hidden-sm hidden-xs'>+{{ earner.new_funds|format_money }}</span>
                                 <span class='green visible-sm-block visible-xs-block'>+{{ earner.new_funds|format_money_short }}</span>
                             </td>
                             <td class='text-right hidden-sm hidden-xs'>
@@ -79,6 +86,7 @@ Keep an eye on money in New Mexico politics
             </table>
 
             <h2><a href='/donations/'><i class='fa fa-dollar'></i> Largest donations</a></h2>
+            {{ largest_donations|safe }}
             <table class='table table-striped'>
                 <thead>
                     <tr>
@@ -106,8 +114,8 @@ Keep an eye on money in New Mexico politics
                         <td class='no-wrap'>
                             <a href="{% url 'contribution-detail' transaction.id %}">
                                 <span class='hidden-sm hidden-xs'>{{transaction.transaction_type|get_transaction_verb }}</span>
-                                <strong class='hidden-sm hidden-xs'>{{ transaction.amount|format_money }}</strong> 
-                                <strong class='visible-sm-block visible-xs-block'>{{ transaction.amount|format_money_short }}</strong> 
+                                <strong class='hidden-sm hidden-xs'>{{ transaction.amount|format_money }}</strong>
+                                <strong class='visible-sm-block visible-xs-block'>{{ transaction.amount|format_money_short }}</strong>
                                 <span class='hidden-sm hidden-xs'>to</span>
                             </a>
                         </td>
@@ -128,6 +136,7 @@ Keep an eye on money in New Mexico politics
             </table>
 
             <h2><a href='/candidates/'><i class='fa fa-user'></i> Top candidates</a></h2>
+            {{ top_candidates|safe }}
             <table class='table table-striped'>
                 <thead>
                     <tr>
@@ -156,6 +165,7 @@ Keep an eye on money in New Mexico politics
             </table>
 
             <h2><a href='/committees/'><i class='fa fa-group'></i> Committees</a></h2>
+            {{ committees|safe }}
             <table class='table table-striped'>
                 <thead>
                     <tr>
@@ -182,9 +192,7 @@ Keep an eye on money in New Mexico politics
             </table>
 
             <h2><a href='/donations/'><i class='fa fa-fw fa-info-circle'></i> About</a></h2>
-            <p><strong>New Mexico Campaign Finance</strong> is a tool by New Mexico In Depth for browsing political contributions in the state of New Mexico.</p>
-
-            <p>The data comes from the New Mexcio Secretary of State. We built this site to give journalists, activists and citizens better access to and documentation for this data.</p>
+            {{ home_page_about|safe }}
         </div>
     </div>
 
