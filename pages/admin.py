@@ -3,7 +3,7 @@ from django import forms
 
 from ckeditor.widgets import CKEditorWidget
 
-from .models import Page
+from .models import Page, Blob
 
 
 class PageAdminForm(forms.ModelForm):
@@ -15,4 +15,8 @@ class PageAdminForm(forms.ModelForm):
 class PageAdmin(admin.ModelAdmin):
     form = PageAdminForm
 
+class BlobAdmin(admin.ModelAdmin):
+    pass
+
 admin.site.register(Page, PageAdmin)
+admin.site.register(Blob, BlobAdmin)
