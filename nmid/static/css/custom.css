@@ -39,6 +39,12 @@ th a { color: #333333; }
     background-color: #8C0012;
 }
 
+.footer {
+  border-top: 1px solid #e8e8e8;
+  background-color: #fff9ee;
+  padding: 10px 0;
+}
+
 .jumbotron, .well {
   background-color: #fff9ee;
 }
