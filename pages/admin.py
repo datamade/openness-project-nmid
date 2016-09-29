@@ -1,22 +1,20 @@
 from django.contrib import admin
 from django import forms
+from django.db import models
 
 from ckeditor.widgets import CKEditorWidget
 
 from .models import Page, Blob
 
-
-class PageAdminForm(forms.ModelForm):
-    text = forms.CharField(widget=CKEditorWidget())
-    class Meta:
-        model = Page
-        fields = '__all__'
-
 class PageAdmin(admin.ModelAdmin):
-    form = PageAdminForm
+    formfield_overrides = {
+        models.TextField: {'widget': CKEditorWidget},
+    }
 
 class BlobAdmin(admin.ModelAdmin):
-    pass
+    formfield_overrides = {
+        models.TextField: {'widget': CKEditorWidget},
+    }
 
 admin.site.register(Page, PageAdmin)
 admin.site.register(Blob, BlobAdmin)

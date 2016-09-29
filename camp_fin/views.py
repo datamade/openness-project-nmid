@@ -18,6 +18,8 @@ from rest_framework import serializers, viewsets, filters, generics, metadata, \
     renderers
 from rest_framework.response import Response
 
+from pages.models import Page
+
 from .models import Candidate, Office, Transaction, Campaign, Filing, PAC, \
     LoanTransaction
 from .base_views import PaginatedList, TransactionDetail, TransactionBaseViewSet, \
@@ -132,6 +134,15 @@ class IndexView(TemplateView):
             context['transaction_objects'] = transaction_objects
             context['pac_objects'] = pac_objects
             context['candidate_objects'] = candidate_objects
+            
+            try:
+                page = Page.objects.get(path='/')
+                context['page'] = page
+                for blob in page.blobs.all():
+                    context[blob.context_name] = blob.text
+            except Page.DoesNotExist:
+                page = None
+            
             return context
 
 class DonationsView(PaginatedList):
