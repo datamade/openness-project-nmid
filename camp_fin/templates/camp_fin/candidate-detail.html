@@ -121,29 +121,25 @@
 {% endblock %}
 
 {% block campaigns %}
-    <div class="row">
-        <div class="col-md-12">
-            <h3>Campaigns</h3>
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Office (Party)</th>
-                        <th>Committee</th>
-                        <th>Election year</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for campaign in candidate.campaign_set.all %}
-                        <tr>
-                            <td>{{ campaign.office.description }} ({{ campaign.political_party }})</td>
-                            <td>{{ campaign.committee_name|default_if_none:"" }}</td>
-                            <td>{{ campaign.election_season.year }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <h3>Campaigns</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Office (Party)</th>
+                <th>Committee</th>
+                <th>Election year</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for campaign in candidate.campaign_set.all %}
+                <tr>
+                    <td>{{ campaign.office.description }} ({{ campaign.political_party }})</td>
+                    <td>{{ campaign.committee_name|default_if_none:"" }}</td>
+                    <td>{{ campaign.election_season.year }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}
 
 {% block js_templates %}
