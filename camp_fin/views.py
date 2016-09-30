@@ -417,7 +417,10 @@ class CommitteeDetailBaseView(DetailView):
               SUM(COALESCE(f.total_loans, 0)) AS total_loans,
               SUM(COALESCE(f.total_unpaid_debts, 0)) AS total_unpaid_debts,
               SUM(f.closing_balance) AS closing_balance,
-              fp.filing_date
+              SUM(f.opening_balance) AS opening_balance,
+              SUM(f.total_debt_carried_forward) AS debt_carried_forward,
+              fp.filing_date,
+              MIN(fp.initial_date) AS initial_date
             FROM camp_fin_filing AS f
             JOIN camp_fin_filingperiod AS fp
               ON f.filing_period_id = fp.id
@@ -447,6 +450,14 @@ class CommitteeDetailBaseView(DetailView):
             debts = (-1 * filing.total_unpaid_debts)
             balance_trend.append([filing.closing_balance, *date_array])
             debt_trend.append([debts, *date_array])
+        
+        first_opening_balance = summed_filings[0].opening_balance
+        first_debt = summed_filings[0].debt_carried_forward
+        first_initial_date = [summed_filings[0].initial_date.year,
+                              summed_filings[0].initial_date.month,
+                              summed_filings[0].initial_date.day]
+        balance_trend.insert(0, [first_opening_balance, *first_initial_date])
+        debt_trend.insert(0, [first_debt, *first_initial_date])
 
         all_filings = ''' 
             SELECT 
@@ -458,7 +469,7 @@ class CommitteeDetailBaseView(DetailView):
               ON contributions.entity_id = expenditures.entity_id
               AND contributions.month = expenditures.month
             WHERE (contributions.entity_id = %s OR expenditures.entity_id = %s)
-              AND (contributions.month >= '2010-01-01' OR expenditures.month >= '2010-01-01')
+              AND (contributions.month >= '2009-10-01' OR expenditures.month >= '2009-10-01')
             ORDER BY month
         '''
         
@@ -474,7 +485,7 @@ class CommitteeDetailBaseView(DetailView):
         
         all_months = list(contributions_lookup.keys()) + list(expenditures_lookup.keys())
         start_month, end_month = min(all_months), max(all_months)
-
+        
         donation_trend = []
         expend_trend = []
         
