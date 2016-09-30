@@ -22,9 +22,8 @@ from camp_fin.views import IndexView, CandidateList, CandidateDetail, \
     ContributionViewSet, ExpenditureViewSet, TransactionViewSet, TopDonorsView, \
     TopExpensesView, CommitteeList, CommitteeDetail, ContributionDetail, \
     ExpenditureDetail, SearchView, SearchAPIView, DonationsView, \
-    LoanViewSet, TopEarnersView, TopEarnersWidgetView, bulk_contributions, bulk_expenditures
-
-from pages.views import PagesView
+    LoanViewSet, TopEarnersView, TopEarnersWidgetView, bulk_contributions, \
+    bulk_expenditures, AboutView
 
 router = routers.DefaultRouter()
 router.register(r'contributions', ContributionViewSet, base_name='contributions')
@@ -38,7 +37,7 @@ router.register(r'loans', LoanViewSet, base_name='loan')
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^$', IndexView.as_view(), name='index'),
-    url(r'^about/$', PagesView.as_view(), name='about'),
+    url(r'^about/$', AboutView.as_view(), name='about'),
     url(r'^donations/$', DonationsView.as_view(), name='donations'),
     url(r'^search/$', SearchView.as_view(), name='search'),
     url(r'^candidates/$', CandidateList.as_view(), name='candidate-list'),

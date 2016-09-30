@@ -18,6 +18,8 @@ from rest_framework import serializers, viewsets, filters, generics, metadata, \
     renderers
 from rest_framework.response import Response
 
+from pages.models import Page
+
 from .models import Candidate, Office, Transaction, Campaign, Filing, PAC, \
     LoanTransaction
 from .base_views import PaginatedList, TransactionDetail, TransactionBaseViewSet, \
@@ -28,6 +30,23 @@ from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer
     TransactionCSVRenderer, SearchCSVRenderer
 
 TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
+
+class AboutView(TemplateView):
+    template_name = 'about.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        try:
+            page = Page.objects.get(path='/about/')
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            page = None
+        
+        return context
+
 
 class IndexView(TemplateView):
     template_name = 'index.html'
@@ -169,6 +188,15 @@ class IndexView(TemplateView):
             context['transaction_objects'] = transaction_objects
             context['pac_objects'] = pac_objects
             context['candidate_objects'] = candidate_objects
+            
+            try:
+                page = Page.objects.get(path='/')
+                context['page'] = page
+                for blob in page.blobs.all():
+                    context[blob.context_name] = blob.text
+            except Page.DoesNotExist:
+                page = None
+            
             return context
 
 class DonationsView(PaginatedList):
@@ -339,6 +367,14 @@ class CandidateList(PaginatedList):
 
         columns = [c[0] for c in cursor.description]
         candidate_tuple = namedtuple('Candidate', columns)
+        
+        try:
+            page = Page.objects.get(path='/candidates/')
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            page = None
 
         return [candidate_tuple(*r) for r in cursor]
 
@@ -583,6 +619,14 @@ class CommitteeList(PaginatedList):
 
         columns = [c[0] for c in cursor.description]
         pac_tuple = namedtuple('PAC', columns)
+        
+        try:
+            page = Page.objects.get(path='/committees/')
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            page = None
 
         return [pac_tuple(*r) for r in cursor]
 
