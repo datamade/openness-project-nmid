@@ -41,6 +41,7 @@ th a { color: #333333; }
 .navbar {
   font-size: 15px;
   text-shadow: #333 0 1px 1px;
+  margin-bottom: 0;
 }
 
 .navbar-brand a {
@@ -65,6 +66,28 @@ th a { color: #333333; }
   border-top: 1px solid #e8e8e8;
   background-color: #fff9ee;
   padding: 10px 0;
+}
+
+
+#section-photo{
+    background-image:
+        linear-gradient(
+            rgba(0, 0, 0, 0.2),
+            rgba(0, 0, 0, 0.2)
+        ),
+        url('../images/nm-state-capitol.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
+    height: 350px;
+}
+#section-photo h1, #section-photo h3 a, #section-photo p{
+  color: #fff;
+  text-shadow: #333 0 1px 1px;
+}
+
+#section-intro, #section-engage{
+    line-height: 1.6em;
 }
 
 .jumbotron, .well {
