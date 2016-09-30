@@ -45,6 +45,7 @@ Keep an eye on money in New Mexico politics
         <div class='col-sm-12'>
 
             <h2><a href='/top-earners/'><i class='fa fa-plus-circle'></i> Top earners</a></h2>
+            {{ home_page_top_earners|safe }}
             <table class="table table-striped" id="candidate-list">
                 <thead>
                     <tr>
@@ -86,7 +87,7 @@ Keep an eye on money in New Mexico politics
             </table>
 
             <h2><a href='/donations/'><i class='fa fa-dollar'></i> Largest donations</a></h2>
-            {{ largest_donations|safe }}
+            {{ home_page_largest_donations|safe }}
             <table class='table table-striped'>
                 <thead>
                     <tr>
@@ -136,7 +137,7 @@ Keep an eye on money in New Mexico politics
             </table>
 
             <h2><a href='/candidates/'><i class='fa fa-user'></i> Top candidates</a></h2>
-            {{ top_candidates|safe }}
+            {{ home_page_top_candidates|safe }}
             <table class='table table-striped'>
                 <thead>
                     <tr>
@@ -165,7 +166,7 @@ Keep an eye on money in New Mexico politics
             </table>
 
             <h2><a href='/committees/'><i class='fa fa-group'></i> Committees</a></h2>
-            {{ committees|safe }}
+            {{ home_page_committees|safe }}
             <table class='table table-striped'>
                 <thead>
                     <tr>

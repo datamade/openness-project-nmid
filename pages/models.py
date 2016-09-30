@@ -17,7 +17,7 @@ class Page(models.Model):
 
 class Blob(models.Model):
     text = models.TextField()
-    context_name = models.CharField(max_length=20)
+    context_name = models.CharField(max_length=255)
 
     class Meta:
         verbose_name = 'Chunk'
