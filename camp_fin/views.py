@@ -53,6 +53,8 @@ class IndexView(TemplateView):
 
     def get_context_data(self, **kwargs):
         with connection.cursor() as cursor:
+
+            # Top earners
             cursor.execute(''' 
               SELECT * FROM (
                 SELECT 
@@ -80,6 +82,8 @@ class IndexView(TemplateView):
                       AND t.received_date >= (NOW() - INTERVAL '90 days')
                     GROUP BY c.id, p.id
                   ) AS s 
+                WHERE name NOT ILIKE '%public election fund%'
+                  OR name NOT ILIKE '%department of finance%'
                 ORDER BY new_funds DESC
                 LIMIT 10
               ) AS s
@@ -88,7 +92,8 @@ class IndexView(TemplateView):
             columns = [c[0] for c in cursor.description]
             transaction_tuple = namedtuple('Transaction', columns)
             top_earners_objects = [transaction_tuple(*r) for r in cursor]
-
+            
+            # Largest donations
             cursor.execute('''
               SELECT * FROM (
                 SELECT
@@ -116,6 +121,8 @@ class IndexView(TemplateView):
                     ON entity.id = candidate.entity_id
                   WHERE tt.contribution = TRUE
                     AND o.received_date >= (NOW() - interval '1 year')
+                    AND company_name NOT ILIKE '%public election fund%'
+                    AND company_name NOT ILIKE '%department of finance%'
                   ORDER BY o.amount DESC
               ) AS x
               WHERE rank <= 5
@@ -124,7 +131,8 @@ class IndexView(TemplateView):
             columns = [c[0] for c in cursor.description]
             transaction_tuple = namedtuple('Transaction', columns)
             transaction_objects = [transaction_tuple(*r) for r in cursor]
-
+            
+            # Committees
             cursor.execute('''
                 SELECT * FROM (
                   SELECT
@@ -149,7 +157,8 @@ class IndexView(TemplateView):
             columns = [c[0] for c in cursor.description]
             pac_tuple = namedtuple('PAC', columns)
             pac_objects = [pac_tuple(*r) for r in cursor]
-
+            
+            # Top candidates
             cursor.execute('''
                 SELECT * FROM (
                   SELECT
@@ -247,7 +256,9 @@ class DonationsView(PaginatedList):
                   LEFT JOIN camp_fin_candidate AS candidate
                     ON entity.id = candidate.entity_id
                   WHERE tt.contribution = TRUE
-                  AND o.received_date BETWEEN %s and %s
+                    AND o.received_date BETWEEN %s and %s
+                    AND company_name NOT ILIKE '%%public election fund%%'
+                    AND company_name NOT ILIKE '%%department of finance%%'
                   ORDER BY {0} {1}
               ) as z
             '''.format(self.order_by, self.sort_order)
