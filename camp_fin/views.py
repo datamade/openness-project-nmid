@@ -31,6 +31,23 @@ from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer
 
 TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
 
+class AboutView(TemplateView):
+    template_name = 'about.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        try:
+            page = Page.objects.get(path='/about/')
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            page = None
+        
+        return context
+
+
 class IndexView(TemplateView):
     template_name = 'index.html'
 
