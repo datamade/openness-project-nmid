@@ -11,6 +11,7 @@ from django.db import transaction, connection, connections
 from django.utils import timezone
 from django.core.urlresolvers import reverse_lazy
 from django.utils.text import slugify
+from django.conf import settings
 
 from dateutil.rrule import rrule, MONTHLY
 
@@ -28,6 +29,7 @@ from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer
     TransactionSearchSerializer, CandidateSearchSerializer, PACSearchSerializer, \
     LoanTransactionSerializer, TreasurerSearchSerializer, DataTablesPagination, \
     TransactionCSVRenderer, SearchCSVRenderer
+from .templatetags.helpers import format_money, get_transaction_verb
 
 TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
 
@@ -321,6 +323,33 @@ class DonationsView(PaginatedList):
         context['end_date'] = self.end_date
         context['donation_count'] = self.donation_count
         context['donation_sum'] = self.donation_sum
+        
+        seo = {}
+        seo.update(settings.SITE_META)
+        
+        start_date = self.start_date.strftime('%B %-d, %Y')
+        end_date = self.end_date.strftime('%B %-d, %Y')
+        count = '{:,}'.format(self.donation_count)
+        total = format_money(self.donation_sum)
+        
+        fmt_args = {
+            'start_date': start_date,
+            'count': count,
+            'total': total,
+            'end_date': end_date,
+        }
+        
+        if start_date != end_date:
+            seo['title'] = 'Donations between {start_date} and {end_date} - The Openness Project'.format(**fmt_args)
+            seo['site_desc'] = '{count} donations between {start_date} and {end_date} totalling {total}'.format(**fmt_args)
+        
+        else:
+            seo['title'] = 'Donations on {start_date} - The Openness Project'.format(**fmt_args)
+            seo['site_desc'] = '{count} donations on {start_date} totalling {total}'.format(**fmt_args)
+
+
+        context['seo'] = seo
+
         return context
 
 class SearchView(TemplateView):
@@ -331,6 +360,14 @@ class SearchView(TemplateView):
 
         context['term'] = self.request.GET.get('term')
         context['table_name'] = self.request.GET.getlist('table_name')
+        
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        seo['title'] = "Search for '{}' - The Openness Project".format(context['term'])
+        seo['site_desc'] = 'Search for candidates, committees and donors in New Mexico'
+        
+        context['seo'] = seo
 
         return context
 
@@ -399,6 +436,81 @@ class CandidateList(PaginatedList):
                 context[blob.context_name] = blob.text
         except Page.DoesNotExist:
             page = None
+        
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        seo['title'] = 'Candidates - The Openness Project'
+        seo['site_desc'] = 'Candidates in New Mexico'
+
+        context['seo'] = seo
+        
+        return context
+
+class CommitteeList(PaginatedList):
+    template_name = 'camp_fin/committee-list.html'
+
+    def get_queryset(self, **kwargs):
+        cursor = connection.cursor()
+
+        self.order_by = self.request.GET.get('order_by', 'closing_balance')
+        self.sort_order = self.request.GET.get('sort_order', 'desc')
+
+        cursor.execute('''
+            SELECT * FROM (
+              SELECT
+                DENSE_RANK() OVER (ORDER BY closing_balance DESC) AS rank,
+                pac.*
+              FROM (
+                SELECT DISTINCT ON (pac.id)
+                  pac.*,
+                  filing.closing_balance,
+                  period.filing_date
+                FROM camp_fin_pac AS pac
+                JOIN camp_fin_filing AS filing
+                  USING(entity_id)
+                JOIN camp_fin_filingperiod AS period
+                  ON filing.filing_period_id = period.id
+                WHERE filing.date_added >= '2010-01-01'
+                  AND period.exclude_from_cascading = FALSE
+                  AND period.regular_filing_period_id IS NULL
+                ORDER BY pac.id, period.filing_date DESC
+              ) AS pac
+            ) AS s
+            ORDER BY {0} {1}
+        '''.format(self.order_by, self.sort_order))
+
+        columns = [c[0] for c in cursor.description]
+        pac_tuple = namedtuple('PAC', columns)
+
+        return [pac_tuple(*r) for r in cursor]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['sort_order'] = self.sort_order
+
+        context['toggle_order'] = 'desc'
+        if self.sort_order.lower() == 'desc':
+            context['toggle_order'] = 'asc'
+
+        context['order_by'] = self.order_by
+        
+        try:
+            page = Page.objects.get(path='/committees/')
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            page = None
+        
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        seo['title'] = 'PACs - The Openness Project'
+        seo['site_desc'] = 'PACs in New Mexico'
+
+        context['seo'] = seo
 
         return context
 
@@ -600,73 +712,69 @@ class CandidateDetail(CommitteeDetailBaseView):
         
         context['loans'] = [loan_tuple(*r) for r in cursor]
         
+        seo = {}
+        seo.update(settings.SITE_META)
+        
+        first_name = context['object'].first_name
+        last_name = context['object'].last_name
+
+        seo['title'] = '{0} {1} - The Openness Project'.format(first_name,
+                                                               last_name)
+        seo['site_desc'] = 'Candidate information for {0} {1}'.format(first_name,
+                                                                      last_name)
+
+        context['seo'] = seo
+        
         return context
 
 class CommitteeDetail(CommitteeDetailBaseView):
     template_name = "camp_fin/committee-detail.html"
     model = PAC
 
-class CommitteeList(PaginatedList):
-    template_name = 'camp_fin/committee-list.html'
-
-    def get_queryset(self, **kwargs):
-        cursor = connection.cursor()
-
-        self.order_by = self.request.GET.get('order_by', 'closing_balance')
-        self.sort_order = self.request.GET.get('sort_order', 'desc')
-
-        cursor.execute('''
-            SELECT * FROM (
-              SELECT
-                DENSE_RANK() OVER (ORDER BY closing_balance DESC) AS rank,
-                pac.*
-              FROM (
-                SELECT DISTINCT ON (pac.id)
-                  pac.*,
-                  filing.closing_balance,
-                  period.filing_date
-                FROM camp_fin_pac AS pac
-                JOIN camp_fin_filing AS filing
-                  USING(entity_id)
-                JOIN camp_fin_filingperiod AS period
-                  ON filing.filing_period_id = period.id
-                WHERE filing.date_added >= '2010-01-01'
-                  AND period.exclude_from_cascading = FALSE
-                  AND period.regular_filing_period_id IS NULL
-                ORDER BY pac.id, period.filing_date DESC
-              ) AS pac
-            ) AS s
-            ORDER BY {0} {1}
-        '''.format(self.order_by, self.sort_order))
-
-        columns = [c[0] for c in cursor.description]
-        pac_tuple = namedtuple('PAC', columns)
-
-        return [pac_tuple(*r) for r in cursor]
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        context['sort_order'] = self.sort_order
-
-        context['toggle_order'] = 'desc'
-        if self.sort_order.lower() == 'desc':
-            context['toggle_order'] = 'asc'
-
-        context['order_by'] = self.order_by
         
-        try:
-            page = Page.objects.get(path='/committees/')
-            context['page'] = page
-            for blob in page.blobs.all():
-                context[blob.context_name] = blob.text
-        except Page.DoesNotExist:
-            page = None
+        seo = {}
+        seo.update(settings.SITE_META)
+        
+        seo['title'] = '{0} - The Openness Project'.format(context['object'].name)
+        seo['site_desc'] = "Information about '{0}' in New Mexico".format(context['object'].name)
 
+        context['seo'] = seo
+        
         return context
 
 class ContributionDetail(TransactionDetail):
     template_name = 'camp_fin/contribution-detail.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        transaction_verb = get_transaction_verb(context['object'].transaction_type.description)
+        contributor = context['object'].full_name
+        amount = format_money(context['object'].amount)
+
+        if hasattr(context['entity'], 'name'):
+            recipient = context['entity'].name
+        else:
+            recipient = '{0} {1}'.format(context['entity'].first_name, 
+                                         context['entity'].last_name)
+
+        seo['title'] = '{0} {1} to {2}'.format(contributor, 
+                                               transaction_verb, 
+                                               recipient)
+        
+        seo['site_desc'] = '{0} {1} {2} to {3}'.format(contributor, 
+                                                       transaction_verb,
+                                                       amount,
+                                                       recipient)
+
+        context['seo'] = seo
+
+        return context
 
 class ExpenditureDetail(TransactionDetail):
     template_name = 'camp_fin/expenditure-detail.html'

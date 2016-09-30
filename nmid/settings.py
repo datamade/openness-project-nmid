@@ -62,6 +62,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'camp_fin.context_processors.seo_context',
             ],
         },
     },
@@ -130,3 +131,12 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 CKEDITOR_JQUERY_URL = '//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js'
 CKEDITOR_UPLOAD_PATH = "uploads/"
 CKEDITOR_IMAGE_BACKEND = 'pillow'
+
+SITE_META = {
+    'site_name' : 'The Openness Project',
+    'site_desc' : 'Keep an eye on money in New Mexico politics',
+    'site_author' : 'New Mexico In Depth',
+    'site_url' : 'https://opennessproject.com',
+    'twitter_site': '@NMInDepth',
+    'twitter_creator': '@NMInDepth',
+}
