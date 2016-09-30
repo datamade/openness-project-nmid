@@ -6,7 +6,7 @@ class Page(models.Model):
     path = models.CharField(max_length=255)
     template = models.CharField(max_length=255)
     
-    blobs = models.ManyToManyField('Blob')
+    blobs = models.ManyToManyField('Blob', blank=True)
 
     class Meta:
         verbose_name = 'Content'
