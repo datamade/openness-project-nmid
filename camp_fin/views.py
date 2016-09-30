@@ -350,6 +350,14 @@ class CandidateList(PaginatedList):
 
         columns = [c[0] for c in cursor.description]
         candidate_tuple = namedtuple('Candidate', columns)
+        
+        try:
+            page = Page.objects.get(path='/candidates/')
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            page = None
 
         return [candidate_tuple(*r) for r in cursor]
 
@@ -594,6 +602,14 @@ class CommitteeList(PaginatedList):
 
         columns = [c[0] for c in cursor.description]
         pac_tuple = namedtuple('PAC', columns)
+        
+        try:
+            page = Page.objects.get(path='/committees/')
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            page = None
 
         return [pac_tuple(*r) for r in cursor]
 
