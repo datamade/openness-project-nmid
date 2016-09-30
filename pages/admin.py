@@ -7,6 +7,15 @@ from ckeditor.widgets import CKEditorWidget
 from .models import Page, Blob
 
 class PageAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {
+            'fields': ('text', 'blobs')
+        }),
+        ('Advanced options', {
+            'classes': ('collapse',),
+            'fields': ('title', 'path', 'template'),
+        }),
+    )
     formfield_overrides = {
         models.TextField: {'widget': CKEditorWidget},
     }
