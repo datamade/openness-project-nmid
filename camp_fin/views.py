@@ -100,37 +100,34 @@ class IndexView(TemplateView):
             
             # Largest donations
             cursor.execute('''
-              SELECT * FROM (
                 SELECT
-                    DENSE_RANK() OVER (ORDER BY amount DESC) AS rank,
-                    o.*,
-                    tt.description AS transaction_type,
-                    CASE WHEN
-                      pac.name IS NULL OR TRIM(pac.name) = ''
-                    THEN
-                      candidate.full_name
-                    ELSE pac.name
-                    END AS transaction_subject,
-                    pac.slug AS pac_slug,
-                    candidate.slug AS candidate_slug
-                  FROM camp_fin_transaction AS o
-                  JOIN camp_fin_transactiontype AS tt
-                    ON o.transaction_type_id = tt.id
-                  JOIN camp_fin_filing AS filing
-                    ON o.filing_id = filing.id
-                  JOIN camp_fin_entity AS entity
-                    ON filing.entity_id = entity.id
-                  LEFT JOIN camp_fin_pac AS pac
-                    ON entity.id = pac.entity_id
-                  LEFT JOIN camp_fin_candidate AS candidate
-                    ON entity.id = candidate.entity_id
-                  WHERE tt.contribution = TRUE
-                    AND o.received_date >= (NOW() - interval '1 year')
-                    AND company_name NOT ILIKE '%public election fund%'
-                    AND company_name NOT ILIKE '%department of finance%'
-                  ORDER BY o.amount DESC
-              ) AS x
-              WHERE rank <= 5
+                  o.*,
+                  tt.description AS transaction_type,
+                  CASE WHEN
+                    pac.name IS NULL OR TRIM(pac.name) = ''
+                  THEN
+                    candidate.full_name
+                  ELSE pac.name
+                  END AS transaction_subject,
+                  pac.slug AS pac_slug,
+                  candidate.slug AS candidate_slug
+                FROM camp_fin_transaction AS o
+                JOIN camp_fin_transactiontype AS tt
+                  ON o.transaction_type_id = tt.id
+                JOIN camp_fin_filing AS filing
+                  ON o.filing_id = filing.id
+                JOIN camp_fin_entity AS entity
+                  ON filing.entity_id = entity.id
+                LEFT JOIN camp_fin_pac AS pac
+                  ON entity.id = pac.entity_id
+                LEFT JOIN camp_fin_candidate AS candidate
+                  ON entity.id = candidate.entity_id
+                WHERE tt.contribution = TRUE
+                  AND o.received_date >= (NOW() - interval '1 year')
+                  AND company_name NOT ILIKE '%public election fund%'
+                  AND company_name NOT ILIKE '%department of finance%'
+                ORDER BY o.amount DESC
+                LIMIT 10
             ''')
 
             columns = [c[0] for c in cursor.description]
