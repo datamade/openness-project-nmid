@@ -1,4 +1,8 @@
 from django.db import models
+from django.core.cache import cache
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
 
 class Page(models.Model):
     text = models.TextField()
@@ -14,6 +18,10 @@ class Page(models.Model):
 
     def __str__(self):
         return self.title
+
+@receiver(post_save, sender=Page)
+def clear_cache(sender, **kwargs):
+    cache.clear()
 
 class Blob(models.Model):
     text = models.TextField()
