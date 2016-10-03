@@ -773,6 +773,7 @@ class Command(BaseCommand):
         trans = self.connection.begin()
 
         try:
+            self.connection.execute("SET local timezone to 'America/Denver'")
             if kwargs:
                 self.connection.execute(query, **kwargs)
             else:

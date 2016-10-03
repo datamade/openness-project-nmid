@@ -72,6 +72,8 @@
             <li role="presentation"><a class="transactions" href="javascript://" data-table_type="contributions">All donations</a></li>
             <li role="presentation"><a class="transactions" href="javascript://" data-table_type="expenditures">All expenditures</a></li>
         </ul>
+        <br />
+        <a href="#" class="btn btn-default" id="csv-download" style="display: none;">Download as CSV</a>
         <div id='money-table-guts'>
             <h1><i class='fa fa-spin fa-refresh'></i></h1>
         </div>
@@ -88,7 +90,6 @@
     <script src="{% static 'js/chart_helper.js' %}"></script>
     <script type="text/EJS" id="transaction-table-guts">
 
-        <a href="<%= csv_download %>" class="btn btn-default">Download as CSV</a>
         <table class="table table-striped">
             <thead>
                 <tr>
@@ -319,12 +320,14 @@
                     if (data.results.length > 0){
                         var template = new EJS({'text': $('#transaction-table-guts').html()});
                         data['type'] = transaction_type;
-                        params['limit'] = 1000000;
-                        params['format'] = 'csv'
-                        data['csv_download'] = url + '?' + $.param(params);
                         $('#money-table-guts').html(template.render(data));
                         $('.page-link').off('click');
                         $('.page-link').on('click', getPage);
+
+                        params['limit'] = 1000000;
+                        params['format'] = 'csv'
+                        $('#csv-download').prop('href',url + '?' + $.param(params));
+                        $('#csv-download').show();
 
                         var sorter = ''
 
@@ -363,6 +366,7 @@
 
             $('.transactions').on('click', function(e){
                 $('#money-table-guts').html("<h1><i class='fa fa-spin fa-refresh'></i></h1>");
+                $('#csv-download').hide();
                 if(!$(this).parent().hasClass('active')){
                     $('li[role="presentation"]').removeClass('active');
                     $(this).parent().addClass('active');

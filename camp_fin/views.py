@@ -3,6 +3,7 @@ from collections import namedtuple, OrderedDict
 from datetime import datetime, timedelta
 import time
 import csv
+from urllib.parse import urlencode
 
 from django.views.generic import ListView, TemplateView, DetailView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
@@ -727,6 +728,15 @@ class CandidateDetail(CommitteeDetailBaseView):
 
         context['seo'] = seo
         
+        latest_campaign = context['latest_filing'].campaign
+        sos_link = 'https://www.cfis.state.nm.us/media/CandidateReportH.aspx?es={es}&ot={ot}&o={o}&c={c}'
+        sos_link = sos_link.format(es=latest_campaign.election_season.id,
+                                   ot=latest_campaign.office.office_type.id,
+                                   o=latest_campaign.office.id,
+                                   c=latest_campaign.candidate_id)
+        
+        context['sos_link'] = sos_link
+
         return context
 
 class CommitteeDetail(CommitteeDetailBaseView):
@@ -744,6 +754,8 @@ class CommitteeDetail(CommitteeDetailBaseView):
 
         context['seo'] = seo
         
+        context['sos_link'] = 'https://www.cfis.state.nm.us/media/PACReport.aspx?p={}'.format(context['object'].entity_id)
+        
         return context
 
 class ContributionDetail(TransactionDetail):
@@ -758,7 +770,7 @@ class ContributionDetail(TransactionDetail):
         transaction_verb = get_transaction_verb(context['object'].transaction_type.description)
         contributor = context['object'].full_name
         amount = format_money(context['object'].amount)
-
+        
         if hasattr(context['entity'], 'name'):
             recipient = context['entity'].name
         else:
@@ -775,7 +787,7 @@ class ContributionDetail(TransactionDetail):
                                                        recipient)
 
         context['seo'] = seo
-
+        
         return context
 
 class ExpenditureDetail(TransactionDetail):

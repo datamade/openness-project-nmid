@@ -55,6 +55,27 @@ class TransactionDetail(DetailView):
             context['transaction_type'] = 'contribution'
         else:
             context['transaction_type'] = 'expenditure'
+        
+        filing = context['object'].filing
+        mountain_time = timezone.get_current_timezone()
+        date_closed = mountain_time.normalize(filing.date_closed.astimezone(mountain_time))
+        
+        query_params = '{camp_id}_{filing_id}_{year}_{month}_{day}_{hour}{minute}{second}.pdf'
+        
+        camp_id = filing.campaign_id
+        if not camp_id:
+            camp_id = 0
+
+        query_params = query_params.format(camp_id=camp_id,
+                                           filing_id=filing.id,
+                                           year=date_closed.year,
+                                           month=date_closed.month,
+                                           day=date_closed.day,
+                                           hour=date_closed.hour,
+                                           minute=date_closed.minute,
+                                           second=date_closed.second)
+
+        context['sos_link'] = 'https://www.cfis.state.nm.us/docs/FPReports/{}'.format(query_params)
 
         return context
 

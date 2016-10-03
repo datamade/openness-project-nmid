@@ -13,6 +13,8 @@ def format_money(s):
 
 @register.filter()
 def format_money_short(n):
+    if not n:
+        return '$0'
     import math
     millnames=['','K','M','B']
     n = float(n)
