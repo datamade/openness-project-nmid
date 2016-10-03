@@ -12,6 +12,8 @@ from django.utils import timezone
 from django.core.urlresolvers import reverse_lazy
 from django.utils.text import slugify
 from django.conf import settings
+from django.views.decorators.clickjacking import xframe_options_exempt
+from django.utils.decorators import method_decorator
 
 from dateutil.rrule import rrule, MONTHLY
 
@@ -1151,6 +1153,7 @@ class TopEarnersView(PaginatedList):
 
         return context
 
+@method_decorator(xframe_options_exempt, name='dispatch')
 class TopEarnersWidgetView(TemplateView):
     template_name = 'camp_fin/widgets/top-earners.html'
 
