@@ -8,7 +8,7 @@ def last_updated(request):
         SELECT 
           MAX(received_date) AS last_updated 
         FROM camp_fin_transaction 
-        WHERE received_date BETWEEN (NOW() - INTERVAL '1 year') AND now()
+        WHERE received_date <= NOW()
     ''')
 
     last_updated = cursor.fetchone()[0]

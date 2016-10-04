@@ -223,94 +223,83 @@ class DonationsView(PaginatedList):
 
     def get_queryset(self, **kwargs):
         with connection.cursor() as cursor:
-            today = datetime.now().date()
 
-            count_query = '''
-            SELECT MAX(t.received_date)
-            FROM camp_fin_transaction AS t
-            JOIN camp_fin_transactiontype AS tt
-              ON t.transaction_type_id = tt.id
-            WHERE tt.contribution = TRUE
-              AND t.received_date <= NOW()
+            max_date_query = '''
+                SELECT 
+                  MAX(t.received_date)::date 
+                FROM camp_fin_transaction AS t
+                JOIN camp_fin_transactiontype AS tt
+                  ON t.transaction_type_id = tt.id
+                WHERE tt.contribution = TRUE
+                  AND t.received_date <= NOW()
             '''
-            cursor.execute(count_query)
-            row = cursor.fetchone()
-            max_date = row[0].date()
+            cursor.execute(max_date_query)
+            max_date = cursor.fetchone()[0]
 
             self.order_by = self.request.GET.get('order_by', 'received_date')
             self.sort_order = self.request.GET.get('sort_order', 'asc')
 
             query = '''
-            SELECT * FROM (
                 SELECT
-                    DENSE_RANK() OVER (ORDER BY amount DESC) AS rank,
-                    o.*,
-                    tt.description AS transaction_type,
-                    CASE WHEN
-                      pac.name IS NULL OR TRIM(pac.name) = ''
-                    THEN
-                      candidate.full_name
-                    ELSE pac.name
-                    END AS transaction_subject,
-                    pac.slug AS pac_slug,
-                    candidate.slug AS candidate_slug
-                  FROM camp_fin_transaction AS o
-                  JOIN camp_fin_transactiontype AS tt
-                    ON o.transaction_type_id = tt.id
-                  JOIN camp_fin_filing AS filing
-                    ON o.filing_id = filing.id
-                  JOIN camp_fin_entity AS entity
-                    ON filing.entity_id = entity.id
-                  LEFT JOIN camp_fin_pac AS pac
-                    ON entity.id = pac.entity_id
-                  LEFT JOIN camp_fin_candidate AS candidate
-                    ON entity.id = candidate.entity_id
-                  WHERE tt.contribution = TRUE
-                    AND o.received_date BETWEEN %s and %s
-                    AND company_name NOT ILIKE '%%public election fund%%'
-                    AND company_name NOT ILIKE '%%department of finance%%'
-                  ORDER BY {0} {1}
-              ) as z
+                  DENSE_RANK() OVER (ORDER BY amount DESC) AS rank,
+                  o.*,
+                  tt.description AS transaction_type,
+                  CASE WHEN
+                    pac.name IS NULL OR TRIM(pac.name) = ''
+                  THEN
+                    candidate.full_name
+                  ELSE pac.name
+                  END AS transaction_subject,
+                  pac.slug AS pac_slug,
+                  candidate.slug AS candidate_slug
+                FROM camp_fin_transaction AS o
+                JOIN camp_fin_transactiontype AS tt
+                  ON o.transaction_type_id = tt.id
+                JOIN camp_fin_filing AS filing
+                  ON o.filing_id = filing.id
+                JOIN camp_fin_entity AS entity
+                  ON filing.entity_id = entity.id
+                LEFT JOIN camp_fin_pac AS pac
+                  ON entity.id = pac.entity_id
+                LEFT JOIN camp_fin_candidate AS candidate
+                  ON entity.id = candidate.entity_id
+                WHERE tt.contribution = TRUE
+                  AND o.received_date::date BETWEEN %s AND %s
+                  AND company_name NOT ILIKE '%%public election fund%%'
+                  AND company_name NOT ILIKE '%%department of finance%%'
+                ORDER BY {0} {1}
             '''.format(self.order_by, self.sort_order)
+            
+            start_date_str = self.request.GET.get('from')
+            end_date_str = self.request.GET.get('to')
 
-            days_donations = []
-
-            if ('from' in self.request.GET) and ('to' in self.request.GET):
-                start_date_str = self.request.GET.get('from')
-                self.start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() + timedelta(days=1)
-
-                end_date_str = self.request.GET.get('to')
-                self.end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() + timedelta(days=2)
-
-                cursor.execute(query, [self.start_date, self.end_date])
-                days_donations = list(cursor)
-
-                # Reset variables.
+            if start_date_str and end_date_str:
+                
                 self.start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
                 self.end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
 
+            elif start_date_str and not end_date_str:
+                
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                self.start_date = start_date
+                self.end_date = start_date + timedelta(days=1)
+            
+            elif not start_date_str and end_date_str:
+                
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+                self.start_date = end_date - timedelta(days=1)
+                self.end_date = end_date
+
             else:
-                self.end_date = max_date + timedelta(days=2)
-                self.start_date = max_date + timedelta(days=1)
+                
+                self.end_date = max_date
+                self.start_date = max_date
 
-                # Find dates for main query.
-                while len(days_donations) == 0:
-                    cursor.execute(count_query, [self.start_date, self.end_date])
-                    days_donations = list(cursor)
-
-                    self.end_date = self.end_date - timedelta(days=1)
-                    self.start_date = self.start_date - timedelta(days=1)
-
-                # Run main query.
-                cursor.execute(query, [self.start_date, self.end_date])
-                days_donations = list(cursor)
-
-                self.start_date = self.start_date - timedelta(days=1)
-                self.end_date = self.start_date
+            cursor.execute(query, [self.start_date, self.end_date])
 
             columns = [c[0] for c in cursor.description]
             result_tuple = namedtuple('Transaction', columns)
-            donation_objects = [result_tuple(*r) for r in days_donations]
+            donation_objects = [result_tuple(*r) for r in cursor]
 
             self.donation_count = len(donation_objects)
             self.donation_sum = sum([d.amount for d in donation_objects])
@@ -1105,6 +1094,8 @@ class SearchAPIView(viewsets.ViewSet):
                 serializer = serializer(page, many=True)
                 
                 objects = serializer.data
+                
+                draw = int(request.GET.get('draw', 0))
 
                 meta = OrderedDict([
                     ('total_rows', paginator.count),
@@ -1112,7 +1103,7 @@ class SearchAPIView(viewsets.ViewSet):
                     ('offset', offset),
                     ('recordsTotal', paginator.count),
                     ('recordsFiltered', limit),
-                    ('draw', request.GET.get('draw', 0))
+                    ('draw', draw),
                 ])
 
             response[table] = OrderedDict([

@@ -145,7 +145,7 @@ class Transaction(models.Model):
     middle_name = models.CharField(max_length=255, null=True)
     last_name = models.CharField(max_length=255, null=True)
     suffix = models.CharField(max_length=15, null=True)
-    company_name = models.CharField(max_length=255, null=True)
+    company_name = models.CharField(max_length=255, null=True, db_index=True)
     address = models.CharField(max_length=255, null=True)
     city = models.CharField(max_length=50, null=True)
     state = models.CharField(max_length=25, null=True)

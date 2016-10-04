@@ -334,18 +334,13 @@
                 'processing': "<h1><i class='fa fa-spin fa-refresh-o'></i></h1>"
             },
             "initComplete": function(settings, data){
-                var meta = data[table_name]['meta']
-                if(data[table_name].length == 0){
-                    $('#' + table_name + '-results').hide();
-                    $('#download-results').hide();
-                    $('#no-results').show();
+                var meta = data[table_name]['meta'];
+                if(meta.total_rows == 0){
+                    $('#' + table_name + '-search-results').hide();
                 }
                 else {
                     $('#' + table_name + '-search-results h3 small').html(meta.total_rows + " found");
                     $('#download-results').show();
-                    // var query = window.location.search;
-                    // $('#download-results-link').attr('href', '/api/advanced-search/' + query + '&datatype=csv')
-                    setTimeout(function(){ $('#no-results').hide(); }, 500);
                 }
             },
             "drawCallback": function(settings){
@@ -362,7 +357,7 @@
 
     $(document).ready(function(){
         var query = URI(window.location.search).query(true)
-        
+
         if (typeof query.table_name === 'undefined')
             $(':checkbox').prop("checked", "checked");
 
