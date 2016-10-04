@@ -16,7 +16,6 @@ from .settings_local import *
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.10/howto/deployment/checklist/
 
@@ -36,6 +35,7 @@ INSTALLED_APPS = [
     'camp_fin.apps.CampFinConfig',
     'pages.apps.PagesConfig',
     'ckeditor',
+    'raven.contrib.django.raven_compat',
 ]
 
 MIDDLEWARE = [

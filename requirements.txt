@@ -11,3 +11,4 @@ pytz==2016.6.1
 django-ckeditor==5.1.1
 Pillow==3.3.1
 djangorestframework-csv==1.4.1
+raven==5.27.1
