@@ -73,10 +73,10 @@ th a { color: #333333; }
 #section-photo{
     background-image:
         linear-gradient(
-            rgba(0, 0, 0, 0.2),
-            rgba(0, 0, 0, 0.2)
+            rgba(0, 0, 0, 0.1),
+            rgba(0, 0, 0, 0.1)
         ),
-        url('../images/nm-state-capitol-2.jpg');
+        url('../images/nm-state-capitol-4.jpg');
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center center;
