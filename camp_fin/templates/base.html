@@ -90,27 +90,24 @@
     </div>
 
     <div class='footer'>
-        <div class="container-fluid">
+        <div class="container">
             <div class='row'>
-                <div class='col-sm-12'>
-                    <div class='row'>
-                        <div class='col-sm-offset-1 col-sm-3'>
-                            <p>
-                                Brought to you by<br />
-                                <a href='http://nmindepth.com/' target='_blank'><img src="{% static 'images/nmid-logo.png' %}" alt='New Mexico In Depth' style='height: 30px;' title='New Mexico In Depth' class='img-responsive'/></a>
-                            </p>
-                            <p>Last updated on {{ LAST_UPDATED }}</p>
-                            <p>Website built by <a href='https://datamade.us'>DataMade</a></p>
-                        </div>
-                        <div class='col-sm-6'>
-                            <p>Stay up to date on all of New Mexico In Depth's Openness Project reporting and updates to this site.</p>
+                <div class='col-sm-4'>
+                    <p>
+                        Brought to you by<br />
+                        <a href='http://nmindepth.com/' target='_blank'><img src="{% static 'images/nmid-logo.png' %}" alt='New Mexico In Depth' style='height: 40px;' title='New Mexico In Depth' class='img-responsive'/></a>
+                    </p>
+                    <p>Website built by <a href='https://datamade.us'>DataMade</a></p>
+                </div>
+                <div class='col-sm-8'>
+                    <p>Stay up to date on all of New Mexico In Depth's Openness Project reporting and updates to this site.</p>
 
-                            <p>
-                                <a href='http://nmindepth.us6.list-manage2.com/subscribe?u=1d2ab093d81b992e50978b363&id=9294743d38' class='btn btn-danger' target='_blank'><i class='fa fa-envelope'></i> Get our news in your email box</a>
-                                <a href='https://www.facebook.com/NMInDepth' class='btn btn-danger' target='_blank'><i class='fa fa-facebook-official'></i> Follow us on Facebook</a>
-                            </p>
-                        </div>
-                    </div>
+                    <p>
+                        <a href='http://nmindepth.us6.list-manage2.com/subscribe?u=1d2ab093d81b992e50978b363&id=9294743d38' class='btn btn-danger' target='_blank'><i class='fa fa-envelope'></i> Get our news in your email box</a>
+                        <a href='https://www.facebook.com/NMInDepth' class='btn btn-danger' target='_blank'><i class='fa fa-facebook-official'></i> Follow us on Facebook</a>
+                    </p>
+
+                    <p>Data last updated from the <a href='https://www.cfis.state.nm.us/' target='_blank'>New Mexico Secretary of State</a> on {{ LAST_UPDATED }}</p>
                 </div>
             </div>
         </div>
