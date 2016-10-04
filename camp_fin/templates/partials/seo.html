@@ -4,6 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 {% if seo %}
+
     <meta name="description" content="{{seo.site_desc}}">
     <meta name="author" content="{{seo.site_author}}">
 
@@ -14,6 +15,7 @@
     <!-- Facebook -->
     <meta property="og:site_name" content="{{seo.site_name}}">
     {% if seo.title %}
+        <title>{{seo.title}} - The Openness Project</title>
         <meta property="og:title" content="{{seo.title}}">
     {% else %}
         <meta property="og:title" content="{{seo.site_name}}">
@@ -44,6 +46,8 @@
         <meta name="twitter:image:src" content="{{seo.site_url}}{% static 'images/nmid-logo-square.png' %}">
     {% endif %}
 {% else %}
+    <title>The Openness Project</title>
+
     <meta name="description" content="{{SITE_META.site_desc}}">
     <meta name="author" content="{{SITE_META.site_author}}">
 

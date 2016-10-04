@@ -42,6 +42,14 @@ class AboutView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        seo['title'] = "About"
+        seo['site_desc'] = 'Welcome to New Mexico In Depth’s Openness Project'
+        
+        context['seo'] = seo
+
         try:
             page = Page.objects.get(path='/about/')
             context['page'] = page
@@ -340,11 +348,11 @@ class DonationsView(PaginatedList):
         }
         
         if start_date != end_date:
-            seo['title'] = 'Donations between {start_date} and {end_date} - The Openness Project'.format(**fmt_args)
+            seo['title'] = 'Donations between {start_date} and {end_date}'.format(**fmt_args)
             seo['site_desc'] = '{count} donations between {start_date} and {end_date} totalling {total}'.format(**fmt_args)
         
         else:
-            seo['title'] = 'Donations on {start_date} - The Openness Project'.format(**fmt_args)
+            seo['title'] = 'Donations on {start_date}'.format(**fmt_args)
             seo['site_desc'] = '{count} donations on {start_date} totalling {total}'.format(**fmt_args)
 
 
@@ -364,7 +372,7 @@ class SearchView(TemplateView):
         seo = {}
         seo.update(settings.SITE_META)
 
-        seo['title'] = "Search for '{}' - The Openness Project".format(context['term'])
+        seo['title'] = "Search for '{}'".format(context['term'])
         seo['site_desc'] = 'Search for candidates, committees and donors in New Mexico'
         
         context['seo'] = seo
@@ -440,7 +448,7 @@ class CandidateList(PaginatedList):
         seo = {}
         seo.update(settings.SITE_META)
 
-        seo['title'] = 'Candidates - The Openness Project'
+        seo['title'] = 'Candidates'
         seo['site_desc'] = 'Candidates in New Mexico'
 
         context['seo'] = seo
@@ -507,7 +515,7 @@ class CommitteeList(PaginatedList):
         seo = {}
         seo.update(settings.SITE_META)
 
-        seo['title'] = 'PACs - The Openness Project'
+        seo['title'] = 'PACs'
         seo['site_desc'] = 'PACs in New Mexico'
 
         context['seo'] = seo
@@ -718,7 +726,7 @@ class CandidateDetail(CommitteeDetailBaseView):
         first_name = context['object'].first_name
         last_name = context['object'].last_name
 
-        seo['title'] = '{0} {1} - The Openness Project'.format(first_name,
+        seo['title'] = '{0} {1}'.format(first_name,
                                                                last_name)
         seo['site_desc'] = 'Candidate information for {0} {1}'.format(first_name,
                                                                       last_name)
@@ -746,7 +754,7 @@ class CommitteeDetail(CommitteeDetailBaseView):
         seo = {}
         seo.update(settings.SITE_META)
         
-        seo['title'] = '{0} - The Openness Project'.format(context['object'].name)
+        seo['title'] = '{0}'.format(context['object'].name)
         seo['site_desc'] = "Information about '{0}' in New Mexico".format(context['object'].name)
 
         context['seo'] = seo
@@ -789,6 +797,33 @@ class ContributionDetail(TransactionDetail):
 
 class ExpenditureDetail(TransactionDetail):
     template_name = 'camp_fin/expenditure-detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        transaction_verb = get_transaction_verb(context['object'].transaction_type.description)
+        vendor = context['object'].full_name
+        amount = format_money(context['object'].amount)
+        
+        if hasattr(context['entity'], 'name'):
+            pac = context['entity'].name
+        else:
+            pac = '{0} {1}'.format(context['entity'].first_name, 
+                                         context['entity'].last_name)
+
+        seo['title'] = 'Expenditure by {0}'.format(pac)
+        
+        seo['site_desc'] = '{0} {1} {2} on {3}'.format(pac,
+                                                       transaction_verb,
+                                                       amount, 
+                                                       vendor)
+
+        context['seo'] = seo
+        
+        return context
 
 class TransactionViewSet(TransactionBaseViewSet):
     serializer_class = TransactionSerializer
@@ -1159,6 +1194,14 @@ class TopEarnersView(PaginatedList):
         context = super().get_context_data(**kwargs)
 
         context['interval'] = int(self.request.GET.get('interval', 30))
+
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        seo['title'] = "Top earners"
+        seo['site_desc'] = 'Top earning political committees and candidates in New Mexico'
+        
+        context['seo'] = seo
 
         return context
 
