@@ -149,149 +149,151 @@
             table_names = query.table_name;
         }
 
-        if(table_names.indexOf('pac') >= 0){
-            var columns = [
-                {
-                    'data': 'name',
-                    'render': function(data, type, full, meta){
-                        return '<a href="/committees/' + full['slug'] + '/">' + full['name'] + '</a>';
-                    }
-                },
-                {
-                    'data': 'treasurer_name',
-                    'render': function(data, type, full, meta){
-                        return '<a href="/search/?term=' + full['treasurer_name'] + '">' + full['treasurer_name'] + '</a>';
-                    }
-                }
-            ];
-            init_datatable(term, 'pac', columns)
-        }
+        if (term != '') {
 
-        if(table_names.indexOf('candidate') >= 0){
-            var columns = [
-                {
-                    'data': 'full_name',
-                    'render': function(data, type, full, meta){
-                        return '<a href="/candidates/' + full['slug'] + '/">' + full['full_name'] + '</a>' + ' (' + full['party_name'].charAt(0) + ')';
-                    }
-                },
-                {
-                    'data': 'office_name',
-                    'render': function(data, type, full, meta){
-                        var name = full['office_name'];
-                        if (full['county_name'] != '' && full['county_name'] != 'ALL'){
-                            name += ' ' + full['county_name'] + ' County';
+            if(table_names.indexOf('pac') >= 0){
+                var columns = [
+                    {
+                        'data': 'name',
+                        'render': function(data, type, full, meta){
+                            return '<a href="/committees/' + full['slug'] + '/">' + full['name'] + '</a>';
                         }
-                        if (full['district_name']){
-                            name += ' ' + full['district_name'];
-                        }
-                        if (full['division_name']){
-                            name += ' ' + full['division_name'];
-                        }
-                        return name;
-                    }
-                },
-                {
-                    'data': 'committee_name',
-                    'className': 'hidden-xs hidden-sm'
-                },
-                {
-                    'data': 'election_year',
-                    'className': 'hidden-xs hidden-sm'
-                }
-            ];
-            init_datatable(term, 'candidate', columns)
-        }
-
-        if(table_names.indexOf('expenditure') >= 0){
-            var columns = [
-                {
-                    'data': 'full_name'
-                },
-                {
-                    'data': 'transaction_subject',
-                    'render': function(data, type, full, meta){
-                        if(full['pac_slug']){
-                            return '<a href="/committees/' + full['pac_slug'] + '/">' + full['transaction_subject'] + '</a>';
-                        } else {
-                            return '<a href="/candidates/' + full['candidate_slug'] + '/">' + full['transaction_subject'] + '</a>';
-                        }
-                    }
-                },
-                {
-                    'data': 'received_date',
-                    'render': function(data, type, full, meta){
-                        return moment(data).format('MMM DD, YYYY');
                     },
-                    'className': 'hidden-xs hidden-sm'
-                },
-                {
-                    'data': 'amount',
-                    'render': function(data, type, full, meta){
-                        return '<a href="/expenditures/' + full['id'] + '/">' + accounting.formatMoney(data) + '</a>';
-                    }
-                },
-                {
-                    'data': 'description',
-                    'className': 'hidden-xs hidden-sm'
-                }
-            ];
-            var order = [[2, 'desc']];
-            init_datatable(term, 'expenditure', columns, order)
-        }
-
-        if(table_names.indexOf('contribution') >= 0){
-            var columns = [
-                {
-                    'data': 'full_name',
-                },
-                {
-                    'data': 'transaction_subject',
-                    'render': function(data, type, full, meta){
-                        if(full['pac_slug']){
-                            return '<a href="/committees/' + full['pac_slug'] + '/">' + full['transaction_subject'] + '</a>';
-                        } else {
-                            return '<a href="/candidates/' + full['candidate_slug'] + '/">' + full['transaction_subject'] + '</a>';
+                    {
+                        'data': 'treasurer_name',
+                        'render': function(data, type, full, meta){
+                            return '<a href="/search/?term=' + full['treasurer_name'] + '">' + full['treasurer_name'] + '</a>';
                         }
                     }
-                },
-                {
-                    'data': 'received_date',
-                    'render': function(data, type, full, meta){
-                        return moment(data).format('MMM DD, YYYY');
+                ];
+                init_datatable(term, 'pac', columns)
+            }
+
+            if(table_names.indexOf('candidate') >= 0){
+                var columns = [
+                    {
+                        'data': 'full_name',
+                        'render': function(data, type, full, meta){
+                            return '<a href="/candidates/' + full['slug'] + '/">' + full['full_name'] + '</a>' + ' (' + full['party_name'].charAt(0) + ')';
+                        }
                     },
-                    'className': 'hidden-xs hidden-sm'
-                },
-                {
-                    'data': 'amount',
-                    'render': function(data, type, full, meta){
-                        return '<a href="/contributions/' + full['id'] + '/">' + accounting.formatMoney(data) + '</a>';
+                    {
+                        'data': 'office_name',
+                        'render': function(data, type, full, meta){
+                            var name = full['office_name'];
+                            if (full['county_name'] != '' && full['county_name'] != 'ALL'){
+                                name += ' ' + full['county_name'] + ' County';
+                            }
+                            if (full['district_name']){
+                                name += ' ' + full['district_name'];
+                            }
+                            if (full['division_name']){
+                                name += ' ' + full['division_name'];
+                            }
+                            return name;
+                        }
+                    },
+                    {
+                        'data': 'committee_name',
+                        'className': 'hidden-xs hidden-sm'
+                    },
+                    {
+                        'data': 'election_year',
+                        'className': 'hidden-xs hidden-sm'
                     }
-                },
-                {
-                    'data': 'description',
-                    'className': 'hidden-xs hidden-sm'
-                }
-            ];
-            var order = [[2, 'desc']];
-            init_datatable(term, 'contribution', columns, order)
-        }
+                ];
+                init_datatable(term, 'candidate', columns)
+            }
 
-        if(table_names.indexOf('treasurer') >= 0){
-            var columns = [
-                {
-                    'data': 'full_name'
-                },
-                {
-                    'data': 'related_entity_name',
-                    'render': function(data, type, full, meta){
-                        return '<a href="' + full['related_entity_url'] + '">' + full['related_entity_name'] + '</a>';
+            if(table_names.indexOf('expenditure') >= 0){
+                var columns = [
+                    {
+                        'data': 'full_name'
+                    },
+                    {
+                        'data': 'transaction_subject',
+                        'render': function(data, type, full, meta){
+                            if(full['pac_slug']){
+                                return '<a href="/committees/' + full['pac_slug'] + '/">' + full['transaction_subject'] + '</a>';
+                            } else {
+                                return '<a href="/candidates/' + full['candidate_slug'] + '/">' + full['transaction_subject'] + '</a>';
+                            }
+                        }
+                    },
+                    {
+                        'data': 'received_date',
+                        'render': function(data, type, full, meta){
+                            return moment(data).format('MMM DD, YYYY');
+                        },
+                        'className': 'hidden-xs hidden-sm'
+                    },
+                    {
+                        'data': 'amount',
+                        'render': function(data, type, full, meta){
+                            return '<a href="/expenditures/' + full['id'] + '/">' + accounting.formatMoney(data) + '</a>';
+                        }
+                    },
+                    {
+                        'data': 'description',
+                        'className': 'hidden-xs hidden-sm'
                     }
-                }
-            ];
-            init_datatable(term, 'treasurer', columns)
-        }
+                ];
+                var order = [[2, 'desc']];
+                init_datatable(term, 'expenditure', columns, order)
+            }
 
+            if(table_names.indexOf('contribution') >= 0){
+                var columns = [
+                    {
+                        'data': 'full_name',
+                    },
+                    {
+                        'data': 'transaction_subject',
+                        'render': function(data, type, full, meta){
+                            if(full['pac_slug']){
+                                return '<a href="/committees/' + full['pac_slug'] + '/">' + full['transaction_subject'] + '</a>';
+                            } else {
+                                return '<a href="/candidates/' + full['candidate_slug'] + '/">' + full['transaction_subject'] + '</a>';
+                            }
+                        }
+                    },
+                    {
+                        'data': 'received_date',
+                        'render': function(data, type, full, meta){
+                            return moment(data).format('MMM DD, YYYY');
+                        },
+                        'className': 'hidden-xs hidden-sm'
+                    },
+                    {
+                        'data': 'amount',
+                        'render': function(data, type, full, meta){
+                            return '<a href="/contributions/' + full['id'] + '/">' + accounting.formatMoney(data) + '</a>';
+                        }
+                    },
+                    {
+                        'data': 'description',
+                        'className': 'hidden-xs hidden-sm'
+                    }
+                ];
+                var order = [[2, 'desc']];
+                init_datatable(term, 'contribution', columns, order)
+            }
+
+            if(table_names.indexOf('treasurer') >= 0){
+                var columns = [
+                    {
+                        'data': 'full_name'
+                    },
+                    {
+                        'data': 'related_entity_name',
+                        'render': function(data, type, full, meta){
+                            return '<a href="' + full['related_entity_url'] + '">' + full['related_entity_name'] + '</a>';
+                        }
+                    }
+                ];
+                init_datatable(term, 'treasurer', columns)
+            }
+        }
     }
 
     function init_datatable(term, table_name, columns, order){
@@ -331,7 +333,7 @@
                     'next': '&gt;'
                 },
                 'zeroRecords': 'No results found',
-                'processing': "<h1><i class='fa fa-spin fa-refresh-o'></i></h1>"
+                'processing': "<h1><i class='fa fa-spin fa-circle-o-notch'></i></h1>"
             },
             "initComplete": function(settings, data){
                 var meta = data[table_name]['meta'];
