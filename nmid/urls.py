@@ -24,7 +24,7 @@ from camp_fin.views import IndexView, CandidateList, CandidateDetail, \
     TopExpensesView, CommitteeList, CommitteeDetail, ContributionDetail, \
     ExpenditureDetail, SearchView, SearchAPIView, DonationsView, \
     LoanViewSet, TopEarnersView, TopEarnersWidgetView, bulk_contributions, \
-    bulk_expenditures, AboutView
+    bulk_expenditures, AboutView, flush_cache
 
 router = routers.DefaultRouter()
 router.register(r'contributions', ContributionViewSet, base_name='contributions')
@@ -57,4 +57,5 @@ urlpatterns = [
     url(r'^ckeditor/', include('ckeditor_uploader.urls')),
     url(r'^top-earners/$', TopEarnersView.as_view(), name='top-earners'),
     url(r'^widgets/top-earners/$', TopEarnersWidgetView.as_view(), name='widget-top-earners'),
+    url(r'^flush-cache/$', flush_cache, name='flush-cache'),
 ]

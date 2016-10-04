@@ -16,6 +16,7 @@ from django.conf import settings
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.utils.decorators import method_decorator
 from django.shortcuts import render
+from django.core.cache import cache
 
 from dateutil.rrule import rrule, MONTHLY
 
@@ -1419,3 +1420,10 @@ def four_oh_four(request):
 
 def five_hundred(request):
     return render(request, '500.html', {}, status=500)
+
+def flush_cache(request):
+    if request.GET.get('key') == settings.FLUSH_CACHE_KEY:
+        cache.clear()
+        return HttpResponse('woo!')
+    else:
+        return HttpResponse("Sorry, I can't do that")
