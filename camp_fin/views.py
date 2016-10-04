@@ -15,6 +15,7 @@ from django.utils.text import slugify
 from django.conf import settings
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.utils.decorators import method_decorator
+from django.shortcuts import render
 
 from dateutil.rrule import rrule, MONTHLY
 
@@ -1412,3 +1413,9 @@ def bulk_committees(request):
     filename = 'PACs_{}.csv'.format(timezone.now().isoformat())
     
     return make_response(copy, filename)
+
+def four_oh_four(request):
+    return render(request, '404.html', {}, status=404)
+
+def five_hundred(request):
+    return render(request, '500.html', {}, status=500)

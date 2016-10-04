@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
+from django.conf.urls import handler404, handler500
 
 from rest_framework import routers
 
@@ -33,6 +34,9 @@ router.register(r'top-donors', TopDonorsView, base_name='top-donors')
 router.register(r'top-expenses', TopExpensesView, base_name='top-expenses')
 router.register(r'search', SearchAPIView, base_name='search')
 router.register(r'loans', LoanViewSet, base_name='loan')
+
+handler404 = 'camp_fin.views.four_oh_four'
+handler500 = 'camp_fin.views.five_hundred'
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
