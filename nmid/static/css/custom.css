@@ -82,9 +82,13 @@ th a { color: #333333; }
     background-position: center center;
     height: 350px;
 }
-#section-photo h1, #section-photo h3 a, #section-photo p{
+#section-photo h1, #section-photo h2 a, #section-photo h3 a, #section-photo h4 a, #section-photo p{
   color: #fff;
   text-shadow: #333 0 1px 1px;
+}
+
+#section-photo h3 {
+  margin-top: 5px;
 }
 
 #section-intro, #section-engage{
