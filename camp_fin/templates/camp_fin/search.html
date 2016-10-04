@@ -8,6 +8,7 @@
 <div class="container">
     <div class="row">
         <div class="col-md-12">
+            <br />
             <div class='jumbotron'>
                 <form method='GET'>
                     <div class="input-group input-group-lg">
@@ -40,7 +41,12 @@
         </div>
     </div>
     <div class="row">
-        <div class="col-md-12">
+        <div id="no-search" class="col-md-12">
+            <p class='lead text-center'><i class='fa fa-hand-pointer-o'></i> Search for names of candidates, committees and donors in the box above</p><br /><br /><br /><br /><br /><br /><br /><br />
+
+        </div>
+
+        <div id="download-results" class="col-md-12" style="display:none;">
             <a href="/api/search/?{% query_transform request format='csv' limit='1000000' %}" class="btn btn-default">
                 <i class='fa fa-download'></i>
                 Download as a spreadsheet
@@ -293,6 +299,8 @@
             var order = [[0, 'asc']]
         }
 
+        $('#no-search').hide();
+        $('#download-results').show();
         $('#' + table_name + '-search-results').show();
 
         var params = {
