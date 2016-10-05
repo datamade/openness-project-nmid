@@ -23,9 +23,9 @@
                 {% endif %}
 
                 {% if interval == 0 %}
-                    <li role="presentation" class="active"><a href="{% url 'top-earners' %}?interval=0">All time</a></li>
+                    <li role="presentation" class="active"><a href="{% url 'top-earners' %}?interval=0">Since 2010</a></li>
                 {% else %}
-                    <li role="presentation"><a href="{% url 'top-earners' %}?interval=0">All time</a></li>
+                    <li role="presentation"><a href="{% url 'top-earners' %}?interval=0">Since 2010</a></li>
                 {% endif %}
             </ul>
             <table class="table table-striped" id="candidate-list">

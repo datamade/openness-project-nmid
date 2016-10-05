@@ -683,6 +683,7 @@ class CandidateDetail(CommitteeDetailBaseView):
                                    c=latest_campaign.candidate_id)
         
         context['sos_link'] = sos_link
+        context['entity_type'] = 'candidate'
 
         return context
 
@@ -702,6 +703,8 @@ class CommitteeDetail(CommitteeDetailBaseView):
         context['seo'] = seo
         
         context['sos_link'] = 'https://www.cfis.state.nm.us/media/PACReport.aspx?p={}'.format(context['object'].entity_id)
+        
+        context['entity_type'] = 'pac'
         
         return context
 
