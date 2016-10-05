@@ -1,18 +1,6 @@
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.urls import reverse
 
-TEST_DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'test_nmid',
-        'USER': 'postgres',
-        'PASSWORD': '',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
-}
-
-@override_settings(DATABASES=TEST_DATABASES)
 class TestViews(TestCase):
     def test_index(self):
         response = self.client.get(reverse('index'))
