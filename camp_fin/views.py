@@ -1098,7 +1098,7 @@ class TopEarnersView(PaginatedList):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context['interval'] = int(self.request.GET.get('interval', 30))
+        context['interval'] = int(self.request.GET.get('interval', 90))
 
         seo = {}
         seo.update(settings.SITE_META)
