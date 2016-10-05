@@ -23,7 +23,7 @@ class PaginatedList(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
+        
         paginator = Paginator(context['object_list'], self.per_page)
 
         page = self.request.GET.get('page')

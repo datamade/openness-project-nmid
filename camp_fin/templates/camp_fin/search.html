@@ -32,9 +32,6 @@
                         <label data-title='Expenditures' data-content='Any person or organization who was given money by a political committee'>
                             <input type="checkbox" name="table_name" value="expenditure" {% if 'expenditure' in table_name %}checked='checked'{% endif %}> Expenditures by committees
                         </label>
-                        <label data-title='Treasurers' data-content='Treasurers for political organizations'>
-                            <input type="checkbox" name="table_name" value="treasurer" {% if 'treasurer' in table_name %}checked='checked'{% endif %}> Committee treasurers
-                        </label>
                     </div>
                 </form>
             </div>
@@ -72,20 +69,7 @@
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th>Treasurer</th>
-                    </tr>
-                </thead>
-                <tbody>
-            </table>
-            <hr />
-        </div>
-        <div id="treasurer-search-results" class="col-md-12" style="display:none;">
-            <h3>Treasurers <small></small></h3>
-            <table class="table table-hover" id="treasurer-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Committee or candidate name</th>
+                        <th>Address</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -144,7 +128,7 @@
         if(typeof query.table_name === 'string'){
             table_names = [query.table_name];
         } else if (typeof query.table_name === 'undefined'){
-            table_names = ['pac', 'contribution', 'expenditure', 'candidate', 'treasurer'];
+            table_names = ['pac', 'contribution', 'expenditure', 'candidate'];
         } else {
             table_names = query.table_name;
         }
@@ -160,10 +144,7 @@
                         }
                     },
                     {
-                        'data': 'treasurer_name',
-                        'render': function(data, type, full, meta){
-                            return '<a href="/search/?term=' + full['treasurer_name'] + '">' + full['treasurer_name'] + '</a>';
-                        }
+                        'data': 'address'
                     }
                 ];
                 init_datatable(term, 'pac', columns)

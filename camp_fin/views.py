@@ -317,11 +317,12 @@ class SearchView(TemplateView):
 
         return context
 
-class CandidateList(PaginatedList, PagesMixin):
+class CandidateList(PaginatedList):
     template_name = "camp_fin/candidate-list.html"
     page_path = '/candidates/'
 
     def get_queryset(self, **kwargs):
+
         cursor = connection.cursor()
 
         self.order_by = self.request.GET.get('order_by', 'closing_balance')
@@ -367,7 +368,7 @@ class CandidateList(PaginatedList, PagesMixin):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
+        
         context['sort_order'] = self.sort_order
 
         context['toggle_order'] = 'desc'
@@ -384,9 +385,17 @@ class CandidateList(PaginatedList, PagesMixin):
 
         context['seo'] = seo
         
+        try:
+            page = Page.objects.get(path=self.page_path)
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            context['page'] = None
+        
         return context
 
-class CommitteeList(PaginatedList, PagesMixin):
+class CommitteeList(PaginatedList):
     template_name = 'camp_fin/committee-list.html'
     page_path = '/committees/'
 
@@ -443,6 +452,15 @@ class CommitteeList(PaginatedList, PagesMixin):
         seo['site_desc'] = 'PACs in New Mexico'
 
         context['seo'] = seo
+        
+        try:
+            page = Page.objects.get(path=self.page_path)
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            context['page'] = None
+        
 
         return context
 
@@ -804,7 +822,6 @@ SERIALIZER_LOOKUP = {
     'pac': PACSearchSerializer,
     'contribution': TransactionSearchSerializer,
     'expenditure': TransactionSearchSerializer,
-    'treasurer': TreasurerSearchSerializer,
 }
 
 class SearchAPIView(viewsets.ViewSet):
@@ -843,7 +860,6 @@ class SearchAPIView(viewsets.ViewSet):
                 'pac',
                 'contribution',
                 'expenditure',
-                'treasurer',
             ]
 
         response = {}
@@ -854,11 +870,16 @@ class SearchAPIView(viewsets.ViewSet):
                 query = '''
                     SELECT * FROM (
                       SELECT DISTINCT ON (pac.id)
-                        pac.*, 
-                        treasurer.full_name AS treasurer_name 
+                        pac.*,
+                        address.street || ' ' ||
+                        address.city || ', ' ||
+                        state.postal_code || ' ' ||
+                        address.zipcode AS address
                       FROM camp_fin_pac AS pac
-                      JOIN camp_fin_treasurer AS treasurer
-                        ON pac.treasurer_id = treasurer.id
+                      JOIN camp_fin_address AS address
+                        ON pac.address_id = address.id
+                      JOIN camp_fin_state AS state
+                        ON address.state_id = state.id
                       JOIN camp_fin_filing AS filing
                         ON filing.entity_id = pac.entity_id
                       WHERE pac.search_name @@ plainto_tsquery('english', %s)
@@ -958,50 +979,6 @@ class SearchAPIView(viewsets.ViewSet):
                     WHERE o.search_name @@ plainto_tsquery('english', %s)
                       AND tt.contribution = FALSE
                       AND o.received_date >= '2010-01-01'
-                '''
-            
-            elif table == 'treasurer':
-                query = ''' 
-                    SELECT * FROM (
-                      SELECT 
-                        t.full_name, 
-                        a.street, 
-                        a.city, 
-                        s.postal_code AS state, 
-                        a.zipcode, 
-                        d.full_name AS related_entity_name, 
-                        '/candidates/' || d.slug || '/' AS related_entity_url, 
-                        t.search_name 
-                      FROM camp_fin_treasurer AS t 
-                      JOIN camp_fin_address AS a 
-                        ON t.address_id = a.id 
-                      JOIN camp_fin_state AS s 
-                        ON a.state_id = s.id 
-                      JOIN camp_fin_campaign AS m 
-                        ON t.id = m.treasurer_id 
-                      JOIN camp_fin_candidate AS d 
-                        ON m.candidate_id = d.id 
-                      
-                      UNION 
-                      
-                      SELECT 
-                        t.full_name, 
-                        a.street, 
-                        a.city, 
-                        s.postal_code AS state, 
-                        a.zipcode, 
-                        p.name AS related_entity_name, 
-                        '/committees/' || p.slug || '/' AS related_entity_url, 
-                        t.search_name 
-                      FROM camp_fin_treasurer AS t 
-                      JOIN camp_fin_address AS a 
-                        ON t.address_id = a.id 
-                      JOIN camp_fin_state AS s 
-                        ON a.state_id = s.id 
-                      JOIN camp_fin_pac AS p 
-                        ON t.id = p.treasurer_id
-                    ) AS s 
-                    WHERE search_name @@ plainto_tsquery('english', %s)
                 '''
             
             if order_by_col:

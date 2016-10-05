@@ -5,7 +5,8 @@ import zipfile
 from rest_framework import serializers, pagination, renderers
 from rest_framework_csv.renderers import CSVStreamingRenderer
 
-from camp_fin.models import Candidate, PAC, Transaction, LoanTransaction, Loan, Treasurer
+from camp_fin.models import Candidate, PAC, Transaction, LoanTransaction, \
+    Loan, Treasurer, Address
 
 class CandidateSerializer(serializers.ModelSerializer):
 
@@ -170,7 +171,7 @@ class CandidateSearchSerializer(serializers.ModelSerializer):
         )
 
 class PACSearchSerializer(serializers.ModelSerializer):
-    treasurer_name = serializers.StringRelatedField(read_only=True)
+    address = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = PAC
@@ -191,7 +192,7 @@ class PACSearchSerializer(serializers.ModelSerializer):
             'initial_debt',
             'initial_debt_from_self',
             'slug',
-            'treasurer_name',
+            'address',
         )
 
 class TopMoneySerializer(serializers.Serializer):

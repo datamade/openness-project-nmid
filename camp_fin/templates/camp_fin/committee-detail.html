@@ -56,61 +56,6 @@
                 {% endif %}
             </tbody>
         </table>
-        <h4>Treasurer</h4>
-        <table class="table table-condensed">
-            <tbody>
-                {% if pac.treasurer.full_name %}
-                <tr>
-                    <td>
-                        Name
-                    </td>
-                    <td>
-                        <a href="{% url 'search' %}?term={{ pac.treasurer.full_name }}">
-                            {{ pac.treasurer.full_name}}
-                        </a>
-                    </td>
-                </tr>
-                {% endif %}
-                {% if pac.treasurer.business_phone %}
-                <tr>
-                    <td>
-                        Phone
-                    </td>
-                    <td>{{ pac.treasurer.business_phone }}</td>
-                </tr>
-                {% endif %}
-                {% if pac.treasurer.alt_phone %}
-                <tr>
-                    <td>
-                        Alternantive Phone
-                    </td>
-                    <td>{{ pac.treasurer.alt_phone }}</td>
-                </tr>
-                {% endif %}
-                {% if pac.treasurer.email %}
-                <tr>
-                    <td>
-                        Email
-                    </td>
-                    <td>
-                        <a href="mailto:{{ pac.treasurer.email }}">
-                            {{ pac.treasurer.email }}
-                        </a>
-                    </td>
-                </tr>
-                {% endif %}
-                {% if pac.treasurer.address %}
-                <tr>
-                    <td>
-                        Address
-                    </td>
-                    <td>
-                        {{ pac.treasurer.address }}
-                    </td>
-                </tr>
-                {% endif %}
-            </tbody>
-        </table>
         <p><a href="{{ sos_link }}" target="_blank">View on Secretary of State's website</a></p>
     </div>
 {% endblock %}

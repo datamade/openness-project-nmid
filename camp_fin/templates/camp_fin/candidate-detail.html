@@ -58,63 +58,6 @@
                 {% endif %}
             </tbody>
         </table>
-        <h4>Treasurer <small>{{ latest_filing.campaign.committee_name|default:""}}</small></h4>
-        {% with treasurer=latest_filing.campaign.treasurer %}
-        <table class="table table-condensed">
-            <tbody>
-                {% if treasurer.full_name %}
-                <tr>
-                    <td>
-                        Name
-                    </td>
-                    <td>
-                        <a href="{% url 'search' %}?term={{ treasurer.full_name }}">
-                            {{ treasurer.full_name}}
-                        </a>
-                    </td>
-                </tr>
-                {% endif %}
-                {% if treasurer.business_phone %}
-                <tr>
-                    <td>
-                        Phone
-                    </td>
-                    <td>{{ treasurer.business_phone }}</td>
-                </tr>
-                {% endif %}
-                {% if treasurer.alt_phone %}
-                <tr>
-                    <td>
-                        Alternantive Phone
-                    </td>
-                    <td>{{ treasurer.alt_phone }}</td>
-                </tr>
-                {% endif %}
-                {% if treasurer.email %}
-                <tr>
-                    <td>
-                        Email
-                    </td>
-                    <td>
-                        <a href="mailto:{{ treasurer.email }}">
-                            {{ treasurer.email }}
-                        </a>
-                    </td>
-                </tr>
-                {% endif %}
-                {% if treasurer.address %}
-                <tr>
-                    <td>
-                        Address
-                    </td>
-                    <td>
-                        {{ treasurer.address }}
-                    </td>
-                </tr>
-                {% endif %}
-            </tbody>
-        </table>
-        {% endwith %}
         <p><a href="{{ sos_link }}" target="_blank">View on Secretary of State's website</a></p>
     </div>
 {% endblock %}
