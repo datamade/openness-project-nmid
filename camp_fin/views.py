@@ -29,7 +29,7 @@ from pages.models import Page
 from .models import Candidate, Office, Transaction, Campaign, Filing, PAC, \
     LoanTransaction
 from .base_views import PaginatedList, TransactionDetail, TransactionBaseViewSet, \
-    TopMoneyView, TopEarnersMixin, PagesMixin
+    TopMoneyView, TopEarnersBase, PagesMixin
 from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer, \
     TransactionSearchSerializer, CandidateSearchSerializer, PACSearchSerializer, \
     LoanTransactionSerializer, TreasurerSearchSerializer, DataTablesPagination, \
@@ -55,7 +55,7 @@ class AboutView(PagesMixin):
 
         return context
 
-class IndexView(TopEarnersMixin, PagesMixin):
+class IndexView(TopEarnersBase, PagesMixin):
     template_name = 'index.html'
     page_path = '/'
 
@@ -1066,7 +1066,7 @@ class TopEarnersView(PaginatedList):
                   MAX(COALESCE(c.slug, p.slug)) AS slug, 
                   MAX(COALESCE(c.full_name, p.name)) AS name, 
                   SUM(t.amount) AS new_funds, 
-                  MAX(f.closing_balance) AS current_funds, 
+                  (array_agg(f.closing_balance ORDER BY f.id DESC))[1] AS current_funds, 
                   CASE WHEN p.id IS NULL 
                     THEN 'Candidate' 
                     ELSE 'PAC' 
@@ -1114,7 +1114,7 @@ class TopEarnersView(PaginatedList):
         return context
 
 @method_decorator(xframe_options_exempt, name='dispatch')
-class TopEarnersWidgetView(TopEarnersMixin):
+class TopEarnersWidgetView(TopEarnersBase):
     template_name = 'camp_fin/widgets/top-earners.html'
 
 class Echo(object):

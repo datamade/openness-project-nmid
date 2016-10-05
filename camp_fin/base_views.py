@@ -329,7 +329,7 @@ class TopMoneyView(viewsets.ViewSet):
 
         return Response(serializer.data)
 
-class TopEarnersMixin(TemplateView):
+class TopEarnersBase(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -345,7 +345,7 @@ class TopEarnersMixin(TemplateView):
                     MAX(COALESCE(c.slug, p.slug)) AS slug, 
                     MAX(COALESCE(c.full_name, p.name)) AS name, 
                     SUM(t.amount) AS new_funds, 
-                    MAX(f.closing_balance) AS current_funds, 
+                    (array_agg(f.closing_balance ORDER BY f.id DESC))[1] AS current_funds, 
                     CASE WHEN p.id IS NULL 
                       THEN 'Candidate' 
                       ELSE 'PAC' 
