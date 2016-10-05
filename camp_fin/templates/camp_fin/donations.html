@@ -66,22 +66,28 @@
                         {% for transaction in object_list %}
                         <tr>
                             <td>
-                                {{ transaction.full_name }}
+                                <a href="{% url 'search' %}?term={{ transaction.full_name }}">
+                                    {{ transaction.full_name }}
+                                </a>
                             </td>
                             <td class="no-wrap">
                                 <a href="{% url 'contribution-detail' transaction.id %}">
-                                    <span class='hidden-sm hidden-xs'>{{transaction.transaction_type|get_transaction_verb }}</span>
-                                    <strong class='hidden-sm hidden-xs'>{{ transaction.amount|format_money }}</strong> 
-                                    <strong class='visible-sm-block visible-xs-block'>{{ transaction.amount|format_money_short }}</strong> 
+                                    <span class='hidden-sm hidden-xs'>{{ transaction.transaction_type|get_transaction_verb }}</span>
+                                    <strong class='hidden-sm hidden-xs'>{{ transaction.amount|format_money }}</strong>
+                                    <strong class='visible-sm-block visible-xs-block'>{{ transaction.amount|format_money_short }}</strong>
                                     <span class='hidden-sm hidden-xs'>to</span>
                                 </a>
                             </td>
                             <td>
                                 {% if transaction.pac_slug %}
-                                  <a href="{% url 'committee-detail' transaction.pac_slug %}">{{ transaction.transaction_subject }}</a>
+                                    <a href="{% url 'committee-detail' transaction.pac_slug %}">
+                                        {{ transaction.transaction_subject }}
+                                    </a>
                                 {% endif %}
                                 {% if transaction.candidate_slug %}
-                                  <a href="{% url 'candidate-detail' transaction.candidate_slug %}">{{ transaction.transaction_subject }}</a>
+                                    <a href="{% url 'candidate-detail' transaction.candidate_slug %}">
+                                        {{ transaction.transaction_subject }}
+                                    </a>
                                 {% endif %}
                             </td>
                             <td class="no-wrap hidden-sm hidden-xs">
