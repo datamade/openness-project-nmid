@@ -29,7 +29,7 @@ from pages.models import Page
 from .models import Candidate, Office, Transaction, Campaign, Filing, PAC, \
     LoanTransaction
 from .base_views import PaginatedList, TransactionDetail, TransactionBaseViewSet, \
-    TopMoneyView
+    TopMoneyView, TopEarnersMixin, PagesMixin
 from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer, \
     TransactionSearchSerializer, CandidateSearchSerializer, PACSearchSerializer, \
     LoanTransactionSerializer, TreasurerSearchSerializer, DataTablesPagination, \
@@ -38,8 +38,9 @@ from .templatetags.helpers import format_money, get_transaction_verb
 
 TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
 
-class AboutView(TemplateView):
+class AboutView(PagesMixin):
     template_name = 'about.html'
+    page_path = '/about/'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -52,61 +53,17 @@ class AboutView(TemplateView):
         
         context['seo'] = seo
 
-        try:
-            page = Page.objects.get(path='/about/')
-            context['page'] = page
-            for blob in page.blobs.all():
-                context[blob.context_name] = blob.text
-        except Page.DoesNotExist:
-            page = None
-        
         return context
 
-
-class IndexView(TemplateView):
+class IndexView(TopEarnersMixin, PagesMixin):
     template_name = 'index.html'
+    page_path = '/'
 
     def get_context_data(self, **kwargs):
+        
+        context = super().get_context_data(**kwargs)
+        
         with connection.cursor() as cursor:
-
-            # Top earners
-            cursor.execute(''' 
-              SELECT * FROM (
-                SELECT 
-                  dense_rank() OVER (ORDER BY new_funds DESC) AS rank, * 
-                FROM (
-                  SELECT 
-                    MAX(COALESCE(c.slug, p.slug)) AS slug, 
-                    MAX(COALESCE(c.full_name, p.name)) AS name, 
-                    SUM(t.amount) AS new_funds, 
-                    MAX(f.closing_balance) AS current_funds, 
-                    CASE WHEN p.id IS NULL 
-                      THEN 'Candidate' 
-                      ELSE 'PAC' 
-                    END AS committee_type 
-                    FROM camp_fin_transaction AS t 
-                    JOIN camp_fin_transactiontype AS tt 
-                      ON t.transaction_type_id = tt.id 
-                    JOIN camp_fin_filing AS f 
-                      ON t.filing_id = f.id 
-                    LEFT JOIN camp_fin_pac AS p 
-                      ON f.entity_id = p.entity_id 
-                    LEFT JOIN camp_fin_candidate AS c 
-                      ON f.entity_id = c.entity_id 
-                    WHERE tt.contribution = TRUE 
-                      AND t.received_date >= (NOW() - INTERVAL '90 days')
-                    GROUP BY c.id, p.id
-                  ) AS s 
-                WHERE name NOT ILIKE '%public election fund%'
-                  OR name NOT ILIKE '%department of finance%'
-                ORDER BY new_funds DESC
-                LIMIT 10
-              ) AS s
-            ''')
-
-            columns = [c[0] for c in cursor.description]
-            transaction_tuple = namedtuple('Transaction', columns)
-            top_earners_objects = [transaction_tuple(*r) for r in cursor]
             
             # Largest donations
             cursor.execute('''
@@ -204,21 +161,11 @@ class IndexView(TemplateView):
             candidate_tuple = namedtuple('Candidate', columns)
             candidate_objects = [candidate_tuple(*r) for r in cursor]
 
-            context = super().get_context_data(**kwargs)
-            context['top_earners_objects'] = top_earners_objects
-            context['transaction_objects'] = transaction_objects
-            context['pac_objects'] = pac_objects
-            context['candidate_objects'] = candidate_objects
-            
-            try:
-                page = Page.objects.get(path='/')
-                context['page'] = page
-                for blob in page.blobs.all():
-                    context[blob.context_name] = blob.text
-            except Page.DoesNotExist:
-                page = None
-            
-            return context
+        context['transaction_objects'] = transaction_objects
+        context['pac_objects'] = pac_objects
+        context['candidate_objects'] = candidate_objects
+        
+        return context
 
 class DonationsView(PaginatedList):
     template_name = 'camp_fin/donations.html'
@@ -370,8 +317,9 @@ class SearchView(TemplateView):
 
         return context
 
-class CandidateList(PaginatedList):
+class CandidateList(PaginatedList, PagesMixin):
     template_name = "camp_fin/candidate-list.html"
+    page_path = '/candidates/'
 
     def get_queryset(self, **kwargs):
         cursor = connection.cursor()
@@ -428,14 +376,6 @@ class CandidateList(PaginatedList):
 
         context['order_by'] = self.order_by
         
-        try:
-            page = Page.objects.get(path='/candidates/')
-            context['page'] = page
-            for blob in page.blobs.all():
-                context[blob.context_name] = blob.text
-        except Page.DoesNotExist:
-            page = None
-        
         seo = {}
         seo.update(settings.SITE_META)
 
@@ -446,8 +386,9 @@ class CandidateList(PaginatedList):
         
         return context
 
-class CommitteeList(PaginatedList):
+class CommitteeList(PaginatedList, PagesMixin):
     template_name = 'camp_fin/committee-list.html'
+    page_path = '/committees/'
 
     def get_queryset(self, **kwargs):
         cursor = connection.cursor()
@@ -494,14 +435,6 @@ class CommitteeList(PaginatedList):
             context['toggle_order'] = 'asc'
 
         context['order_by'] = self.order_by
-        
-        try:
-            page = Page.objects.get(path='/committees/')
-            context['page'] = page
-            for blob in page.blobs.all():
-                context[blob.context_name] = blob.text
-        except Page.DoesNotExist:
-            page = None
         
         seo = {}
         seo.update(settings.SITE_META)
@@ -1136,7 +1069,7 @@ class TopEarnersView(PaginatedList):
 
     def get_queryset(self):
         
-        interval = self.request.GET.get('interval', 30)
+        interval = self.request.GET.get('interval', 90)
         
         if int(interval) > 0:
             where_clause = "AND t.received_date >= (NOW() - INTERVAL '%s days')"
@@ -1171,6 +1104,8 @@ class TopEarnersView(PaginatedList):
                     {} 
                   GROUP BY c.id, p.id
                 ) AS s 
+                WHERE name NOT ILIKE '%%public election fund%%'
+                  OR name NOT ILIKE '%%department of finance%%'
               ORDER BY new_funds DESC
             ) AS s
         '''.format(where_clause)
@@ -1199,51 +1134,8 @@ class TopEarnersView(PaginatedList):
         return context
 
 @method_decorator(xframe_options_exempt, name='dispatch')
-class TopEarnersWidgetView(TemplateView):
+class TopEarnersWidgetView(TopEarnersMixin):
     template_name = 'camp_fin/widgets/top-earners.html'
-
-    def get_context_data(self, **kwargs):
-
-      with connection.cursor() as cursor:
-        cursor.execute(''' 
-          SELECT * FROM (
-            SELECT 
-              dense_rank() OVER (ORDER BY new_funds DESC) AS rank, * 
-            FROM (
-              SELECT 
-                MAX(COALESCE(c.slug, p.slug)) AS slug, 
-                MAX(COALESCE(c.full_name, p.name)) AS name, 
-                SUM(t.amount) AS new_funds, 
-                MAX(f.closing_balance) AS current_funds, 
-                CASE WHEN p.id IS NULL 
-                  THEN 'Candidate' 
-                  ELSE 'PAC' 
-                END AS committee_type 
-                FROM camp_fin_transaction AS t 
-                JOIN camp_fin_transactiontype AS tt 
-                  ON t.transaction_type_id = tt.id 
-                JOIN camp_fin_filing AS f 
-                  ON t.filing_id = f.id 
-                LEFT JOIN camp_fin_pac AS p 
-                  ON f.entity_id = p.entity_id 
-                LEFT JOIN camp_fin_candidate AS c 
-                  ON f.entity_id = c.entity_id 
-                WHERE tt.contribution = TRUE 
-                  AND t.received_date >= (NOW() - INTERVAL '90 days')
-                GROUP BY c.id, p.id
-              ) AS s 
-            ORDER BY new_funds DESC
-            LIMIT 10
-          ) AS s
-        ''')
-
-        columns = [c[0] for c in cursor.description]
-        transaction_tuple = namedtuple('Transaction', columns)
-        top_earners_objects = [transaction_tuple(*r) for r in cursor]
-
-        context = super().get_context_data(**kwargs)
-        context['top_earners_objects'] = top_earners_objects
-        return context
 
 class Echo(object):
     def write(self, value):

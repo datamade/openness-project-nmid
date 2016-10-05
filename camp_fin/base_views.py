@@ -1,7 +1,7 @@
 from collections import namedtuple
 from datetime import datetime
 
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, TemplateView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.http import JsonResponse
 from django.db import connection
@@ -12,6 +12,8 @@ from rest_framework.response import Response
 
 from camp_fin.models import Transaction, Candidate, PAC
 from camp_fin.api_parts import TransactionSerializer, TopMoneySerializer
+
+from pages.models import Page
 
 TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
 
@@ -326,3 +328,66 @@ class TopMoneyView(viewsets.ViewSet):
         serializer = TopMoneySerializer(objects, many=True)
 
         return Response(serializer.data)
+
+class TopEarnersMixin(TemplateView):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        with connection.cursor() as cursor:
+
+            # Top earners
+            cursor.execute(''' 
+              SELECT * FROM (
+                SELECT 
+                  dense_rank() OVER (ORDER BY new_funds DESC) AS rank, * 
+                FROM (
+                  SELECT 
+                    MAX(COALESCE(c.slug, p.slug)) AS slug, 
+                    MAX(COALESCE(c.full_name, p.name)) AS name, 
+                    SUM(t.amount) AS new_funds, 
+                    MAX(f.closing_balance) AS current_funds, 
+                    CASE WHEN p.id IS NULL 
+                      THEN 'Candidate' 
+                      ELSE 'PAC' 
+                    END AS committee_type 
+                    FROM camp_fin_transaction AS t 
+                    JOIN camp_fin_transactiontype AS tt 
+                      ON t.transaction_type_id = tt.id 
+                    JOIN camp_fin_filing AS f 
+                      ON t.filing_id = f.id 
+                    LEFT JOIN camp_fin_pac AS p 
+                      ON f.entity_id = p.entity_id 
+                    LEFT JOIN camp_fin_candidate AS c 
+                      ON f.entity_id = c.entity_id 
+                    WHERE tt.contribution = TRUE 
+                      AND t.received_date >= (NOW() - INTERVAL '90 days')
+                    GROUP BY c.id, p.id
+                  ) AS s 
+                WHERE name NOT ILIKE '%public election fund%'
+                  OR name NOT ILIKE '%department of finance%'
+                ORDER BY new_funds DESC
+                LIMIT 10
+              ) AS s
+            ''')
+
+            columns = [c[0] for c in cursor.description]
+            transaction_tuple = namedtuple('Transaction', columns)
+            top_earners_objects = [transaction_tuple(*r) for r in cursor]
+        
+        context['top_earners_objects'] = top_earners_objects
+
+        return context
+
+class PagesMixin(TemplateView):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        try:
+            page = Page.objects.get(path=self.page_path)
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            context['page'] = None
+        
+        return context
