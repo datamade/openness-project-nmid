@@ -90,7 +90,7 @@ class IndexView(TopEarnersMixin, PagesMixin):
                 LEFT JOIN camp_fin_candidate AS candidate
                   ON entity.id = candidate.entity_id
                 WHERE tt.contribution = TRUE
-                  AND o.received_date >= (NOW() - interval '1 year')
+                  AND o.received_date >= '2015-01-01'
                   AND company_name NOT ILIKE '%public election fund%'
                   AND company_name NOT ILIKE '%department of finance%'
                 ORDER BY o.amount DESC
