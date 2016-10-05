@@ -10,7 +10,7 @@
 
             <h1><i class='fa fa-fw fa-plus-circle'></i> Top earners</h1>
             <ul class="nav nav-pills">
-                {% if interval == 30 %}
+                {% if interval == 90 %}
                     <li role="presentation" class="active"><a href="{% url 'top-earners' %}?interval=90">Last 90 days</a></li>
                 {% else %}
                     <li role="presentation"><a href="{% url 'top-earners' %}?interval=90">Last 90 days</a></li>
