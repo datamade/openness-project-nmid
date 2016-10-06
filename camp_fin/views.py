@@ -1148,7 +1148,9 @@ def bulk_contributions(request):
     copy = ''' 
         SELECT
           transaction.*, 
-          entity.*
+          entity.*,
+          f.filing_date,
+          fp.description AS filing_name
         FROM camp_fin_transaction AS transaction
         JOIN camp_fin_transactiontype AS tt
           ON transaction.transaction_type_id = tt.id
@@ -1192,7 +1194,9 @@ def bulk_expenditures(request):
     copy = ''' 
         SELECT
           transaction.*, 
-          entity.*
+          entity.*,
+          f.filing_date,
+          fp.description AS filing_name
         FROM camp_fin_transaction AS transaction
         JOIN camp_fin_transactiontype AS tt
           ON transaction.transaction_type_id = tt.id
