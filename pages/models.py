@@ -23,6 +23,7 @@ class Page(models.Model):
 def clear_cache(sender, **kwargs):
     cache.clear()
 
+
 class Blob(models.Model):
     text = models.TextField()
     context_name = models.CharField(max_length=255)
@@ -33,3 +34,7 @@ class Blob(models.Model):
     
     def __str__(self):
         return self.context_name
+
+@receiver(post_save, sender=Blob)
+def clear_cache(sender, **kwargs):
+    cache.clear()
