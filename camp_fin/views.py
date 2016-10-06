@@ -1149,7 +1149,7 @@ def bulk_contributions(request):
         SELECT
           transaction.*, 
           entity.*,
-          f.filing_date,
+          fp.filing_date,
           fp.description AS filing_name
         FROM camp_fin_transaction AS transaction
         JOIN camp_fin_transactiontype AS tt
@@ -1195,7 +1195,7 @@ def bulk_expenditures(request):
         SELECT
           transaction.*, 
           entity.*,
-          f.filing_date,
+          fp.filing_date,
           fp.description AS filing_name
         FROM camp_fin_transaction AS transaction
         JOIN camp_fin_transactiontype AS tt
