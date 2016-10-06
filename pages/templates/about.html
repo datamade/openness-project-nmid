@@ -11,7 +11,7 @@
             {{ page.text|safe }}
             <hr />
             <h3><i class='fa fa-fw fa-download'></i> Data downloads</h3>
-            {{ about_page_downloads }}
+            {{ about_page_downloads|safe }}
                 <a href="/api/bulk/contributions/" class="btn btn-default"><i class='fa fa-fw fa-download'></i> Contributions</a>
                 <a href="/api/bulk/expenditures/" class="btn btn-default"><i class='fa fa-fw fa-download'></i> Expenditures</a>
                 <a href="/api/bulk/candidates/" class="btn btn-default"><i class='fa fa-fw fa-download'></i> Candidates</a>
