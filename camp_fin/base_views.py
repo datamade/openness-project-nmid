@@ -379,6 +379,8 @@ class TopEarnersBase(TemplateView):
         return context
 
 class PagesMixin(TemplateView):
+    template_name = 'pages/default.html'
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 

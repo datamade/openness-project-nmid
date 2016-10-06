@@ -7,8 +7,8 @@ from django.dispatch import receiver
 class Page(models.Model):
     text = models.TextField()
     title = models.CharField(max_length=500)
-    path = models.CharField(max_length=255)
-    template = models.CharField(max_length=255)
+    path = models.CharField(max_length=255, unique=True)
+    template = models.CharField(max_length=255, default='pages/default.html')
     
     blobs = models.ManyToManyField('Blob', blank=True)
 
