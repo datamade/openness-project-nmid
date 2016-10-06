@@ -3,7 +3,7 @@ from datetime import datetime
 
 from django.views.generic import ListView, DetailView, TemplateView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseNotFound, Http404
 from django.db import connection
 from django.utils import timezone
 
@@ -378,18 +378,29 @@ class TopEarnersBase(TemplateView):
 
         return context
 
-class PagesMixin(TemplateView):
+# TODO: Need to make this subclass detail view and return a 404 if the thing
+# isn't found
+
+class PagesBase(TemplateView):
     template_name = 'pages/default.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        
+        print(self.page_path)
+
+        try:
+            self.page = Page.objects.get(path=self.page_path)
+        except Page.DoesNotExist:
+            raise Http404
+
+        return super().dispatch(request, *args, **kwargs)
+
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        try:
-            page = Page.objects.get(path=self.page_path)
-            context['page'] = page
-            for blob in page.blobs.all():
-                context[blob.context_name] = blob.text
-        except Page.DoesNotExist:
-            context['page'] = None
+        context['page'] = self.page
+        for blob in self.page.blobs.all():
+            context[blob.context_name] = blob.text
         
         return context

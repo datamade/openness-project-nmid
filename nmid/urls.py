@@ -24,7 +24,7 @@ from camp_fin.views import IndexView, CandidateList, CandidateDetail, \
     TopExpensesView, CommitteeList, CommitteeDetail, ContributionDetail, \
     ExpenditureDetail, SearchView, SearchAPIView, DonationsView, \
     LoanViewSet, TopEarnersView, TopEarnersWidgetView, bulk_contributions, \
-    bulk_expenditures, AboutView, flush_cache
+    bulk_expenditures, AboutView, flush_cache, PagesBase
 
 router = routers.DefaultRouter()
 router.register(r'contributions', ContributionViewSet, base_name='contributions')
@@ -41,7 +41,7 @@ handler500 = 'camp_fin.views.five_hundred'
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^$', IndexView.as_view(), name='index'),
-    url(r'^about/$', AboutView.as_view(), name='about'),
+    # url(r'^about/$', AboutView.as_view(), name='about'),
     url(r'^donations/$', DonationsView.as_view(), name='donations'),
     url(r'^search/$', SearchView.as_view(), name='search'),
     url(r'^candidates/$', CandidateList.as_view(), name='candidate-list'),
@@ -58,4 +58,7 @@ urlpatterns = [
     url(r'^top-earners/$', TopEarnersView.as_view(), name='top-earners'),
     url(r'^widgets/top-earners/$', TopEarnersWidgetView.as_view(), name='widget-top-earners'),
     url(r'^flush-cache/$', flush_cache, name='flush-cache'),
+
+    # This needs to be last
+    url(r'^(?P<page_path>[\w-]+)/$', PagesBase.as_view()),
 ]

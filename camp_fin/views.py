@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 
 from django.views.generic import ListView, TemplateView, DetailView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.http import HttpResponseNotFound, HttpResponse, StreamingHttpResponse
+from django.http import HttpResponse, StreamingHttpResponse
 from django.db import transaction, connection, connections
 from django.utils import timezone
 from django.core.urlresolvers import reverse_lazy
@@ -29,7 +29,7 @@ from pages.models import Page
 from .models import Candidate, Office, Transaction, Campaign, Filing, PAC, \
     LoanTransaction
 from .base_views import PaginatedList, TransactionDetail, TransactionBaseViewSet, \
-    TopMoneyView, TopEarnersBase, PagesMixin
+    TopMoneyView, TopEarnersBase, PagesBase
 from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer, \
     TransactionSearchSerializer, CandidateSearchSerializer, PACSearchSerializer, \
     LoanTransactionSerializer, TreasurerSearchSerializer, DataTablesPagination, \
@@ -38,9 +38,9 @@ from .templatetags.helpers import format_money, get_transaction_verb
 
 TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
 
-class AboutView(PagesMixin):
+class AboutView(PagesBase):
     template_name = 'about.html'
-    page_path = '/about/'
+    # page_path = '/about/'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -55,7 +55,7 @@ class AboutView(PagesMixin):
 
         return context
 
-class IndexView(TopEarnersBase, PagesMixin):
+class IndexView(TopEarnersBase, PagesBase):
     template_name = 'index.html'
     page_path = '/'
 
