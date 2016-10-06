@@ -11,10 +11,7 @@
             {{ page.text|safe }}
             <hr />
             <h3><i class='fa fa-fw fa-download'></i> Data downloads</h3>
-            <p>Data from this website comes from the New Mexico Secretary of State’s <a href='https://www.cfis.state.nm.us/'>Campaign Finance Reporting System</a>. 
-                Updates are provided on a weekly basis. We make this data available in bulk for download:</p>
-            
-            <p>
+            {{ about_page_downloads }}
                 <a href="/api/bulk/contributions/" class="btn btn-default"><i class='fa fa-fw fa-download'></i> Contributions</a>
                 <a href="/api/bulk/expenditures/" class="btn btn-default"><i class='fa fa-fw fa-download'></i> Expenditures</a>
                 <a href="/api/bulk/candidates/" class="btn btn-default"><i class='fa fa-fw fa-download'></i> Candidates</a>
