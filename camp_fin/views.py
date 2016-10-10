@@ -506,21 +506,23 @@ class CommitteeDetailBaseView(DetailView):
 
         balance_trend = []
         debt_trend = []
-
-        for filing in summed_filings:
-            filing_date = filing.filing_date
-            date_array = [filing_date.year, filing_date.month, filing_date.day]
-            debts = (-1 * filing.total_unpaid_debts)
-            balance_trend.append([filing.closing_balance, *date_array])
-            debt_trend.append([debts, *date_array])
         
-        first_opening_balance = summed_filings[0].opening_balance
-        first_debt = summed_filings[0].debt_carried_forward
-        first_initial_date = [summed_filings[0].initial_date.year,
-                              summed_filings[0].initial_date.month,
-                              summed_filings[0].initial_date.day]
-        balance_trend.insert(0, [first_opening_balance, *first_initial_date])
-        debt_trend.insert(0, [first_debt, *first_initial_date])
+        if summed_filings:
+            
+            for filing in summed_filings:
+                filing_date = filing.filing_date
+                date_array = [filing_date.year, filing_date.month, filing_date.day]
+                debts = (-1 * filing.total_unpaid_debts)
+                balance_trend.append([filing.closing_balance, *date_array])
+                debt_trend.append([debts, *date_array])
+            
+            first_opening_balance = summed_filings[0].opening_balance
+            first_debt = summed_filings[0].debt_carried_forward
+            first_initial_date = [summed_filings[0].initial_date.year,
+                                  summed_filings[0].initial_date.month,
+                                  summed_filings[0].initial_date.day]
+            balance_trend.insert(0, [first_opening_balance, *first_initial_date])
+            debt_trend.insert(0, [first_debt, *first_initial_date])
 
         all_filings = ''' 
             SELECT 
