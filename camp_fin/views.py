@@ -17,6 +17,7 @@ from django.views.decorators.clickjacking import xframe_options_exempt
 from django.utils.decorators import method_decorator
 from django.shortcuts import render
 from django.core.cache import cache
+from django.core.exceptions import ObjectDoesNotExist
 
 from dateutil.rrule import rrule, MONTHLY
 
@@ -677,14 +678,17 @@ class CandidateDetail(CommitteeDetailBaseView):
         
         try:
             latest_campaign = context['latest_filing'].campaign
-        except AttributeError:
+        except (AttributeError, ObjectDoesNotExist):
             latest_campaign = None
+        
+        sos_link = None
 
-        sos_link = 'https://www.cfis.state.nm.us/media/CandidateReportH.aspx?es={es}&ot={ot}&o={o}&c={c}'
-        sos_link = sos_link.format(es=latest_campaign.election_season.id,
-                                   ot=latest_campaign.office.office_type.id,
-                                   o=latest_campaign.office.id,
-                                   c=latest_campaign.candidate_id)
+        if latest_campaign:
+            sos_link = 'https://www.cfis.state.nm.us/media/CandidateReportH.aspx?es={es}&ot={ot}&o={o}&c={c}'
+            sos_link = sos_link.format(es=latest_campaign.election_season.id,
+                                       ot=latest_campaign.office.office_type.id,
+                                       o=latest_campaign.office.id,
+                                       c=latest_campaign.candidate_id)
         
         context['sos_link'] = sos_link
         context['entity_type'] = 'candidate'
