@@ -675,7 +675,11 @@ class CandidateDetail(CommitteeDetailBaseView):
 
         context['seo'] = seo
         
-        latest_campaign = context['latest_filing'].campaign
+        try:
+            latest_campaign = context['latest_filing'].campaign
+        except AttributeError:
+            latest_campaign = None
+
         sos_link = 'https://www.cfis.state.nm.us/media/CandidateReportH.aspx?es={es}&ot={ot}&o={o}&c={c}'
         sos_link = sos_link.format(es=latest_campaign.election_season.id,
                                    ot=latest_campaign.office.office_type.id,
