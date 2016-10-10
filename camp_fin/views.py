@@ -541,44 +541,46 @@ class CommitteeDetailBaseView(DetailView):
         columns = [c[0] for c in cursor.description]
         amount_tuple = namedtuple('Amount', columns)
         
-        amounts = [amount_tuple(*r) for r in cursor]
-        
-        contributions_lookup = {r.month.date(): r.contribution_amount for r in amounts}
-        expenditures_lookup = {r.month.date(): r.expenditure_amount for r in amounts}
-        
-        all_months = list(contributions_lookup.keys()) + list(expenditures_lookup.keys())
-        start_month, end_month = min(all_months), max(all_months)
-        
         donation_trend = []
         expend_trend = []
         
-        for month in rrule(freq=MONTHLY, dtstart=start_month, until=end_month):
+        amounts = [amount_tuple(*r) for r in cursor]
+        
+        if amounts:
+            contributions_lookup = {r.month.date(): r.contribution_amount for r in amounts}
+            expenditures_lookup = {r.month.date(): r.expenditure_amount for r in amounts}
             
-            replacements = {'month': month.month - 1}
-
-            if replacements['month'] < 1:
-                replacements['month'] = 12
-                replacements['year'] = month.year - 1
+            all_months = list(contributions_lookup.keys()) + list(expenditures_lookup.keys())
+            start_month, end_month = min(all_months), max(all_months)
             
-            begin_date = month.replace(**replacements)
-
-            begin_date_array = [begin_date.year, 
-                                begin_date.month, 
-                                begin_date.day]
             
-            end_date_array = [month.year,
-                              month.month,
-                              month.day]
-            
-            contribution_amount = contributions_lookup.get(month.date(), 0)
-            expenditure_amount = expenditures_lookup.get(month.date(), 0)
-            donation_trend.append([begin_date_array, end_date_array, contribution_amount])
+            for month in rrule(freq=MONTHLY, dtstart=start_month, until=end_month):
+                
+                replacements = {'month': month.month - 1}
 
-            expend_trend.append([begin_date_array, end_date_array, (-1 * expenditure_amount)])
+                if replacements['month'] < 1:
+                    replacements['month'] = 12
+                    replacements['year'] = month.year - 1
+                
+                begin_date = month.replace(**replacements)
+
+                begin_date_array = [begin_date.year, 
+                                    begin_date.month, 
+                                    begin_date.day]
+                
+                end_date_array = [month.year,
+                                  month.month,
+                                  month.day]
+                
+                contribution_amount = contributions_lookup.get(month.date(), 0)
+                expenditure_amount = expenditures_lookup.get(month.date(), 0)
+                donation_trend.append([begin_date_array, end_date_array, contribution_amount])
+
+                expend_trend.append([begin_date_array, end_date_array, (-1 * expenditure_amount)])
 
 
-        donation_trend = self.stackTrends(donation_trend)
-        expend_trend = self.stackTrends(expend_trend)
+            donation_trend = self.stackTrends(donation_trend)
+            expend_trend = self.stackTrends(expend_trend)
         
         context['latest_filing'] = context['object'].entity.filing_set.order_by('-filing_period__filing_date').first()
         context['balance_trend'] = balance_trend
