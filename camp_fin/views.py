@@ -14,6 +14,7 @@ from django.core.urlresolvers import reverse_lazy
 from django.utils.text import slugify
 from django.conf import settings
 from django.views.decorators.clickjacking import xframe_options_exempt
+from django.views.decorators.cache import never_cache
 from django.utils.decorators import method_decorator
 from django.shortcuts import render
 from django.core.cache import cache
@@ -839,6 +840,7 @@ SERIALIZER_LOOKUP = {
     'expenditure': TransactionSearchSerializer,
 }
 
+@method_decorator(never_cache, name='dispatch')
 class SearchAPIView(viewsets.ViewSet):
     renderer_classes = (renderers.JSONRenderer, SearchCSVRenderer)
     
