@@ -344,20 +344,18 @@ class CandidateList(PaginatedList):
                   campaign.division_id,
                   office.description AS office_name,
                   filing.closing_balance,
-                  period.filing_date
+                  COALESCE(period.filing_date, filing.date_added) AS filing_date
                 FROM camp_fin_candidate AS candidate
                 JOIN camp_fin_filing AS filing
                   USING(entity_id)
-                JOIN camp_fin_filingperiod AS period
+                LEFT JOIN camp_fin_filingperiod AS period
                   ON filing.filing_period_id = period.id
                 JOIN camp_fin_campaign AS campaign
                   ON filing.campaign_id = campaign.id
                 JOIN camp_fin_office AS office
                   ON campaign.office_id = office.id
                 WHERE filing.date_added >= '2010-01-01'
-                  AND period.exclude_from_cascading = FALSE
-                  AND period.regular_filing_period_id IS NULL
-                ORDER BY candidate.id, period.filing_date DESC
+                ORDER BY candidate.id, filing.date_added DESC
               ) AS candidates
             ) AS s
             ORDER BY {0} {1}
@@ -416,16 +414,14 @@ class CommitteeList(PaginatedList):
                 SELECT DISTINCT ON (pac.id)
                   pac.*,
                   filing.closing_balance,
-                  period.filing_date
+                  COALESCE(period.filing_date, filing.date_added) AS filing_date
                 FROM camp_fin_pac AS pac
                 JOIN camp_fin_filing AS filing
                   USING(entity_id)
-                JOIN camp_fin_filingperiod AS period
+                LEFT JOIN camp_fin_filingperiod AS period
                   ON filing.filing_period_id = period.id
                 WHERE filing.date_added >= '2010-01-01'
-                  AND period.exclude_from_cascading = FALSE
-                  AND period.regular_filing_period_id IS NULL
-                ORDER BY pac.id, period.filing_date DESC
+                ORDER BY pac.id, filing.date_added DESC
               ) AS pac
             ) AS s
             ORDER BY {0} {1}
@@ -585,7 +581,7 @@ class CommitteeDetailBaseView(DetailView):
             donation_trend = self.stackTrends(donation_trend)
             expend_trend = self.stackTrends(expend_trend)
         
-        context['latest_filing'] = context['object'].entity.filing_set.order_by('-filing_period__filing_date').first()
+        context['latest_filing'] = context['object'].entity.filing_set.order_by('-date_added').first()
         context['balance_trend'] = balance_trend
         context['donation_trend'] = donation_trend
         context['expend_trend'] = expend_trend
