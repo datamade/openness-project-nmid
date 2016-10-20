@@ -6,6 +6,9 @@
 {% block header %}
     <p><a href='/candidates'>&laquo; Candidates</a></p>
     <h1>{{ candidate.full_name }}</h1>
+    {% if sos_link %}
+        <p><a href="{{sos_link}}" target="_blank">View on the New Mexico Secretary of State's website &raquo;</a></p>
+    {% endif %}
 {% endblock %}
 
 {% block charts %}
