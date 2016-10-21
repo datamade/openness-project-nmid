@@ -769,8 +769,10 @@ class Command(BaseCommand):
 
         return import_count.first().count
 
-    def executeTransaction(self, query, raise_exc=True, *args, **kwargs):
+    def executeTransaction(self, query, *args, **kwargs):
         trans = self.connection.begin()
+        
+        raise_exc = kwargs.get('raise_exc', True)
 
         try:
             self.connection.execute("SET local timezone to 'America/Denver'")
