@@ -1170,27 +1170,24 @@ def bulk_contributions(request):
           ON f.filing_period_id = fp.id
         JOIN (
           SELECT 
-            entity_id, 
-            id, 
+            entity_id AS recipient_entity_id, 
             recipient, 
-            type 
+            entity_type AS recipient_entity_type 
           FROM (
             SELECT 
               entity_id, 
-              id, 
               full_name AS recipient, 
-              'candidate' AS type 
+              'candidate' AS entity_type 
             FROM camp_fin_candidate 
             UNION 
             SELECT 
               entity_id, 
-              id, 
               name AS recipient, 
-              'pac' AS type 
+              'pac' AS entity_type 
             FROM camp_fin_pac
           ) AS all_entities
         ) AS entity
-          ON f.entity_id = entity.entity_id
+          ON f.entity_id = entity.recipient_entity_id
         WHERE tt.contribution = TRUE
           AND fp.filing_date >= '2010-01-01'
     '''
@@ -1216,27 +1213,24 @@ def bulk_expenditures(request):
           ON f.filing_period_id = fp.id
         JOIN (
           SELECT 
-            entity_id, 
-            id, 
+            entity_id AS spender_entity_id, 
             spender, 
-            type 
+            entity_type AS spender_entity_type 
           FROM (
             SELECT 
               entity_id, 
-              id, 
               full_name AS spender, 
-              'candidate' AS type 
+              'candidate' AS entity_type 
             FROM camp_fin_candidate 
             UNION 
             SELECT 
               entity_id, 
-              id, 
               name AS spender, 
-              'pac' AS type 
+              'pac' AS entity_type 
             FROM camp_fin_pac
           ) AS all_entities
         ) AS entity
-          ON f.entity_id = entity.entity_id
+          ON f.entity_id = entity.spender_entity_id
         WHERE tt.contribution = FALSE
           AND fp.filing_date >= '2010-01-01'
     '''
