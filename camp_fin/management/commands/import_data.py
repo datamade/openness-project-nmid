@@ -61,7 +61,7 @@ FILE_LOOKUP = {
     'transaction': 'Cam_ContribExpenditure.zip',
     'transactiontype': 'Cam_ContribExpenditureType.xlsx',
     'office': 'Cam_ElectionOffice.xlsx',
-    'filingperiod': 'Cam_FilingPeriod.xlsx',
+    'filingperiod': 'Cam_FilingPeriod.csv',
     'officetype': 'Cam_OfficeType.xlsx',
     'filing': 'Cam_Report.xlsx',
     'candidate': 'Candidates.csv',
