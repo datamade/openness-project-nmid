@@ -1190,6 +1190,7 @@ def bulk_contributions(request):
           ON f.entity_id = entity.recipient_entity_id
         WHERE tt.contribution = TRUE
           AND fp.filing_date >= '2010-01-01'
+        ORDER BY transaction.received_date
     '''
 
     filename = 'Contributions_{}.csv'.format(timezone.now().isoformat())
@@ -1233,6 +1234,7 @@ def bulk_expenditures(request):
           ON f.entity_id = entity.spender_entity_id
         WHERE tt.contribution = FALSE
           AND fp.filing_date >= '2010-01-01'
+        ORDER BY transaction.received_date
     '''
 
     filename = 'Expenditures_{}.csv'.format(timezone.now().isoformat())
