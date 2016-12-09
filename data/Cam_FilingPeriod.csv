@@ -1,5 +1,6 @@
 FilingPeriodId,FilingDate,DueDate,OLDDBReportingPeriodId,Description,AllowStatementOfNoActivity,FilingPeriodTypeId,ExcludeFromCascading,SupplementalInitDate,RegularFilingPeriodId,InitialDate,FilingPeriodEmailingSendStatusId,FilingPeriodReminderSendStatusId,DateReminderSent
-120,12/08/16,12/03/16,,2016 Fourth General,1,1,0,,,11/02/16,1,1,
+121,12/08/16,11/08/16,,2016 Fourth General,1,1,0,,,11/02/16,1,1,
+120,12/08/16,11/08/16,,2016 General Supplemental,1,2,1,,,11/01/16,1,1,
 119,11/03/16,11/01/16,,2016 Third General,1,1,0,,,10/04/16,1,1,
 118,10/11/16,10/03/16,,2016 Second General,1,1,0,,,09/06/16,1,1,
 117,9/12/2016,9/5/2016,,2016 First General,1,1,0,,,7/3/2016,1,1,
