@@ -581,7 +581,9 @@ class CommitteeDetailBaseView(DetailView):
             donation_trend = self.stackTrends(donation_trend)
             expend_trend = self.stackTrends(expend_trend)
         
-        context['latest_filing'] = context['object'].entity.filing_set.order_by('-date_added').first()
+        context['latest_filing'] = context['object'].entity.filing_set\
+                                                    .filter(filing_period__exclude_from_cascading=False)\
+                                                    .order_by('-date_added').first()
         context['balance_trend'] = balance_trend
         context['donation_trend'] = donation_trend
         context['expend_trend'] = expend_trend
