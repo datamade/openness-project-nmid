@@ -557,7 +557,8 @@ class Command(BaseCommand):
         
         header = [r.value for r in sheet.rows[0]]
         
-        csv_path = '{}.csv'.format(self.file_path.rsplit('.', 1)[0])
+        base_name = os.path.basename(self.file_path.rsplit('.', 1)[0])
+        csv_path = '{}.csv'.format(os.path.join('data', base_name))
         
         with open(csv_path, 'w') as f:
             writer = csv.writer(f)
