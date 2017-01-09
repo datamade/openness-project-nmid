@@ -64,7 +64,7 @@ FILE_LOOKUP = {
     'filingperiod': 'Cam_FilingPeriod.csv',
     'officetype': 'Cam_OfficeType.xlsx',
     'filing': 'Cam_Report.xlsx',
-    'candidate': 'Candidates.csv',
+    'candidate': 'Cam_Candidate.xlsx',
     'pac': 'PACs.csv',
     'campaignstatus': 'Cam_CampaignStatus.xlsx',
     'county': 'Cam_County.xlsx',
@@ -140,8 +140,13 @@ class Command(BaseCommand):
         if file_name:
             
             self.stdout.write(self.style.SUCCESS('Importing {}'.format(file_name)))
-
+            
             self.file_path = 'data/{}'.format(file_name)
+            
+            ftp_file = os.path.join(settings.FTP_DIRECTORY, file_name)
+
+            if os.path.exists(ftp_file):
+                self.file_path = ftp_file
 
             self.encoding = 'utf-8'
             if entity_type in ['transaction', 'address', 'contact']:
