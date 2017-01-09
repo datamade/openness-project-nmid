@@ -58,7 +58,7 @@ MAPPER_LOOKUP = {
 
 FILE_LOOKUP = {
     'campaign': 'Cam_Campaign.xlsx',
-    'transaction': 'Cam_ContribExpenditure.zip',
+    'transaction': 'Cam_ContribExpenditure.csv',
     'transactiontype': 'Cam_ContribExpenditureType.xlsx',
     'office': 'Cam_ElectionOffice.xlsx',
     'filingperiod': 'Cam_FilingPeriod.csv',
