@@ -61,7 +61,7 @@ class PAC(models.Model):
 
 class Campaign(models.Model):
     olddb_id = models.IntegerField(null=True)
-    candidate = models.ForeignKey('Candidate', db_constraint=False)
+    candidate = models.ForeignKey('Candidate', db_constraint=False, null=True)
     election_season = models.ForeignKey('ElectionSeason', db_constraint=False)
     office = models.ForeignKey('Office', db_constraint=False)
     division = models.ForeignKey('Division', db_constraint=False, null=True)
@@ -365,8 +365,8 @@ class FilingPeriod(models.Model):
                                       self.filing_period_type.description)
 
 class Address(models.Model):
-    street = models.CharField(null=True, max_length=100)
-    city = models.CharField(null=True, max_length=50)
+    street = models.CharField(null=True, max_length=255)
+    city = models.CharField(null=True, max_length=255)
     state = models.ForeignKey('State', null=True, db_constraint=False)
     zipcode = models.CharField(null=True, max_length=10)
     county = models.ForeignKey('County', null=True, db_constraint=False)

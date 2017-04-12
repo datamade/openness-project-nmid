@@ -58,15 +58,15 @@ MAPPER_LOOKUP = {
 }
 
 FILE_LOOKUP = {
-    'campaign': 'Cam_Campaign.xlsx',
+    'campaign': 'Cam_Campaign.csv',
     'transaction': 'Cam_ContribExpenditure.csv',
     'transactiontype': 'Cam_ContribExpenditureType.xlsx',
     'office': 'Cam_ElectionOffice.xlsx',
-    'filingperiod': 'Cam_FilingPeriod.csv',
+    'filingperiod': 'Cam_FilingPeriod.xlsx',
     'officetype': 'Cam_OfficeType.xlsx',
     'filing': 'Cam_Report.xlsx',
     'candidate': 'Cam_Candidate.xlsx',
-    'pac': 'PACs.csv',
+    'pac': 'Cam_PoliticalActionCommittee.xlsx',
     'campaignstatus': 'Cam_CampaignStatus.xlsx',
     'county': 'Cam_County.xlsx',
     'district': 'Cam_District.xlsx',
@@ -150,7 +150,7 @@ class Command(BaseCommand):
                 self.file_path = ftp_file
 
             self.encoding = 'utf-8'
-            if entity_type in ['transaction', 'address', 'contact']:
+            if entity_type in ['transaction', 'address', 'contact', 'campaign']:
                 self.encoding = 'windows-1252'
 
             if self.file_path.endswith('xlsx'):
