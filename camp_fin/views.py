@@ -169,6 +169,30 @@ class IndexView(TopEarnersBase, PagesMixin):
         
         return context
 
+
+class RacesView(PaginatedList):
+    template_name = 'camp_fin/races.html'
+
+    def get_queryset(self, **kwargs):
+        queryset = []
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        return context
+
+
+class RaceDetail(DetailView):
+    template_name = 'camp_fin/race-detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        return context
+
+
 class DonationsView(PaginatedList):
     template_name = 'camp_fin/donations.html'
 

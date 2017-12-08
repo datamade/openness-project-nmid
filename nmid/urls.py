@@ -22,7 +22,7 @@ from rest_framework import routers
 from camp_fin.views import IndexView, CandidateList, CandidateDetail, \
     ContributionViewSet, ExpenditureViewSet, TransactionViewSet, TopDonorsView, \
     TopExpensesView, CommitteeList, CommitteeDetail, ContributionDetail, \
-    ExpenditureDetail, SearchView, SearchAPIView, DonationsView, \
+    ExpenditureDetail, SearchView, SearchAPIView, DonationsView, RacesView, RaceDetail, \
     LoanViewSet, TopEarnersView, TopEarnersWidgetView, bulk_contributions, \
     bulk_expenditures, AboutView, flush_cache, bulk_candidates, bulk_committees
 
@@ -50,6 +50,8 @@ urlpatterns = [
     url(r'^expenditures/(?P<pk>[0-9]+)/$', ExpenditureDetail.as_view(), name='expenditure-detail'),
     url(r'^committees/$', CommitteeList.as_view(), name='committee-list'),
     url(r'^committees/(?P<slug>[\w-]+)/$', CommitteeDetail.as_view(), name='committee-detail'),
+    url(r'^races/$', RacesView.as_view(), name='races'),
+    url(r'^races/(?P<slug>[\w-]+)/$', RaceDetail.as_view(), name='race-detail'),
     url(r'^api/bulk/contributions/$', bulk_contributions, name='bulk-contributions'),
     url(r'^api/bulk/expenditures/$', bulk_expenditures, name='bulk-expenditures'),
     url(r'^api/bulk/candidates/$', bulk_candidates, name='bulk-candidates'),
