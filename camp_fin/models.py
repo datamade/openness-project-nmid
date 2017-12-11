@@ -90,12 +90,61 @@ class Campaign(models.Model):
     qual_campaign_id = models.IntegerField(null=True)
     biannual = models.NullBooleanField()
     from_campaign = models.ForeignKey('Campaign', db_constraint=False, null=True)
-    
+    active_race = models.ForeignKey('Race', db_constraint=False, null=True)
+
     def __str__(self):
         candidate_name = '{0} {1}'.format(self.candidate.first_name, 
                                           self.candidate.last_name)
         office = self.office.description
         return '{0} ({1})'.format(candidate_name, office)
+
+    @property
+    def funds_raised(self):
+        filings = self.candidate.entity.filing_set.all()
+        return sum(filing.closing_balance for filing in filings)
+
+    @property
+    def is_winner(self):
+        if getattr(self, 'race', False):
+            # Use reverse access
+            return True
+        else:
+            return False
+
+
+class Race(models.Model):
+    group = models.ForeignKey('RaceGroup', db_constraint=False, null=True)
+    office = models.ForeignKey('Office', db_constraint=False)
+    division = models.ForeignKey('Division', db_constraint=False, null=True)
+    district = models.ForeignKey('District', db_constraint=False, null=True)
+    office_type = models.ForeignKey('OfficeType', db_constraint=False, null=True)
+    election_season = models.ForeignKey('ElectionSeason', db_constraint=False)
+    winner = models.OneToOneField('Campaign', null=True)
+
+    class Meta:
+        unique_together = ('district', 'division', 'office_type', 'office', 'election_season')
+
+    @property
+    def campaigns(self):
+        return Campaign.objects.filter(race__id=self.id)
+
+    @property
+    def num_candidates(self):
+        return len(self.campaigns)
+
+    @property
+    def total_funds(self):
+        return sum(campaign.funds_raised for campaign in self.campaigns)
+
+
+class RaceGroup(models.Model):
+    short_title = models.CharField(max_length=50)
+    full_title = models.CharField(max_length=50)
+    description = models.CharField(max_length=250)
+
+    def __str__(self):
+        return self.full_title
+
 
 class OfficeType(models.Model):
     description = models.CharField(max_length=50)
