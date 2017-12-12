@@ -181,6 +181,14 @@ class RacesView(PaginatedList):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        seo['title'] = "Contested races in New Mexico"
+        seo['site_desc'] = 'View contested races in New Mexico'
+
+        context['seo'] = seo
+
         return context
 
 

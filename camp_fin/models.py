@@ -93,10 +93,15 @@ class Campaign(models.Model):
     active_race = models.ForeignKey('Race', db_constraint=False, null=True)
 
     def __str__(self):
-        candidate_name = '{0} {1}'.format(self.candidate.first_name, 
-                                          self.candidate.last_name)
         office = self.office.description
-        return '{0} ({1})'.format(candidate_name, office)
+
+        if self.candidate:
+            candidate_name = '{0} {1}'.format(self.candidate.first_name, 
+                                            self.candidate.last_name)
+            return '{0} ({1})'.format(candidate_name, office)
+        else:
+            party = self.political_party.name
+            return '{0} ({1})'.format(party, office)
 
     def funds_raised(self, since=None):
         '''
@@ -143,6 +148,9 @@ class Race(models.Model):
         unique_together = ('district', 'division', 'office_type', 'county',
                            'office', 'election_season')
 
+    def __str__(self):
+        return 'Race for {office}'.format(office=self.office)
+
     @property
     def campaigns(self):
         return self.campaign_set.all()
@@ -168,6 +176,9 @@ class RaceGroup(models.Model):
 
 class OfficeType(models.Model):
     description = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.description
 
 class Office(models.Model):
     description = models.CharField(max_length=100)
