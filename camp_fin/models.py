@@ -120,11 +120,13 @@ class Race(models.Model):
     division = models.ForeignKey('Division', db_constraint=False, null=True)
     district = models.ForeignKey('District', db_constraint=False, null=True)
     office_type = models.ForeignKey('OfficeType', db_constraint=False, null=True)
+    county = models.ForeignKey('County', db_constraint=False, null=True)
     election_season = models.ForeignKey('ElectionSeason', db_constraint=False)
     winner = models.OneToOneField('Campaign', null=True)
 
     class Meta:
-        unique_together = ('district', 'division', 'office_type', 'office', 'election_season')
+        unique_together = ('district', 'division', 'office_type', 'county',
+                           'office', 'election_season')
 
     @property
     def campaigns(self):

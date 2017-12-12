@@ -7,7 +7,7 @@ from camp_fin.models import (Race, Campaign, Filing, Division,
                              District, Office, OfficeType,
                              Candidate, ElectionSeason, Status,
                              Entity, PoliticalParty, FilingPeriod,
-                             FilingType)
+                             FilingType, County)
 
 class TestCampaignsAndRaces(TestCase):
     @classmethod
@@ -43,11 +43,14 @@ class TestCampaignsAndRaces(TestCase):
                                                             special=False,
                                                             status=status)
 
+        cls.county = County.objects.create(name='first county')
+
         cls.race = Race.objects.create(division=cls.division,
                                        district=cls.district,
                                        office=cls.office,
                                        office_type=cls.office_type,
-                                       election_season=cls.election_season)
+                                       election_season=cls.election_season,
+                                       county=cls.county)
 
         cls.first_campaign = Campaign.objects.create(candidate=cls.first_candidate,
                                                      active_race=cls.race,
@@ -108,7 +111,8 @@ class TestCampaignsAndRaces(TestCase):
                                       district=self.district,
                                       office=self.office,
                                       office_type=self.office_type,
-                                      election_season=self.election_season)
+                                      election_season=self.election_season,
+                                      county=self.county)
 
     def test_race_campaigns(self):
         self.assertEqual(set(self.race.campaigns), set(self.campaigns))
