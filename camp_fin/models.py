@@ -98,10 +98,25 @@ class Campaign(models.Model):
         office = self.office.description
         return '{0} ({1})'.format(candidate_name, office)
 
-    @property
-    def funds_raised(self):
+    def funds_raised(self, since=None):
+        '''
+        Total funds raised in a given filing period.
+
+        Accepts an optional filter argument, `since`, as a string representing a year
+        (e.g. '2017'). If `since` is present, the method will restrict contributions
+        to filings starting January 1st of that year. If `since` is not specified,
+        the method will return all contributions ever recorded for this campaign.
+        '''
+        # Enforce argument format
+        assert (since is None or (isinstance(since, str) and len(since) == 4))
+
         filings = self.candidate.entity.filing_set.all()
-        return sum(filing.closing_balance for filing in filings)
+
+        if since:
+            date = '{year}-01-01'.format(year=since)
+            filings = filings.filter(filing_period__filing_date__gte=date)
+
+        return sum(filing.total_contributions for filing in filings)
 
     @property
     def is_winner(self):
@@ -130,7 +145,7 @@ class Race(models.Model):
 
     @property
     def campaigns(self):
-        return Campaign.objects.filter(active_race__id=self.id)
+        return self.campaign_set.all()
 
     @property
     def num_candidates(self):
@@ -138,7 +153,8 @@ class Race(models.Model):
 
     @property
     def total_funds(self):
-        return sum(campaign.funds_raised for campaign in self.campaigns)
+        year = getattr(self.election_season, 'year', None)
+        return sum(campaign.funds_raised(since=year) for campaign in self.campaigns)
 
 
 class RaceGroup(models.Model):

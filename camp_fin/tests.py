@@ -70,7 +70,7 @@ class TestCampaignsAndRaces(TestCase):
 
         filing_type = FilingType.objects.create(description='type')
 
-        filing_period = FilingPeriod.objects.create(filing_date=datetime.datetime.now(pytz.utc),
+        cls.filing_period = FilingPeriod.objects.create(filing_date=datetime.datetime.now(pytz.utc),
                                                     due_date=datetime.datetime.now(pytz.utc),
                                                     allow_no_activity=True,
                                                     filing_period_type=filing_type,
@@ -80,7 +80,7 @@ class TestCampaignsAndRaces(TestCase):
                                                     reminder_sent_status=0)
 
         cls.first_filing = Filing.objects.create(entity=first_entity,
-                                                 filing_period=filing_period,
+                                                 filing_period=cls.filing_period,
                                                  date_added=datetime.datetime.now(pytz.utc),
                                                  date_closed=datetime.datetime.now(pytz.utc),
                                                  opening_balance=0.0,
@@ -92,7 +92,7 @@ class TestCampaignsAndRaces(TestCase):
                                                  edited='0')
 
         cls.second_filing = Filing.objects.create(entity=second_entity,
-                                                  filing_period=filing_period,
+                                                  filing_period=cls.filing_period,
                                                   date_added=datetime.datetime.now(pytz.utc),
                                                   date_closed=datetime.datetime.now(pytz.utc),
                                                   opening_balance=0.0,
@@ -103,7 +103,30 @@ class TestCampaignsAndRaces(TestCase):
                                                   no_activity=False,
                                                   edited='0')
 
-        cls.filings = (cls.first_filing, cls.second_filing)
+        year_ago = (datetime.datetime.now(pytz.utc) - datetime.timedelta(days=730))
+
+        cls.filtered_filing_period = FilingPeriod.objects.create(filing_date=year_ago,
+                                                    due_date=year_ago,
+                                                    allow_no_activity=True,
+                                                    filing_period_type=filing_type,
+                                                    exclude_from_cascading=True,
+                                                    initial_date=year_ago,
+                                                    email_sent_status=0,
+                                                    reminder_sent_status=0)
+
+        cls.filtered_filing = Filing.objects.create(entity=second_entity,
+                                                    filing_period=cls.filtered_filing_period,
+                                                    date_added=year_ago,
+                                                    date_closed=year_ago,
+                                                    opening_balance=0.0,
+                                                    total_contributions=100.0,
+                                                    total_expenditures=20.0,
+                                                    closing_balance=80.0,
+                                                    final=True,
+                                                    no_activity=False,
+                                                    edited='0')
+
+        cls.filings = ((cls.first_filing,), (cls.second_filing, cls.filtered_filing))
 
     def test_race_unique_constraint(self):
         with self.assertRaises(IntegrityError):
@@ -121,12 +144,18 @@ class TestCampaignsAndRaces(TestCase):
         self.assertEqual(self.race.num_candidates, 2)
 
     def test_race_total_funds(self):
-        self.assertEqual(self.race.total_funds, (self.first_filing.closing_balance +
-                                                 self.second_filing.closing_balance))
+        self.assertEqual(self.race.total_funds, (self.first_filing.total_contributions +
+                                                 self.second_filing.total_contributions))
 
     def test_campaign_funds_raised(self):
         for campaign, filing in zip(self.campaigns, self.filings):
-            self.assertEqual(campaign.funds_raised, filing.closing_balance)
+            self.assertEqual(campaign.funds_raised(), sum(flg.total_contributions
+                                                          for flg in filing))
+
+    def test_campaign_funds_raised_since_date(self):
+        year = str(self.filing_period.filing_date.year)
+        total_funds = self.second_filing.total_contributions
+        self.assertEqual(self.second_campaign.funds_raised(since=year), total_funds)
 
     def test_campaign_is_winner(self):
         self.assertFalse(self.first_campaign.is_winner)
