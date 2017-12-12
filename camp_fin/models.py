@@ -106,7 +106,9 @@ class Campaign(models.Model):
     @property
     def is_winner(self):
         if getattr(self, 'race', False):
-            # Use reverse access
+            # Since the `winner` relationship is OneToOne, the ability
+            # to reverse access a `race` (distinct from `active_race`)
+            # means that this campaign must be the winner
             return True
         else:
             return False
@@ -126,7 +128,7 @@ class Race(models.Model):
 
     @property
     def campaigns(self):
-        return Campaign.objects.filter(race__id=self.id)
+        return Campaign.objects.filter(active_race__id=self.id)
 
     @property
     def num_candidates(self):

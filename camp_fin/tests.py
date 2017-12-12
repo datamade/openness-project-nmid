@@ -1,4 +1,5 @@
 import datetime
+import pytz
 
 from django.test import TestCase
 from django.db.utils import IntegrityError
@@ -49,36 +50,36 @@ class TestCampaignsAndRaces(TestCase):
                                        election_season=cls.election_season)
 
         cls.first_campaign = Campaign.objects.create(candidate=cls.first_candidate,
-                                                     race=cls.race,
+                                                     active_race=cls.race,
                                                      election_season=cls.election_season,
                                                      office=cls.office,
-                                                     date_added=datetime.datetime.now(),
+                                                     date_added=datetime.datetime.now(pytz.utc),
                                                      political_party=first_party)
 
         cls.second_campaign = Campaign.objects.create(candidate=cls.second_candidate,
-                                                      race=cls.race,
+                                                      active_race=cls.race,
                                                       election_season=cls.election_season,
                                                       office=cls.office,
-                                                      date_added=datetime.datetime.now(),
+                                                      date_added=datetime.datetime.now(pytz.utc),
                                                       political_party=second_party)
 
         cls.campaigns = (cls.first_campaign, cls.second_campaign)
 
         filing_type = FilingType.objects.create(description='type')
 
-        filing_period = FilingPeriod.objects.create(filing_date=datetime.datetime.now(),
-                                                    due_date=datetime.datetime.now(),
+        filing_period = FilingPeriod.objects.create(filing_date=datetime.datetime.now(pytz.utc),
+                                                    due_date=datetime.datetime.now(pytz.utc),
                                                     allow_no_activity=True,
                                                     filing_period_type=filing_type,
                                                     exclude_from_cascading=True,
-                                                    initial_date=datetime.datetime.now(),
+                                                    initial_date=datetime.datetime.now(pytz.utc),
                                                     email_sent_status=0,
                                                     reminder_sent_status=0)
 
         cls.first_filing = Filing.objects.create(entity=first_entity,
                                                  filing_period=filing_period,
-                                                 date_added=datetime.datetime.now(),
-                                                 date_closed=datetime.datetime.now(),
+                                                 date_added=datetime.datetime.now(pytz.utc),
+                                                 date_closed=datetime.datetime.now(pytz.utc),
                                                  opening_balance=0.0,
                                                  total_contributions=100.0,
                                                  total_expenditures=20.0,
@@ -89,8 +90,8 @@ class TestCampaignsAndRaces(TestCase):
 
         cls.second_filing = Filing.objects.create(entity=second_entity,
                                                   filing_period=filing_period,
-                                                  date_added=datetime.datetime.now(),
-                                                  date_closed=datetime.datetime.now(),
+                                                  date_added=datetime.datetime.now(pytz.utc),
+                                                  date_closed=datetime.datetime.now(pytz.utc),
                                                   opening_balance=0.0,
                                                   total_contributions=100.0,
                                                   total_expenditures=20.0,
@@ -124,7 +125,11 @@ class TestCampaignsAndRaces(TestCase):
             self.assertEqual(campaign.funds_raised, filing.closing_balance)
 
     def test_campaign_is_winner(self):
+        self.assertFalse(self.first_campaign.is_winner)
+        self.assertFalse(self.second_campaign.is_winner)
+
         self.race.winner = self.first_campaign
         self.race.save()
 
         self.assertTrue(self.first_campaign.is_winner)
+        self.assertFalse(self.second_campaign.is_winner)
