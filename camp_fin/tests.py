@@ -24,9 +24,12 @@ class FakeTestData(TestCase):
         first_entity = Entity.objects.create(user_id=1)
         second_entity = Entity.objects.create(user_id=2)
         third_entity = Entity.objects.create(user_id=3)
+        fourth_entity = Entity.objects.create(user_id=4)
 
-        first_party = PoliticalParty.objects.create(name='first party')
-        second_party = PoliticalParty.objects.create(name='second party')
+        first_party = PoliticalParty.objects.create(name='Democrat')
+        second_party = PoliticalParty.objects.create(name='Republican')
+
+        cls.parties = (first_party, second_party)
 
         cls.first_candidate = Candidate.objects.create(first_name='first',
                                                        last_name='candidate',
@@ -36,10 +39,14 @@ class FakeTestData(TestCase):
                                                         last_name='candidate',
                                                         entity=second_entity)
 
+        cls.third_candidate = Candidate.objects.create(first_name='third',
+                                                       last_name='candidate',
+                                                       entity=third_entity)
+
         # We won't use this candidate in the Race. Create it to test filtering
         cls.non_race_candidate = Candidate.objects.create(first_name='non race',
                                                           last_name='candidate',
-                                                          entity=third_entity)
+                                                          entity=fourth_entity)
 
         status = Status.objects.create()
 
@@ -84,13 +91,20 @@ class FakeTestData(TestCase):
                                                       date_added=datetime.datetime.now(pytz.utc),
                                                       political_party=second_party)
 
+        cls.third_campaign = Campaign.objects.create(candidate=cls.third_candidate,
+                                                     active_race=cls.race,
+                                                     election_season=cls.election_season,
+                                                     office=cls.office,
+                                                     date_added=datetime.datetime.now(pytz.utc),
+                                                     political_party=second_party)
+
         cls.non_race_campaign = Campaign.objects.create(candidate=cls.non_race_candidate,
                                                         election_season=cls.election_season,
                                                         office=cls.office,
                                                         date_added=datetime.datetime.now(pytz.utc),
                                                         political_party=second_party)
 
-        cls.campaigns = (cls.first_campaign, cls.second_campaign)
+        cls.campaigns = (cls.first_campaign, cls.second_campaign, cls.third_campaign)
 
         filing_type = FilingType.objects.create(description='type')
 
@@ -127,6 +141,18 @@ class FakeTestData(TestCase):
                                                   no_activity=False,
                                                   edited='0')
 
+        cls.third_filing = Filing.objects.create(entity=third_entity,
+                                                 filing_period=cls.filing_period,
+                                                 date_added=datetime.datetime.now(pytz.utc),
+                                                 date_closed=datetime.datetime.now(pytz.utc),
+                                                 opening_balance=0.0,
+                                                 total_contributions=0.0,
+                                                 total_expenditures=0.0,
+                                                 closing_balance=0.0,
+                                                 final=True,
+                                                 no_activity=False,
+                                                 edited='0')
+
         year_ago = (datetime.datetime.now(pytz.utc) - datetime.timedelta(days=730))
 
         cls.filtered_filing_period = FilingPeriod.objects.create(filing_date=year_ago,
@@ -150,7 +176,7 @@ class FakeTestData(TestCase):
                                                     no_activity=False,
                                                     edited='0')
 
-        cls.filings = ((cls.first_filing,), (cls.second_filing, cls.filtered_filing))
+        cls.filings = ((cls.first_filing,), (cls.second_filing, cls.filtered_filing), (cls.third_filing,))
 
 
 class TestRaces(FakeTestData):
@@ -170,11 +196,24 @@ class TestRaces(FakeTestData):
         self.assertEqual(set(self.race.campaigns), set(self.campaigns))
 
     def test_race_num_candidates(self):
-        self.assertEqual(self.race.num_candidates, 2)
+        self.assertEqual(self.race.num_candidates, 3)
 
     def test_race_total_funds(self):
         self.assertEqual(self.race.total_funds, (self.first_filing.total_contributions +
                                                  self.second_filing.total_contributions))
+
+    def test_campaigns_by_party(self):
+        parties = self.race.campaigns_by_party
+
+        self.assertEqual(parties[0][0], 'democrat')
+        self.assertEqual({camp.id for camp in parties[0][1] if hasattr(camp, 'id')},
+                         {self.first_campaign.id})
+
+        self.assertEqual(parties[1][0], 'republican')
+        self.assertEqual({camp.id for camp in parties[1][1] if hasattr(camp, 'id')},
+                         {self.second_campaign.id, self.third_campaign.id})
+
+        self.assertEqual(len(parties[0][1]), len(parties[1][1]))
 
 
 class TestCampaigns(FakeTestData):

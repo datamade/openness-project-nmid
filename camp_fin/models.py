@@ -153,16 +153,61 @@ class Race(models.Model):
 
     @property
     def campaigns(self):
+        '''
+        Return all campaigns involved in this race.
+        '''
         return self.campaign_set.all()
 
     @property
     def num_candidates(self):
-        return len(self.campaigns)
+        '''
+        Return the number of candidates involved in this race.
+        '''
+        return self.campaigns.count()
+
+    @property
+    def year(self):
+        '''
+        If this race has an ElectionSeason, return the year of the race.
+        Otherwise, return None.
+        '''
+        return getattr(self.election_season, 'year', None)
 
     @property
     def total_funds(self):
-        year = getattr(self.election_season, 'year', None)
-        return sum(campaign.funds_raised(since=year) for campaign in self.campaigns)
+        '''
+        Return the total amount of money raised in this race, aggreggated from
+        the total contributions to each campaign during the election season.
+        '''
+        return sum(campaign.funds_raised(since=self.year) for campaign in self.campaigns)
+
+    @property
+    def campaigns_by_party(self):
+        '''
+        Return a list of campaigns in this race, organized by party.
+        '''
+        campaigns = [
+            ('democrat', self.campaign_set.filter(political_party__name='Democrat')),
+            ('republican', self.campaign_set.filter(political_party__name='Republican')),
+            ('other', self.campaign_set.exclude(political_party__name__in=['Democrat', 'Republican']))
+        ]
+
+        biggest_party = max(queryset.count() for party, queryset in campaigns)
+
+        campaign_list = []
+        for party, queryset in campaigns:
+            if queryset.count() > 0:
+                # Sort campaigns by funds raised
+                formatted_campaigns = sorted([campaign for campaign in queryset],
+                                             key=lambda camp: camp.funds_raised(since=self.year),
+                                             reverse=True)
+                if queryset.count() < biggest_party:
+                    # Add empty campaigns so that the table rows will line up
+                    formatted_campaigns += [{} for missing in range(biggest_party - queryset.count())]
+
+                campaign_list.append((party, formatted_campaigns))
+
+        return campaign_list
 
 
 class RaceGroup(models.Model):

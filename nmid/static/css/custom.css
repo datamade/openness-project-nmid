@@ -24,6 +24,42 @@ a:hover, a:active { color: #8C0012; }
 
 th a { color: #333333; }
 
+tr.header.democrat {
+    background-color: #99afff;
+}
+
+tr.subrow.democrat {
+    background-color: #d0ecff !important;
+}
+
+tr.subrow.democrat > td > a {
+    color: #99999;
+}
+
+tr.header.republican {
+    background-color: #ff9999;
+}
+
+tr.subrow.republican {
+    background-color: #ffe0e0 !important;
+}
+
+tr.subrow.democrat > td > a {
+    color: #99999;
+}
+
+tr.header.other {
+    background-color: #bababa;
+}
+
+tr.subrow.other {
+    background-color: #fafafa !important;
+}
+
+tr.subrow.other > td > a {
+    color: #99999;
+}
+
 @media screen and (max-width: 767px) {
   body, table { font-size: 14px; }
 
