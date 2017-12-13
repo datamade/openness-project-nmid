@@ -29,7 +29,7 @@ from rest_framework.response import Response
 from pages.models import Page
 
 from .models import Candidate, Office, Transaction, Campaign, Filing, PAC, \
-    LoanTransaction
+    LoanTransaction, Race, RaceGroup
 from .base_views import PaginatedList, TransactionDetail, TransactionBaseViewSet, \
     TopMoneyView, TopEarnersBase, PagesMixin
 from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer, \
@@ -172,14 +172,35 @@ class IndexView(TopEarnersBase, PagesMixin):
 
 class RacesView(PaginatedList):
     template_name = 'camp_fin/races.html'
+    page_path = '/races/'
 
     def get_queryset(self, **kwargs):
-        queryset = []
+
+        self.order_by = self.request.GET.get('order_by', 'office')
+        self.sort_order = self.request.GET.get('sort_order', 'desc')
+
+        if self.sort_order == 'asc':
+            ordering = ''
+        else:
+            ordering = '-'
+
+        ordering += self.order_by
+
+        queryset = Race.objects.filter(election_season__year='2017')\
+                               .order_by(ordering)
 
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        context['sort_order'] = self.sort_order
+        context['toggle_order'] = 'desc'
+
+        if self.sort_order.lower() == 'desc':
+            context['toggle_order'] = 'asc'
+
+        context['order_by'] = self.order_by
 
         seo = {}
         seo.update(settings.SITE_META)
@@ -188,6 +209,14 @@ class RacesView(PaginatedList):
         seo['site_desc'] = 'View contested races in New Mexico'
 
         context['seo'] = seo
+
+        try:
+            page = Page.objects.get(path=self.page_path)
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            context['page'] = None
 
         return context
 

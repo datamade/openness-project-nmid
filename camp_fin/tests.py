@@ -211,12 +211,16 @@ class TestRaceView(FakeTestData):
         self.assertEqual(found.func.view_class, RacesView)
 
     def test_race_view_html(self):
-        response = self.client.get('/races/')
+        response = self.client.get(reverse('races'))
 
         html = response.content.decode('utf-8')
 
         self.assertIn('<title>Contested races in New Mexico', html)
         self.assertTemplateUsed(response, 'camp_fin/races.html')
+
+        # Check that a table is loaded
+        table_list = html.split('<tr')
+        self.assertTrue(len(table_list) > 2)
 
 
 class TestAdmin(FakeTestData):

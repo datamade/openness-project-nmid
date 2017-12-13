@@ -9,14 +9,49 @@
 {% block full_content %}
 <div class="container">
     <div class="row">
-        <div class="col-md-6">
-            <h1><i class='fa fa-fw fa-check-square-o'></i> Races</h1>
-        </div>
-    </div>
-    <div class="row">
         <div class="col-md-12">
-            <br />
-            <p class="lead">Contested races!</p>
+            <h1><i class='fa fa-fw fa-check-square-o'></i> Races</h1>
+            {{ page.text|safe }}
+            <table class="table table-striped" id="candidate-list">
+                <thead>
+                    <tr>
+                        <th>
+                            <a href="{% url 'races' %}?{% query_transform request order_by='office' sort_order=toggle_order %}">
+                                Office
+                            </a>
+                            {% if order_by == 'office' %}
+                                {{ sort_order|get_sort_icon|safe }}
+                            {% endif %}
+                        </th>
+                        <th>
+                            <a href="{% url 'races' %}?{% query_transform request order_by='num_candidates' sort_order=toggle_order %}">
+                                Total candidates
+                            </a>
+                            {% if order_by == 'num_candidates' %}
+                                {{ sort_order|get_sort_icon|safe }}
+                            {% endif %}
+                        </th>
+                        <th>Candidates</th>
+                        <th>
+                            <a href="{% url 'races' %}?{% query_transform request order_by='total_funds' sort_order=toggle_order %}">
+                                Total funds in race
+                            </a>
+                            {% if order_by == 'total_funds' %}
+                                {{ sort_order|get_sort_icon|safe }}
+                            {% endif %}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for race in object_list %}
+                    <tr>
+                        <td>{{ race.office }}</td>
+                        <td>{{ race.num_candidates }}</td>
+                        <td></td>
+                        <td>{{ race.total_funds }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
         </div>
     </div>
 </div>
