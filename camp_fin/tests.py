@@ -95,13 +95,13 @@ class FakeTestData(TestCase):
         filing_type = FilingType.objects.create(description='type')
 
         cls.filing_period = FilingPeriod.objects.create(filing_date=datetime.datetime.now(pytz.utc),
-                                                    due_date=datetime.datetime.now(pytz.utc),
-                                                    allow_no_activity=True,
-                                                    filing_period_type=filing_type,
-                                                    exclude_from_cascading=True,
-                                                    initial_date=datetime.datetime.now(pytz.utc),
-                                                    email_sent_status=0,
-                                                    reminder_sent_status=0)
+                                                        due_date=datetime.datetime.now(pytz.utc),
+                                                        allow_no_activity=True,
+                                                        filing_period_type=filing_type,
+                                                        exclude_from_cascading=True,
+                                                        initial_date=datetime.datetime.now(pytz.utc),
+                                                        email_sent_status=0,
+                                                        reminder_sent_status=0)
 
         cls.first_filing = Filing.objects.create(entity=first_entity,
                                                  filing_period=cls.filing_period,
@@ -202,7 +202,7 @@ class TestCampaigns(FakeTestData):
         self.assertFalse(self.second_campaign.is_winner)
 
 
-class TestRaceView(FakeTestData):
+class TestRacesView(FakeTestData):
     '''
     Test view to display contested races.
     '''
@@ -211,7 +211,8 @@ class TestRaceView(FakeTestData):
         self.assertEqual(found.func.view_class, RacesView)
 
     def test_race_view_html(self):
-        response = self.client.get(reverse('races'))
+        year = str(self.filing_period.due_date.year)
+        response = self.client.get(reverse('races') + '?year=%s' % year)
 
         html = response.content.decode('utf-8')
 

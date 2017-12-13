@@ -4,13 +4,13 @@
 {% load humanize %}
 {% load helpers %}
 
-{% block title %}Races{% endblock %}
+{% block title %}{{ year }} Races{% endblock %}
 
 {% block full_content %}
 <div class="container">
     <div class="row">
         <div class="col-md-12">
-            <h1><i class='fa fa-fw fa-check-square-o'></i> Races</h1>
+            <h1><i class='fa fa-fw fa-check-square-o'></i>{{ year }} Races</h1>
             {{ page.text|safe }}
             <table class="table table-striped" id="candidate-list">
                 <thead>
@@ -62,6 +62,7 @@
                     </td>
                 </tr>
             {% endfor %}
+            </tbody>
         </table>
     </div>
     {% if object_list.paginator.num_pages > 1 %}

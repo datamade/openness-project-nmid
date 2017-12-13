@@ -178,6 +178,11 @@ class RacesView(PaginatedList):
 
         self.order_by = self.request.GET.get('order_by', 'total_funds')
         self.sort_order = self.request.GET.get('sort_order', 'desc')
+        self.year = self.request.GET.get('year', '2014')
+
+        if len(self.year) != 4:
+            # Bogus request
+            self.year = '2014'
 
         if self.sort_order == 'asc':
             ordering = ''
@@ -191,7 +196,7 @@ class RacesView(PaginatedList):
         db_order = ('office',)
         py_order = ('num_candidates', 'total_funds')
 
-        queryset = Race.objects.filter(election_season__year='2014')
+        queryset = Race.objects.filter(election_season__year=self.year)
 
         if self.order_by in db_order:
             # For columns that correspond directly to DB attributes, sort the
@@ -214,6 +219,7 @@ class RacesView(PaginatedList):
 
         context['sort_order'] = self.sort_order
         context['toggle_order'] = 'desc'
+        context['year'] = self.year
 
         if self.sort_order.lower() == 'desc':
             context['toggle_order'] = 'asc'
