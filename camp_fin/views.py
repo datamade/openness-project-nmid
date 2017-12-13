@@ -176,18 +176,36 @@ class RacesView(PaginatedList):
 
     def get_queryset(self, **kwargs):
 
-        self.order_by = self.request.GET.get('order_by', 'office')
+        self.order_by = self.request.GET.get('order_by', 'total_funds')
         self.sort_order = self.request.GET.get('sort_order', 'desc')
 
         if self.sort_order == 'asc':
             ordering = ''
+            reverse = False
         else:
             ordering = '-'
+            reverse = True
 
-        ordering += self.order_by
+        # Distinguish between columns that can be ordered in SQL, and columns
+        # that need to be ordered in Python
+        db_order = ('office',)
+        py_order = ('num_candidates', 'total_funds')
 
-        queryset = Race.objects.filter(election_season__year='2017')\
-                               .order_by(ordering)
+        queryset = Race.objects.filter(election_season__year='2014')
+
+        if self.order_by in db_order:
+            # For columns that correspond directly to DB attributes, sort the
+            # Queryset in SQL
+            ordering += self.order_by
+
+            queryset = queryset.order_by(ordering)
+
+        elif self.order_by in py_order:
+            # For columns that correspond to properties on the Race model,
+            # sort the Queryset in Python (worse performance)
+            queryset = sorted(queryset,
+                              key=lambda race: getattr(race, self.order_by),
+                              reverse=reverse)
 
         return queryset
 

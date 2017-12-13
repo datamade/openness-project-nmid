@@ -31,30 +31,74 @@
                                 {{ sort_order|get_sort_icon|safe }}
                             {% endif %}
                         </th>
-                        <th>Candidates</th>
-                        <th>
-                            <a href="{% url 'races' %}?{% query_transform request order_by='total_funds' sort_order=toggle_order %}">
-                                Total funds in race
-                            </a>
-                            {% if order_by == 'total_funds' %}
-                                {{ sort_order|get_sort_icon|safe }}
-                            {% endif %}
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for race in object_list %}
-                    <tr>
-                        <td>{{ race.office }}</td>
-                        <td>{{ race.num_candidates }}</td>
-                        <td></td>
-                        <td>{{ race.total_funds }}</td>
-                    </tr>
+                    <th>Candidates</th>
+                    <th class="text-right no-wrap">
+                        <a href="{% url 'races' %}?{% query_transform request order_by='total_funds' sort_order=toggle_order %}">
+                            Total funds in race
+                        </a>
+                        {% if order_by == 'total_funds' %}
+                            {{ sort_order|get_sort_icon|safe }}
+                        {% endif %}
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for race in object_list %}
+                <tr>
+                    <td>{{ race.office }}</td>
+                    <td>{{ race.num_candidates }}</td>
+                    <td>
+                    {% for campaign in race.campaigns %}
+                        {{ campaign.candidate.full_name }}{% if not forloop.last %};{% endif %}
+                    {% endfor %}
+                    </td>
+                    <td class="text-right">
+                        <span class='hidden-sm hidden-xs'>
+                            {{ race.total_funds |format_money }}
+                        </span>
+                        <span class='visible-sm-block visible-xs-block'>
+                            {{ race.total_funds|format_money_short }}
+                        </span>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% if object_list.paginator.num_pages > 1 %}
+    <div class="row">
+        <div class="col-xs-12 text-center">
+            <nav aria-label="pagination">
+                <ul class="pagination">
+                {% if object_list.has_previous %}
+                    <li>
+                        <a href="{% url 'races' %}?{% query_transform request page=object_list.previous_page_number %}"
+                           aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+                {% for page in object_list.paginator.page_range %}
+                    <li {% if object_list.number == page %}class="active"{% endif %}>
+                        <a href="{% url 'races' %}?{% query_transform request page=page %}">
+                            {{ page }}
+                        </a>
+                    </li>
                 {% endfor %}
-            </table>
+                {% if object_list.has_next %}
+                    <li>
+                        <a href="{% url 'races' %}?{% query_transform request page=object_list.next_page_number %}"
+                           aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+                </ul>
+            </nav>
         </div>
     </div>
+    {% endif %}
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
