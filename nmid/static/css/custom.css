@@ -33,7 +33,7 @@ tr.subrow.democrat {
 }
 
 tr.subrow.democrat > td > a {
-    color: #99999;
+    color: #1c657d;
 }
 
 tr.header.republican {
@@ -44,8 +44,8 @@ tr.subrow.republican {
     background-color: #ffe0e0 !important;
 }
 
-tr.subrow.democrat > td > a {
-    color: #99999;
+tr.subrow.republican > td > a {
+    color: #095F87;
 }
 
 tr.header.other {
@@ -57,7 +57,7 @@ tr.subrow.other {
 }
 
 tr.subrow.other > td > a {
-    color: #99999;
+    color: #095F87;
 }
 
 @media screen and (max-width: 767px) {

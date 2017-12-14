@@ -57,6 +57,32 @@ Keep an eye on money in New Mexico politics
 <div class='row'>
     <div class='col-sm-12'>
 
+        <h2><i class='fa fa-star'></i> {{ year }} Race for Governor</a></h2>
+        {{ home_page_governors_race|safe }}
+        <table class="table table-striped" id="candidate-list">
+            <thead>
+                <tr>
+                    <th>Candidate</th>
+                    <th>Total funds raised</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for campaign in governor_campaigns %}
+                    <tr>
+                        <td>{{ campaign.candidate.full_name }}</td>
+                        <td>
+                            <span class="hidden-sm hidden-xs">
+                                {% funds_raised campaign year %}
+                            </span>
+                            <span class="visible-sm-block visible-xs-block">
+                                {% funds_raised campaign year short=True %}
+                            </span>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
         <h2><a href='/top-earners/'><i class='fa fa-plus-circle'></i> Top earners</a></h2>
         {{ home_page_top_earners|safe }}
         <table class="table table-striped" id="candidate-list">

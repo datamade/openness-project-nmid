@@ -166,7 +166,21 @@ class IndexView(TopEarnersBase, PagesMixin):
         context['transaction_objects'] = transaction_objects
         context['pac_objects'] = pac_objects
         context['candidate_objects'] = candidate_objects
-        
+
+        year = '2014'
+        context['year'] = year
+
+        gov_race = Race.objects.filter(office__description='Governor Of New Mexico')\
+                               .filter(election_season__year=year)\
+                               .first()
+
+        gov_campaigns = sorted([camp for camp in gov_race.campaigns],
+                               key=lambda camp: camp.funds_raised(since=year),
+                               reverse=True)
+
+        context['governor_race'] = gov_race
+        context['governor_campaigns'] = gov_campaigns
+
         return context
 
 
