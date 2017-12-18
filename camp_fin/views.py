@@ -205,7 +205,7 @@ class RacesView(PaginatedList):
         self.sort_order = self.request.GET.get('sort_order', 'desc')
         self.year = self.request.GET.get('year', '2014')
         self.visible = self.request.GET.get('visible')
-        self.type = self.request.GET.get('type')
+        self.type = self.request.GET.get('type', 1)
 
         # For now, use office types as groupings for races
         self.race_types = OfficeType.objects.all()
