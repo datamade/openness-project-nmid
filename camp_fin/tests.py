@@ -220,6 +220,14 @@ class TestCampaigns(FakeTestData):
     '''
     Test methods of the `Campaign` model.
     '''
+    def test_campaign_filings(self):
+        for campaign, filing in zip(self.campaigns, self.filings):
+            self.assertEqual(set(campaign.filings()), set(filing))
+
+    def test_campaign_filings_since_date(self):
+        year = str(self.filing_period.filing_date.year)
+        self.assertNotIn(self.filtered_filing, self.second_campaign.filings(since=year))
+
     def test_campaign_funds_raised(self):
         for campaign, filing in zip(self.campaigns, self.filings):
             self.assertEqual(campaign.funds_raised(), sum(flg.total_contributions
@@ -229,6 +237,16 @@ class TestCampaigns(FakeTestData):
         year = str(self.filing_period.filing_date.year)
         total_funds = self.second_filing.total_contributions
         self.assertEqual(self.second_campaign.funds_raised(since=year), total_funds)
+
+    def test_campaign_expenditures(self):
+        for campaign, filing in zip(self.campaigns, self.filings):
+            self.assertEqual(campaign.expenditures(), sum(flg.total_expenditures
+                                                          for flg in filing))
+
+    def test_campaign_expenditures_since_date(self):
+        year = str(self.filing_period.filing_date.year)
+        total_expenditures = self.second_filing.total_expenditures
+        self.assertEqual(self.second_campaign.expenditures(since=year), total_expenditures)
 
     def test_campaign_is_winner(self):
         self.assertFalse(self.first_campaign.is_winner)
@@ -240,6 +258,9 @@ class TestCampaigns(FakeTestData):
         self.assertTrue(self.first_campaign.is_winner)
         self.assertFalse(self.second_campaign.is_winner)
 
+    def test_campaign_cash_on_hand(self):
+        for campaign in self.campaigns:
+            self.assertEqual(campaign.cash_on_hand, (campaign.funds_raised() - campaign.expenditures()))
 
 class TestRacesView(FakeTestData):
     '''

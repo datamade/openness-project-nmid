@@ -170,6 +170,7 @@ class IndexView(TopEarnersBase, PagesMixin):
         year = '2014'
         context['year'] = year
 
+        # Race for governor
         gov_race = Race.objects.filter(office__description='Governor Of New Mexico')\
                                .filter(election_season__year=year)\
                                .first()
@@ -180,6 +181,16 @@ class IndexView(TopEarnersBase, PagesMixin):
 
         context['governor_race'] = gov_race
         context['governor_campaigns'] = gov_campaigns
+
+        # Hottest races
+        filtered_races = Race.objects.filter(election_season__year=year)\
+                                     .exclude(office__description='Governor Of New Mexico')
+
+        top_races = sorted([race for race in filtered_races],
+                           key=lambda race: race.total_funds,
+                           reverse=True)
+
+        context['top_races'] = top_races[:10]
 
         return context
 
@@ -193,6 +204,10 @@ class RacesView(PaginatedList):
         self.order_by = self.request.GET.get('order_by', 'total_funds')
         self.sort_order = self.request.GET.get('sort_order', 'desc')
         self.year = self.request.GET.get('year', '2014')
+        self.visible = self.request.GET.get('visible')
+
+        if self.visible:
+            self.visible = int(self.visible)
 
         if len(self.year) != 4:
             # Bogus request
@@ -234,11 +249,11 @@ class RacesView(PaginatedList):
         context['sort_order'] = self.sort_order
         context['toggle_order'] = 'desc'
         context['year'] = self.year
+        context['order_by'] = self.order_by
+        context['visible'] = self.visible
 
         if self.sort_order.lower() == 'desc':
             context['toggle_order'] = 'asc'
-
-        context['order_by'] = self.order_by
 
         seo = {}
         seo.update(settings.SITE_META)

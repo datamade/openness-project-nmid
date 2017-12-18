@@ -103,9 +103,9 @@ class Campaign(models.Model):
             party = self.political_party.name
             return '{0} ({1})'.format(party, office)
 
-    def funds_raised(self, since=None):
+    def filings(self, since=None):
         '''
-        Total funds raised in a given filing period.
+        Return a queryset representing all filings in a given filing period.
 
         Accepts an optional filter argument, `since`, as a string representing a year
         (e.g. '2017'). If `since` is present, the method will restrict contributions
@@ -121,7 +121,32 @@ class Campaign(models.Model):
             date = '{year}-01-01'.format(year=since)
             filings = filings.filter(filing_period__filing_date__gte=date)
 
-        return sum(filing.total_contributions for filing in filings)
+        return filings
+
+    def funds_raised(self, since=None):
+        '''
+        Total funds raised in a given filing period.
+
+        Accepts optional filter argument `since` with the same requirements as
+        all other methods on this class.
+        '''
+        return sum(filing.total_contributions for filing in self.filings(since=since))
+
+    def expenditures(self, since=None):
+        '''
+        Total expenditures in a given filing period.
+
+        Accepts optional filter argument `since` with the same requirements as
+        all other methods on this class.
+        '''
+        return sum(filing.total_expenditures for filing in self.filings(since=since))
+
+    @property
+    def cash_on_hand(self):
+        '''
+        Total amount of cash that a campaign has on hand at any given point in time.
+        '''
+        return (self.funds_raised() - self.expenditures())
 
     @property
     def is_winner(self):
