@@ -267,12 +267,13 @@ class TestRacesView(FakeTestData):
     Test view to display contested races.
     '''
     def test_race_view_resolves(self):
-        found = resolve('/races/')
+        found = resolve(reverse('races'))
         self.assertEqual(found.func.view_class, RacesView)
 
     def test_race_view_html(self):
         year = str(self.filing_period.due_date.year)
-        response = self.client.get(reverse('races') + '?year=%s' % year)
+        response = self.client.get(reverse('races') + '?year=%s' % year
+                                                    + '&type=%d' % self.office_type.id)
 
         html = response.content.decode('utf-8')
 
