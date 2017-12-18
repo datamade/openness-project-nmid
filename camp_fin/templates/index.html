@@ -115,7 +115,7 @@ Keep an eye on money in New Mexico politics
                 {% for race in top_races %}
                     <tr class="clickable"
                         style="cursor:pointer;"
-                        onclick="window.open(&quot;{% url 'races' %}?type={{ race.group }}&visible={{ race.id }}&quot;);
+                        onclick="window.open(&quot;{% url 'races' %}?type={{ race.office_type.id }}&visible={{ race.id }}&quot;);
                                  setAttribute('target', '_blank');">
                         <td>{{ race.office }}</td>
                         <td>{{ race.num_candidates }}</td>

@@ -29,7 +29,7 @@ from rest_framework.response import Response
 from pages.models import Page
 
 from .models import Candidate, Office, Transaction, Campaign, Filing, PAC, \
-    LoanTransaction, Race, RaceGroup
+    LoanTransaction, Race, RaceGroup, OfficeType
 from .base_views import PaginatedList, TransactionDetail, TransactionBaseViewSet, \
     TopMoneyView, TopEarnersBase, PagesMixin
 from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer, \
@@ -205,9 +205,16 @@ class RacesView(PaginatedList):
         self.sort_order = self.request.GET.get('sort_order', 'desc')
         self.year = self.request.GET.get('year', '2014')
         self.visible = self.request.GET.get('visible')
+        self.type = self.request.GET.get('type')
+
+        # For now, use office types as groupings for races
+        self.race_types = OfficeType.objects.all()
 
         if self.visible:
             self.visible = int(self.visible)
+
+        if self.type:
+            self.type = int(self.type)
 
         if len(self.year) != 4:
             # Bogus request
@@ -220,12 +227,15 @@ class RacesView(PaginatedList):
             ordering = '-'
             reverse = True
 
+        queryset = Race.objects.filter(election_season__year=self.year)
+
+        if self.type and self.type != 'None':
+            queryset = queryset.filter(office_type__id=self.type)
+
         # Distinguish between columns that can be ordered in SQL, and columns
         # that need to be ordered in Python
         db_order = ('office',)
         py_order = ('num_candidates', 'total_funds')
-
-        queryset = Race.objects.filter(election_season__year=self.year)
 
         if self.order_by in db_order:
             # For columns that correspond directly to DB attributes, sort the
@@ -251,6 +261,8 @@ class RacesView(PaginatedList):
         context['year'] = self.year
         context['order_by'] = self.order_by
         context['visible'] = self.visible
+        context['type'] = self.type
+        context['race_types'] = self.race_types
 
         if self.sort_order.lower() == 'desc':
             context['toggle_order'] = 'asc'
