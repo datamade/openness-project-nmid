@@ -2,7 +2,7 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: /home/datamade/nmid-test
+    destination: /home/datamade/nmid
 hooks:
   BeforeInstall:
     - location: scripts/before_install.sh
