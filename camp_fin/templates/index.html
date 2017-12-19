@@ -57,6 +57,88 @@ Keep an eye on money in New Mexico politics
 <div class='row'>
     <div class='col-sm-12'>
 
+        <h2><i class='fa fa-star'></i> {{ year }} Race for Governor</a></h2>
+        {{ home_page_governors_race|safe }}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Candidate</th>
+                    <th>Cash on hand</th>
+                    <th>Total funds raised</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for campaign in governor_campaigns %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'candidate-detail' campaign.candidate.slug %}">
+                                {{ campaign.candidate.full_name }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="hidden-sm hidden-xs">
+                                {{ campaign.cash_on_hand | format_money }}
+                            </span>
+                            <span class="visible-sm-block visible-xs-block">
+                                {{ campaign.cash_on_hand | format_money_short }}
+                            </span>
+                        </td>
+                        <td>
+                            <strong>
+                                <span class="hidden-sm hidden-xs">
+                                    {% funds_raised campaign year %}
+                                </span>
+                                <span class="visible-sm-block visible-xs-block">
+                                    {% funds_raised campaign year short=True %}
+                                </span>
+                            </strong>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <br/>
+
+        <h2><i class="fa fa-fw fa-check-square-o"></i> Hottest {{ year }} races</h2>
+        {{ home_page_contested_races|safe }}
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Office</th>
+                    <th>Total candidates</th>
+                    <th>Candidates</th>
+                    <th>Total funds in race</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for race in top_races %}
+                    <tr class="clickable"
+                        style="cursor:pointer;"
+                        onclick="window.open(&quot;{% url 'races' %}?type={{ race.office_type.id }}&visible={{ race.id }}&quot;);
+                                 setAttribute('target', '_blank');">
+                        <td>{{ race.office }}</td>
+                        <td>{{ race.num_candidates }}</td>
+                        <td>
+                        {% for campaign in race.campaigns %}
+                            {{ campaign.candidate.full_name }}{% if not forloop.last %};{% endif %}
+                        {% endfor %}
+                        </td>
+                        <td>
+                            <span class="hidden-sm hidden-xs">
+                                {{ race.total_funds | format_money }}
+                            </span>
+                            <span class="visible-sm-block visible-xs-block">
+                                {{ race.total_funds | format_money_short }}
+                            </span>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <p><a href="{% url 'races' %}" class='btn btn-danger'><i class='fa fa-plus-circle'></i> More top races ></a></p><br /><br />
+
         <h2><a href='/top-earners/'><i class='fa fa-plus-circle'></i> Top earners</a></h2>
         {{ home_page_top_earners|safe }}
         <table class="table table-striped" id="candidate-list">

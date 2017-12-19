@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% load bootstrap_pagination %}
+{% load humanize %}
+{% load helpers %}
+
+{% block title %}Race detail{% endblock %}
+
+{% block full_content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <h1><i class='fa fa-fw fa-check-square-o'></i> Race detail</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <br />
+            <p class="lead">One big race!</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}

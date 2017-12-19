@@ -29,7 +29,7 @@ from rest_framework.response import Response
 from pages.models import Page
 
 from .models import Candidate, Office, Transaction, Campaign, Filing, PAC, \
-    LoanTransaction
+    LoanTransaction, Race, RaceGroup, OfficeType
 from .base_views import PaginatedList, TransactionDetail, TransactionBaseViewSet, \
     TopMoneyView, TopEarnersBase, PagesMixin
 from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer, \
@@ -166,8 +166,134 @@ class IndexView(TopEarnersBase, PagesMixin):
         context['transaction_objects'] = transaction_objects
         context['pac_objects'] = pac_objects
         context['candidate_objects'] = candidate_objects
-        
+
+        year = '2014'
+        context['year'] = year
+
+        # Race for governor
+        gov_race = Race.objects.filter(office__description='Governor Of New Mexico')\
+                               .filter(election_season__year=year)\
+                               .first()
+
+        gov_campaigns = sorted([camp for camp in gov_race.campaigns],
+                               key=lambda camp: camp.funds_raised(since=year),
+                               reverse=True)
+
+        context['governor_race'] = gov_race
+        context['governor_campaigns'] = gov_campaigns
+
+        # Hottest races
+        filtered_races = Race.objects.filter(election_season__year=year)\
+                                     .exclude(office__description='Governor Of New Mexico')
+
+        top_races = sorted([race for race in filtered_races],
+                           key=lambda race: race.total_funds,
+                           reverse=True)
+
+        context['top_races'] = top_races[:10]
+
         return context
+
+
+class RacesView(PaginatedList):
+    template_name = 'camp_fin/races.html'
+    page_path = '/races/'
+
+    def get_queryset(self, **kwargs):
+
+        self.order_by = self.request.GET.get('order_by', 'total_funds')
+        self.sort_order = self.request.GET.get('sort_order', 'desc')
+        self.year = self.request.GET.get('year', '2014')
+        self.visible = self.request.GET.get('visible')
+        self.type = self.request.GET.get('type', 1)
+
+        # For now, use office types as groupings for races
+        self.race_types = OfficeType.objects.all()
+
+        if self.visible:
+            self.visible = int(self.visible)
+
+        if self.type:
+            self.type = int(self.type)
+
+        if len(self.year) != 4:
+            # Bogus request
+            self.year = '2014'
+
+        if self.sort_order == 'asc':
+            ordering = ''
+            reverse = False
+        else:
+            ordering = '-'
+            reverse = True
+
+        queryset = Race.objects.filter(election_season__year=self.year)
+
+        if self.type and self.type != 'None':
+            queryset = queryset.filter(office_type__id=self.type)
+
+        # Distinguish between columns that can be ordered in SQL, and columns
+        # that need to be ordered in Python
+        db_order = ('office',)
+        py_order = ('num_candidates', 'total_funds')
+
+        if self.order_by in db_order:
+            # For columns that correspond directly to DB attributes, sort the
+            # Queryset in SQL
+            ordering += self.order_by
+
+            queryset = queryset.order_by(ordering)
+
+        elif self.order_by in py_order:
+            # For columns that correspond to properties on the Race model,
+            # sort the Queryset in Python (worse performance)
+            queryset = sorted(queryset,
+                              key=lambda race: getattr(race, self.order_by),
+                              reverse=reverse)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['sort_order'] = self.sort_order
+        context['toggle_order'] = 'desc'
+        context['year'] = self.year
+        context['order_by'] = self.order_by
+        context['visible'] = self.visible
+        context['type'] = self.type
+        context['race_types'] = self.race_types
+
+        if self.sort_order.lower() == 'desc':
+            context['toggle_order'] = 'asc'
+
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        seo['title'] = "Contested races in New Mexico"
+        seo['site_desc'] = 'View contested races in New Mexico'
+
+        context['seo'] = seo
+
+        try:
+            page = Page.objects.get(path=self.page_path)
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            context['page'] = None
+
+        return context
+
+
+class RaceDetail(DetailView):
+    template_name = 'camp_fin/race-detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        return context
+
 
 class DonationsView(PaginatedList):
     template_name = 'camp_fin/donations.html'

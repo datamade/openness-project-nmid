@@ -46,3 +46,16 @@ def get_transaction_verb(s):
     }
     return verbs.get(s, '')
 
+@register.simple_tag
+def funds_raised(campaign, year, short=False):
+    '''
+    Retrives the amount of funds raised for a candidate in a given year.
+    '''
+    funds = campaign.funds_raised(since=year)
+
+    if short:
+        output = format_money_short(funds)
+    else:
+        output = format_money(funds)
+
+    return output

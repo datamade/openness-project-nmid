@@ -90,15 +90,165 @@ class Campaign(models.Model):
     qual_campaign_id = models.IntegerField(null=True)
     biannual = models.NullBooleanField()
     from_campaign = models.ForeignKey('Campaign', db_constraint=False, null=True)
-    
+    active_race = models.ForeignKey('Race', db_constraint=False, null=True)
+
     def __str__(self):
-        candidate_name = '{0} {1}'.format(self.candidate.first_name, 
-                                          self.candidate.last_name)
         office = self.office.description
-        return '{0} ({1})'.format(candidate_name, office)
+
+        if self.candidate:
+            candidate_name = '{0} {1}'.format(self.candidate.first_name, 
+                                            self.candidate.last_name)
+            return '{0} ({1})'.format(candidate_name, office)
+        else:
+            party = self.political_party.name
+            return '{0} ({1})'.format(party, office)
+
+    def filings(self, since=None):
+        '''
+        Return a queryset representing all filings in a given filing period.
+
+        Accepts an optional filter argument, `since`, as a string representing a year
+        (e.g. '2017'). If `since` is present, the method will restrict contributions
+        to filings starting January 1st of that year. If `since` is not specified,
+        the method will return all contributions ever recorded for this campaign.
+        '''
+        # Enforce argument format
+        assert (since is None or (isinstance(since, str) and len(since) == 4))
+
+        filings = self.candidate.entity.filing_set.all()
+
+        if since:
+            date = '{year}-01-01'.format(year=since)
+            filings = filings.filter(filing_period__filing_date__gte=date)
+
+        return filings
+
+    def funds_raised(self, since=None):
+        '''
+        Total funds raised in a given filing period.
+
+        Accepts optional filter argument `since` with the same requirements as
+        all other methods on this class.
+        '''
+        return sum(filing.total_contributions for filing in self.filings(since=since))
+
+    def expenditures(self, since=None):
+        '''
+        Total expenditures in a given filing period.
+
+        Accepts optional filter argument `since` with the same requirements as
+        all other methods on this class.
+        '''
+        return sum(filing.total_expenditures for filing in self.filings(since=since))
+
+    @property
+    def cash_on_hand(self):
+        '''
+        Total amount of cash that a campaign has on hand at any given point in time.
+        '''
+        return (self.funds_raised() - self.expenditures())
+
+    @property
+    def is_winner(self):
+        if getattr(self, 'race', False):
+            # Since the `winner` relationship is OneToOne, the ability
+            # to reverse access a `race` (distinct from `active_race`)
+            # means that this campaign must be the winner
+            return True
+        else:
+            return False
+
+
+class Race(models.Model):
+    group = models.ForeignKey('RaceGroup', db_constraint=False, null=True)
+    office = models.ForeignKey('Office', db_constraint=False)
+    division = models.ForeignKey('Division', db_constraint=False, null=True)
+    district = models.ForeignKey('District', db_constraint=False, null=True)
+    office_type = models.ForeignKey('OfficeType', db_constraint=False, null=True)
+    county = models.ForeignKey('County', db_constraint=False, null=True)
+    election_season = models.ForeignKey('ElectionSeason', db_constraint=False)
+    winner = models.OneToOneField('Campaign', null=True)
+
+    class Meta:
+        unique_together = ('district', 'division', 'office_type', 'county',
+                           'office', 'election_season')
+
+    def __str__(self):
+        return 'Race for {office}'.format(office=self.office)
+
+    @property
+    def campaigns(self):
+        '''
+        Return all campaigns involved in this race.
+        '''
+        return self.campaign_set.all()
+
+    @property
+    def num_candidates(self):
+        '''
+        Return the number of candidates involved in this race.
+        '''
+        return self.campaigns.count()
+
+    @property
+    def year(self):
+        '''
+        If this race has an ElectionSeason, return the year of the race.
+        Otherwise, return None.
+        '''
+        return getattr(self.election_season, 'year', None)
+
+    @property
+    def total_funds(self):
+        '''
+        Return the total amount of money raised in this race, aggreggated from
+        the total contributions to each campaign during the election season.
+        '''
+        return sum(campaign.funds_raised(since=self.year) for campaign in self.campaigns)
+
+    @property
+    def campaigns_by_party(self):
+        '''
+        Return a list of campaigns in this race, organized by party.
+        '''
+        campaigns = [
+            ('democrat', self.campaign_set.filter(political_party__name='Democrat')),
+            ('republican', self.campaign_set.filter(political_party__name='Republican')),
+            ('other', self.campaign_set.exclude(political_party__name__in=['Democrat', 'Republican']))
+        ]
+
+        biggest_party = max(queryset.count() for party, queryset in campaigns)
+
+        campaign_list = []
+        for party, queryset in campaigns:
+            if queryset.count() > 0:
+                # Sort campaigns by funds raised
+                formatted_campaigns = sorted([campaign for campaign in queryset],
+                                             key=lambda camp: camp.funds_raised(since=self.year),
+                                             reverse=True)
+                if queryset.count() < biggest_party:
+                    # Add empty campaigns so that the table rows will line up
+                    formatted_campaigns += [{} for missing in range(biggest_party - queryset.count())]
+
+                campaign_list.append((party, formatted_campaigns))
+
+        return campaign_list
+
+
+class RaceGroup(models.Model):
+    short_title = models.CharField(max_length=50)
+    full_title = models.CharField(max_length=50)
+    description = models.CharField(max_length=250)
+
+    def __str__(self):
+        return self.full_title
+
 
 class OfficeType(models.Model):
     description = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.description
 
 class Office(models.Model):
     description = models.CharField(max_length=100)

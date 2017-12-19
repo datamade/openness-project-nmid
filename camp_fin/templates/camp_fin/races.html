@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% load bootstrap_pagination %}
+{% load humanize %}
+{% load helpers %}
+
+{% block title %}{{ year }} Races{% endblock %}
+
+{% block full_content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1><i class='fa fa-fw fa-check-square-o'></i>{{ year }} Races</h1>
+            <div class="btn btn-group" role="group" aria-label="Race types">
+                {% for race_type in race_types %}
+                    <a href="{% url 'races' %}?type={{ race_type.id }}"
+                       role="button"
+                       class="btn btn-default {% if type == race_type.id %}active{% else %}inactive{% endif %}">
+                            {{ race_type.description }}
+                    </a>
+                {% endfor %}
+            </div>
+            {% if page.text %}
+                {{ page.text|safe }}
+            {% else %}
+                <br/>
+            {% endif %}
+            <table class="table table-striped table-hover" id="candidate-list">
+                <thead>
+                    <tr>
+                        <th>
+                            <a href="{% url 'races' %}?{% query_transform request order_by='office' sort_order=toggle_order %}">
+                                Office
+                            </a>
+                            {% if order_by == 'office' %}
+                                {{ sort_order|get_sort_icon|safe }}
+                            {% endif %}
+                        </th>
+                        <th>
+                            <a href="{% url 'races' %}?{% query_transform request order_by='num_candidates' sort_order=toggle_order %}">
+                                Total candidates
+                            </a>
+                            {% if order_by == 'num_candidates' %}
+                                {{ sort_order|get_sort_icon|safe }}
+                            {% endif %}
+                        </th>
+                    <th>Candidates</th>
+                    <th class="text-right no-wrap">
+                        <a href="{% url 'races' %}?{% query_transform request order_by='total_funds' sort_order=toggle_order %}">
+                            Total funds in race
+                        </a>
+                        {% if order_by == 'total_funds' %}
+                            {{ sort_order|get_sort_icon|safe }}
+                        {% endif %}
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for race in object_list %}
+            <tr class="clickable" style="cursor:pointer;" onclick="display('{{ race.id }}')">
+                    <td>{{ race.office }}</td>
+                    <td>{{ race.num_candidates }}</td>
+                    <td>
+                    {% for campaign in race.campaigns %}
+                        {{ campaign.candidate.full_name }}{% if not forloop.last %};{% endif %}
+                    {% endfor %}
+                    </td>
+                    <td class="text-right">
+                        <span class='hidden-sm hidden-xs'>
+                            {{ race.total_funds |format_money }}
+                        </span>
+                        <span class='visible-sm-block visible-xs-block'>
+                            {{ race.total_funds|format_money_short }}
+                        </span>
+                    </td>
+                </tr>
+                <tr id="{{ race.id }}" class="race-subtable" {% if visible != race.id %} style="display: none;" {% endif %}>
+                    <td colspan=4 style="padding:0">
+                    {% for party, campaigns in race.campaigns_by_party %}
+                        {% if race.campaigns_by_party|length == 1 %}
+                            <div class="col-xs-12" style="padding:0">
+                        {% elif race.campaigns_by_party|length == 2 %}
+                            <div class="col-xs-6" style="padding:0">
+                        {% else %}
+                            <div class="col-xs-4" style="padding:0">
+                        {% endif %}
+                            <table class="table table-striped table-merge"
+                                style="padding-bottom: 0; margin-bottom: 0">
+                                <thead>
+                                    <tr class="header {{ party }}">
+                                        <th>{{ party|title }} Candidates</th>
+                                        <th class="text-right">Cash on hand</th>
+                                        <th class="text-right">Total funds raised</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for campaign in campaigns %}
+                                    <tr class="subrow {{ party }}">
+                                        <td>
+                                        {% if campaign %}
+                                            <a href="{% url 'candidate-detail' campaign.candidate.slug %}">
+                                                {{ campaign.candidate.full_name }}
+                                            </a>
+                                        {% else %}
+                                            &nbsp;
+                                        {% endif %}
+                                        </td>
+                                        <td class="text-right">
+                                        {% if campaign %}
+                                            <span class='hidden-sm hidden-xs'>
+                                                {{ campaign.cash_on_hand | format_money }}
+                                            </span>
+                                            <span class='visible-sm-block visible-xs-block'>
+                                                {{ campaign.cash_on_hand | format_money_short }}
+                                            </span>
+                                        {% endif %}
+                                        </td>
+                                        <td class="text-right">
+                                        {% if campaign %}
+                                            <span class='hidden-sm hidden-xs'>
+                                                {% funds_raised campaign year %}
+                                            </span>
+                                            <span class='visible-sm-block visible-xs-block'>
+                                                {% funds_raised campaign year short=True %}
+                                            </span>
+                                        {% else %}
+                                            &nbsp;
+                                        {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endfor %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if object_list.paginator.num_pages > 1 %}
+    <div class="row">
+        <div class="col-xs-12 text-center">
+            <nav aria-label="pagination">
+                <ul class="pagination">
+                {% if object_list.has_previous %}
+                    <li>
+                        <a href="{% url 'races' %}?{% query_transform request page=object_list.previous_page_number %}"
+                           aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+                {% for page in object_list.paginator.page_range %}
+                    <li {% if object_list.number == page %}class="active"{% endif %}>
+                        <a href="{% url 'races' %}?{% query_transform request page=page %}">
+                            {{ page }}
+                        </a>
+                    </li>
+                {% endfor %}
+                {% if object_list.has_next %}
+                    <li>
+                        <a href="{% url 'races' %}?{% query_transform request page=object_list.next_page_number %}"
+                           aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Scroll to linked races
+    $(document).ready(function() {
+        if ($(".race-subtable:visible").length) {
+            $(document).scrollTop($(".race-subtable:visible").offset().top - 50);
+        }
+    });
+
+    // Display races on click
+    function display(id) {
+        $("#" + id).toggle();
+    }
+</script>
+{% endblock %}
