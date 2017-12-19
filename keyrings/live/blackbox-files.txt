@@ -1,3 +1,4 @@
+configs/nginx.staging.conf
 configs/settings_local.py
 configs/supervisor.staging.conf
 scripts/after_install.sh
