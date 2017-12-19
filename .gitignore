@@ -12,3 +12,4 @@ settings_local.py
 /scripts/validate_service.sh
 /configs/settings_local.py
 /configs/supervisor.staging.conf
+/configs/nginx.staging.conf
