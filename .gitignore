@@ -11,3 +11,4 @@ settings_local.py
 /scripts/app_stop.sh
 /scripts/validate_service.sh
 /configs/settings_local.py
+/configs/supervisor.staging.conf
