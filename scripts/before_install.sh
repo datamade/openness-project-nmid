@@ -4,4 +4,4 @@
 mkdir -p /home/datamade/nmid
 
 # Decrypt files encrypted with blackbox
-cd /opt/codedeploy-agent/deployment-root/$DEPLOYMENT_GROUP_ID/$DEPLOYMENT_ID/deployment-archive/ && sudo -H -u datamade blackbox_postdeploy
+cd /opt/codedeploy-agent/deployment-root/$DEPLOYMENT_GROUP_ID/$DEPLOYMENT_ID/deployment-archive/ && chown -R datamade.datamade . && sudo -H -u datamade blackbox_postdeploy
