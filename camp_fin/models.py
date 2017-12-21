@@ -199,12 +199,23 @@ class Race(models.Model):
         return getattr(self.election_season, 'year', None)
 
     @property
+    def funding_period(self):
+        '''
+        If this race has an ElectionSeason, return the year that the funding
+        period started. Otherwise, return None.
+        '''
+        if self.year:
+            return str(int(self.year) - 1)
+        else:
+            return None
+
+    @property
     def total_funds(self):
         '''
         Return the total amount of money raised in this race, aggreggated from
         the total contributions to each campaign during the election season.
         '''
-        return sum(campaign.funds_raised(since=self.year) for campaign in self.campaigns)
+        return sum(campaign.funds_raised(since=self.funding_period) for campaign in self.campaigns)
 
     @property
     def campaigns_by_party(self):

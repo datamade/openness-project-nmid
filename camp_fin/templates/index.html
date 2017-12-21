@@ -64,7 +64,7 @@ Keep an eye on money in New Mexico politics
                 <tr>
                     <th>Candidate</th>
                     <th>Cash on hand</th>
-                    <th>Total funds raised</th>
+                    <th>Total funds raised since {{ last_year }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -86,10 +86,10 @@ Keep an eye on money in New Mexico politics
                         <td>
                             <strong>
                                 <span class="hidden-sm hidden-xs">
-                                    {% funds_raised campaign year %}
+                                    {% funds_raised campaign last_year %}
                                 </span>
                                 <span class="visible-sm-block visible-xs-block">
-                                    {% funds_raised campaign year short=True %}
+                                    {% funds_raised campaign last_year short=True %}
                                 </span>
                             </strong>
                         </td>

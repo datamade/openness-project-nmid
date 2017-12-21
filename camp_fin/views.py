@@ -167,8 +167,8 @@ class IndexView(TopEarnersBase, PagesMixin):
         context['pac_objects'] = pac_objects
         context['candidate_objects'] = candidate_objects
 
-        year = '2014'
-        context['year'] = year
+        year, last_year = '2018', '2017'
+        context['year'], context['last_year'] = year, last_year
 
         # Race for governor
         gov_race = Race.objects.filter(office__description='Governor Of New Mexico')\
@@ -203,12 +203,13 @@ class RacesView(PaginatedList):
 
         self.order_by = self.request.GET.get('order_by', 'total_funds')
         self.sort_order = self.request.GET.get('sort_order', 'desc')
-        self.year = self.request.GET.get('year', '2014')
+        self.year = self.request.GET.get('year', '2018')
         self.visible = self.request.GET.get('visible')
         self.type = self.request.GET.get('type', 1)
 
         # For now, use office types as groupings for races
-        self.race_types = OfficeType.objects.all()
+        self.race_types = OfficeType.objects.filter(race__election_season__year=self.year)\
+                                            .distinct()
 
         if self.visible:
             self.visible = int(self.visible)
@@ -270,8 +271,8 @@ class RacesView(PaginatedList):
         seo = {}
         seo.update(settings.SITE_META)
 
-        seo['title'] = "Contested races in New Mexico"
-        seo['site_desc'] = 'View contested races in New Mexico'
+        seo['title'] = "Contested {year} races in New Mexico".format(year=self.year)
+        seo['site_desc'] = "View contested {year} races in New Mexico".format(year=self.year)
 
         context['seo'] = seo
 

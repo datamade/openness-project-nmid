@@ -153,21 +153,21 @@ class FakeTestData(TestCase):
                                                  no_activity=False,
                                                  edited='0')
 
-        year_ago = (datetime.datetime.now(pytz.utc) - datetime.timedelta(days=730))
+        two_years_ago = (datetime.datetime.now(pytz.utc) - datetime.timedelta(days=730))
 
-        cls.filtered_filing_period = FilingPeriod.objects.create(filing_date=year_ago,
-                                                    due_date=year_ago,
+        cls.filtered_filing_period = FilingPeriod.objects.create(filing_date=two_years_ago,
+                                                    due_date=two_years_ago,
                                                     allow_no_activity=True,
                                                     filing_period_type=filing_type,
                                                     exclude_from_cascading=True,
-                                                    initial_date=year_ago,
+                                                    initial_date=two_years_ago,
                                                     email_sent_status=0,
                                                     reminder_sent_status=0)
 
         cls.filtered_filing = Filing.objects.create(entity=second_entity,
                                                     filing_period=cls.filtered_filing_period,
-                                                    date_added=year_ago,
-                                                    date_closed=year_ago,
+                                                    date_added=two_years_ago,
+                                                    date_closed=two_years_ago,
                                                     opening_balance=0.0,
                                                     total_contributions=100.0,
                                                     total_expenditures=20.0,
@@ -197,6 +197,10 @@ class TestRaces(FakeTestData):
 
     def test_race_num_candidates(self):
         self.assertEqual(self.race.num_candidates, 3)
+
+    def test_race_year_and_funding_period(self):
+        self.assertEqual(self.race.year, '2017')
+        self.assertEqual(self.race.funding_period, '2016')
 
     def test_race_total_funds(self):
         self.assertEqual(self.race.total_funds, (self.first_filing.total_contributions +
@@ -277,7 +281,7 @@ class TestRacesView(FakeTestData):
 
         html = response.content.decode('utf-8')
 
-        self.assertIn('<title>Contested races in New Mexico', html)
+        self.assertIn('<title>Contested 2017 races in New Mexico', html)
         self.assertTemplateUsed(response, 'camp_fin/races.html')
 
         # Check that a table is loaded
