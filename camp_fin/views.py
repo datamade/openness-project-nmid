@@ -167,7 +167,9 @@ class IndexView(TopEarnersBase, PagesMixin):
         context['pac_objects'] = pac_objects
         context['candidate_objects'] = candidate_objects
 
-        year, last_year = '2018', '2017'
+        year = settings.ELECTION_YEAR
+        last_year = str(int(settings.ELECTION_YEAR) - 1)
+
         context['year'], context['last_year'] = year, last_year
 
         # Race for governor
@@ -176,7 +178,7 @@ class IndexView(TopEarnersBase, PagesMixin):
                                .first()
 
         gov_campaigns = sorted([camp for camp in gov_race.campaigns],
-                               key=lambda camp: camp.funds_raised(since=year),
+                               key=lambda camp: camp.funds_raised(since=last_year),
                                reverse=True)
 
         context['governor_race'] = gov_race
@@ -203,9 +205,14 @@ class RacesView(PaginatedList):
 
         self.order_by = self.request.GET.get('order_by', 'total_funds')
         self.sort_order = self.request.GET.get('sort_order', 'desc')
-        self.year = self.request.GET.get('year', '2018')
+        self.year = self.request.GET.get('year', settings.ELECTION_YEAR)
         self.visible = self.request.GET.get('visible')
         self.type = self.request.GET.get('type', 1)
+
+        try:
+            self.type = int(self.type)
+        except TypeError:
+            self.type = 1
 
         # For now, use office types as groupings for races
         self.race_types = OfficeType.objects.filter(race__election_season__year=self.year)\
@@ -214,8 +221,7 @@ class RacesView(PaginatedList):
         if self.visible:
             self.visible = int(self.visible)
 
-        if self.type:
-            self.type = int(self.type)
+        self.type = int(self.type)
 
         if len(self.year) != 4:
             # Bogus request
@@ -235,7 +241,7 @@ class RacesView(PaginatedList):
 
         # Distinguish between columns that can be ordered in SQL, and columns
         # that need to be ordered in Python
-        db_order = ('office',)
+        db_order = ('office', 'county__name', 'district__name')
         py_order = ('num_candidates', 'total_funds')
 
         if self.order_by in db_order:
@@ -264,6 +270,13 @@ class RacesView(PaginatedList):
         context['visible'] = self.visible
         context['type'] = self.type
         context['race_types'] = self.race_types
+
+        try:
+            verbose_type = OfficeType.objects.get(id=self.type)
+        except OfficeType.DoesNotExist:
+            verbose_type = OfficeType.objects.first()
+
+        context['verbose_type'] = verbose_type.description
 
         if self.sort_order.lower() == 'desc':
             context['toggle_order'] = 'asc'

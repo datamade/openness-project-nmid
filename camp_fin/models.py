@@ -275,8 +275,7 @@ class District(models.Model):
     status = models.ForeignKey('Status', db_constraint=False)
 
     def __str__(self):
-        return '{1} ({0})'.format(self.name, 
-                                  self.office.description)
+        return self.name
 
 class County(models.Model):
     name = models.CharField(max_length=50)
@@ -556,7 +555,7 @@ class Division(models.Model):
     status = models.ForeignKey('Status', db_constraint=False)
 
     def __str__(self):
-        return '{0} ({1})'.format(self.name, self.district)
+        return self.name
 
 class ElectionSeason(models.Model):
     year = models.CharField(max_length=5)

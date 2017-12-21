@@ -142,3 +142,6 @@ SITE_META = {
     'twitter_site': '@NMInDepth',
     'twitter_creator': '@NMInDepth',
 }
+
+# Year to pull races from
+ELECTION_YEAR = '2018'

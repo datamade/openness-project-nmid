@@ -7,6 +7,21 @@ from camp_fin.models import Campaign, Race
 
 DB_CONN = 'postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}'
 
+'''
+Defines which attributes are relevant to consider a race "unique".
+Indexed by office type.
+'''
+UNIQUE_RACES_MAP = {
+    'Statewide': ['office', 'election_season'],
+    'Legislative': ['office', 'district', 'election_season'],
+    'Judicial': ['office', 'district', 'division', 'county', 'election_season'],
+    'Public Regulation Commission': ['office', 'district', 'election_season'],
+    'Public Education Commission': ['office', 'district', 'election_season'],
+    'County Offices': ['office', 'county', 'election_season'],
+    'School Board': ['office', 'county', 'district', 'election_season'],
+    'None': ['office', 'county', 'election_season']
+}
+
 engine = sa.create_engine(DB_CONN.format(**settings.DATABASES['default']),
                           convert_unicode=True,
                           server_side_cursors=True)
@@ -28,6 +43,9 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('Creating Races from Campaigns...'))
 
         if options['recreate']:
+
+            self.stdout.write(self.style.SUCCESS('Deleting existing Race data...'))
+
             with engine.connect() as conn:
                 with conn.begin():
                     conn.execute('''
@@ -36,12 +54,24 @@ class Command(BaseCommand):
                     ''')
                     conn.execute('''TRUNCATE camp_fin_race''')
 
+            self.stdout.write(self.style.SUCCESS('Existing data deleted!'))
+
         campaigns = Campaign.objects.all()
 
         num_races = 0
         num_campaigns = len(campaigns)
 
         for campaign in campaigns:
+
+            if campaign.office.office_type:
+                unique_fields = UNIQUE_RACES_MAP[campaign.office.office_type.description]
+            else:
+                unique_fields = UNIQUE_RACES_MAP['None']
+
+            unique_kwargs = {field: getattr(campaign, field, None) for field in unique_fields}
+
+            race, created = Race.objects.get_or_create(**unique_kwargs)
+
             kwargs = {
                 'office': campaign.office,
                 'office_type': campaign.office.office_type,
@@ -51,7 +81,9 @@ class Command(BaseCommand):
                 'election_season': campaign.election_season
             }
 
-            race, created = Race.objects.get_or_create(**kwargs)
+            rows_updated = Race.objects.filter(id=race.id).update(**kwargs)
+
+            assert rows_updated == 1
 
             if created:
                 num_races += 1
