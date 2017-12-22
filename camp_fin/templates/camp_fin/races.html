@@ -90,7 +90,7 @@
                     <td>{{ race.num_candidates }}</td>
                     <td>
                     {% for campaign in race.campaigns %}
-                        {{ campaign.candidate.full_name }}{% if not forloop.last %};{% endif %}
+                        {{ campaign.candidate.full_name }}{% if not forloop.last %}<br/>{% endif %}
                     {% endfor %}
                     </td>
                     <td class="text-right">

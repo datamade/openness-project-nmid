@@ -28,8 +28,9 @@ class FakeTestData(TestCase):
 
         first_party = PoliticalParty.objects.create(name='Democrat')
         second_party = PoliticalParty.objects.create(name='Republican')
+        third_party = PoliticalParty.objects.create(name='Green')
 
-        cls.parties = (first_party, second_party)
+        cls.parties = (first_party, second_party, third_party)
 
         cls.first_candidate = Candidate.objects.create(first_name='first',
                                                        last_name='candidate',
@@ -102,7 +103,7 @@ class FakeTestData(TestCase):
                                                         election_season=cls.election_season,
                                                         office=cls.office,
                                                         date_added=datetime.datetime.now(pytz.utc),
-                                                        political_party=second_party)
+                                                        political_party=third_party)
 
         cls.campaigns = (cls.first_campaign, cls.second_campaign, cls.third_campaign)
 
@@ -265,6 +266,11 @@ class TestCampaigns(FakeTestData):
     def test_campaign_cash_on_hand(self):
         for campaign in self.campaigns:
             self.assertEqual(campaign.cash_on_hand, (campaign.funds_raised() - campaign.expenditures()))
+
+    def test_campaign_party_identifier(self):
+        self.assertEqual(self.first_campaign.party_identifier, 'D')
+        self.assertEqual(self.second_campaign.party_identifier, 'R')
+        self.assertEqual(self.non_race_campaign.party_identifier, 'I')
 
 class TestRacesView(FakeTestData):
     '''

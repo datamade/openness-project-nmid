@@ -74,6 +74,14 @@ Keep an eye on money in New Mexico politics
                             <a href="{% url 'candidate-detail' campaign.candidate.slug %}">
                                 {{ campaign.candidate.full_name }}
                             </a>
+                            {% if campaign.party_identifier %}
+                                <small>
+                                    <span class="party-identifier {{ campaign.party_identifier }}">
+                                        ({{ campaign.party_identifier }})
+                                    </span>
+                                </small>
+                            {% endif %}
+                            </a>
                         </td>
                         <td>
                             <span class="hidden-sm hidden-xs">

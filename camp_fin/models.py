@@ -158,6 +158,20 @@ class Campaign(models.Model):
         else:
             return False
 
+    @property
+    def party_identifier(self):
+        '''
+        Return a shortened version of the Campaign's party.
+        '''
+        if self.political_party.name:
+            if self.political_party.name == 'Democrat':
+                return 'D'
+            elif self.political_party.name == 'Republican':
+                return 'R'
+            else:
+                return 'I'
+        else:
+            return None
 
 class Race(models.Model):
     group = models.ForeignKey('RaceGroup', db_constraint=False, null=True)

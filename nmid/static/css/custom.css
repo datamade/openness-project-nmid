@@ -24,6 +24,8 @@ a:hover, a:active { color: #8C0012; }
 
 th a { color: #333333; }
 
+/* Party affiliation colors */
+
 tr.header.democrat {
     background-color: #99afff;
 }
@@ -58,6 +60,22 @@ tr.subrow.other {
 
 tr.subrow.other > td > a {
     color: #095F87;
+}
+
+.party-identifier {
+    font-weight: 600;
+}
+
+.D {
+    color: #5675e9;
+}
+
+.R {
+    color: #de5050;
+}
+
+.I {
+    color: #bababa;
 }
 
 @media screen and (max-width: 767px) {
