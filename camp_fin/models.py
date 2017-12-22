@@ -146,16 +146,13 @@ class Campaign(models.Model):
         '''
         This campaign's share of the total funds raised in this campaign's active race.
         '''
-        percent = round(self.funds_raised(since=str(int(self.active_race.year) - 1)) /
-                        self.active_race.total_funds, 2)
+        if self.active_race and self.active_race.total_funds > 0:
+            percent = round(self.funds_raised(since=str(int(self.active_race.year) - 1)) /
+                            self.active_race.total_funds, 2)
 
-        percent = round(percent * 100)
-
-        # For display purposes, 1% should be the minimum share
-        if percent <= 1:
-            percent = 1
-
-        return '{share}%'.format(share=percent)
+            return round(percent * 100)
+        else:
+            return 0
 
     @property
     def cash_on_hand(self):
@@ -213,6 +210,16 @@ class Race(models.Model):
         Return all campaigns involved in this race.
         '''
         return self.campaign_set.all()
+
+    @property
+    def sorted_campaigns(self):
+        '''
+        Return all campaigns involved in this race, in reverse order of how much
+        money they've raised.
+        '''
+        return sorted([camp for camp in self.campaigns],
+                      key=lambda camp: camp.funds_raised(since=self.funding_period),
+                      reverse=True)
 
     @property
     def num_candidates(self):

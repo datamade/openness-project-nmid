@@ -105,7 +105,7 @@ class FakeTestData(TestCase):
                                                         date_added=datetime.datetime.now(pytz.utc),
                                                         political_party=third_party)
 
-        cls.campaigns = (cls.first_campaign, cls.second_campaign, cls.third_campaign)
+        cls.campaigns = [cls.first_campaign, cls.second_campaign, cls.third_campaign]
 
         filing_type = FilingType.objects.create(description='type')
 
@@ -123,7 +123,7 @@ class FakeTestData(TestCase):
                                                  date_added=datetime.datetime.now(pytz.utc),
                                                  date_closed=datetime.datetime.now(pytz.utc),
                                                  opening_balance=0.0,
-                                                 total_contributions=100.0,
+                                                 total_contributions=200.0,
                                                  total_expenditures=20.0,
                                                  closing_balance=80.0,
                                                  final=True,
@@ -195,6 +195,9 @@ class TestRaces(FakeTestData):
 
     def test_race_campaigns(self):
         self.assertEqual(set(self.race.campaigns), set(self.campaigns))
+
+    def test_race_sorted_campaigns(self):
+        self.assertEqual(self.race.sorted_campaigns, self.campaigns)
 
     def test_race_num_candidates(self):
         self.assertEqual(self.race.num_candidates, 3)
@@ -273,9 +276,9 @@ class TestCampaigns(FakeTestData):
         self.assertEqual(self.non_race_campaign.party_identifier, 'I')
 
     def test_campaign_share_of_total_funds(self):
-        self.assertEqual(self.first_campaign.share_of_total_funds, '50%')
-        self.assertEqual(self.second_campaign.share_of_total_funds, '50%')
-        self.assertEqual(self.third_campaign.share_of_total_funds, '1%')
+        self.assertEqual(self.first_campaign.share_of_total_funds, 67)
+        self.assertEqual(self.second_campaign.share_of_total_funds, 33)
+        self.assertEqual(self.third_campaign.share_of_total_funds, 0)
 
 
 class TestRacesView(FakeTestData):

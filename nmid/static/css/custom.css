@@ -268,19 +268,51 @@ button#btn-search { border-radius: 5px; }
 
 /* Styles for the distribution charts */
 .bar-chart {
-    padding-bottom: 5px;
-    /* background-color: #b9b9b9; */
     width: 100%;
     position: relative;
     display: block;
+    margin-bottom: 28.5px;
+    height: 5px;
+    margin-top: 8px;
+}
+
+.bar-chart.visible {
 }
 
 .bar {
-    padding-bottom: 5px;
     height: 15px;
-    background-color: #df766d; /* Fallback */
+    display: block;
+    background-color: #df766d;
     background-color: hsla(5, 77%, 48%, 0.43);
+    position: absolute;
+    margin-top: -5px;
 }
+
+.tick {
+    top: 50%;
+    margin-top: -15px;
+    background-color: #ccc;
+    width: 1px;
+    height: 34px;
+    position: absolute;
+    display: block;
+}
+
+.tick.thick {
+    width: 2px;
+}
+
+.funding-label {
+    margin-top: -6px;
+    position: absolute;
+}
+
+.funding-label.below {
+    margin-top: 10px;
+    left: 85%;
+}
+
+
 
 /* support reverse spin for icons */
 .fa-spin-reverse {
