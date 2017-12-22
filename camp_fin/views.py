@@ -193,6 +193,7 @@ class IndexView(TopEarnersBase, PagesMixin):
                            reverse=True)
 
         context['top_races'] = top_races[:10]
+        context['verbose_type'] = 'all'
 
         return context
 

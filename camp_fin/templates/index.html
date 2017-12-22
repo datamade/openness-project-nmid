@@ -113,49 +113,9 @@ Keep an eye on money in New Mexico politics
 
         <h2><i class="fa fa-fw fa-check-square-o"></i> Hottest {{ year }} races</h2>
         {{ home_page_contested_races|safe }}
-        <table class="table table-striped table-hover">
-            <thead>
-                <tr>
-                    <th>Office</th>
-                    <th>Candidates</th>
-                    <th>Total funds in race</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for race in top_races %}
-                    <tr class="clickable"
-                        style="cursor:pointer;"
-                        onclick="window.open(&quot;{% url 'races' %}?type={{ race.office_type.id }}&visible={{ race.id }}&quot;);
-                                 setAttribute('target', '_blank');">
-                        <td>{{ race.office }}</td>
-                        <td>
-                        {% for campaign in race.campaigns %}
-                            {{ campaign.candidate.full_name }}
-                            {% if campaign.party_identifier %}
-                                <small>
-                                    <span class="party-identifier {{ campaign.party_identifier }}">
-                                        ({{ campaign.party_identifier }})
-                                    </span>
-                                </small>
-                            {% endif %}
-                            {% if campaign.is_winner %}
-                                <i class="fa fa-fw fa-check-circle green"></i>
-                            {% endif %}
-                            {% if not forloop.last %}<br/>{% endif %}
-                        {% endfor %}
-                        </td>
-                        <td>
-                            <span class="hidden-sm hidden-xs">
-                                {{ race.total_funds | format_money }}
-                            </span>
-                            <span class="visible-sm-block visible-xs-block">
-                                {{ race.total_funds | format_money_short }}
-                            </span>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        {% with object_list=top_races %}
+            {% include 'camp_fin/widgets/races_list.html' %}
+        {% endwith %}
 
         <p><a href="{% url 'races' %}" class='btn btn-danger'><i class='fa fa-plus-circle'></i> More top races ></a></p><br /><br />
 
