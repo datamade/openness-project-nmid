@@ -142,6 +142,22 @@ class Campaign(models.Model):
         return sum(filing.total_expenditures for filing in self.filings(since=since))
 
     @property
+    def share_of_total_funds(self):
+        '''
+        This campaign's share of the total funds raised in this campaign's active race.
+        '''
+        percent = round(self.funds_raised(since=str(int(self.active_race.year) - 1)) /
+                        self.active_race.total_funds, 2)
+
+        percent = round(percent * 100)
+
+        # For display purposes, 1% should be the minimum share
+        if percent <= 1:
+            percent = 1
+
+        return '{share}%'.format(share=percent)
+
+    @property
     def cash_on_hand(self):
         '''
         Total amount of cash that a campaign has on hand at any given point in time.
@@ -173,15 +189,16 @@ class Campaign(models.Model):
         else:
             return None
 
+
 class Race(models.Model):
-    group = models.ForeignKey('RaceGroup', db_constraint=False, null=True)
+    group = models.ForeignKey('RaceGroup', db_constraint=False, blank=True, null=True)
     office = models.ForeignKey('Office', db_constraint=False)
-    division = models.ForeignKey('Division', db_constraint=False, null=True)
-    district = models.ForeignKey('District', db_constraint=False, null=True)
-    office_type = models.ForeignKey('OfficeType', db_constraint=False, null=True)
-    county = models.ForeignKey('County', db_constraint=False, null=True)
+    division = models.ForeignKey('Division', db_constraint=False, blank=True, null=True)
+    district = models.ForeignKey('District', db_constraint=False, blank=True, null=True)
+    office_type = models.ForeignKey('OfficeType', db_constraint=False, blank=True, null=True)
+    county = models.ForeignKey('County', db_constraint=False, blank=True, null=True)
     election_season = models.ForeignKey('ElectionSeason', db_constraint=False)
-    winner = models.OneToOneField('Campaign', null=True)
+    winner = models.OneToOneField('Campaign', blank=True, null=True)
 
     class Meta:
         unique_together = ('district', 'division', 'office_type', 'county',

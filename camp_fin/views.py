@@ -203,9 +203,16 @@ class RacesView(PaginatedList):
 
     def get_queryset(self, **kwargs):
 
+        self.year = self.request.GET.get('year', settings.ELECTION_YEAR)
+
+        if len(self.year) != 4:
+            # Bogus request
+            self.year = '2014'
+
+        self.last_year = str(int(self.year) - 1)
+
         self.order_by = self.request.GET.get('order_by', 'total_funds')
         self.sort_order = self.request.GET.get('sort_order', 'desc')
-        self.year = self.request.GET.get('year', settings.ELECTION_YEAR)
         self.visible = self.request.GET.get('visible')
         self.type = self.request.GET.get('type', 1)
 
@@ -222,10 +229,6 @@ class RacesView(PaginatedList):
             self.visible = int(self.visible)
 
         self.type = int(self.type)
-
-        if len(self.year) != 4:
-            # Bogus request
-            self.year = '2014'
 
         if self.sort_order == 'asc':
             ordering = ''
@@ -266,6 +269,7 @@ class RacesView(PaginatedList):
         context['sort_order'] = self.sort_order
         context['toggle_order'] = 'desc'
         context['year'] = self.year
+        context['last_year'] = self.last_year
         context['order_by'] = self.order_by
         context['visible'] = self.visible
         context['type'] = self.type

@@ -81,6 +81,9 @@ Keep an eye on money in New Mexico politics
                                     </span>
                                 </small>
                             {% endif %}
+                            {% if campaign.is_winner %}
+                                <i class="fa fa-fw fa-check-circle green"></i>
+                            {% endif %}
                             </a>
                         </td>
                         <td>
@@ -114,7 +117,6 @@ Keep an eye on money in New Mexico politics
             <thead>
                 <tr>
                     <th>Office</th>
-                    <th>Total candidates</th>
                     <th>Candidates</th>
                     <th>Total funds in race</th>
                 </tr>
@@ -126,10 +128,20 @@ Keep an eye on money in New Mexico politics
                         onclick="window.open(&quot;{% url 'races' %}?type={{ race.office_type.id }}&visible={{ race.id }}&quot;);
                                  setAttribute('target', '_blank');">
                         <td>{{ race.office }}</td>
-                        <td>{{ race.num_candidates }}</td>
                         <td>
                         {% for campaign in race.campaigns %}
-                            {{ campaign.candidate.full_name }}{% if not forloop.last %};{% endif %}
+                            {{ campaign.candidate.full_name }}
+                            {% if campaign.party_identifier %}
+                                <small>
+                                    <span class="party-identifier {{ campaign.party_identifier }}">
+                                        ({{ campaign.party_identifier }})
+                                    </span>
+                                </small>
+                            {% endif %}
+                            {% if campaign.is_winner %}
+                                <i class="fa fa-fw fa-check-circle green"></i>
+                            {% endif %}
+                            {% if not forloop.last %}<br/>{% endif %}
                         {% endfor %}
                         </td>
                         <td>
