@@ -26,64 +26,66 @@
         </div>
     </div>
     <div class="row">
-        <div class="col-xs-12">
-            <h2><i class="fa fa-fw fa-users"></i> Candidates</h2>
-        </div>
-    </div>
-    <div class="row">
-        {% for campaign in race.sorted_campaigns %}
-            {% if race.campaigns.count > 1 %}
-                <div class="col-md-6">
-            {% else %}
-                <div class="col-xs-12">
-            {% endif %}
-                <h3>
-                    <a href="{% url 'candidate-detail' slug=campaign.candidate.slug %}">
-                        {{ campaign.candidate.full_name }}
-                    </a>
-                    {% if campaign.party_identifier %}
-                        <small>
-                            <span class="party-identifier {{ campaign.party_identifier }}">
-                                ({{ campaign.party_identifier }})
-                            </span>
-                        </small>
+        <table class="table table-striped table-responsive">
+            <thead>
+                <tr>
+                    <th>Candidate</th>
+                    {% if race.funding_period %}
+                        <th>Funds raised since {{ race.funding_period }}</th>
+                    {% else %}
+                        <th>Funds raised</th>
                     {% endif %}
-                    {% if campaign.is_winner %}
-                        <i class="fa fa-fw fa-check-circle green"></i>
-                    {% endif %}
-                </h3>
-                <table class="table table-bordered table-responsive">
-                    <thead>
-                        <tr>
-                            <th>Type</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            {% if race.funding_period %}
-                                <td>Funds raised since {{ race.funding_period }}</td>
-                            {% else %}
-                                <td>Funds raised</td>
-                            {% endif %}
-                            <td>{% funds_raised campaign race.funding_period %}</td>
-                        </tr>
-                        <tr>
-                            {% if race.funding_period %}
-                                <td>Money spent since {{ race.funding_period }}</td>
-                            {% else %}
-                                <td>Money spent</td>
-                            {% endif %}
-                            <td>{% expenditures campaign race.funding_period %}</td>
-                        </tr>
-                        <tr>
-                            <td>Cash on hand</td>
-                            <td>{{ campaign.cash_on_hand | format_money }}
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        {% endfor %}
+                    <th>Money spent</th>
+                    <th>Cash on hand</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for campaign in race.sorted_campaigns %}
+                <tr>
+                    <td>
+                        <a href="{% url 'candidate-detail' slug=campaign.candidate.slug %}">
+                            {{ campaign.candidate.full_name }}
+                        </a>
+                        {% if campaign.party_identifier %}
+                            <small>
+                                <span class="party-identifier {{ campaign.party_identifier }}">
+                                    ({{ campaign.party_identifier }})
+                                </span>
+                            </small>
+                        {% endif %}
+                        {% if campaign.is_winner %}
+                            <i class="fa fa-fw fa-check-circle green"></i>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class='hidden-xs'>
+                            {% with last_year=race.funding_period %}
+                                {% include 'camp_fin/widgets/funding-distribution.html' %}
+                            {% endwith %}
+                        </span>
+                        <span class="visible-xs-block">
+                            {% funds_raised campaign race.funding_period short=True %}
+                    </td>
+                    <td>
+                        <span class='hidden-xs'>
+                            {% expenditures campaign race.funding_period %}
+                        </span>
+                        <span class="visible-xs-block">
+                            {% expenditures campaign race.funding_period short=True %}
+                        </span>
+                    </td>
+                    <td>
+                        <span class='hidden-xs'>
+                            {{ campaign.cash_on_hand | format_money }}
+                        </span>
+                        <span class="visible-xs-block">
+                            {{ campaign.cash_on_hand | format_money_short }}
+                        </span>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}

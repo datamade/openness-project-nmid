@@ -147,7 +147,7 @@ class Campaign(models.Model):
         This campaign's share of the total funds raised in this campaign's active race.
         '''
         if self.active_race and self.active_race.total_funds > 0:
-            percent = round(self.funds_raised(since=str(int(self.active_race.year) - 1)) /
+            percent = round(self.funds_raised(since=self.active_race.funding_period) /
                             self.active_race.total_funds, 2)
 
             return round(percent * 100)
