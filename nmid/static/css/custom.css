@@ -312,7 +312,9 @@ button#btn-search { border-radius: 5px; }
     left: 85%;
 }
 
-
+.total-fund-count {
+    font-size: 1.3em;
+}
 
 /* support reverse spin for icons */
 .fa-spin-reverse {
