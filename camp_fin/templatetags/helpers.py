@@ -59,3 +59,17 @@ def funds_raised(campaign, year, short=False):
         output = format_money(funds)
 
     return output
+
+@register.simple_tag
+def expenditures(campaign, year, short=False):
+    '''
+    Retrives the expenditures for a candidate in a given year.
+    '''
+    expenditures = campaign.expenditures(since=year)
+
+    if short:
+        output = format_money_short(expenditures)
+    else:
+        output = format_money(expenditures)
+
+    return output

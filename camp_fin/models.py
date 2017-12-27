@@ -202,7 +202,29 @@ class Race(models.Model):
                            'office', 'election_season')
 
     def __str__(self):
-        return 'Race for {office}'.format(office=self.office)
+        if self.year:
+            default = '{year} Race for {office}'.format(year=self.year,
+                                                        office=self.office)
+            specific = '%s Race for {specifier} {office}' % str(self.year)
+        else:
+            default = 'Race for {office}'.format(office=self.office)
+            specific = 'Race for {specifier} {office}'
+
+        if self.office_type.description in ('Statewide', 'Judicial'):
+            return default
+
+        elif (self.office_type.description in ('Legislative', 'Public Regulation Commission')
+              and self.district is not None):
+
+            return specific.format(specifier=self.district,
+                                   office=self.office)
+
+        elif self.office_type.description == 'County Offices' and self.county is not None:
+            return specific.format(specifier=self.county,
+                                   office=self.office)
+
+        else:
+            return default
 
     @property
     def campaigns(self):

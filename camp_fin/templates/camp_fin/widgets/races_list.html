@@ -64,7 +64,7 @@
                     {% endif %}
                 {% endif %}
                 <td class="no-wrap">
-                    <a href="#">
+                    <a href="{% url 'race-detail' race.id %}">
                         {{ race.office }}
                         {% if verbose_type == 'all' %}
                             {% with office_type=race.office_type.description %}

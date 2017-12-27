@@ -307,9 +307,29 @@ class RacesView(PaginatedList):
 
 class RaceDetail(DetailView):
     template_name = 'camp_fin/race-detail.html'
+    model = Race
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        self.page_path = self.request.path
+
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        race_str = str(context['object'])
+        seo['title'] = race_str
+        seo['site_desc'] = "View campaign finance contributions for the {race} in New Mexico".format(race=race_str)
+
+        context['seo'] = seo
+
+        try:
+            page = Page.objects.get(path=self.page_path)
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            context['page'] = None
 
         return context
 

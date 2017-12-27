@@ -4,20 +4,82 @@
 {% load humanize %}
 {% load helpers %}
 
-{% block title %}Race detail{% endblock %}
+{% block title %}
+    {{ object }}
+{% endblock %}
 
 {% block full_content %}
 <div class="container">
     <div class="row">
-        <div class="col-md-6">
-            <h1><i class='fa fa-fw fa-check-square-o'></i> Race detail</h1>
+        <div class="col-xs-12">
+            <h1><i class='fa fa-fw fa-check-square-o'></i>
+                {{ object }}
+            </h1>
+            <br />
+            <p>
+                Total funds raised in this race: <strong>{{ race.total_funds | format_money}}</strong>
+            </p>
+            {% if page.text %}
+                {{ page.text|safe }}
+            {% endif %}
+            <hr />
         </div>
     </div>
     <div class="row">
-        <div class="col-md-12">
-            <br />
-            <p class="lead">One big race!</p>
-        </div>
+        <h2><i class="fa fa-fw fa-users"></i> Candidates</h2>
+        {% for campaign in race.sorted_campaigns %}
+            {% if race.campaigns.count > 1 %}
+                <div class="col-md-6">
+            {% else %}
+                <div class="col-xs-12">
+            {% endif %}
+                <h3>
+                    <a href="{% url 'candidate-detail' slug=campaign.candidate.slug %}">
+                        {{ campaign.candidate.full_name }}
+                    </a>
+                    {% if campaign.party_identifier %}
+                        <small>
+                            <span class="party-identifier {{ campaign.party_identifier }}">
+                                ({{ campaign.party_identifier }})
+                            </span>
+                        </small>
+                    {% endif %}
+                    {% if campaign.is_winner %}
+                        <i class="fa fa-fw fa-check-circle green"></i>
+                    {% endif %}
+                </h3>
+                <table class="table table-bordered table-responsive">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            {% if race.funding_period %}
+                                <td>Funds raised since {{ race.funding_period }}</td>
+                            {% else %}
+                                <td>Funds raised</td>
+                            {% endif %}
+                            <td>{% funds_raised campaign race.year %}</td>
+                        </tr>
+                        <tr>
+                            {% if race.funding_period %}
+                                <td>Money spent since {{ race.funding_period }}</td>
+                            {% else %}
+                                <td>Money spent</td>
+                            {% endif %}
+                            <td>{% expenditures campaign race.year %}</td>
+                        </tr>
+                        <tr>
+                            <td>Cash on hand</td>
+                            <td>{{ campaign.cash_on_hand | format_money }}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}

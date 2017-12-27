@@ -13,7 +13,7 @@ from camp_fin.models import (Race, Campaign, Filing, Division,
                              Candidate, ElectionSeason, Status,
                              Entity, PoliticalParty, FilingPeriod,
                              FilingType, County)
-from camp_fin.views import RacesView
+from camp_fin.views import RacesView, RaceDetail
 
 class FakeTestData(TestCase):
     '''
@@ -223,6 +223,44 @@ class TestRaces(FakeTestData):
 
         self.assertEqual(len(parties[0][1]), len(parties[1][1]))
 
+    def test_race_string_representation(self):
+        orig_year = self.election_season.year
+
+        self.assertEqual(str(self.race), '2017 Race for test office')
+
+        statewide = OfficeType.objects.create(description='Statewide')
+
+        self.race.office_type = statewide
+        self.assertEqual(str(self.race), '2017 Race for test office')
+
+        legislative = OfficeType.objects.create(description='Legislative')
+
+        self.race.office_type = legislative
+        self.assertEqual(str(self.race), '2017 Race for first district test office')
+
+        county = OfficeType.objects.create(description='County Offices')
+
+        self.race.office_type = county
+        self.assertEqual(str(self.race), '2017 Race for first county test office')
+
+        # Test branch where year doesn't exist
+        self.election_season.year = None
+
+        self.race.office_type = statewide
+        self.assertEqual(str(self.race), 'Race for test office')
+
+        self.race.office_type = legislative
+        self.assertEqual(str(self.race), 'Race for first district test office')
+
+        self.race.office_type = county
+        self.assertEqual(str(self.race), 'Race for first county test office')
+
+        # Clean up
+        self.race.office_type = self.office_type
+        self.election_season.year = orig_year
+
+        self.race.save()
+
 
 class TestCampaigns(FakeTestData):
     '''
@@ -302,6 +340,32 @@ class TestRacesView(FakeTestData):
         # Check that a table is loaded
         table_list = html.split('<tr')
         self.assertTrue(len(table_list) > 2)
+
+    def test_race_detail_view_resolves(self):
+        found = resolve(reverse('race-detail', args=[self.race.id]))
+        self.assertEqual(found.func.view_class, RaceDetail)
+
+    def test_race_detail_view_html(self):
+        detail_url = reverse('race-detail', args=[self.race.id])
+        response = self.client.get(detail_url)
+        self.assertEqual(response.status_code, 200)
+
+        html = response.content.decode('utf-8')
+
+        self.assertIn('<title>2017 Race for test office', html)
+        self.assertTemplateUsed(response, 'camp_fin/race-detail.html')
+
+    def test_race_detail_view_404(self):
+        pk = 0
+        while pk == self.race.id:
+            pk += 1
+            if pk == 100:
+                self.fail()  # Something's gone very wrong
+
+        bogus_url = reverse('race-detail', args=[pk])
+        response = self.client.get(bogus_url)
+
+        self.assertEqual(response.status_code, 404)
 
 
 class TestAdmin(FakeTestData):
