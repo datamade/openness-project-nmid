@@ -830,6 +830,12 @@ class CandidateDetail(CommitteeDetailBaseView):
         loan_tuple = namedtuple('Loans', columns)
         
         context['loans'] = [loan_tuple(*r) for r in cursor]
+
+        latest_campaign = context['object'].campaign_set\
+                                           .order_by('-election_season__year')\
+                                           .first()
+
+        context['latest_race'] = latest_campaign.active_race
         
         seo = {}
         seo.update(settings.SITE_META)

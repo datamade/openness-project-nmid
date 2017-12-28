@@ -186,6 +186,9 @@ table#donations-list thead th, table#donations-list thead td {
 
 table#donations-list.no-footer { border-bottom: 0px; }
 
+table.race-detail-table {
+    margin-bottom: 50px;
+}
 .no-wrap { white-space: nowrap; }
 
 .green { color: #008600;}

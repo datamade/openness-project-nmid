@@ -40,6 +40,15 @@
             {% endfor %}
         </tbody>
     </table>
+    <p>
+        <strong>
+            <i class="fa fa-fw fa-check-square-o"></i>
+            Latest race:
+        </strong>
+        <a href="{% url 'race-detail' latest_race.id %}">
+            {{ latest_race }} &raquo;
+        </a>
+    </p>
 {% endblock %}
 
 {% block js_templates %}
