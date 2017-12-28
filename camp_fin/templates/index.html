@@ -113,7 +113,7 @@ Keep an eye on money in New Mexico politics
 
         <h2><i class="fa fa-fw fa-check-square-o"></i> Hottest {{ year }} races</h2>
         {{ home_page_contested_races|safe }}
-        {% with object_list=top_races %}
+        {% with races=top_races %}
             {% include 'camp_fin/widgets/races_list.html' %}
         {% endwith %}
 

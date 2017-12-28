@@ -54,7 +54,7 @@
         </tr>
     </thead>
     <tbody>
-        {% for race in object_list %}
+        {% for race in races %}
             <tr>
                 {% if verbose_type != 'all' and verbose_type != 'Statewide' and verbose_type != 'Judicial' %}
                     {% if verbose_type == 'Legislative' or verbose_type == 'Public Regulation Commission' %}
@@ -96,7 +96,9 @@
                 </td>
                 <td>
                     {% for campaign in race.sorted_campaigns %}
-                        {% include 'camp_fin/widgets/funding-distribution.html' %}
+                        {% with total=races|total_funds %}
+                            {% include 'camp_fin/widgets/funding-distribution.html' %}
+                        {% endwith %}
                     {% endfor %}
                 </td>
                 <td>

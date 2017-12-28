@@ -25,7 +25,9 @@
             {% else %}
                 <br/>
             {% endif %}
-            {% include 'camp_fin/widgets/races_list.html' %}
+            {% with races=object_list %}
+                {% include 'camp_fin/widgets/races_list.html' %}
+            {% endwith %}
         </div>
     </div>
     {% if object_list.paginator.num_pages > 1 %}

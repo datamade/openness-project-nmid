@@ -313,10 +313,11 @@ class TestCampaigns(FakeTestData):
         self.assertEqual(self.second_campaign.party_identifier, 'R')
         self.assertEqual(self.non_race_campaign.party_identifier, 'I')
 
-    def test_campaign_share_of_total_funds(self):
-        self.assertEqual(self.first_campaign.share_of_total_funds, 67)
-        self.assertEqual(self.second_campaign.share_of_total_funds, 33)
-        self.assertEqual(self.third_campaign.share_of_total_funds, 0)
+    def test_campaign_share_of_funds(self):
+        total = self.race.total_funds
+        self.assertEqual(self.first_campaign.share_of_funds(total=total), 67)
+        self.assertEqual(self.second_campaign.share_of_funds(total=total), 33)
+        self.assertEqual(self.third_campaign.share_of_funds(total=total), 0)
 
 
 class TestRacesView(FakeTestData):

@@ -141,14 +141,22 @@ class Campaign(models.Model):
         '''
         return sum(filing.total_expenditures for filing in self.filings(since=since))
 
-    @property
-    def share_of_total_funds(self):
+    def share_of_funds(self, total=None):
         '''
-        This campaign's share of the total funds raised in this campaign's active race.
+        This campaign's share of some portion of total funds. Defaults to the
+        portion of total funds raised in this campaign's active race.
         '''
-        if self.active_race and self.active_race.total_funds > 0:
+        has_race = self.active_race is not None and self.active_race.total_funds > 0
+
+        if not total:
+            if has_race:
+                total = self.active_race.total_funds
+            else:
+                return 0
+
+        if has_race:
             percent = round(self.funds_raised(since=self.active_race.funding_period) /
-                            self.active_race.total_funds, 2)
+                            total, 2)
 
             return round(percent * 100)
         else:

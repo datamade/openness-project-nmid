@@ -73,3 +73,18 @@ def expenditures(campaign, year, short=False):
         output = format_money(expenditures)
 
     return output
+
+@register.filter
+def total_funds(races):
+    '''
+    Return the total amount of funds raised in a set of races.
+    '''
+    return sum(race.total_funds for race in races)
+
+@register.filter
+def percentage(obj, total):
+    '''
+    Return a campaign's share (percentage) of the total funds raised in a given
+    context.
+    '''
+    return obj.share_of_funds(total)
