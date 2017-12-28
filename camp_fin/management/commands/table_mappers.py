@@ -368,3 +368,30 @@ CONTACT = OrderedDict([
     ('occupation', {'field': 'occupation', 'data_type': 'varchar'}),
     
 ])
+
+LOBBYIST = OrderedDict([
+    ('lobbyistid', {'field': 'id', 'data_type': 'bigint'}),
+    ('entityid', {'field': 'entity_id', 'data_type': 'bigint'}),
+    ('statusid', {'field': 'status_id', 'data_type': 'bigint'}),
+    ('dateadded', {'field': 'date_added', 'data_type': 'date'}),
+    ('prefix', {'field': 'prefix', 'data_type': 'varchar'}),
+    ('firstname', {'field': 'first_name', 'data_type': 'varchar'}),
+    ('middlename', {'field': 'middle_name', 'data_type': 'varchar'}),
+    ('lastname', {'field': 'last_name', 'data_type': 'varchar'}),
+    ('suffix', {'field': 'suffix', 'data_type': 'varchar'}),
+    ('emailaddress', {'field': 'email', 'data_type': 'varchar'}),
+    ('registrationdate', {'field': 'registration_date', 'data_type': 'date'}),
+    ('terminationdate', {'field': 'termination_date', 'data_type': 'date'}),
+    ('filingperiodid',{'field': 'filing_period_id', 'data_type': 'bigint'}),
+    ('permanentaddressid', {'field': 'permanent_address_id', 'data_type': 'bigint'}),
+    ('addresswhilelobbyingid', {'field': 'lobbying_address_id', 'data_type': 'bigint'}),
+    ('regexpenditurescontributions', {'field': 'reg_expenditures_contributions', 'data_type': 'varchar'}),
+    ('regcompensation', {'field': 'reg_compensation', 'data_type': 'varchar'}),
+    ('reglobbyingtypeid', {'field': 'reg_lobbying_type_id', 'data_type': 'varchar'}),
+    ('regregistrationdate', {'field': 'reg_registration_date', 'data_type': 'varchar'}),
+    ('regterminationdate', {'field': 'reg_termination_date', 'data_type': 'varchar'}),
+    ('contactid', {'field': 'contact_id', 'data_type': 'bigint'}),
+    ('phone', {'field': 'phone', 'data_type': 'varchar'}),
+    ('datelastupdated', {'field': 'date_updated', 'data_type': 'date'}),
+    ('isregistered', {'field': 'is_registered', 'data_type': 'boolean'}),
+])

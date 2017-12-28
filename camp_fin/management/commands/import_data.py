@@ -15,11 +15,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.utils.text import slugify
 
-from .table_mappers import CANDIDATE, PAC, FILING, FILING_PERIOD, CONTRIB_EXP, \
-    CONTRIB_EXP_TYPE, CAMPAIGN, OFFICE_TYPE, OFFICE, CAMPAIGN_STATUS, COUNTY, \
-    DISTRICT, ELECTION_SEASON, ENTITY, ENTITY_TYPE, FILING_TYPE, LOAN, \
-    LOAN_TRANSACTION, LOAN_TRANSACTION_TYPE, POLITICAL_PARTY, SPECIAL_EVENT, \
-    TREASURER, DIVISION, ADDRESS, CONTACT_TYPE, CONTACT, STATE
+from .table_mappers import *
 
 DB_CONN = 'postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}'
 
@@ -27,6 +23,7 @@ engine = sa.create_engine(DB_CONN.format(**settings.DATABASES['default']),
                           convert_unicode=True,
                           server_side_cursors=True)
 
+# Field mappings are defined in `table_mappers.py`
 MAPPER_LOOKUP = {
     'candidate': CANDIDATE,
     'pac': PAC,
@@ -55,6 +52,7 @@ MAPPER_LOOKUP = {
     'contacttype': CONTACT_TYPE,
     'contact': CONTACT,
     'state': STATE,
+    'lobbyist': LOBBYIST,
 }
 
 FILE_LOOKUP = {
@@ -85,6 +83,17 @@ FILE_LOOKUP = {
     'contacttype': 'Cam_ContactType.xlsx',
     'contact': 'Cam_Contact.csv',
     'state': 'States.csv',
+    'lobbyist': 'Cam_Lobbyist.xlsx',
+    'lobbyistregistration': 'Cam_LobbyistRegistration.xlsx',
+    'lobbyistemployer': 'Cam_LobbyistEmployer.xlsx',
+    'organization': 'Cam_Organization.xlsx',
+    'lobbyistfilingperiod': 'Cam_FilingPeriodLobbyist.xlsx',
+    'lobbyisttransaction': 'Cam_ContribExpenditureLobbyist.xlsx',
+    'lobbyisttransactiontype': 'Cam_ContribExpenditureLobbyistType.xlsx',
+    'lobbyistbundlingdisclosure': 'Cam_BundlingDisclosureLobbyist.xlsx',
+    'lobbyistbundlingdisclosurecontributor': 'Cam_BundlingDisclosureLobbyistContributor.xlsx',
+    'reportlobbyist': 'Cam_ReportLobbyist.xlsx',
+    'specialeventlobbyist': 'Cam_SpecialEventLobbyist.xlsx',
 }
 
 class Command(BaseCommand):
