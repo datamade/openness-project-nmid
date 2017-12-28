@@ -75,11 +75,11 @@ def expenditures(campaign, year, short=False):
     return output
 
 @register.filter
-def total_funds(races):
+def largest_contribution(races):
     '''
-    Return the total amount of funds raised in a set of races.
+    Return the largest amount of funds raised in single race among a set of races.
     '''
-    return sum(race.total_funds for race in races)
+    return max(race.largest_contribution for race in races)
 
 @register.filter
 def percentage(obj, total):

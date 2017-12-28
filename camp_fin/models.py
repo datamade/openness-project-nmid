@@ -259,6 +259,16 @@ class Race(models.Model):
         return self.campaigns.count()
 
     @property
+    def largest_contribution(self):
+        '''
+        Return the amount of funds raised for the largest campaign in this race.
+        '''
+        if self.num_candidates > 0:
+            return self.sorted_campaigns[0].funds_raised(since=self.funding_period)
+        else:
+            return 0
+
+    @property
     def year(self):
         '''
         If this race has an ElectionSeason, return the year of the race.

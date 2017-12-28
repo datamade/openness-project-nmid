@@ -96,7 +96,7 @@
                 </td>
                 <td>
                     {% for campaign in race.sorted_campaigns %}
-                        {% with total=races|total_funds %}
+                        {% with total=races|largest_contribution %}
                             {% include 'camp_fin/widgets/funding-distribution.html' %}
                         {% endwith %}
                     {% endfor %}

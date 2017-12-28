@@ -16,7 +16,7 @@
                 <span class="small funding-label" style="left:{{ funds_share|add:"2" }}%">
                     {% funds_raised campaign last_year short=True %}
                 </span>
-            {% elif 100 > funds_share and funds_share > 80 %}
+            {% elif 100 >= funds_share and funds_share > 80 %}
                 <span class="small funding-label below">
                     {% funds_raised campaign last_year short=True %}
                 </span>

@@ -60,7 +60,7 @@
                         </td>
                         <td>
                             <span class='hidden-xs'>
-                                {% with last_year=race.funding_period total=race.total_funds %}
+                                {% with last_year=race.funding_period total=race.largest_contribution %}
                                     {% include 'camp_fin/widgets/funding-distribution.html' %}
                                 {% endwith %}
                             </span>
