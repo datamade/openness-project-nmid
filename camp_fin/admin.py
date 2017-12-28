@@ -24,6 +24,7 @@ class RaceAdmin(admin.ModelAdmin):
                        'display_election_season', 'display_candidates', 'has_winner')
 
     list_display = relevant_fields
+    list_filter = ('election_season__year',)
     form = RaceForm
     search_fields = ('office__description',)
 

@@ -218,19 +218,22 @@ class Race(models.Model):
             default = 'Race for {office}'.format(office=self.office)
             specific = 'Race for {specifier} {office}'
 
-        if self.office_type.description in ('Statewide', 'Judicial'):
-            return default
+        if self.office_type:
+            if self.office_type.description in ('Statewide', 'Judicial'):
+                return default
 
-        elif (self.office_type.description in ('Legislative', 'Public Regulation Commission')
-              and self.district is not None):
+            elif (self.office_type.description in ('Legislative', 'Public Regulation Commission')
+                and self.district is not None):
 
-            return specific.format(specifier=self.district,
-                                   office=self.office)
+                return specific.format(specifier=self.district,
+                                    office=self.office)
 
-        elif self.office_type.description == 'County Offices' and self.county is not None:
-            return specific.format(specifier=self.county,
-                                   office=self.office)
+            elif self.office_type.description == 'County Offices' and self.county is not None:
+                return specific.format(specifier=self.county,
+                                    office=self.office)
 
+            else:
+                return default
         else:
             return default
 
