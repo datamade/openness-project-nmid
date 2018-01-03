@@ -1072,6 +1072,144 @@ class Story(models.Model):
     candidate = models.ManyToManyField('Candidate', blank=True)
     race = models.ManyToManyField('Race', blank=True)
 
+class Lobbyist(models.Model):
+    entity = models.ForeignKey("Entity", db_constraint=False)
+    status = models.ForeignKey("Status", null=True, db_constraint=False)
+    date_added = models.DateTimeField(null=True)
+    prefix = models.CharField(max_length=10, null=True)
+    first_name = models.CharField(max_length=50, null=True)
+    middle_name = models.CharField(max_length=50, null=True)
+    last_name = models.CharField(max_length=50, null=True)
+    suffix = models.CharField(max_length=10, null=True)
+    email = models.CharField(max_length=100, null=True)
+    registration_date = models.DateTimeField(null=True)
+    termination_date = models.DateTimeField(null=True)
+    filing_period = models.ForeignKey("LobbyistFilingPeriod", db_constraint=False)
+    permanent_address = models.ForeignKey("Address",
+                                          related_name="lobbyist_permanent_address",
+                                          null=True,
+                                          db_constraint=False)
+    lobbying_address = models.ForeignKey("Address",
+                                         related_name="lobbyist_lobbying_address",
+                                         null=True,
+                                         db_constraint=False)
+    reg_expenditures_contributions = models.CharField(max_length=50, null=True)
+    reg_compensation = models.CharField(max_length=50, null=True)
+    reg_lobbying_type_id = models.CharField(max_length=50, null=True)
+    reg_registration_date = models.CharField(max_length=50, null=True)
+    reg_termination_date = models.CharField(max_length=50, null=True)
+    contact = models.ForeignKey("Contact", db_constraint=False)
+    phone = models.CharField(max_length=30, null=True)
+    date_updated = models.DateTimeField(null=True)
+    is_registered = models.NullBooleanField(null=True)
+
+    @property
+    def full_name(self):
+        '''
+        Return the full name of this lobbyist.
+        '''
+        name_parts = [self.prefix, self.first_name, self.middle_name,
+                      self.last_name, self.suffix]
+
+        return ' '.join(name for name in name_parts if name is not None)
+
+    def __str__(self):
+        return self.full_name
+
+class LobbyistRegistration(models.Model):
+    lobbyist = models.ForeignKey("Lobbyist", db_constraint=False)
+    date_added = models.DateTimeField(null=True)
+    year = models.CharField(max_length=5)
+    expcont = models.NullBooleanField(null=True)
+    compensation = models.NullBooleanField(null=True)
+    is_registered = models.NullBooleanField(null=True)
+
+class LobbyistEmployer(models.Model):
+    lobbyist = models.ForeignKey("Lobbyist", db_constraint=False)
+    organization = models.ForeignKey("Organization", db_constraint=False)
+    date_added = models.DateTimeField(null=True)
+    year = models.CharField(max_length=5)
+
+class Organization(models.Model):
+    entity = models.ForeignKey("Entity", db_constraint=False)
+    date_added = models.DateTimeField(null=True)
+    status = models.ForeignKey("Status", null=True, db_constraint=False)
+    name = models.CharField(max_length=100)
+    email = models.CharField(max_length=100, null=True)
+    permanent_address = models.ForeignKey("Address",
+                                          related_name="organization_permanent_address",
+                                          null=True,
+                                          db_constraint=False)
+    contact = models.ForeignKey("Contact", db_constraint=False)
+    date_updated = models.DateTimeField(null=True)
+    phone = models.CharField(max_length=30, null=True)
+
+class LobbyistFilingPeriod(models.Model):
+    filing_date = models.DateTimeField(null=True)
+    due_date = models.DateTimeField(null=True)
+    description = models.CharField(max_length=100)
+    allow_statement_of_no_activity = models.NullBooleanField(null=True)
+    initial_date = models.DateTimeField(null=True)
+    lobbyist_filing_period_type = models.ForeignKey("LobbyistFilingPeriodType", null=True, db_constraint=False)
+    regular_filing_period =  models.ForeignKey("FilingPeriod", null=True, db_constraint=False)
+
+class LobbyistTransaction(models.Model):
+    lobbyist_report = models.ForeignKey("LobbyistReport", null=True, db_constraint=False)
+    name = models.CharField(max_length=100)
+    beneficiary = models.CharField(max_length=100)
+    expenditure_purpose = models.CharField(max_length=100)
+    lobbyist_transaction_type = models.ForeignKey("LobbyistTransactionType", null=True, db_constraint=False)
+    received_date = models.DateTimeField(null=True)
+    amount = models.FloatField()
+    date_added = models.DateTimeField(null=True)
+    transaction_status = models.ForeignKey("LobbyistTransactionStatus", null=True, db_constraint=False)
+
+class LobbyistTransactionType(models.Model):
+    description = models.CharField(max_length=100)
+    group = models.ForeignKey("LobbyistTransactionGroup", null=True, db_constraint=False)
+
+class LobbyistReport(models.Model):
+    entity = models.ForeignKey("Entity", db_constraint=False)
+    lobbyist_filing_period = models.ForeignKey("LobbyistFilingPeriod", null=True, db_Constraint=False)
+    status = models.ForeignKey("Status", null=True, db_constraint=False)
+    date_added = models.DateTimeField(null=True)
+    date_closed = models.DateTimeField(null=True)
+    date_updated = models.DateTimeField(null=True)
+    pdf_report = models.CharField(max_length=50)
+    meal_beverage_expenses = models.FloatField()
+    entertainment_expenses = models.FloatField()
+    gift_expenses = models.FloatField()
+    other_expenses = models.FloatField()
+    special_event_expenses = models.FloatField()
+    expenditures = models.FloatField()
+    political_contributions = models.FloatField()
+
+class LobbyistSpecialEvent(models.Model):
+    lobbyist_report = models.ForeignKey("LobbyistReport", db_constraint=False)
+    event_type = models.CharField(max_length=50)
+    location = models.CharField(max_length=50)
+    received_date = models.DateTimeField(null=True)
+    amount = models.FloatField()
+    groups_invited = models.CharField(max_length=250)
+    date_added = models.DateTimeField(null=True)
+    transaction_status = models.ForeignKey("LobbyistTransactionStatus", null=True, db_constraint=False),
+
+class LobbyistBundlingDisclosure(models.Model):
+    destinatary_name = models.CharField(max_length=100)
+    lobbyist_report = models.ForeignKey("LobbyistReport", db_constraint=False)
+    date_added = models.DateTimeField(null=True)
+    transaction_status = models.ForeignKey("LobbyistTransactionStatus", null=True, db_constraint=False),
+
+class LobbyistBundlingDisclosureContributor(models.Model):
+    bundling_disclosure = models.ForeignKey("LobbyistBundlingDisclosure", db_constraint=False)
+    name = models.CharField(max_length=100)
+    address = models.ForeignKey("Address",
+                                related_name="lobbyist_bundling_disclosure_contributor_address",
+                                null=True,
+                                db_constraint=False)
+    amount = models.FloatField()
+    occupation = models.CharField(max_length=50)
+    lobbyist_report = models.ForeignKey("LobbyistReport", null=True, db_constraint=False)
 
 ######################################################################
 ### Below here are normalized tables that we may or may not end up ###
@@ -1085,4 +1223,13 @@ class Status(models.Model):
     pass
 
 class AddressType(models.Model):
+    pass
+
+class LobbyistFilingPeriodType(models.Model):
+    pass
+
+class LobbyistTransactionStatus(models.Model):
+    pass
+
+class LobbyistTransactionGroup(models.Model):
     pass
