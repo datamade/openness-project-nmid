@@ -1093,15 +1093,9 @@ class Lobbyist(models.Model):
                                          related_name="lobbyist_lobbying_address",
                                          null=True,
                                          db_constraint=False)
-    reg_expenditures_contributions = models.CharField(max_length=50, null=True)
-    reg_compensation = models.CharField(max_length=50, null=True)
-    reg_lobbying_type_id = models.CharField(max_length=50, null=True)
-    reg_registration_date = models.CharField(max_length=50, null=True)
-    reg_termination_date = models.CharField(max_length=50, null=True)
     contact = models.ForeignKey("Contact", db_constraint=False)
     phone = models.CharField(max_length=30, null=True)
     date_updated = models.DateTimeField(null=True)
-    is_registered = models.NullBooleanField(null=True)
 
     @property
     def full_name(self):
@@ -1120,8 +1114,6 @@ class LobbyistRegistration(models.Model):
     lobbyist = models.ForeignKey("Lobbyist", db_constraint=False)
     date_added = models.DateTimeField(null=True)
     year = models.CharField(max_length=5)
-    expcont = models.NullBooleanField(null=True)
-    compensation = models.NullBooleanField(null=True)
     is_registered = models.NullBooleanField(null=True)
 
 class LobbyistEmployer(models.Model):
@@ -1155,9 +1147,9 @@ class LobbyistFilingPeriod(models.Model):
 
 class LobbyistTransaction(models.Model):
     lobbyist_report = models.ForeignKey("LobbyistReport", null=True, db_constraint=False)
-    name = models.CharField(max_length=100)
-    beneficiary = models.CharField(max_length=100)
-    expenditure_purpose = models.CharField(max_length=100)
+    name = models.CharField(max_length=250, null=True)
+    beneficiary = models.CharField(max_length=250, null=True)
+    expenditure_purpose = models.CharField(max_length=250, null=True)
     lobbyist_transaction_type = models.ForeignKey("LobbyistTransactionType", null=True, db_constraint=False)
     received_date = models.DateTimeField(null=True)
     amount = models.FloatField()
@@ -1170,7 +1162,7 @@ class LobbyistTransactionType(models.Model):
 
 class LobbyistReport(models.Model):
     entity = models.ForeignKey("Entity", db_constraint=False)
-    lobbyist_filing_period = models.ForeignKey("LobbyistFilingPeriod", null=True, db_Constraint=False)
+    lobbyist_filing_period = models.ForeignKey("LobbyistFilingPeriod", null=True, db_constraint=False)
     status = models.ForeignKey("Status", null=True, db_constraint=False)
     date_added = models.DateTimeField(null=True)
     date_closed = models.DateTimeField(null=True)
@@ -1186,19 +1178,19 @@ class LobbyistReport(models.Model):
 
 class LobbyistSpecialEvent(models.Model):
     lobbyist_report = models.ForeignKey("LobbyistReport", db_constraint=False)
-    event_type = models.CharField(max_length=50)
-    location = models.CharField(max_length=50)
+    event_type = models.CharField(max_length=100)
+    location = models.CharField(max_length=100)
     received_date = models.DateTimeField(null=True)
     amount = models.FloatField()
-    groups_invited = models.CharField(max_length=250)
+    groups_invited = models.CharField(max_length=2000, null=True)
     date_added = models.DateTimeField(null=True)
-    transaction_status = models.ForeignKey("LobbyistTransactionStatus", null=True, db_constraint=False),
+    transaction_status = models.ForeignKey("LobbyistTransactionStatus", null=True, db_constraint=False)
 
 class LobbyistBundlingDisclosure(models.Model):
     destinatary_name = models.CharField(max_length=100)
     lobbyist_report = models.ForeignKey("LobbyistReport", db_constraint=False)
     date_added = models.DateTimeField(null=True)
-    transaction_status = models.ForeignKey("LobbyistTransactionStatus", null=True, db_constraint=False),
+    transaction_status = models.ForeignKey("LobbyistTransactionStatus", null=True, db_constraint=False)
 
 class LobbyistBundlingDisclosureContributor(models.Model):
     bundling_disclosure = models.ForeignKey("LobbyistBundlingDisclosure", db_constraint=False)
@@ -1208,7 +1200,7 @@ class LobbyistBundlingDisclosureContributor(models.Model):
                                 null=True,
                                 db_constraint=False)
     amount = models.FloatField()
-    occupation = models.CharField(max_length=50)
+    occupation = models.CharField(max_length=250, null=True)
     lobbyist_report = models.ForeignKey("LobbyistReport", null=True, db_constraint=False)
 
 ######################################################################

@@ -61,8 +61,8 @@ MAPPER_LOOKUP = {
     'lobbyisttransactiontype': LOBBYIST_TRANSACTION_TYPE,
     'lobbyistbundlingdisclosure': LOBBYIST_BUNDLING_DISCLOSURE,
     'lobbyistbundlingdisclosurecontributor': LOBBYIST_BUNDLING_DISCLOSURE_CONTRIBUTOR,
-    'reportlobbyist': LOBBYIST_REPORT,
-    'specialeventlobbyist': LOBBYIST_SPECIAL_EVENT,
+    'lobbyistreport': LOBBYIST_REPORT,
+    'lobbyistspecialevent': LOBBYIST_SPECIAL_EVENT,
 }
 
 FILE_LOOKUP = {
@@ -102,8 +102,8 @@ FILE_LOOKUP = {
     'lobbyisttransactiontype': 'Cam_ContribExpenditureLobbyistType.xlsx',
     'lobbyistbundlingdisclosure': 'Cam_BundlingDisclosureLobbyist.xlsx',
     'lobbyistbundlingdisclosurecontributor': 'Cam_BundlingDisclosureLobbyistContributor.xlsx',
-    'reportlobbyist': 'Cam_ReportLobbyist.xlsx',
-    'specialeventlobbyist': 'Cam_SpecialEventLobbyist.xlsx',
+    'lobbyistreport': 'Cam_ReportLobbyist.xlsx',
+    'lobbyistspecialevent': 'Cam_SpecialEventLobbyist.xlsx',
 }
 
 class Command(BaseCommand):
@@ -150,7 +150,6 @@ class Command(BaseCommand):
         self.addCandidateFullName()
         self.addContactFullName()
         self.addTreasurerFullName()
-        self.addLobbyistFullName()
 
         # Make or refresh materialized views
         self.makeTransactionAggregates()
