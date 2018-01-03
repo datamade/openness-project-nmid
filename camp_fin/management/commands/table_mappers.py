@@ -395,3 +395,112 @@ LOBBYIST = OrderedDict([
     ('datelastupdated', {'field': 'date_updated', 'data_type': 'date'}),
     ('isregistered', {'field': 'is_registered', 'data_type': 'boolean'}),
 ])
+
+LOBBYIST_REGISTRATION = OrderedDict([
+    ('lobbyistregistrationid', {'field': 'id', 'data_type': 'bigint'}),
+    ('lobbyistid', {'field': 'lobbyist_id', 'data_type': 'bigint'}),
+    ('dateadded', {'field': 'date_added', 'data_type': 'date'}),
+    ('year', {'field': 'year', 'data_type': 'varchar'}),
+    ('expcont', {'field': 'expcont', 'data_type': 'boolean'}),
+    ('compensation', {'field': 'compensation', 'data_type': 'boolean'}),
+    ('isregistered', {'field': 'is_registered', 'data_type': 'boolean'}),
+])
+
+LOBBYIST_EMPLOYER = OrderedDict([
+    ('employerid', {'field': 'id', 'data_type': 'bigint'}),
+    ('lobbyistid', {'field': 'lobbyist_id', 'data_type': 'bigint'}),
+    ('organizationid', {'field': 'organization_id', 'data_type': 'bigint'}),
+    ('dateadded', {'field': 'date_added', 'data_type': 'date'}),
+    ('year', {'field': 'year', 'data_type': 'varchar'}),
+])
+
+ORGANIZATION = OrderedDict([
+    ('organizationid', {'field': 'id', 'data_type': 'bigint'}),
+    ('entityid', {'field': 'entity_id', 'data_type': 'bigint'}),
+    ('dateadded', {'field': 'date_added', 'data_type': 'date'}),
+    ('statusid', {'field': 'status_id', 'data_type': 'bigint'}),
+    ('name', {'field': 'name', 'data_type': 'varchar'}),
+    ('emailaddress', {'field': 'email', 'data_type': 'varchar'}),
+    ('permanentaddressid', {'field': 'permanent_address_id', 'data_type': 'bigint'}),
+    ('contactid', {'field': 'contact_id', 'data_type': 'bigint'}),
+    ('datelastupdated', {'field': 'date_updated', 'data_type': 'date'}),
+    ('phone', {'field': 'phone', 'data_type': 'varchar'}),
+])
+
+LOBBYIST_FILING_PERIOD = OrderedDict([
+    ('filingperiodlobbyistid', {'field': 'id', 'data_type': 'bigint'}),
+    ('filingdate', {'field': 'filing_date', 'data_type': 'timestamp with time zone'}),
+    ('duedate', {'field': 'due_date', 'data_type': 'timestamp with time zone'}),
+    ('description', {'field': 'description', 'data_type': 'varchar'}),
+    ('filingperiodlobbyisttypeid', {'field': 'lobbyist_type_id', 'data_type': 'bigint'}),
+    ('allowstatementofnoactivity', {'field': 'allow_statement_of_no_activity', 'data_type': 'boolean'}),
+    ('initialdate', {'field': 'initial_date', 'data_type': 'timestamp with time zone'}),
+    ('regularfilingperiodid', {'field': 'regular_filing_period_id', 'data_type': 'bigint'}),
+])
+
+LOBBYIST_TRANSACTION = OrderedDict([
+    ('contribexpenditurelobbyistid', {'field': 'id', 'data_type': 'bigint'}),
+    ('reportlobbyistid', {'field': 'lobbyist_report_id', 'data_type': 'bigint'}),
+    ('name', {'field': 'name', 'data_type': 'varchar'}),
+    ('beneficiary', {'field': 'beneficiary', 'data_type': 'varchar'}),
+    ('expenditurepurpose', {'field': 'expenditure_purpose', 'data_type': 'varchar'}),
+    ('contribexpenditurelobbyisttypeid', {'field': 'lobbyist_type_id', 'data_type': 'bigint'}),
+    ('datecontribution', {'field': 'received_date', 'data_type': 'date'}),
+    ('amount', {'field': 'amount', 'data_type': 'money::numeric::double precision'}),
+    ('dateadded', {'field': 'date_added', 'data_type': 'timestamp with time zone'}),
+    ('transactionstatusid', {'field': 'transaction_status_id', 'data_type': 'bigint'}),
+])
+
+LOBBYIST_TRANSACTION_TYPE = OrderedDict([
+    ('contribexpenditurelobbyisttypeid', {'field': 'id', 'data_type': 'bigint'}),
+    ('description', {'field': 'description', 'data_type': 'varchar'}),
+    ('contribexpenditurelobbyisttypegroupid', {'field': 'group_id', 'data_type': 'bigint'}),
+])
+
+LOBBYIST_REPORT = OrderedDict([
+    ('reportlobbyistid', {'field': 'id', 'data_type': 'bigint'}),
+    ('entityid', {'field': 'entity_id', 'data_type': 'bigint'}),
+    ('filingperiodlobbyistid', {'field': 'lobbyist_filing_period_id', 'data_type': 'bigint'}),
+    ('statusid', {'field': 'status_id', 'data_type': 'bigint'}),
+    ('dateadded', {'field': 'date_added', 'data_type': 'timestamp with time zone'}),
+    ('dateclosed', {'field': 'date_closed', 'data_type': 'timestamp with time zone'}),
+    ('lastdateamended', {'field': 'date_updated', 'data_type': 'timestamp with time zone'}),
+    ('pdffile', {'field': 'pdf_report', 'data_type': 'varchar'}),
+    ('mealbeverageexpenses', {'field': 'meal_beverage_expenses', 'data_type': 'money::numeric::double precision'}),
+    ('otherentertainmentexpenses', {'field': 'entertainment_expenses', 'data_type': 'money::numeric::double precision'}),
+    ('giftexpenses', {'field': 'gift_expenses', 'data_type': 'money::numeric::double precision'}),
+    ('otherexpenses', {'field': 'other_expenses', 'data_type': 'money::numeric::double precision'}),
+    ('specialeventexpenses', {'field': 'special_event_expenses', 'data_type': 'money::numeric::double precision'}),
+    ('expenditures', {'field': 'expenditures', 'data_type': 'money::numeric::double precision'}),
+    ('politicalcontributions', {'field': 'political_contributions', 'data_type': 'money::numeric::double precision'}),
+])
+
+LOBBYIST_SPECIAL_EVENT = OrderedDict([
+    ('specialeventlobbyistid', {'field': 'id', 'data_type': 'bigint'}),
+    ('reportlobbyistid', {'field': 'lobbyist_report_id', 'data_type': 'bigint'}),
+    ('type', {'field': 'type', 'data_type': 'varchar'}),
+    ('location', {'field': 'location', 'data_location': 'varchar'}),
+    ('datecontribution', {'field': 'received_date', 'data_type': 'date'}),
+    ('amount', {'field': 'amount', 'data_type': 'money::numeric::double precision'}),
+    ('groupsinvited', {'field': 'groups_invited', 'data_type': 'varchar'}),
+    ('dateadded', {'field': 'date_added', 'data_type': 'timestamp with time zone'}),
+    ('transactionstatusid', {'field': 'transaction_status_id', 'data_type': 'bigint'}),
+])
+
+LOBBYIST_BUNDLING_DISCLOSURE = OrderedDict([
+    ('bundlingdisclosurelobbyistid', {'field': 'id', 'data_type': 'bigint'}),
+    ('destinataryname', {'field': 'destinatary_name', 'data_type': 'varchar'}),
+    ('reportlobbyistid', {'field': 'lobbyist_report_id', 'data_type': 'bigint'}),
+    ('dateadded', {'field': 'date_added', 'data_type': 'timestamp with time zone'}),
+    ('transactionstatusid', {'field': 'transaction_status_id', 'data_type': 'bigint'}),
+])
+
+LOBBYIST_BUNDLING_DISCLOSURE_CONTRIBUTOR = OrderedDict([
+    ('bundlingdisclosurelobbyistcontributorid', {'field': 'id', 'data_type': 'bigint'}),
+    ('bundlingdisclosurelobbyistid', {'field': 'bundling_disclosure_id', 'data_type': 'bigint'}),
+    ('name', {'field': 'name', 'data_type': 'varchar'}),
+    ('addressid', {'field': 'address_id', 'data_type': 'bigint'}),
+    ('amount', {'field': 'amount', 'data_type': 'money::numeric::double precision'}),
+    ('occupation', {'field': 'occupation', 'data_type': 'varchar'}),
+    ('reportlobbyistid', {'field': 'lobbyist_report_id', 'data_type': 'bigint'}),
+])

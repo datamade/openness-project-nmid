@@ -53,6 +53,16 @@ MAPPER_LOOKUP = {
     'contact': CONTACT,
     'state': STATE,
     'lobbyist': LOBBYIST,
+    'lobbyistregistration': LOBBYIST_REGISTRATION,
+    'lobbyistemployer': LOBBYIST_EMPLOYER,
+    'organization': ORGANIZATION,
+    'lobbyistfilingperiod': LOBBYIST_FILING_PERIOD,
+    'lobbyisttransaction': LOBBYIST_TRANSACTION,
+    'lobbyisttransactiontype': LOBBYIST_TRANSACTION_TYPE,
+    'lobbyistbundlingdisclosure': LOBBYIST_BUNDLING_DISCLOSURE,
+    'lobbyistbundlingdisclosurecontributor': LOBBYIST_BUNDING_DISCLOSURE_CONTRIBUTOR,
+    'reportlobbyist': LOBBYIST_REPORT,
+    'specialeventlobbyist': LOBBYIST_SPECIAL_EVENT,
 }
 
 FILE_LOOKUP = {
