@@ -21,6 +21,10 @@ class FakeTestData(TestCase):
     '''
     @classmethod
     def setUpTestData(cls):
+        cls.races()
+
+    @classmethod
+    def races(cls):
         first_entity = Entity.objects.create(user_id=1)
         second_entity = Entity.objects.create(user_id=2)
         third_entity = Entity.objects.create(user_id=3)
@@ -65,7 +69,14 @@ class FakeTestData(TestCase):
                                                district=cls.district,
                                                status=status)
 
-        cls.election_season = ElectionSeason.objects.create(year='2017',
+        year = datetime.datetime.now(pytz.utc).year
+        last_year = year - 1
+        cls.year, cls.last_year = str(year), str(last_year)
+
+        # Generate a timestamp from two years ago for filing dates
+        two_years_ago = (datetime.datetime.now(pytz.utc) - datetime.timedelta(days=730))
+
+        cls.election_season = ElectionSeason.objects.create(year=cls.year,
                                                             special=False,
                                                             status=status)
 
@@ -154,8 +165,6 @@ class FakeTestData(TestCase):
                                                  no_activity=False,
                                                  edited='0')
 
-        two_years_ago = (datetime.datetime.now(pytz.utc) - datetime.timedelta(days=730))
-
         cls.filtered_filing_period = FilingPeriod.objects.create(filing_date=two_years_ago,
                                                     due_date=two_years_ago,
                                                     allow_no_activity=True,
@@ -203,8 +212,8 @@ class TestRaces(FakeTestData):
         self.assertEqual(self.race.num_candidates, 3)
 
     def test_race_year_and_funding_period(self):
-        self.assertEqual(self.race.year, '2017')
-        self.assertEqual(self.race.funding_period, '2016')
+        self.assertEqual(self.race.year, self.year)
+        self.assertEqual(self.race.funding_period, self.last_year)
 
     def test_race_total_funds(self):
         self.assertEqual(self.race.total_funds, (self.first_filing.total_contributions +
@@ -226,22 +235,26 @@ class TestRaces(FakeTestData):
     def test_race_string_representation(self):
         orig_year = self.election_season.year
 
-        self.assertEqual(str(self.race), '2017 Race for test office')
+        self.assertEqual(str(self.race),
+                         '{year} Race for test office'.format(year=orig_year))
 
         statewide = OfficeType.objects.create(description='Statewide')
 
         self.race.office_type = statewide
-        self.assertEqual(str(self.race), '2017 Race for test office')
+        self.assertEqual(str(self.race),
+                         '{year} Race for test office'.format(year=orig_year))
 
         legislative = OfficeType.objects.create(description='Legislative')
 
         self.race.office_type = legislative
-        self.assertEqual(str(self.race), '2017 Race for first district test office')
+        self.assertEqual(str(self.race),
+                         '{year} Race for first district test office'.format(year=orig_year))
 
         county = OfficeType.objects.create(description='County Offices')
 
         self.race.office_type = county
-        self.assertEqual(str(self.race), '2017 Race for first county test office')
+        self.assertEqual(str(self.race),
+                         '{year} Race for first county test office'.format(year=orig_year))
 
         # Test branch where year doesn't exist
         self.election_season.year = None
@@ -335,7 +348,7 @@ class TestRacesView(FakeTestData):
 
         html = response.content.decode('utf-8')
 
-        self.assertIn('<title>Contested 2017 races in New Mexico', html)
+        self.assertIn('<title>Contested %s races in New Mexico' % year, html)
         self.assertTemplateUsed(response, 'camp_fin/races.html')
 
         # Check that a table is loaded
@@ -353,7 +366,7 @@ class TestRacesView(FakeTestData):
 
         html = response.content.decode('utf-8')
 
-        self.assertIn('<title>2017 Race for test office', html)
+        self.assertIn('<title>{year} Race for test office'.format(year=self.year), html)
         self.assertTemplateUsed(response, 'camp_fin/race-detail.html')
 
     def test_race_detail_view_404(self):
