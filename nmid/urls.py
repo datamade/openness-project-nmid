@@ -20,6 +20,7 @@ from django.conf.urls import handler404, handler500
 from rest_framework import routers
 
 from camp_fin.views import IndexView, CandidateList, CandidateDetail, \
+    LobbyistList, LobbyistDetail, LobbyistTransactionList, \
     ContributionViewSet, ExpenditureViewSet, ContributionDownloadViewSet, \
     ExpenditureDownloadViewSet, TransactionViewSet, TopDonorsView, \
     TopExpensesView, CommitteeList, CommitteeDetail, ContributionDetail, DownloadView, \
@@ -56,6 +57,11 @@ urlpatterns = [
     url(r'^races/$', RacesView.as_view(), name='races'),
     url(r'^races/(?P<pk>[\w-]+)/$', RaceDetail.as_view(), name='race-detail'),
     url(r'^downloads/$', DownloadView.as_view(), name='downloads'),
+    url(r'^lobbyists/$', LobbyistList.as_view(), name='lobbyist-list'),
+    url(r'^lobbyists/(?P<slug>[\w-]+)/$', LobbyistDetail.as_view(), name='lobbyist-detail'),
+    url(r'^transactions/$', LobbyistTransactionList.as_view(), name='lobbyist-transaction-list'),
+    url(r'^api/bulk/contributions/$', bulk_contributions, name='bulk-contributions'),
+    url(r'^api/bulk/expenditures/$', bulk_expenditures, name='bulk-expenditures'),
     url(r'^api/bulk/candidates/$', bulk_candidates, name='bulk-candidates'),
     url(r'^api/bulk/committees/$', bulk_committees, name='bulk-committees'),
     url(r'^api/', include(router.urls)),

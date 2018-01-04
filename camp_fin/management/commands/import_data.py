@@ -210,7 +210,7 @@ class Command(BaseCommand):
                 self.populateEntityTable()
                 self.stdout.write(self.style.SUCCESS('Populated entity table for {}'.format(self.entity_type)))
 
-            if self.entity_type in ['candidate', 'pac']:
+            if self.entity_type in ['candidate', 'pac', 'lobbyist']:
                 self.populateSlugField()
                 self.stdout.write(self.style.SUCCESS('Populated slug fields for {}'.format(self.entity_type)))
 
@@ -601,7 +601,7 @@ class Command(BaseCommand):
         self.executeTransaction(entities)
 
     def populateSlugField(self):
-        if self.entity_type == 'candidate':
+        if self.entity_type in ['candidate', 'lobbyist']:
             name_components = [
                 'first_name',
                 'last_name',

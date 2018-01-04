@@ -1084,7 +1084,9 @@ class Lobbyist(models.Model):
     email = models.CharField(max_length=100, null=True)
     registration_date = models.DateTimeField(null=True)
     termination_date = models.DateTimeField(null=True)
-    filing_period = models.ForeignKey("LobbyistFilingPeriod", db_constraint=False)
+    filing_period = models.ForeignKey("LobbyistFilingPeriod",
+                                      db_constraint=False,
+                                      null=True)
     permanent_address = models.ForeignKey("Address",
                                           related_name="lobbyist_permanent_address",
                                           null=True,
@@ -1093,9 +1095,10 @@ class Lobbyist(models.Model):
                                          related_name="lobbyist_lobbying_address",
                                          null=True,
                                          db_constraint=False)
-    contact = models.ForeignKey("Contact", db_constraint=False)
+    contact = models.ForeignKey("Contact", db_constraint=False, null=True)
     phone = models.CharField(max_length=30, null=True)
     date_updated = models.DateTimeField(null=True)
+    slug = models.CharField(max_length=500, null=True)
 
     @property
     def full_name(self):
