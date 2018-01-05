@@ -130,6 +130,7 @@ class FakeTestData(TestCase):
                                                         reminder_sent_status=0)
 
         cls.first_filing = Filing.objects.create(entity=first_entity,
+                                                 campaign=cls.first_campaign,
                                                  filing_period=cls.filing_period,
                                                  date_added=datetime.datetime.now(pytz.utc),
                                                  date_closed=datetime.datetime.now(pytz.utc),
@@ -142,6 +143,7 @@ class FakeTestData(TestCase):
                                                  edited='0')
 
         cls.second_filing = Filing.objects.create(entity=second_entity,
+                                                  campaign=cls.second_campaign,
                                                   filing_period=cls.filing_period,
                                                   date_added=datetime.datetime.now(pytz.utc),
                                                   date_closed=datetime.datetime.now(pytz.utc),
@@ -154,6 +156,7 @@ class FakeTestData(TestCase):
                                                   edited='0')
 
         cls.third_filing = Filing.objects.create(entity=third_entity,
+                                                 campaign=cls.third_campaign,
                                                  filing_period=cls.filing_period,
                                                  date_added=datetime.datetime.now(pytz.utc),
                                                  date_closed=datetime.datetime.now(pytz.utc),
@@ -166,15 +169,16 @@ class FakeTestData(TestCase):
                                                  edited='0')
 
         cls.filtered_filing_period = FilingPeriod.objects.create(filing_date=two_years_ago,
-                                                    due_date=two_years_ago,
-                                                    allow_no_activity=True,
-                                                    filing_period_type=filing_type,
-                                                    exclude_from_cascading=True,
-                                                    initial_date=two_years_ago,
-                                                    email_sent_status=0,
-                                                    reminder_sent_status=0)
+                                                                 due_date=two_years_ago,
+                                                                 allow_no_activity=True,
+                                                                 filing_period_type=filing_type,
+                                                                 exclude_from_cascading=True,
+                                                                 initial_date=two_years_ago,
+                                                                 email_sent_status=0,
+                                                                 reminder_sent_status=0)
 
         cls.filtered_filing = Filing.objects.create(entity=second_entity,
+                                                    campaign=cls.second_campaign,
                                                     filing_period=cls.filtered_filing_period,
                                                     date_added=two_years_ago,
                                                     date_closed=two_years_ago,
@@ -318,8 +322,9 @@ class TestCampaigns(FakeTestData):
         self.assertFalse(self.second_campaign.is_winner)
 
     def test_campaign_cash_on_hand(self):
-        for campaign in self.campaigns:
-            self.assertEqual(campaign.cash_on_hand, (campaign.funds_raised() - campaign.expenditures()))
+        for campaign, filings in zip(self.campaigns, self.filings):
+            filing = filings[0]
+            self.assertEqual(campaign.cash_on_hand, filing.closing_balance)
 
     def test_campaign_party_identifier(self):
         self.assertEqual(self.first_campaign.party_identifier, 'D')

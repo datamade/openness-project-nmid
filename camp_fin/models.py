@@ -167,7 +167,8 @@ class Campaign(models.Model):
         '''
         Total amount of cash that a campaign has on hand at any given point in time.
         '''
-        return (self.funds_raised() - self.expenditures())
+        last_filing = self.filing_set.order_by('-date_closed').first()
+        return last_filing.closing_balance
 
     @property
     def is_winner(self):
