@@ -189,7 +189,11 @@ table#donations-list.no-footer { border-bottom: 0px; }
 table.race-detail-table {
     margin-bottom: 50px;
 }
+
 .no-wrap { white-space: nowrap; }
+
+/* override bootstrap default */
+.align-middle { vertical-align: middle !important; }
 
 .green { color: #008600;}
 
