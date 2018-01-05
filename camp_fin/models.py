@@ -1100,6 +1100,9 @@ class Lobbyist(models.Model):
     date_updated = models.DateTimeField(null=True)
     slug = models.CharField(max_length=500, null=True)
 
+    def __str__(self):
+        return self.full_name
+
     @property
     def full_name(self):
         '''
@@ -1108,10 +1111,23 @@ class Lobbyist(models.Model):
         name_parts = [self.prefix, self.first_name, self.middle_name,
                       self.last_name, self.suffix]
 
-        return ' '.join(name for name in name_parts if name is not None)
+        return ' '.join(name.strip() for name in name_parts if name is not None)
 
-    def __str__(self):
-        return self.full_name
+    @property
+    def employers(self):
+        '''
+        Return a list of Organizations that have employed this Lobbyist,
+        in descending order of how recent the term of employment was.
+        '''
+        return []
+
+    @property
+    def total_contributions(self):
+        '''
+        Return the total amount of money that this Lobbyist has spent on lobbying,
+        for any purpose.
+        '''
+        return 0
 
 class LobbyistRegistration(models.Model):
     lobbyist = models.ForeignKey("Lobbyist", db_constraint=False)
@@ -1139,6 +1155,9 @@ class Organization(models.Model):
     date_updated = models.DateTimeField(null=True)
     phone = models.CharField(max_length=30, null=True)
 
+    def __str__(self):
+        return self.name
+
 class LobbyistFilingPeriod(models.Model):
     filing_date = models.DateTimeField(null=True)
     due_date = models.DateTimeField(null=True)
@@ -1158,6 +1177,20 @@ class LobbyistTransaction(models.Model):
     amount = models.FloatField()
     date_added = models.DateTimeField(null=True)
     transaction_status = models.ForeignKey("LobbyistTransactionStatus", null=True, db_constraint=False)
+
+    @property
+    def lobbyist(self):
+        '''
+        Return the Lobbyist or Organization repsonsible for this transaction.
+        '''
+        return None
+
+    @property
+    def purpose(self):
+        '''
+        Return the reason for this Transaction.
+        '''
+        return None
 
 class LobbyistTransactionType(models.Model):
     description = models.CharField(max_length=100)

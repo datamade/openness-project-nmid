@@ -675,7 +675,7 @@ class CommitteeList(PaginatedList):
 
 
 class LobbyistList(PaginatedList):
-    template_name = 'camp_fin/lobbyist-list.html'
+    template_name = 'camp_fin/lobbyists.html'
     page_path = '/lobbyists/'
 
     def get_queryset(self, **kwargs):

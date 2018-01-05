@@ -5,6 +5,44 @@
 {% load helpers %}
 
 {% block full_content %}
+<div class="container">
+    <div class="row">
+        <div class="col-xs-12">
+            <p style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;margin-top:15px">
+            <a href="{% url 'lobbyist-list' %}">&laquo; Back to Lobbyists</a>
+            </p>
+            <h1>{{ lobbyist.full_name }}
+                <small>Lobbyist</small>
+            </h1>
+            {% if sos_link %}
+                <p><a href="{{sos_link}}" target="_blank">View on the New Mexico Secretary of State's website &raquo;</a></p>
+            {% endif %}
+        </div>
+    </div>
+    {% if lobbyist.employers %}
+        <div class="row">
+            <div class="col-xs-12">
+                <h2>Employers</h2>
+                <table class="table-striped table-responsive">
+                    <thead>
+                        <tr>
+                            <th>Organization</th>
+                            <th>Year</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for employer in lobbyist.employers %}
+                            <tr>
+                                <td>{{ employer.organization.name }}</td>
+                                <td>{{ employer.year }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+</div>
 {% endblock %}
 
 {% block extra_js %}

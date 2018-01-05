@@ -5,6 +5,43 @@
 {% load helpers %}
 
 {% block full_content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <h1><i class='fa fa-fw fa-usd'></i>Lobbyist Transactions</h1>
+        </div>
+        <div class="col-md-6">
+            {% with action='/transactions' %}
+                {% include 'camp_fin/widgets/calendar-form.html' %}
+            {% endwith %}
+        </div>
+    </div>
+    {% if page.text %}
+        <div class="row">
+            {{ page.text|safe }}
+        </div>
+    {% endif %}
+    <div class="row">
+        <div class="col-md-12">
+            <table class="table table-striped" id="donations-list">
+                <thead>
+                    <tr>
+                        <th>Lobbyist</th>
+                        <th>Amount</th>
+                        <th>Recipient</th>
+                        <th class="hidden-sm hidden-xs">
+                            Date
+                        </th>
+                        <th class="hidden-sm hidden-xs">
+                            Purpose
+                        </th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+    {% bootstrap_paginate object_list range=10 %}
+</div>
 {% endblock %}
 
 {% block extra_js %}

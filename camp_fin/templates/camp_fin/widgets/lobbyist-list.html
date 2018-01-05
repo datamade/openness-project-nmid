@@ -1,0 +1,41 @@
+{% load staticfiles %}
+{% load bootstrap_pagination %}
+{% load humanize %}
+{% load helpers %}
+
+<table class="table table-striped table-hover table-responsive" id="candidate-list">
+    <thead>
+        <tr>
+            <th>Rank</th>
+            <th>Lobbyist</th>
+            <th>Employers</th>
+            <th>Total contributions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for lobbyist in lobbyists %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>
+                    <a href="{% url 'lobbyist-detail' lobbyist.slug %}">
+                        {{ lobbyist.full_name }}
+                    </a>
+                </td>
+                <td>
+                    {% with employers=lobbyist.employers %}
+                        {% for employer in employers %}
+                            {{ employer }}
+                            {% if employers|length > 1 %}
+                                <small>{{ employer.year }}</small>
+                                {% if not forloop.last %}
+                                    <br/>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endwith %}
+                </td>
+                <td>{{ lobbyist.total_contributions }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
