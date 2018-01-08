@@ -4,8 +4,12 @@
 {% block title %}{{ candidate.full_name }}{% endblock %}
 
 {% block header %}
-    <p><a href='/candidates'>&laquo; Candidates</a></p>
-    <h1>{{ candidate.full_name }}</h1>
+    <p class="breadcrumbs"><a href='/candidates'>&laquo; Candidates</a></p>
+    <h1>
+        <i class="fa fa-fw fa-user"></i>
+        {{ candidate.full_name }}
+        <small>Candidate</small>
+    </h1>
     {% if sos_link %}
         <p><a href="{{sos_link}}" target="_blank">View on the New Mexico Secretary of State's website &raquo;</a></p>
     {% endif %}
@@ -23,16 +27,114 @@
 {% endblock %}
 
 {% block charts %}
-    <h3>Net funds over time</h3>
+    <h3><i class="fa fa-fw fa-area-chart"></i> Net funds over time</h3>
     <div id='net-funds-chart'></div>
 
-    <h3>Donations and expenditure rates over time</h3>
+    <h3><i class="fa fa-fw fa-bar-chart"></i> Donations and expenditures over time</h3>
     <div id='expend-chart'></div>
 
 {% endblock %}
 
 {% block campaigns %}
-    <h3>Campaigns</h3>
+    <h3><i class="fa fa-fw fa-check-square-o"></i>Latest race</h3>
+    <p style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
+        <a href="{% url 'race-detail' latest_race.id %}">
+            {{ latest_race }} &raquo;
+        </a>
+    </p>
+    <div class="row">
+        <div class="col-xs-12">
+            <table class="table">
+                <thead>
+                    <th>Candidate</th>
+                    <th class="visible-xs">Cash on hand</th>
+                    <th>Funds raised</th>
+                <tbody>
+                    <td class="no-wrap col-sm-4">
+                        <!-- Start with this candidate -->
+                        <p>
+                            <strong>{{ candidate.full_name }}</strong>
+                            {% if latest_campaign.party_identifier %}
+                                <small>
+                                    <span class="party-identifier {{ latest_campaign.party_identifier }}">
+                                        ({{ latest_campaign.party_identifier }})
+                                    </span>
+                                </small>
+                            {% endif %}
+                            {% if campaign.is_winner %}
+                                <i class="fa fa-fw fa-check-circle green"></i>
+                            {% endif %}
+                        </p>
+                        <!-- Display the rest of the candidates -->
+                        {% for campaign in latest_race.sorted_campaigns %}
+                            {% if campaign.candidate != candidate %}
+                            <p>
+                                {{ campaign.candidate.full_name }}
+                                {% if campaign.party_identifier %}
+                                    <small>
+                                        <span class="party-identifier {{ campaign.party_identifier }}">
+                                            ({{ campaign.party_identifier }})
+                                        </span>
+                                    </small>
+                                {% endif %}
+                                {% if campaign.is_winner %}
+                                    <i class="fa fa-fw fa-check-circle green"></i>
+                                {% endif %}
+                            </p>
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td class="visible-xs">
+                        <!-- Start with this candidate -->
+                        <p>
+                            {{ latest_campaign.cash_on_hand | format_money_short }}
+                        </p>
+                        <!-- Other candidates -->
+                        {% for campaign in latest_race.sorted_campaigns %}
+                            {% if campaign.candidate != candidate %}
+                            <p>
+                                {{ campaign.cash_on_hand | format_money_short }}
+                            </p>
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td class="no-wrap col-sm-8">
+                        <!-- Large sizes: show bar charts -->
+                        <div class="hidden-xs">
+                            <!-- Start with this candidate -->
+                            {% with campaign=latest_campaign last_year=latest_race.funding_period total=latest_race.largest_contribution %}
+                                {% include 'camp_fin/widgets/funding-distribution.html' %}
+                            {% endwith %}
+                            <!-- Display the rest of the candidates -->
+                            {% for campaign in latest_race.sorted_campaigns %}
+                                {% if campaign.candidate != candidate %}
+                                    {% with total=latest_race.largest_contribution last_year=latest_race.funding_period %}
+                                        {% include 'camp_fin/widgets/funding-distribution.html' %}
+                                    {% endwith %}
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <!-- Small sizes: show text cash amounts -->
+                        <div class="visible-xs">
+                            <!--This candidate -->
+                            <p>
+                                {% funds_raised latest_campaign latest_race.funding_period short=True %}
+                            </p>
+                            <!-- The rest of the candidates -->
+                            {% for campaign in latest_race.sorted_campaigns %}
+                                <p>
+                                    {% if campaign.candidate != candidate %}
+                                        {% funds_raised campaign latest_race.funding_period short=True %}
+                                    {% endif %}
+                                </p>
+                            {% endfor %}
+                        </div>
+                    </td>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <h3><i class="fa fa-fw fa-history"></i> Past campaigns</h3>
     <table class="table table-striped">
         <thead>
             <tr>
@@ -51,15 +153,6 @@
             {% endfor %}
         </tbody>
     </table>
-    <p style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
-        <strong>
-            <i class="fa fa-fw fa-check-square-o"></i>
-            Latest race:
-        </strong>
-        <a href="{% url 'race-detail' latest_race.id %}">
-            {{ latest_race }} &raquo;
-        </a>
-    </p>
 {% endblock %}
 
 {% block js_templates %}

@@ -839,6 +839,7 @@ class CandidateDetail(CommitteeDetailBaseView):
                                            .order_by('-election_season__year')\
                                            .first()
 
+        context['latest_campaign'] = latest_campaign
         context['latest_race'] = latest_campaign.active_race
 
         context['note'] = latest_campaign.note

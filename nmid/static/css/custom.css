@@ -323,6 +323,11 @@ button#btn-search { border-radius: 5px; }
     font-size: 1.3em;
 }
 
+.breadcrumbs {
+    font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif;
+    margin-top: 15px
+}
+
 /* support reverse spin for icons */
 .fa-spin-reverse {
   -webkit-animation: fa-spin-reverse 2s infinite linear;
