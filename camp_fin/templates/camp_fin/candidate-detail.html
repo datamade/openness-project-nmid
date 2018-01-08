@@ -9,6 +9,14 @@
     {% if sos_link %}
         <p><a href="{{sos_link}}" target="_blank">View on the New Mexico Secretary of State's website &raquo;</a></p>
     {% endif %}
+    {% if stories %}
+        <h3>Related stories</h3>
+            <ul>
+            {% for story in stories %}
+                <li><a href="{{ story.link }}">{{ story.title }}</a></li>
+            {% endfor %}
+            </ul>
+    {% endif %}
     {% if note %}
         <p><strong>Note:</strong> {{ note }}</p>
     {% endif %}

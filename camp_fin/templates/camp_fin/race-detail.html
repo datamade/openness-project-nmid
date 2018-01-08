@@ -15,7 +15,14 @@
             <h1><i class='fa fa-fw fa-check-square-o'></i>
                 {{ object }}
             </h1>
-            <br />
+            {% if stories %}
+                <h3>Related stories</h3>
+                    <ul>
+                    {% for story in stories %}
+                        <li><a href="{{ story.link }}">{{ story.title }}</a></li>
+                    {% endfor %}
+                    </ul>
+            {% endif %}
             <p class="total-fund-count">
                 Total funds raised in this race: <strong>{{ race.total_funds | format_money}}</strong>
             </p>

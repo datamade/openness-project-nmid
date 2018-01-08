@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django import forms
 
-from camp_fin.models import Race, RaceGroup, Campaign
+from camp_fin.models import Race, RaceGroup, Campaign, Story
 
 
 def create_display(obj, attr, field):
@@ -99,6 +99,13 @@ class RaceForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['winner'].queryset = Campaign.objects\
                                                  .filter(active_race__id=self.instance.id)
+
+
+@admin.register(Story)
+class StoryAdmin(admin.ModelAdmin):
+    relevant_fields = ('title', 'link')
+    list_display = relevant_fields
+    search_fields = ('title', 'link')
 
 
 @admin.register(Race)

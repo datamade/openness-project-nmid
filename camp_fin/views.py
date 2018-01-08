@@ -314,10 +314,14 @@ class RaceDetail(DetailView):
 
         self.page_path = self.request.path
 
+        race = self.object
+
+        context['stories'] = race.story_set.all()
+
         seo = {}
         seo.update(settings.SITE_META)
 
-        race_str = str(context['object'])
+        race_str = str(race)
         seo['title'] = race_str
         seo['site_desc'] = "View campaign finance contributions for the {race} in New Mexico".format(race=race_str)
 
@@ -838,6 +842,8 @@ class CandidateDetail(CommitteeDetailBaseView):
         context['latest_race'] = latest_campaign.active_race
 
         context['note'] = latest_campaign.note
+
+        context['stories'] = self.object.story_set.all()
         
         seo = {}
         seo.update(settings.SITE_META)

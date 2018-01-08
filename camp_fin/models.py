@@ -724,6 +724,21 @@ class State(models.Model):
         if self.postal_code:
             return self.postal_code
         return ''
+
+class Story(models.Model):
+    '''
+    NMID stories that accompany candidates, campaigns, and races.
+    '''
+
+    class Meta:
+        verbose_name_plural = 'stories'
+
+    link = models.URLField()
+    title = models.CharField(max_length=500)
+    candidate = models.ManyToManyField('Candidate', blank=True)
+    race = models.ManyToManyField('Race', blank=True)
+
+
 ######################################################################
 ### Below here are normalized tables that we may or may not end up ###
 ### getting. Just stubbing them out in case we do                  ###
