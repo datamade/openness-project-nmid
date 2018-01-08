@@ -11,15 +11,17 @@
     <div class="row">
         <div class="col-md-12">
             <h1><i class='fa fa-fw fa-check-square-o'></i>{{ year }} Races</h1>
-            <div class="btn btn-group" role="group" aria-label="Race types">
+            <h3>Select a category:</h3>
+            <ul class="nav nav-tabs" role="group" aria-label="Race types">
                 {% for race_type in race_types %}
+                <li {% if type == race_type.id %}class="active"{% endif %}>
                     <a href="{% url 'races' %}?type={{ race_type.id }}"
-                       role="button"
-                       class="btn btn-default {% if type == race_type.id %}active{% else %}inactive{% endif %}">
+                       role="button">
                             {{ race_type.description }}
                     </a>
+                </li>
                 {% endfor %}
-            </div>
+            </ul>
             {% if page.text %}
                 {{ page.text|safe }}
             {% else %}
