@@ -836,6 +836,8 @@ class CandidateDetail(CommitteeDetailBaseView):
                                            .first()
 
         context['latest_race'] = latest_campaign.active_race
+
+        context['note'] = latest_campaign.note
         
         seo = {}
         seo.update(settings.SITE_META)

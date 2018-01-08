@@ -84,6 +84,10 @@ Keep an eye on money in New Mexico politics
                             {% if campaign.is_winner %}
                                 <i class="fa fa-fw fa-check-circle green"></i>
                             {% endif %}
+                            {% if campaign.note %}
+                                <br/>
+                                <span class="small">{{ campaign.note }}</span>
+                            {% endif %}
                             </a>
                         </td>
                         <td>

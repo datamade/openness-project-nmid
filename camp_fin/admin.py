@@ -4,16 +4,59 @@ from django import forms
 from camp_fin.models import Race, RaceGroup, Campaign
 
 
-class RaceForm(forms.ModelForm):
+def create_display(obj, attr, field):
+    '''
+    Utility function for generating display values for ForeignKey form fields
+    on the Admin page.
+    '''
+    attribute = getattr(getattr(obj, attr), field, None)
+
+    if attribute:
+        return attribute
+    else:
+        return '--'
+
+
+def short_description(desc):
+    '''
+    Decorator that assigns the `short_description` attribute of an admin form field.
+    '''
+    def decorator(func):
+        func.short_description = desc
+        return func
+    return decorator
+
+
+def boolean(func):
+    '''
+    Decorator that marks an admin form field as a Boolean type.
+    '''
+    func.boolean = True
+    return func
+
+
+class CampaignForm(forms.ModelForm):
 
     class Meta:
-        model = Race
-        fields = ['winner']
+        model = Campaign
+        fields = ['note']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['winner'].queryset = Campaign.objects\
-                                                 .filter(active_race__id=self.instance.id)
+
+
+@admin.register(Campaign)
+class CampaignAdmin(admin.ModelAdmin):
+    relevant_fields = ('__str__', 'display_election_season', 'note')
+
+    list_display = relevant_fields
+    form = CampaignForm
+    search_fields = ('candidate__full_name',)
+
+    def display_election_season(self, obj):
+        return create_display(obj, 'election_season', 'year')
+
+    display_election_season.short_description = 'Season'
 
 
 class WinnerFilter(admin.SimpleListFilter):
@@ -46,6 +89,18 @@ class WinnerFilter(admin.SimpleListFilter):
             return queryset.filter(winner__isnull=True)
 
 
+class RaceForm(forms.ModelForm):
+
+    class Meta:
+        model = Race
+        fields = ['winner']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['winner'].queryset = Campaign.objects\
+                                                 .filter(active_race__id=self.instance.id)
+
+
 @admin.register(Race)
 class RaceAdmin(admin.ModelAdmin):
     relevant_fields = ('__str__', 'display_division', 'display_district',
@@ -57,47 +112,39 @@ class RaceAdmin(admin.ModelAdmin):
     form = RaceForm
     search_fields = ('office__description',)
 
-    def create_display(self, obj, attr, field):
-        attribute = getattr(getattr(obj, attr), field, None)
-
-        if attribute:
-            return attribute
-        else:
-            return '--'
-
+    @short_description('Division')
     def display_division(self, obj):
-        return self.create_display(obj, 'division', 'name')
+        return create_display(obj, 'division', 'name')
 
+    @short_description('District')
     def display_district(self, obj):
-        return self.create_display(obj, 'district', 'name')
+        return create_display(obj, 'district', 'name')
 
+    @short_description('Office')
     def display_office(self, obj):
-        return self.create_display(obj, 'office', 'description')
+        return create_display(obj, 'office', 'description')
 
+    @short_description('Office Type')
     def display_office_type(self, obj):
-        return self.create_display(obj, 'office_type', 'description')
+        return create_display(obj, 'office_type', 'description')
 
+    @short_description('County')
     def display_county(self, obj):
-        return self.create_display(obj, 'county', 'name')
+        return create_display(obj, 'county', 'name')
 
+    @short_description('Season')
     def display_election_season(self, obj):
-        return self.create_display(obj, 'election_season', 'year')
+        return create_display(obj, 'election_season', 'year')
 
+    @short_description('Candidates')
     def display_candidates(self, obj):
         return obj.num_candidates
 
+    @short_description('Winner')
+    @boolean
     def has_winner(self, obj):
         return obj.winner is not None
 
-    display_division.short_description = 'Division'
-    display_district.short_description = 'District'
-    display_office.short_description = 'Office'
-    display_office_type.short_description = 'Office Type'
-    display_county.short_description = 'County'
-    display_election_season.short_description = 'Season'
-    display_candidates.short_description = 'Candidates'
-    has_winner.short_description = 'Winner'
-    has_winner.boolean = True
 
 @admin.register(RaceGroup)
 class RaceGroupAdmin(admin.ModelAdmin):
