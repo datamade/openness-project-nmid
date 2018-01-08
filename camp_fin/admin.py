@@ -8,13 +8,42 @@ class RaceForm(forms.ModelForm):
 
     class Meta:
         model = Race
-        fields = ['winner', 'division', 'district', 'office', 'office_type',
-                  'election_season', 'county']
+        fields = ['winner']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['winner'].queryset = Campaign.objects\
                                                  .filter(active_race__id=self.instance.id)
+
+
+class WinnerFilter(admin.SimpleListFilter):
+    '''
+    Filter Races based on whether they have a Winner or not.
+    '''
+    title = 'whether a winner exists'
+    parameter_name = 'winner'
+
+    def lookups(self, request, model_admin):
+        '''
+        Filter options that the user can choose, in the form:
+
+        (<parameter>, <human_readable_string>)
+        '''
+        return (
+            ('yes', 'Yes'),
+            ('no', 'No'),
+        )
+
+    def queryset(self, request, queryset):
+        '''
+        Restrict the queryset based on the parameter the user has chosen.
+        '''
+
+        if self.value() == 'yes':
+            return queryset.filter(winner__isnull=False)
+
+        elif self.value() == 'no':
+            return queryset.filter(winner__isnull=True)
 
 
 @admin.register(Race)
@@ -24,7 +53,7 @@ class RaceAdmin(admin.ModelAdmin):
                        'display_election_season', 'display_candidates', 'has_winner')
 
     list_display = relevant_fields
-    list_filter = ('election_season__year',)
+    list_filter = (WinnerFilter, 'election_season__year')
     form = RaceForm
     search_fields = ('office__description',)
 
