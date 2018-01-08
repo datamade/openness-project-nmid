@@ -64,6 +64,11 @@ class IndexView(TopEarnersBase, PagesMixin):
     def get_context_data(self, **kwargs):
         
         context = super().get_context_data(**kwargs)
+
+        year = settings.ELECTION_YEAR
+        last_year = str(int(settings.ELECTION_YEAR) - 1)
+
+        context['year'], context['last_year'] = year, last_year
         
         with connection.cursor() as cursor:
             
@@ -92,12 +97,12 @@ class IndexView(TopEarnersBase, PagesMixin):
                 LEFT JOIN camp_fin_candidate AS candidate
                   ON entity.id = candidate.entity_id
                 WHERE tt.contribution = TRUE
-                  AND o.received_date >= '2015-01-01'
+                  AND o.received_date >= '{year}-01-01'
                   AND company_name NOT ILIKE '%public election fund%'
                   AND company_name NOT ILIKE '%department of finance%'
                 ORDER BY o.amount DESC
                 LIMIT 10
-            ''')
+            '''.format(year=last_year))
 
             columns = [c[0] for c in cursor.description]
             transaction_tuple = namedtuple('Transaction', columns)
@@ -117,13 +122,13 @@ class IndexView(TopEarnersBase, PagesMixin):
                     FROM camp_fin_pac AS pac
                     JOIN camp_fin_filing AS filing
                       USING(entity_id)
-                    WHERE filing.date_added >= '2010-01-01'
+                    WHERE filing.date_added >= '{year}-01-01'
                     ORDER BY pac.id, filing.date_added desc
                   ) AS pac
                 ) AS s
                 ORDER BY closing_balance DESC
                 LIMIT 10
-            ''')
+            '''.format(year=last_year))
 
             columns = [c[0] for c in cursor.description]
             pac_tuple = namedtuple('PAC', columns)
@@ -152,12 +157,12 @@ class IndexView(TopEarnersBase, PagesMixin):
                       ON filing.campaign_id = campaign.id
                     JOIN camp_fin_office AS office
                       ON campaign.office_id = office.id
-                    WHERE filing.date_added >= '2010-01-01'
+                    WHERE filing.date_added >= '{year}-01-01'
                     ORDER BY candidate.id, filing.date_added DESC
                   ) AS candidates
                 ) AS s
                 LIMIT 10
-            ''')
+            '''.format(year=last_year))
 
             columns = [c[0] for c in cursor.description]
             candidate_tuple = namedtuple('Candidate', columns)
@@ -166,11 +171,6 @@ class IndexView(TopEarnersBase, PagesMixin):
         context['transaction_objects'] = transaction_objects
         context['pac_objects'] = pac_objects
         context['candidate_objects'] = candidate_objects
-
-        year = settings.ELECTION_YEAR
-        last_year = str(int(settings.ELECTION_YEAR) - 1)
-
-        context['year'], context['last_year'] = year, last_year
 
         # Race for governor
         gov_race = Race.objects.filter(office__description='Governor Of New Mexico')\
