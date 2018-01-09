@@ -240,6 +240,81 @@ ChartHelper.donation_expenditure = function(el, title, sourceTxt, yaxisLabel, da
     });
   }
 
+ChartHelper.smallDonationExpend = function(el, min_max, data) {
+  var min = min_max[0];
+  var max = min_max[1];
+  var color = '#007E85';
+
+  var seriesData = [{
+          color: color,
+          data: data[0],
+          name: "Donations"
+        },{
+          color: "#DD0000",
+          data: data[1],
+          name: "Expenditures"
+        }
+      ]
+
+  return new Highcharts.Chart({
+      chart: {
+          renderTo: el,
+          type: "area",
+          marginRight: 10,
+          marginBottom: 25,
+          backgroundColor: null
+      },
+      legend: {
+        backgroundColor: null,
+        floating: true,
+        verticalAlign: "top"
+      },
+      credits: {
+        enabled: false
+      },
+      title: null,
+      xAxis: {
+          dateTimeLabelFormats: { year: "%Y" },
+          type: "datetime"
+      },
+      yAxis: {
+          title: null,
+          max: max,
+          min: min
+      },
+      plotOptions: {
+        line: {
+          animation: false
+        },
+        series: {
+          marker: {
+            fillColor: color,
+            radius: 0,
+            states: {
+              hover: {
+                enabled: true,
+                radius: 5
+              }
+            }
+          },
+          shadow: false
+        }
+      },
+      tooltip: {
+          crosshairs: true,
+          formatter: function() {
+            var s = "<strong>" + ChartHelper.toolTipDateFormat("day", this.x) + "</strong>";
+            $.each(this.points, function(i, point) {
+              s += "<br /><span style='color: " + point.series.color + "'>" + point.series.name + ":</span> $" + Highcharts.numberFormat(point.y, 0, '.', ',');
+            });
+            return s;
+          },
+          shared: true
+      },
+      series: seriesData
+  });
+}
+
 ChartHelper.initQualityChart = function(el) {
   $('#' + el).highcharts({
       chart: {

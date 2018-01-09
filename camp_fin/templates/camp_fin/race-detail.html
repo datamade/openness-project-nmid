@@ -5,7 +5,7 @@
 {% load helpers %}
 
 {% block title %}
-    {{ object }}
+    {{ race }}
 {% endblock %}
 
 {% block full_content %}
@@ -13,7 +13,7 @@
     <div class="row">
         <div class="col-xs-12">
             <h1><i class='fa fa-fw fa-check-square-o'></i>
-                {{ object }}
+                {{ race }}
             </h1>
             {% if stories %}
                 <h3>Related stories</h3>
@@ -38,6 +38,7 @@
                 <thead>
                     <tr>
                         <th>Candidate</th>
+                        <th class="hidden-xs">Expenditures and donations</th>
                         {% if race.funding_period %}
                             <th>Funds raised since {{ race.funding_period }}</th>
                         {% else %}
@@ -64,6 +65,9 @@
                             {% if campaign.is_winner %}
                                 <i class="fa fa-fw fa-check-circle green"></i>
                             {% endif %}
+                        </td>
+                        <td class="hidden-xs">
+                            <div id="expend-chart-{{ forloop.counter0 }}"></div>
                         </td>
                         <td>
                             <span class='hidden-xs'>
@@ -100,4 +104,45 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/highcharts.js' %}"></script>
+<script src="{% static 'js/accounting.min.js' %}"></script>
+<script src="{% static 'js/moment.min.js' %}"></script>
+<script src="{% static 'js/chart_helper.js' %}"></script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        var trends = {{ trends|safe }};
+        var max = {{ race.largest_contribution }};
+        var min = 0;
+
+        console.log(trends);
+        for (j = 0; j < trends.length; j++) {
+
+            var expend_trend = trends[j].expend_trend;
+            var expend_trend_f = [];
+
+            var donation_trend = trends[j].donation_trend;
+            var donation_trend_f = [];
+
+            // format donations
+            for (i = 0; i < donation_trend.length; i++) {
+                donation_trend_f.push([Date.UTC(donation_trend[i][1],
+                                                donation_trend[i][2] - 1,
+                                                donation_trend[i][3]),
+                                       donation_trend[i][0]]);
+            }
+
+            // format expenditures
+            for (i = 0; i < expend_trend.length; i++) {
+                expend_trend_f.push([Date.UTC(expend_trend[i][1],
+                                              expend_trend[i][2] - 1,
+                                              expend_trend[i][3]),
+                                     expend_trend[i][0]]);
+            }
+
+            ChartHelper.smallDonationExpend('expend-chart-' + String(j),
+                                            [min, max],
+                                            [donation_trend_f, expend_trend_f]);
+        }
+    });
+</script>
 {% endblock %}

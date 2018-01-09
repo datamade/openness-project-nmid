@@ -315,6 +315,11 @@ class RaceDetail(DetailView):
         self.page_path = self.request.path
 
         race = self.object
+        year = race.funding_period
+
+        # Create a map of entity IDs and funding trends for each candidate
+        entities = [Entity.objects.get(id=camp.candidate.entity_id) for camp in race.sorted_campaigns]
+        context['trends'] = [entity.trends(since=year) for entity in entities]
 
         context['stories'] = race.story_set.all()
 
@@ -639,7 +644,7 @@ class CommitteeDetailBaseView(DetailView):
         entity_id = context['object'].entity_id
         entity = Entity.objects.get(id=entity_id)
 
-        trends = entity.trends
+        trends = entity.trends()
         context.update(trends)
 
         context['latest_filing'] = context['object'].entity.filing_set\
