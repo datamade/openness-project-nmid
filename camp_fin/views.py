@@ -29,7 +29,7 @@ from rest_framework.response import Response
 from pages.models import Page
 
 from .models import Candidate, Office, Transaction, Campaign, Filing, PAC, \
-    LoanTransaction, Race, RaceGroup, OfficeType
+    LoanTransaction, Race, RaceGroup, OfficeType, Entity
 from .base_views import PaginatedList, TransactionDetail, TransactionBaseViewSet, \
     TopMoneyView, TopEarnersBase, PagesMixin
 from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer, \
@@ -632,177 +632,21 @@ class CommitteeList(PaginatedList):
         return context
 
 class CommitteeDetailBaseView(DetailView):
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         entity_id = context['object'].entity_id
-        
-        summed_filings = ''' 
-            SELECT 
-              SUM(f.total_contributions) + \
-                SUM(COALESCE(f.total_supplemental_contributions, 0)) AS total_contributions,
-              SUM(f.total_expenditures) AS total_expenditures,
-              SUM(COALESCE(f.total_loans, 0)) AS total_loans,
-              SUM(COALESCE(f.total_unpaid_debts, 0)) AS total_unpaid_debts,
-              SUM(f.closing_balance) AS closing_balance,
-              SUM(f.opening_balance) AS opening_balance,
-              SUM(f.total_debt_carried_forward) AS debt_carried_forward,
-              fp.filing_date,
-              MIN(fp.initial_date) AS initial_date
-            FROM camp_fin_filing AS f
-            JOIN camp_fin_filingperiod AS fp
-              ON f.filing_period_id = fp.id
-            WHERE f.entity_id = %s
-              AND fp.exclude_from_cascading = FALSE
-              AND fp.regular_filing_period_id IS NULL
-              AND fp.filing_date >= '2010-01-01'
-            GROUP BY fp.filing_date
-            ORDER BY fp.filing_date
-        '''
+        entity = Entity.objects.get(id=entity_id)
 
-        cursor = connection.cursor()
-        
-        cursor.execute(summed_filings, [entity_id])
-        
-        columns = [c[0] for c in cursor.description]
-        filing_tuple = namedtuple('Filings', columns)
-        
-        summed_filings = [filing_tuple(*r) for r in cursor]
+        trends = entity.trends
+        context.update(trends)
 
-        balance_trend = []
-        debt_trend = []
-        
-        if summed_filings:
-            
-            for filing in summed_filings:
-                filing_date = filing.filing_date
-                date_array = [filing_date.year, filing_date.month, filing_date.day]
-                debts = (-1 * filing.total_unpaid_debts)
-                balance_trend.append([filing.closing_balance, *date_array])
-                debt_trend.append([debts, *date_array])
-            
-            first_opening_balance = summed_filings[0].opening_balance
-            first_debt = summed_filings[0].debt_carried_forward
-            first_initial_date = [summed_filings[0].initial_date.year,
-                                  summed_filings[0].initial_date.month,
-                                  summed_filings[0].initial_date.day]
-            balance_trend.insert(0, [first_opening_balance, *first_initial_date])
-            debt_trend.insert(0, [first_debt, *first_initial_date])
-
-        all_filings = ''' 
-            SELECT 
-              contributions.amount AS contribution_amount,
-              expenditures.amount AS expenditure_amount,
-              COALESCE(contributions.month, expenditures.month) AS month
-            FROM contributions_by_month AS contributions
-            JOIN expenditures_by_month AS expenditures
-              ON contributions.entity_id = expenditures.entity_id
-              AND contributions.month = expenditures.month
-            WHERE (contributions.entity_id = %s OR expenditures.entity_id = %s)
-              AND (contributions.month >= '2009-10-01' OR expenditures.month >= '2009-10-01')
-            ORDER BY month
-        '''
-        
-        cursor.execute(all_filings, [entity_id, entity_id])
-        
-        columns = [c[0] for c in cursor.description]
-        amount_tuple = namedtuple('Amount', columns)
-        
-        donation_trend = []
-        expend_trend = []
-        
-        amounts = [amount_tuple(*r) for r in cursor]
-        
-        if amounts:
-            contributions_lookup = {r.month.date(): r.contribution_amount for r in amounts}
-            expenditures_lookup = {r.month.date(): r.expenditure_amount for r in amounts}
-            
-            all_months = list(contributions_lookup.keys()) + list(expenditures_lookup.keys())
-            start_month, end_month = min(all_months), max(all_months)
-            
-            
-            for month in rrule(freq=MONTHLY, dtstart=start_month, until=end_month):
-                
-                replacements = {'month': month.month - 1}
-
-                if replacements['month'] < 1:
-                    replacements['month'] = 12
-                    replacements['year'] = month.year - 1
-                
-                begin_date = month.replace(**replacements)
-
-                begin_date_array = [begin_date.year, 
-                                    begin_date.month, 
-                                    begin_date.day]
-                
-                end_date_array = [month.year,
-                                  month.month,
-                                  month.day]
-                
-                contribution_amount = contributions_lookup.get(month.date(), 0)
-                expenditure_amount = expenditures_lookup.get(month.date(), 0)
-                donation_trend.append([begin_date_array, end_date_array, contribution_amount])
-
-                expend_trend.append([begin_date_array, end_date_array, (-1 * expenditure_amount)])
-
-
-            donation_trend = self.stackTrends(donation_trend)
-            expend_trend = self.stackTrends(expend_trend)
-        
         context['latest_filing'] = context['object'].entity.filing_set\
                                                     .filter(filing_period__exclude_from_cascading=False)\
                                                     .order_by('-date_added').first()
-        context['balance_trend'] = balance_trend
-        context['donation_trend'] = donation_trend
-        context['expend_trend'] = expend_trend
-        context['debt_trend'] = debt_trend
 
         return context
-    
-    def stackTrends(self, trend):
-        # trend = sorted(trend)
-        
-        stacked_trend = []
-        for begin, end, rate in trend:
-            if not stacked_trend:
-                stacked_trend.append((rate, begin))
-                stacked_trend.append((rate, end))
-            
-            elif begin == stacked_trend[-1][1]:
-                stacked_trend.append((rate, begin))
-                stacked_trend.append((rate, end))
-            
-            elif begin > stacked_trend[-1][1]:
-                previous_rate, previous_end = stacked_trend[-1]
-                stacked_trend.append((previous_rate, begin))
-                stacked_trend.append((rate, begin))
-                stacked_trend.append((rate, end))
-            
-            elif begin < stacked_trend[-1][1]:
-                previous_rate, previous_end = stacked_trend.pop()
-                stacked_trend.append((previous_rate, begin))
-                stacked_trend.append((rate + previous_rate, begin))
-                
-                if end < previous_end:
-                    stacked_trend.append((rate + previous_rate, end))
-                    stacked_trend.append((previous_rate, end))
-                    stacked_trend.append((previous_rate, previous_end))
-                    
-                elif end > previous_end:
-                    stacked_trend.append((rate + previous_rate, previous_end))
-                    stacked_trend.append((rate, previous_end))
-                    stacked_trend.append((rate, end))
-                else:
-                    stacked_trend.append((rate + previous_rate, end))
-        
-        flattened_trend = []
-
-        for i, point in enumerate(stacked_trend):
-            rate, date = point
-            flattened_trend.append([rate, *date])
-
-        return flattened_trend
 
 
 class CandidateDetail(CommitteeDetailBaseView):
