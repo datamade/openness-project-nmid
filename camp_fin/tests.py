@@ -4,6 +4,7 @@ import pytz
 from django.urls import resolve, reverse
 from django.test import TestCase
 from django.db.utils import IntegrityError
+from django.db import connection
 from django.http import HttpRequest
 from django.template.loader import render_to_string
 from django.contrib.auth.models import User
@@ -12,8 +13,10 @@ from camp_fin.models import (Race, Campaign, Filing, Division,
                              District, Office, OfficeType,
                              Candidate, ElectionSeason, Status,
                              Entity, PoliticalParty, FilingPeriod,
-                             FilingType, County)
+                             FilingType, County, Transaction, LoanTransaction,
+                             TransactionType, LoanTransactionType, Loan)
 from camp_fin.views import RacesView, RaceDetail
+from camp_fin.decorators import check_date_params
 
 class FakeTestData(TestCase):
     '''
@@ -25,6 +28,7 @@ class FakeTestData(TestCase):
 
     @classmethod
     def races(cls):
+
         first_entity = Entity.objects.create(user_id=1)
         second_entity = Entity.objects.create(user_id=2)
         third_entity = Entity.objects.create(user_id=3)
@@ -142,6 +146,41 @@ class FakeTestData(TestCase):
                                                  no_activity=False,
                                                  edited='0')
 
+        contribution = TransactionType.objects.create(description='Contribution',
+                                                      contribution=True,
+                                                      anonymous=False)
+
+        expenditure = TransactionType.objects.create(description='Monetary Expenditure',
+                                                     contribution=False,
+                                                     anonymous=False)
+
+        cls.first_contribution = Transaction.objects.create(amount=200.0,
+                                                            received_date=datetime.datetime.now(pytz.utc),
+                                                            date_added=datetime.datetime.now(pytz.utc),
+                                                            transaction_type=contribution,
+                                                            filing=cls.first_filing)
+
+        loan_type = LoanTransactionType.objects.create(description='Payment')
+
+        loan = Loan.objects.create(status=status,
+                                   date_added=datetime.datetime.now(pytz.utc),
+                                   received_date=datetime.datetime.now(pytz.utc),
+                                   amount=33.33)
+
+        cls.loan_contribution = LoanTransaction.objects.create(loan=loan,
+                                                               transaction_type=loan_type,
+                                                               amount=33.33,
+                                                               transaction_date=datetime.datetime.now(pytz.utc),
+                                                               date_added=datetime.datetime.now(pytz.utc),
+                                                               filing=cls.first_filing,
+                                                               transaction_status=status)
+
+        cls.first_expenditure = Transaction.objects.create(amount=20.0,
+                                                           received_date=datetime.datetime.now(pytz.utc),
+                                                           date_added=datetime.datetime.now(pytz.utc),
+                                                           transaction_type=expenditure,
+                                                           filing=cls.first_filing)
+
         cls.second_filing = Filing.objects.create(entity=second_entity,
                                                   campaign=cls.second_campaign,
                                                   filing_period=cls.filing_period,
@@ -155,6 +194,18 @@ class FakeTestData(TestCase):
                                                   no_activity=False,
                                                   edited='0')
 
+        cls.second_contribution = Transaction.objects.create(amount=100.0,
+                                                             received_date=datetime.datetime.now(pytz.utc),
+                                                             date_added=datetime.datetime.now(pytz.utc),
+                                                             transaction_type=contribution,
+                                                             filing=cls.second_filing)
+
+        cls.second_expenditure = Transaction.objects.create(amount=20.0,
+                                                            received_date=datetime.datetime.now(pytz.utc),
+                                                            date_added=datetime.datetime.now(pytz.utc),
+                                                            transaction_type=expenditure,
+                                                            filing=cls.second_filing)
+
         cls.third_filing = Filing.objects.create(entity=third_entity,
                                                  campaign=cls.third_campaign,
                                                  filing_period=cls.filing_period,
@@ -167,6 +218,18 @@ class FakeTestData(TestCase):
                                                  final=True,
                                                  no_activity=False,
                                                  edited='0')
+
+        cls.third_contribution = Transaction.objects.create(amount=0.0,
+                                                            received_date=datetime.datetime.now(pytz.utc),
+                                                            date_added=datetime.datetime.now(pytz.utc),
+                                                            transaction_type=contribution,
+                                                            filing=cls.third_filing)
+
+        cls.third_expenditure = Transaction.objects.create(amount=0.0,
+                                                           received_date=datetime.datetime.now(pytz.utc),
+                                                           date_added=datetime.datetime.now(pytz.utc),
+                                                           transaction_type=expenditure,
+                                                           filing=cls.third_filing)
 
         cls.filtered_filing_period = FilingPeriod.objects.create(filing_date=two_years_ago,
                                                                  due_date=two_years_ago,
@@ -190,8 +253,27 @@ class FakeTestData(TestCase):
                                                     no_activity=False,
                                                     edited='0')
 
+        cls.filtered_contribution = Transaction.objects.create(amount=0.0,
+                                                               received_date=two_years_ago,
+                                                               date_added=two_years_ago,
+                                                               transaction_type=contribution,
+                                                               filing=cls.filtered_filing)
+
+        cls.filtered_expenditure = Transaction.objects.create(amount=0.0,
+                                                              received_date=two_years_ago,
+                                                              date_added=two_years_ago,
+                                                              transaction_type=expenditure,
+                                                              filing=cls.third_filing)
+
         cls.filings = ((cls.first_filing,), (cls.second_filing, cls.filtered_filing), (cls.third_filing,))
 
+        cls.contributions = ((cls.first_contribution, cls.loan_contribution),
+                             (cls.second_contribution, cls.filtered_contribution),
+                             (cls.third_contribution,))
+
+        cls.expenditures = ((cls.first_expenditure,),
+                            (cls.second_expenditure, cls.filtered_expenditure),
+                            (cls.third_expenditure,))
 
 class TestRaces(FakeTestData):
     '''
@@ -220,8 +302,9 @@ class TestRaces(FakeTestData):
         self.assertEqual(self.race.funding_period, self.last_year)
 
     def test_race_total_funds(self):
-        self.assertEqual(self.race.total_funds, (self.first_filing.total_contributions +
-                                                 self.second_filing.total_contributions))
+        self.assertEqual(self.race.total_funds, (self.first_contribution.amount +
+                                                 self.loan_contribution.amount +
+                                                 self.second_contribution.amount))
 
     def test_campaigns_by_party(self):
         parties = self.race.campaigns_by_party
@@ -292,23 +375,23 @@ class TestCampaigns(FakeTestData):
         self.assertNotIn(self.filtered_filing, self.second_campaign.filings(since=year))
 
     def test_campaign_funds_raised(self):
-        for campaign, filing in zip(self.campaigns, self.filings):
-            self.assertEqual(campaign.funds_raised(), sum(flg.total_contributions
-                                                          for flg in filing))
+        for campaign, contributions in zip(self.campaigns, self.contributions):
+            self.assertEqual(campaign.funds_raised(), sum(cont.amount for cont
+                                                          in contributions))
 
     def test_campaign_funds_raised_since_date(self):
         year = str(self.filing_period.filing_date.year)
-        total_funds = self.second_filing.total_contributions
+        total_funds = self.second_contribution.amount
         self.assertEqual(self.second_campaign.funds_raised(since=year), total_funds)
 
     def test_campaign_expenditures(self):
-        for campaign, filing in zip(self.campaigns, self.filings):
-            self.assertEqual(campaign.expenditures(), sum(flg.total_expenditures
-                                                          for flg in filing))
+        for campaign, expenditures in zip(self.campaigns, self.expenditures):
+            self.assertEqual(campaign.expenditures(), sum(exp.amount for exp
+                                                          in expenditures))
 
     def test_campaign_expenditures_since_date(self):
         year = str(self.filing_period.filing_date.year)
-        total_expenditures = self.second_filing.total_expenditures
+        total_expenditures = self.second_expenditure.amount
         self.assertEqual(self.second_campaign.expenditures(since=year), total_expenditures)
 
     def test_campaign_is_winner(self):
@@ -333,8 +416,8 @@ class TestCampaigns(FakeTestData):
 
     def test_campaign_share_of_funds(self):
         total = self.race.total_funds
-        self.assertEqual(self.first_campaign.share_of_funds(total=total), 67)
-        self.assertEqual(self.second_campaign.share_of_funds(total=total), 33)
+        self.assertEqual(self.first_campaign.share_of_funds(total=total), 70)
+        self.assertEqual(self.second_campaign.share_of_funds(total=total), 30)
         self.assertEqual(self.third_campaign.share_of_funds(total=total), 0)
 
 
@@ -483,3 +566,26 @@ class TestAdmin(FakeTestData):
 
         empty_table = empty_html.split('<tr')
         self.assertEqual(len(empty_table), 1)
+
+
+class TestUtils(TestCase):
+    '''
+    Test utility methods.
+    '''
+    def test_check_date_params(self):
+
+        @check_date_params
+        def good_params(since=None):
+            return
+
+        @check_date_params
+        def bad_params(since=None):
+            return
+
+        # These should pass
+        good_params(since='2014')
+        good_params()
+
+        # This should fail
+        with self.assertRaises(AssertionError):
+            bad_params(since=234543698)

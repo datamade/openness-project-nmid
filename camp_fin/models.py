@@ -1,9 +1,11 @@
 from collections import namedtuple
+from datetime import datetime
 
 from django.db import models, connection
 from dateutil.rrule import rrule, MONTHLY
 
 from camp_fin.templatetags.helpers import format_money
+from camp_fin.decorators import check_date_params
 
 class Candidate(models.Model):
     entity = models.ForeignKey("Entity", db_constraint=False)
@@ -101,13 +103,14 @@ class Campaign(models.Model):
         office = self.office.description
 
         if self.candidate:
-            candidate_name = '{0} {1}'.format(self.candidate.first_name, 
+            candidate_name = '{0} {1}'.format(self.candidate.first_name,
                                             self.candidate.last_name)
             return '{0} ({1})'.format(candidate_name, office)
         else:
             party = self.political_party.name
             return '{0} ({1})'.format(party, office)
 
+    @check_date_params
     def filings(self, since=None):
         '''
         Return a queryset representing all filings in a given filing period.
@@ -117,9 +120,6 @@ class Campaign(models.Model):
         to filings starting January 1st of that year. If `since` is not specified,
         the method will return all contributions ever recorded for this campaign.
         '''
-        # Enforce argument format
-        assert (since is None or (isinstance(since, str) and len(since) == 4))
-
         filings = self.candidate.entity.filing_set.all()
 
         if since:
@@ -128,6 +128,7 @@ class Campaign(models.Model):
 
         return filings
 
+    @check_date_params
     def funds_raised(self, since=None):
         '''
         Total funds raised in a given filing period.
@@ -135,8 +136,15 @@ class Campaign(models.Model):
         Accepts optional filter argument `since` with the same requirements as
         all other methods on this class.
         '''
-        return sum(filing.total_contributions for filing in self.filings(since=since))
+        contributions = sum(sum(cont.amount for cont in filing.contributions(since=since))
+                            for filing in self.filings(since=since))
 
+        loans = sum(sum(loan.amount for loan in filing.loans(since=since))
+                    for filing in self.filings(since=since))
+
+        return loans + contributions
+
+    @check_date_params
     def expenditures(self, since=None):
         '''
         Total expenditures in a given filing period.
@@ -144,7 +152,8 @@ class Campaign(models.Model):
         Accepts optional filter argument `since` with the same requirements as
         all other methods on this class.
         '''
-        return sum(filing.total_expenditures for filing in self.filings(since=since))
+        return sum(sum(exp.amount for exp in filing.expenditures(since=since))
+                   for filing in self.filings(since=since))
 
     def share_of_funds(self, total=None):
         '''
@@ -583,7 +592,7 @@ class Filing(models.Model):
     total_supplemental_contributions = models.FloatField(null=True)
     edited = models.CharField(max_length=3)
     regenerate = models.NullBooleanField()
-    
+
     def __str__(self):
         if self.campaign:
             return '{0} {1} {2}'.format(self.campaign.candidate.first_name,
@@ -591,6 +600,55 @@ class Filing(models.Model):
                                         self.filing_period)
         else:
             return self.entity.pac_set.first().name
+
+    @check_date_params
+    def contributions(self, since=None):
+        '''
+        Return the contributions (as Transaction objects) represented by this filing,
+        filtered by an optional year (the `since` parameter).
+
+        We need this method because filing periods can span multiple years, so
+        the `total_contributions` can't reliably disaggregate contributions that
+        occurred in one year but were reported in the next.
+        '''
+        contributions = self.transaction_set.filter(transaction_type__contribution=True)
+
+        if since:
+            date = '{year}-01-01'.format(year=since)
+            contributions = contributions.filter(received_date__gte=date)
+
+        return contributions
+
+    @check_date_params
+    def loans(self, since=None):
+        '''
+        Return the loans (as LoanTransaction objects) represented by this filing.
+        Same params and reasoning as the `contributions` method.
+        '''
+        desc = 'Payment'
+        loans = self.loantransaction_set.filter(transaction_type__description=desc)
+
+        if since:
+            date = '{year}-01-01'.format(year=since)
+            loans = loans.filter(transaction_date__gte=date)
+
+        return loans
+
+    @check_date_params
+    def expenditures(self, since=None):
+        '''
+        Return the expenditures (as Transaction objects) represented by this filing.
+        Same params and reasoning as the `contributions` method.
+        '''
+        desc = 'Monetary Expenditure'
+        expenditures = self.transaction_set.filter(transaction_type__description=desc)
+
+        if since:
+            date = '{year}-01-01'.format(year=since)
+            expenditures = expenditures.filter(received_date__gte=date)
+
+        return expenditures
+
 
 class FilingPeriod(models.Model):
     filing_date = models.DateTimeField()
@@ -660,8 +718,8 @@ class Entity(models.Model):
     def __str__(self):
         return 'Entity {}'.format(self.entity_type)
 
-    @property
-    def trends(self):
+    @check_date_params
+    def trends(self, since='2010'):
         '''
         Generate a dict of filing trends for use in contribution/expenditure charts
         for this Entity.
@@ -730,10 +788,10 @@ class Entity(models.Model):
             WHERE f.entity_id = %s
               AND fp.exclude_from_cascading = FALSE
               AND fp.regular_filing_period_id IS NULL
-              AND fp.filing_date >= '2010-01-01'
+              AND fp.filing_date >= '{year}-01-01'
             GROUP BY fp.filing_date
             ORDER BY fp.filing_date
-        '''
+        '''.format(year=since)
 
         cursor = connection.cursor()
 
@@ -779,9 +837,9 @@ class Entity(models.Model):
               ON contributions.entity_id = expenditures.entity_id
               AND contributions.month = expenditures.month
             WHERE (contributions.entity_id = %s OR expenditures.entity_id = %s)
-              AND (contributions.month >= '2009-10-01' OR expenditures.month >= '2009-10-01')
+              AND (contributions.month >= '{year}-01-01' OR expenditures.month >= '{year}-01-01')
             ORDER BY month
-        '''
+        '''.format(year=since)
 
         cursor.execute(all_filings, [self.id, self.id])
 
@@ -793,11 +851,14 @@ class Entity(models.Model):
         amounts = [amount_tuple(*r) for r in cursor]
 
         if amounts:
+
             contributions_lookup = {r.month.date(): r.contribution_amount for r in amounts}
             expenditures_lookup = {r.month.date(): r.expenditure_amount for r in amounts}
 
             all_months = list(contributions_lookup.keys()) + list(expenditures_lookup.keys())
-            start_month, end_month = min(all_months), max(all_months)
+
+            start_month = datetime(int(since), 1, 1)
+            end_month = datetime.now()
 
             for month in rrule(freq=MONTHLY, dtstart=start_month, until=end_month):
 
