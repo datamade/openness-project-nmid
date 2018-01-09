@@ -132,6 +132,10 @@ class Command(BaseCommand):
         self.addContactFullName()
         self.addTreasurerFullName()
 
+        # Make or refresh materialized views
+        self.makeTransactionAggregates()
+        self.stdout.write(self.style.SUCCESS('Made transaction aggregate views'))
+
         self.stdout.write(self.style.SUCCESS('Import complete!'.format(self.entity_type)))
 
     def doETL(self, entity_type):
@@ -194,10 +198,6 @@ class Command(BaseCommand):
             if self.entity_type == 'loan':
                 self.makeLoanBalanceView()
                 self.stdout.write(self.style.SUCCESS('Made loan balance view'))
-
-            if self.entity_type == 'transaction':
-                self.makeTransactionAggregates()
-                self.stdout.write(self.style.SUCCESS('Made transaction aggregate views'))
 
             self.stdout.write(self.style.SUCCESS('\n'))
 
