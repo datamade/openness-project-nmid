@@ -197,6 +197,28 @@ table.race-detail-table {
 
 .green { color: #008600;}
 
+.donations-color {
+    color: #007E85;
+}
+
+.expenditures-color {
+    color: #DD0000;
+}
+
+.block {
+    height: 12px;
+    width: 12px;
+    display: inline-block;
+}
+
+.block.donations-color {
+    background-color: #007E85;
+}
+
+.block.expenditures-color {
+    background-color: #DD0000;
+}
+
 /* Styles for calendar pop-up. */
 .ui-datepicker {
   width: 216px;

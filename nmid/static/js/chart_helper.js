@@ -262,12 +262,11 @@ ChartHelper.smallDonationExpend = function(el, min_max, data) {
           type: "area",
           marginRight: 10,
           marginBottom: 25,
-          backgroundColor: null
+          backgroundColor: null,
+          height: 100,
       },
       legend: {
-        backgroundColor: null,
-        floating: true,
-        verticalAlign: "top"
+        enabled: false
       },
       credits: {
         enabled: false

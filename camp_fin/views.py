@@ -208,7 +208,7 @@ class RacesView(PaginatedList):
 
         if len(self.year) != 4:
             # Bogus request
-            self.year = '2014'
+            self.year = settings.ELECTION_YEAR
 
         self.last_year = str(int(self.year) - 1)
 
@@ -320,6 +320,21 @@ class RaceDetail(DetailView):
         # Create a map of entity IDs and funding trends for each candidate
         entities = [Entity.objects.get(id=camp.candidate.entity_id) for camp in race.sorted_campaigns]
         context['trends'] = [entity.trends(since=year) for entity in entities]
+
+        # Find max and min of contrib/expend
+        context['max'], context['min'] = 0, 0
+        for cand in context['trends']:
+            top_donation = max(donation[0] for donation in cand['donation_trend'])
+            top_expense = min(expense[0] for expense in cand['expend_trend'])
+
+            if top_donation > context['max']:
+                context['max'] = top_donation
+
+            if top_expense < context['min']:
+                context['min'] = top_expense
+
+        # Scale charts for labels
+        context['max'], context['min'] = context['max'] * 1.1, context['min'] * 1.1
 
         context['stories'] = race.story_set.all()
 
