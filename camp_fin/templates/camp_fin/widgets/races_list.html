@@ -58,12 +58,12 @@
             <tr>
                 {% if verbose_type != 'all' and verbose_type != 'Statewide' and verbose_type != 'Judicial' %}
                     {% if verbose_type == 'Legislative' or verbose_type == 'Public Regulation Commission' %}
-                        <td class="no-wrap align-middle">{{ race.district }}</td>
+                    <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.district }}</td>
                     {% elif verbose_type == 'County Offices' %}
-                        <td class="no-wrap align-middle">{{ race.county }}</td>
+                    <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.county }}</td>
                     {% endif %}
                 {% endif %}
-                <td class="no-wrap align-middle">
+                <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">
                     <a href="{% url 'race-detail' race.id %}">
                         {{ race.office }}
                         {% if verbose_type == 'all' %}
@@ -77,7 +77,7 @@
                         {% endif %}
                     </a>
                 </td>
-                <td class="no-wrap align-middle">
+                <td class="no-wrap">
                     {% for campaign in race.sorted_campaigns %}
                         <p>
                             {{ campaign.candidate.full_name }}
@@ -94,14 +94,14 @@
                         </p>
                     {% endfor %}
                 </td>
-                <td class="align-middle">
+                <td>
                     {% for campaign in race.sorted_campaigns %}
                         {% with total=races|largest_contribution %}
                             {% include 'camp_fin/widgets/funding-distribution.html' %}
                         {% endwith %}
                     {% endfor %}
                 </td>
-                <td class="text-center align-middle">
+                <td class="text-center {% if race.campaigns.count > 1 %}align-middle{% endif %}">
                     <span class='hidden-sm hidden-xs'>
                         {{ race.total_funds |format_money }}
                     </span>

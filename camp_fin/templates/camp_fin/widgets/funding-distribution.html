@@ -5,7 +5,7 @@
 
 {% with funds_share=campaign|percentage:total %}
     <p>
-        <span class="bar-chart {% if forloop.first %}visible{% endif %}">
+    <span class="bar-chart {% if forloop.first %}visible{% endif %} {% if forloop.last %}last{% endif %}">
             <span class="tick thick"></span>
             <span class="tick" style="left:25%"></span>
             <span class="tick" style="left:50%"></span>

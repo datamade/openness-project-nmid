@@ -305,6 +305,10 @@ button#btn-search { border-radius: 5px; }
     margin-top: 8px;
 }
 
+.bar-chart.last {
+    margin-bottom: 0px;
+}
+
 .bar-chart.visible {
 }
 

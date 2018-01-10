@@ -139,7 +139,7 @@ class Campaign(models.Model):
         entity_id = self.candidate.entity.id
 
         sum_contributions = '''
-            SELECT SUM(amount)
+            SELECT COALESCE(SUM(amount), 0)
             FROM contributions_by_month
             WHERE entity_id = %s
         '''
@@ -166,7 +166,7 @@ class Campaign(models.Model):
         entity_id = self.candidate.entity.id
 
         sum_expenditures = '''
-            SELECT SUM(amount)
+            SELECT COALESCE(SUM(amount), 0)
             FROM expenditures_by_month
             WHERE entity_id = %s
         '''
