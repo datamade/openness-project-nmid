@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 
 import os
 from .settings_local import *
+from datetime import datetime
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -145,3 +146,7 @@ SITE_META = {
 
 # Year to pull races from
 ELECTION_YEAR = '2018'
+
+# This variable prevents charts from going beyond the last date for which we
+# have data
+LAST_FILING_DATE = datetime(2017, 11, 1)
