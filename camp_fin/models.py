@@ -136,13 +136,24 @@ class Campaign(models.Model):
         Accepts optional filter argument `since` with the same requirements as
         all other methods on this class.
         '''
-        contributions = sum(sum(cont.amount for cont in filing.contributions(since=since))
-                            for filing in self.filings(since=since))
+        entity_id = self.candidate.entity.id
 
-        loans = sum(sum(loan.amount for loan in filing.loans(since=since))
-                    for filing in self.filings(since=since))
+        sum_contributions = '''
+            SELECT SUM(amount)
+            FROM contributions_by_month
+            WHERE entity_id = %s
+        '''
 
-        return loans + contributions
+        if since:
+            sum_contributions += '''
+                AND month >= '{year}-01-01'::date
+            '''.format(year=since)
+
+        cursor = connection.cursor()
+        cursor.execute(sum_contributions, [entity_id])
+        amount = cursor.fetchone()[0]
+
+        return amount
 
     @check_date_params
     def expenditures(self, since=None):
@@ -152,8 +163,24 @@ class Campaign(models.Model):
         Accepts optional filter argument `since` with the same requirements as
         all other methods on this class.
         '''
-        return sum(sum(exp.amount for exp in filing.expenditures(since=since))
-                   for filing in self.filings(since=since))
+        entity_id = self.candidate.entity.id
+
+        sum_expenditures = '''
+            SELECT SUM(amount)
+            FROM expenditures_by_month
+            WHERE entity_id = %s
+        '''
+
+        if since:
+            sum_expenditures += '''
+                AND month >= '{year}-01-01'::date
+            '''.format(year=since)
+
+        cursor = connection.cursor()
+        cursor.execute(sum_expenditures, [entity_id])
+        amount = cursor.fetchone()[0]
+
+        return amount
 
     def share_of_funds(self, total=None):
         '''
