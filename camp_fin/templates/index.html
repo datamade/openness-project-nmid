@@ -70,7 +70,7 @@ Keep an eye on money in New Mexico politics
             <tbody>
                 {% for campaign in governor_campaigns %}
                     <tr>
-                        <td>
+                        <td class="col-sm-6">
                             <a href="{% url 'candidate-detail' campaign.candidate.slug %}">
                                 {{ campaign.candidate.full_name }}
                             </a>
