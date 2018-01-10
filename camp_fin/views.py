@@ -324,14 +324,17 @@ class RaceDetail(DetailView):
         # Find max and min of contrib/expend
         context['max'], context['min'] = 0, 0
         for cand in context['trends']:
-            top_donation = max(donation[0] for donation in cand['donation_trend'])
-            top_expense = min(expense[0] for expense in cand['expend_trend'])
+            if cand['donation_trend']:
+                top_donation = max(donation[0] for donation in cand['donation_trend'])
 
-            if top_donation > context['max']:
-                context['max'] = top_donation
+                if top_donation > context['max']:
+                    context['max'] = top_donation
 
-            if top_expense < context['min']:
-                context['min'] = top_expense
+            if cand['expend_trend']:
+                top_expense = min(expense[0] for expense in cand['expend_trend'])
+
+                if top_expense < context['min']:
+                    context['min'] = top_expense
 
         # Scale charts for labels
         context['max'], context['min'] = context['max'] * 1.1, context['min'] * 1.1

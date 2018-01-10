@@ -8,6 +8,7 @@ from django.db import connection
 from django.http import HttpRequest
 from django.template.loader import render_to_string
 from django.contrib.auth.models import User
+from django.core.management import call_command
 
 from camp_fin.models import (Race, Campaign, Filing, Division,
                              District, Office, OfficeType,
@@ -425,6 +426,12 @@ class TestRacesView(FakeTestData):
     '''
     Test view to display contested races.
     '''
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+
+        call_command('import_data', '--add-aggregates', '--verbosity=0')
+
     def test_race_view_resolves(self):
         found = resolve(reverse('races'))
         self.assertEqual(found.func.view_class, RacesView)
