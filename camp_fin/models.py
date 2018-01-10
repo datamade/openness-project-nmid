@@ -1,5 +1,5 @@
 from collections import namedtuple
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.db import models, connection
 from dateutil.rrule import rrule, MONTHLY
@@ -209,7 +209,11 @@ class Campaign(models.Model):
         Total amount of cash that a campaign has on hand at any given point in time.
         '''
         last_filing = self.filing_set.order_by('-date_closed').first()
-        return last_filing.closing_balance
+
+        if last_filing:
+            return last_filing.closing_balance
+        else:
+            return 0
 
     @property
     def is_winner(self):
@@ -842,11 +846,33 @@ class Entity(models.Model):
 
             first_opening_balance = summed_filings[0].opening_balance
             first_debt = summed_filings[0].debt_carried_forward
-            first_initial_date = [summed_filings[0].initial_date.year,
-                                  summed_filings[0].initial_date.month,
-                                  summed_filings[0].initial_date.day]
+            init_date = summed_filings[0].initial_date
+
+            first_initial_date = [int(since), 1, 1]
+
+            # If the first available filing date is on or before the start date
+            # passed into this method, use that as the first date in the trendline
+            if init_date:
+                init_date_parts = [init_date.year, init_date.month, init_date.day]
+                if datetime(*init_date_parts) <= datetime(*first_initial_date):
+                    first_initial_date = init_date_parts
+
             balance_trend.insert(0, [first_opening_balance, *first_initial_date])
             debt_trend.insert(0, [first_debt, *first_initial_date])
+
+            # In cases where the candidate only has one filing, add a dummy
+            # filing at the start of the campaign period so the chart doesn't
+            # look weird
+            if len(summed_filings) == 1:
+
+                last_date = summed_filings[-1].filing_date
+                last_date_parts = [last_date.year, last_date.month, last_date.day]
+
+                dummy_year = (datetime(*last_date_parts) - timedelta(365)).year
+                dummy_date_parts = [dummy_year, 1, 1]
+
+                balance_trend.insert(0, [first_opening_balance, *dummy_date_parts])
+                debt_trend.insert(0, [first_debt, *dummy_date_parts])
 
         output_trends = {
             'balance_trend': balance_trend,
