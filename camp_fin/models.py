@@ -860,20 +860,6 @@ class Entity(models.Model):
             balance_trend.insert(0, [first_opening_balance, *first_initial_date])
             debt_trend.insert(0, [first_debt, *first_initial_date])
 
-            # In cases where the candidate only has one filing, add a dummy
-            # filing at the start of the campaign period so the chart doesn't
-            # look weird
-            if len(summed_filings) == 1:
-
-                last_date = summed_filings[-1].filing_date
-                last_date_parts = [last_date.year, last_date.month, last_date.day]
-
-                dummy_year = (datetime(*last_date_parts) - timedelta(365)).year
-                dummy_date_parts = [dummy_year, 1, 1]
-
-                balance_trend.insert(0, [first_opening_balance, *dummy_date_parts])
-                debt_trend.insert(0, [first_debt, *dummy_date_parts])
-
         output_trends = {
             'balance_trend': balance_trend,
             'debt_trend': debt_trend
