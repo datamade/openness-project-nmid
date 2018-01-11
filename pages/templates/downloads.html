@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}Data downloads{% endblock %}
+
+{% block full_content %}
+<div class="container">
+    <div class='row'>
+        <div class='col-sm-8 col-sm-offset-2'>
+            <h1 id='download'><i class='fa fa-fw fa-download'></i> Data downloads</h1>
+            <hr />
+            {{ page.text|safe }}
+                <a href="/api/bulk/contributions/" class="btn btn-default"><i class='fa fa-fw fa-download'></i> Contributions</a>
+                <a href="/api/bulk/expenditures/" class="btn btn-default"><i class='fa fa-fw fa-download'></i> Expenditures</a>
+                <a href="/api/bulk/candidates/" class="btn btn-default"><i class='fa fa-fw fa-download'></i> Candidates</a>
+                <a href="/api/bulk/committees/" class="btn btn-default"><i class='fa fa-fw fa-download'></i> PACs</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

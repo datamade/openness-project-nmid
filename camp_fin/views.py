@@ -52,10 +52,29 @@ class AboutView(PagesMixin):
 
         seo['title'] = "About"
         seo['site_desc'] = 'Welcome to New Mexico In Depth’s Openness Project'
-        
+
         context['seo'] = seo
 
         return context
+
+
+class DownloadView(PagesMixin):
+    template_name = 'downloads.html'
+    page_path = '/downloads/'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        seo['title'] = "Data downloads"
+        seo['site_desc'] = 'Download campaign finance data from New Mexico In Depth’s Openness Project'
+
+        context['seo'] = seo
+
+        return context
+
 
 class IndexView(TopEarnersBase, PagesMixin):
     template_name = 'index.html'

@@ -8,18 +8,9 @@
     <div class='row'>
         <div class='col-sm-8 col-sm-offset-2'>
             <h1><i class='fa fa-fw fa-info-circle'></i> About</h1>
-            {{ page.text|safe }}
             <hr />
-            <h3 id='download'><i class='fa fa-fw fa-download'></i> Data downloads</h3>
-            {{ about_page_downloads|safe }}
-                <a href="/api/bulk/contributions/" class="btn btn-default"><i class='fa fa-fw fa-download'></i> Contributions</a>
-                <a href="/api/bulk/expenditures/" class="btn btn-default"><i class='fa fa-fw fa-download'></i> Expenditures</a>
-                <a href="/api/bulk/candidates/" class="btn btn-default"><i class='fa fa-fw fa-download'></i> Candidates</a>
-                <a href="/api/bulk/committees/" class="btn btn-default"><i class='fa fa-fw fa-download'></i> PACs</a>
-            </p>
+            {{ page.text|safe }}
         </div>
     </div>
-
-
 </div>
 {% endblock %}
