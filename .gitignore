@@ -13,3 +13,5 @@ settings_local.py
 /configs/settings_local.py
 /configs/supervisor.staging.conf
 /configs/nginx.staging.conf
+/configs/nginx.production.conf
+/configs/supervisor.production.conf
