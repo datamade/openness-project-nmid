@@ -7,8 +7,9 @@
 
 <div class='row'>
     <div class="col-sm-6">
-        <h3><i class="fa fa-fw fa-usd"></i>Cash and spending</h3>
-        <h4>{{ latest_filing.committee_name }} <small>{{latest_filing.filing_date | date:"M j, Y"}}</small></h4>
+        <h3><i class="fa fa-fw fa-usd"></i>Cash and spending
+            <small>Reported on {{ latest_filing.date_closed | date:"M j, Y"}}</small>
+        </h3>
             <table class="table table-striped">
                 <tbody>
                     <tr>
@@ -18,14 +19,18 @@
                     <tr>
                         <td>Total contributions</td>
                         <td class='text-right'>
-                            {{ latest_filing.total_contributions|format_money }}
+                            <span class="green">
+                                + {{ latest_filing.total_contributions|format_money }}
+                            </span>
                             {% if is_steve_pearce %}<span class="big-red">*</span>{% endif %}
                         </td>
                     </tr>
                     {% if lastest_filing.total_loans > 0 %}
                         <tr>
                             <td>Total loans</td>
-                            <td class='text-right'>{{ latest_filing.total_loans|format_money }}</td>
+                            <td class='text-right green'>
+                                + {{ latest_filing.total_loans|format_money }}
+                            </td>
                         </tr>
                     {% endif %}
                     {% if latest_filing.total_unpaid_debt > 0 %}
@@ -48,11 +53,15 @@
                     {% endif %}
                     <tr>
                         <td>Total in-kind contributions</td>
-                        <td class='text-right'>{{ latest_filing.total_inkind|format_money }}</td>
+                        <td class='text-right green'>
+                            + {{ latest_filing.total_inkind|format_money }}
+                        </td>
                     </tr>
                     <tr>
                         <td>Total expenditures</td>
-                        <td class='text-right'>{{ latest_filing.total_expenditures|format_money }}</td>
+                        <td class='text-right red'>
+                            - {{ latest_filing.total_expenditures|format_money }}
+                        </td>
                     </tr>
                     <tr>
                         <td><strong>Closing balance</strong></td>
@@ -62,7 +71,7 @@
             </table>
             {% if is_steve_pearce %}
                 <p class="small">
-                    <span class="big-red">*</span>
+                    <span class="big red">*</span>
                     U.S. District Court Judge Judith Herrera has ruled that Steve Pearce
                     can bring roughly a million federal campaign dollars into this race.
                     As such, his total funds raised is an underestimate until his next

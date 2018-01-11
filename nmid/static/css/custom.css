@@ -197,7 +197,9 @@ table.race-detail-table {
 
 .green { color: #008600;}
 
-.big-red { color: red; font-size: 20px; }
+.red { color: red; }
+
+.big.red { font-size: 20px; }
 
 .donations-color {
     color: #007E85;
