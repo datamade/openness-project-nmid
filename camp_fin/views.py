@@ -744,6 +744,11 @@ class CandidateDetail(CommitteeDetailBaseView):
         context['sos_link'] = sos_link
         context['entity_type'] = 'candidate'
 
+        # For now, we're hardcoding in a note about Steve Pearce's million-dollar
+        # federal funds that aren't captured in the SOS data. If that changes,
+        # remove this.
+        context['is_steve_pearce'] = context['object'].full_name == 'Steve E Pearce'
+
         return context
 
 class CommitteeDetail(CommitteeDetailBaseView):
