@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django import forms
 
-from camp_fin.models import Race, RaceGroup, Story
+from camp_fin.models import Race, RaceGroup, Campaign, Story
 from camp_fin.decorators import short_description, boolean
 
 
