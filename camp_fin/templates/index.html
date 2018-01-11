@@ -99,23 +99,21 @@ Keep an eye on money in New Mexico politics
                             </span>
                         </td>
                         <td>
-                            <strong>
-                                <span class="hidden-sm hidden-xs">
-                                    {% funds_raised campaign last_year %}
-                                </span>
-                                <span class="visible-sm-block visible-xs-block">
-                                    {% funds_raised campaign last_year short=True %}
-                                </span>
-                            </strong>
+                            <span class="hidden-sm hidden-xs">
+                                {% funds_raised campaign last_year %}
+                            </span>
+                            <span class="visible-sm-block visible-xs-block">
+                                {% funds_raised campaign last_year short=True %}
+                            </span>
                         </td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
 
-        <br/>
+        <p><a href="{% url 'race-detail' governor_race.id %}" class='btn btn-danger'><i class='fa fa-star'></i> View details of the race for Governor ></a></p><br /><br />
 
-        <h2><i class="fa fa-fw fa-check-square-o"></i> Hottest {{ year }} races</h2>
+        <h2><i class="fa fa-fw fa-check-square-o"></i> {{ year }} races with the most cash</h2>
         {{ home_page_contested_races|safe }}
         {% with races=top_races %}
             {% include 'camp_fin/widgets/races_list.html' %}

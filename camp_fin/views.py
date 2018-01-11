@@ -734,11 +734,14 @@ class CandidateDetail(CommitteeDetailBaseView):
         sos_link = None
 
         if latest_campaign:
-            sos_link = 'https://www.cfis.state.nm.us/media/CandidateReportH.aspx?es={es}&ot={ot}&o={o}&c={c}'
-            sos_link = sos_link.format(es=latest_campaign.election_season.id,
-                                       ot=latest_campaign.office.office_type.id,
-                                       o=latest_campaign.office.id,
-                                       c=latest_campaign.candidate_id)
+            try:
+                sos_link = 'https://www.cfis.state.nm.us/media/CandidateReportH.aspx?es={es}&ot={ot}&o={o}&c={c}'
+                sos_link = sos_link.format(es=latest_campaign.election_season.id,
+                                        ot=latest_campaign.office.office_type.id,
+                                        o=latest_campaign.office.id,
+                                        c=latest_campaign.candidate_id)
+            except AttributeError:
+                sos_link = None
         
         context['sos_link'] = sos_link
         context['entity_type'] = 'candidate'
