@@ -3,6 +3,7 @@
 {% load bootstrap_pagination %}
 {% load humanize %}
 {% load helpers %}
+{% load explainer %}
 
 {% block title %}
     {{ race }}
@@ -15,14 +16,6 @@
             <h1><i class='fa fa-fw fa-check-square-o'></i>
                 {{ race }}
             </h1>
-            {% if stories %}
-                <h3>Related stories</h3>
-                    <ul>
-                    {% for story in stories %}
-                        <li><a href="{{ story.link }}">{{ story.title }}</a></li>
-                    {% endfor %}
-                    </ul>
-            {% endif %}
             <div class="row">
                 <div class="col-xs-12 col-md-6">
                     <h3>
@@ -39,7 +32,10 @@
                                 <td>General election date</td>
                                 <td>November 6th, 2018</td>
                             <tr>
-                                <td>Total funds raised in this race</td>
+                                <td>
+                                    Total funds raised in this race
+                                    {% explainer "The sum of all donations and loans recorded for all candidates in this race, starting January 1st of the year before election year." %}
+                                </td>
                                 <td class="hidden-xs">
                                     <strong>{{ race.total_funds | format_money }}</strong>
                                 </td>
@@ -50,6 +46,16 @@
                         </tbody>
                     </table>
                 </div>
+                {% if stories %}
+                    <div class="col-xs-12 col-md-6">
+                        <h3>Related stories</h3>
+                        <ul>
+                            {% for story in stories %}
+                                <li><a href="{{ story.link }}">{{ story.title }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
             </div>
             {% if page.text %}
                 {{ page.text|safe }}
@@ -77,14 +83,23 @@
                             <span class="expenditures-color">
                                 Expenditures
                             </span>
+                            {% explainer "'Donations' include both contributions and loans. We group donations and expenditures by month for this chart, so the dates are approximate." %}
                         </th>
+                        <th>
                         {% if race.funding_period %}
-                            <th>Funds raised since {{ race.funding_period }}</th>
+                            Funds raised since {{ race.funding_period }}
                         {% else %}
-                            <th>Funds raised</th>
+                            Funds raised
                         {% endif %}
-                        <th>Money spent</th>
-                        <th>Cash on hand</th>
+                            {% explainer "'Funds raised' includes both contributions and loans to the campaign." %}
+                        </th>
+                        <th>
+                            Money spent
+                        </th>
+                        <th>
+                            Cash on hand
+                            {% explainer "The amount of available funds that the campaign reported at the time of the last filing date. This number does not include outstanding debts." %}
+                        </th>
                     </tr>
                 </thead>
                 <tbody>

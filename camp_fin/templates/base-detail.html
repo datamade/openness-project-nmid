@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 {% load helpers %}
 {% load staticfiles %}
+{% load explainer %}
+
 {% block title %}{% endblock %}
 {% block full_content %}
 {% block header %}{% endblock %}
@@ -13,7 +15,10 @@
             <table class="table table-striped">
                 <tbody>
                     <tr>
-                        <td>Opening balance</td>
+                        <td>
+                            Opening balance
+                            {% explainer "'Opening balance' refers to the amount of money this entity had at the start of the filing period." %}
+                        </td>
                         <td class='text-right'>{{ latest_filing.opening_balance|format_money }}</td>
                     </tr>
                     <tr>
@@ -64,7 +69,10 @@
                         </td>
                     </tr>
                     <tr>
-                        <td><strong>Closing balance</strong></td>
+                        <td>
+                            <strong>Closing balance</strong>
+                            {% explainer "'Closing balance' refers to the amount of money this entity had on the reporting date." %}
+                        </td>
                         <td class='text-right'><strong>{{ latest_filing.closing_balance|format_money }}</strong></td>
                     </tr>
                 </tbody>
