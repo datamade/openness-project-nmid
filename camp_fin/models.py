@@ -98,7 +98,6 @@ class Campaign(models.Model):
     biannual = models.NullBooleanField()
     from_campaign = models.ForeignKey('Campaign', db_constraint=False, null=True)
     active_race = models.ForeignKey('Race', db_constraint=False, null=True)
-    note = models.TextField(blank=True, null=True)
 
     def __str__(self):
         office = self.office.description

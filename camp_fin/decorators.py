@@ -11,3 +11,21 @@ def check_date_params(func):
         return func(*args, **kwargs)
 
     return checked_func
+
+
+def short_description(desc):
+    '''
+    Decorator that assigns the `short_description` attribute of an admin form field.
+    '''
+    def decorator(func):
+        func.short_description = desc
+        return func
+    return decorator
+
+
+def boolean(func):
+    '''
+    Decorator that marks an admin form field as a Boolean type.
+    '''
+    func.boolean = True
+    return func

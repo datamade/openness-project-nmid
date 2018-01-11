@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django import forms
 
-from camp_fin.models import Race, RaceGroup, Campaign, Story
+from camp_fin.models import Race, RaceGroup, Story
+from camp_fin.decorators import short_description, boolean
 
 
 def create_display(obj, attr, field):
@@ -15,48 +16,6 @@ def create_display(obj, attr, field):
         return attribute
     else:
         return '--'
-
-
-def short_description(desc):
-    '''
-    Decorator that assigns the `short_description` attribute of an admin form field.
-    '''
-    def decorator(func):
-        func.short_description = desc
-        return func
-    return decorator
-
-
-def boolean(func):
-    '''
-    Decorator that marks an admin form field as a Boolean type.
-    '''
-    func.boolean = True
-    return func
-
-
-class CampaignForm(forms.ModelForm):
-
-    class Meta:
-        model = Campaign
-        fields = ['note']
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
-@admin.register(Campaign)
-class CampaignAdmin(admin.ModelAdmin):
-    relevant_fields = ('__str__', 'display_election_season', 'note')
-
-    list_display = relevant_fields
-    form = CampaignForm
-    search_fields = ('candidate__full_name',)
-
-    def display_election_season(self, obj):
-        return create_display(obj, 'election_season', 'year')
-
-    display_election_season.short_description = 'Season'
 
 
 class WinnerFilter(admin.SimpleListFilter):

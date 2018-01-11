@@ -709,8 +709,6 @@ class CandidateDetail(CommitteeDetailBaseView):
         context['latest_campaign'] = latest_campaign
         context['latest_race'] = latest_campaign.active_race
 
-        context['note'] = latest_campaign.note
-
         context['stories'] = self.object.story_set.all()
         
         seo = {}
