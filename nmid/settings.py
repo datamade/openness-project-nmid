@@ -149,4 +149,4 @@ ELECTION_YEAR = '2018'
 
 # This variable prevents charts from going beyond the last date for which we
 # have data
-LAST_FILING_DATE = datetime(2017, 11, 1)
+LAST_FILING_DATE = datetime(2017, 10, 1)

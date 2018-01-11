@@ -12,12 +12,12 @@
             <span class="tick" style="left:75%"></span>
             <span class="tick thick" style="left:100%"></span>
             <span class="bar" style="width:{{ funds_share }}%"></span>
-            {% if funds_share < 80 %}
-                <span class="small funding-label" style="left:{{ funds_share|add:"2" }}%">
+            {% if funds_share > 20 %}
+                <span class="small funding-label" style="left:{{ funds_share|add:"-21" }}%">
                     {% funds_raised campaign last_year short=True %}
                 </span>
-            {% elif 100 >= funds_share and funds_share > 80 %}
-                <span class="small funding-label below">
+            {% else %}
+                <span class="small funding-label dark" style="left:{{ funds_share|add:"2" }}%">
                     {% funds_raised campaign last_year short=True %}
                 </span>
             {% endif %}
