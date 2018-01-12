@@ -2,7 +2,7 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: /home/datamade/nmid
+    destination: /home/datamade/openness-project-nmid
 hooks:
   BeforeInstall:
     - location: scripts/before_install.sh
