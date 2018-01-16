@@ -866,33 +866,39 @@ class Entity(models.Model):
         }
 
         # Donations and expenditures
-        all_filings = '''
+        monthly_query = '''
             SELECT
-              contributions.amount AS contribution_amount,
-              expenditures.amount AS expenditure_amount,
-              COALESCE(contributions.month, expenditures.month) AS month
-            FROM contributions_by_month AS contributions
-            JOIN expenditures_by_month AS expenditures
-              ON contributions.entity_id = expenditures.entity_id
-              AND contributions.month = expenditures.month
-            WHERE (contributions.entity_id = %s OR expenditures.entity_id = %s)
-              AND (contributions.month >= '{year}-01-01' OR expenditures.month >= '{year}-01-01')
+              {table}.amount AS amount,
+              {table}.month AS month
+            FROM {table}_by_month AS {table}
+            WHERE {table}.entity_id = %s
+              AND {table}.month >= '{year}-01-01'::date
             ORDER BY month
-        '''.format(year=since)
+        '''
 
-        cursor.execute(all_filings, [self.id, self.id])
+        contributions_query = monthly_query.format(table='contributions', year=since)
+        expenditures_query = monthly_query.format(table='expenditures', year=since)
+
+        cursor.execute(contributions_query, [self.id])
 
         columns = [c[0] for c in cursor.description]
         amount_tuple = namedtuple('Amount', columns)
 
+        contributions = [amount_tuple(*r) for r in cursor]
+
+        cursor.execute(expenditures_query, [self.id])
+
+        columns = [c[0] for c in cursor.description]
+        amount_tuple = namedtuple('Amount', columns)
+
+        expenditures = [amount_tuple(*r) for r in cursor]
+
         donation_trend, expend_trend = [], []
 
-        amounts = [amount_tuple(*r) for r in cursor]
+        if contributions or expenditures:
 
-        if amounts:
-
-            contributions_lookup = {r.month.date(): r.contribution_amount for r in amounts}
-            expenditures_lookup = {r.month.date(): r.expenditure_amount for r in amounts}
+            contributions_lookup = {r.month.date(): r.amount for r in contributions}
+            expenditures_lookup = {r.month.date(): r.amount for r in expenditures}
 
             all_months = list(contributions_lookup.keys()) + list(expenditures_lookup.keys())
 
@@ -919,8 +925,8 @@ class Entity(models.Model):
 
                 contribution_amount = contributions_lookup.get(month.date(), 0)
                 expenditure_amount = expenditures_lookup.get(month.date(), 0)
-                donation_trend.append([begin_date_array, end_date_array, contribution_amount])
 
+                donation_trend.append([begin_date_array, end_date_array, contribution_amount])
                 expend_trend.append([begin_date_array, end_date_array, (-1 * expenditure_amount)])
 
             donation_trend = stack_trends(donation_trend)
