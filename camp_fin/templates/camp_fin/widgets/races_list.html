@@ -50,7 +50,7 @@
                     Funds raised since {{ last_year }}
                     {% explainer "'Funds raised' includes both contributions and loans to the campaign. Bars are scaled to show how big each amount is compared to the largest campaign in this set of races." %}
                 </th>
-                <th class="no-wrap text-center">
+                <th class="no-wrap text-right">
                     <a href="{% url 'races' %}?{% query_transform request order_by='total_funds' sort_order=toggle_order %}">
                         Total funds in race
                     </a>
@@ -109,7 +109,7 @@
                         {% endwith %}
                     {% endfor %}
                 </td>
-                <td class="text-center {% if race.campaigns.count > 1 %}align-middle{% endif %}">
+                <td class="text-right {% if race.campaigns.count > 1 %}align-middle{% endif %}">
                     <span class='hidden-sm hidden-xs'>
                         {{ race.total_funds |format_money }}
                     </span>

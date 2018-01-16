@@ -70,11 +70,11 @@ Keep an eye on money in New Mexico politics
             <thead>
                 <tr>
                     <th>Candidate</th>
-                    <th>
+                    <th class="text-right">
                         Cash on hand
                         {% explainer "The amount of available funds that the campaign reported at the time of the last filing date. This number does not include outstanding debts." %}
                     </th>
-                    <th>
+                    <th class="text-right">
                         Total funds raised since {{ last_year }}
                         {% explainer "'Funds raised' includes both contributions and loans to the campaign." %}
                     </th>
@@ -99,7 +99,7 @@ Keep an eye on money in New Mexico politics
                             {% endif %}
                             </a>
                         </td>
-                        <td>
+                        <td class="text-right">
                             <span class="hidden-sm hidden-xs">
                                 {{ campaign.cash_on_hand | format_money }}
                             </span>
@@ -107,7 +107,7 @@ Keep an eye on money in New Mexico politics
                                 {{ campaign.cash_on_hand | format_money_short }}
                             </span>
                         </td>
-                        <td>
+                        <td class="text-right">
                             <span class="hidden-sm hidden-xs">
                                 {% funds_raised campaign last_year %}
                             </span>
