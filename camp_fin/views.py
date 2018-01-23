@@ -880,6 +880,38 @@ class TransactionViewSet(TransactionBaseViewSet):
 
         return response
 
+    def list(self, request, *args, **kwargs):
+
+        candidate_id = self.request.query_params.get('candidate_id')
+
+        if candidate_id:
+            candidate = Candidate.objects.get(id=candidate_id)
+            entity_id = candidate.entity.id
+            self.entity_name = candidate.full_name
+        else:
+            entity_id = None
+
+        query = contributions_query(entity_id=entity_id)
+
+        cursor = connection.cursor()
+
+        if entity_id:
+            cursor.execute(query, [entity_id])
+        else:
+            cursor.execute(query)
+
+        header = [c[0] for c in cursor.description]
+
+        streaming_buffer = Echo()
+        writer = csv.writer(streaming_buffer)
+        writer.writerow(header)
+
+        response = StreamingHttpResponse((writer.writerow(row) for row in iterate_cursor(header, cursor)),
+                                        content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename=blah.csv'
+
+        return response
+
 class ContributionViewSet(TransactionViewSet):
     default_filter = {
         'transaction_type__contribution': True,
@@ -1227,11 +1259,11 @@ def make_response(query, filename):
 
     return response
 
-def bulk_contributions(request):
-   
-    copy = ''' 
+def contributions_query(entity_id=None):
+
+    base_query = '''
         SELECT
-          transaction.*, 
+          transaction.*,
           entity.*,
           fp.filing_date,
           fp.description AS filing_name
@@ -1243,32 +1275,44 @@ def bulk_contributions(request):
         JOIN camp_fin_filingperiod AS fp
           ON f.filing_period_id = fp.id
         JOIN (
-          SELECT 
-            entity_id AS recipient_entity_id, 
-            recipient, 
-            entity_type AS recipient_entity_type 
+          SELECT
+            entity_id AS recipient_entity_id,
+            recipient,
+            entity_type AS recipient_entity_type
           FROM (
-            SELECT 
-              entity_id, 
-              full_name AS recipient, 
-              'candidate' AS entity_type 
-            FROM camp_fin_candidate 
-            UNION 
-            SELECT 
-              entity_id, 
-              name AS recipient, 
-              'pac' AS entity_type 
+            SELECT
+              entity_id,
+              full_name AS recipient,
+              'candidate' AS entity_type
+            FROM camp_fin_candidate
+            UNION
+            SELECT
+              entity_id,
+              name AS recipient,
+              'pac' AS entity_type
             FROM camp_fin_pac
           ) AS all_entities
         ) AS entity
           ON f.entity_id = entity.recipient_entity_id
         WHERE tt.contribution = TRUE
           AND fp.filing_date >= '2010-01-01'
-        ORDER BY transaction.received_date
     '''
 
+    if entity_id:
+        base_query += '''
+            AND entity_id = %s
+        '''
+
+    base_query += '''ORDER BY transaction.received_date'''
+
+    return base_query
+
+def bulk_contributions(request):
+   
+    copy = base_query()
+
     filename = 'Contributions_{}.csv'.format(timezone.now().isoformat())
-    
+
     return make_response(copy, filename)
 
 def bulk_expenditures(request):

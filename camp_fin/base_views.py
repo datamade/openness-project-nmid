@@ -98,7 +98,7 @@ class TransactionBaseViewSet(viewsets.ModelViewSet):
         if self.default_filter:
             queryset = queryset.filter(**self.default_filter)
 
-        candidate_id = self.request.query_params.get('candidate_id')
+        self.candidate_id = self.request.query_params.get('candidate_id')
         pac_id = self.request.query_params.get('pac_id')
         
         if candidate_id:
