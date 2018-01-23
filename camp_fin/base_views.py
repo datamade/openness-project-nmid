@@ -7,11 +7,12 @@ from django.http import JsonResponse
 from django.db import connection
 from django.utils import timezone
 
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, renderers
 from rest_framework.response import Response
 
 from camp_fin.models import Transaction, Candidate, PAC
-from camp_fin.api_parts import TransactionSerializer, TopMoneySerializer
+from camp_fin.api_parts import (TransactionSerializer, TopMoneySerializer,
+                                SearchCSVRenderer)
 
 from pages.models import Page
 
@@ -80,6 +81,84 @@ class TransactionDetail(DetailView):
         context['sos_link'] = 'https://www.cfis.state.nm.us/docs/FPReports/{}'.format(query_params)
 
         return context
+
+
+class MaterializedViewSet(viewsets.ViewSet):
+    serializer_class = TransactionSerializer
+    renderer_classes = (renderers.JSONRenderer, SearchCSVRenderer)
+
+    allowed_methods = ['GET']
+
+    def get_entity_id(self, request):
+        '''
+        Retrieve the entity ID from a request
+        '''
+        pass
+
+    def get_transaction_type(self, request):
+        '''
+        Get the transaction type from a request
+        '''
+        pass
+
+    def transaction_query(self, entity_id, contribution_type):
+        '''
+        Return a query corresponding to the request that the user sent in
+        '''
+        pass
+
+    def list(self, request):
+        '''
+        Run a query to generate the API response to a request
+        '''
+        self.entity_id = self.get_entity_id(request)
+        self.contribution_type = self.get_contribution_type(self, request)
+
+        query = self.transaction_query(self.entity_id, self.contribution_type)
+
+        cursor = connection.cursor()
+
+        if entity_id:
+            cursor.execute(query, [entity_id])
+        else:
+            cursor.execute(query)
+
+        header = [c[0] for c in cursor.description]
+
+        streaming_buffer = Echo()
+        writer = csv.writer(streaming_buffer)
+        writer.writerow(header)
+
+        response = StreamingHttpResponse((writer.writerow(row) for row in iterate_cursor(header, cursor)),
+                                        content_type='text/csv')
+
+        return response
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        '''
+        Prepare the file for the response
+        '''
+        response = super().finalize_response(request, response, *args, **kwargs)
+
+        if request.GET.get('format') == 'csv':
+
+            if self.default_filter['transaction_type__contribution']:
+                ttype = 'contributions'
+            else:
+                ttype = 'expenditures'
+
+            if not self.entity_name:
+                response = HttpResponse('Use /api/bulk/{}/ to get bulk downloads'.format(ttype))
+                response.status_code = 400
+
+            else:
+                filename = '{0}-{1}-{2}.csv'.format(ttype,
+                                                    slugify(self.entity_name),
+                                                    timezone.now().isoformat())
+
+                response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
+
+        return response
 
 class TransactionBaseViewSet(viewsets.ModelViewSet):
     serializer_class = TransactionSerializer

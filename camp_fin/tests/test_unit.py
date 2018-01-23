@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.db.utils import IntegrityError
 from django.contrib.auth.models import User
 from django.core.management import call_command
+from django.http import HttpRequest, QueryDict
 
 from camp_fin.models import (Race, Campaign, Filing, Division,
                              District, Office, OfficeType,
@@ -11,6 +12,7 @@ from camp_fin.models import (Race, Campaign, Filing, Division,
                              FilingType, County, Transaction, LoanTransaction,
                              TransactionType, LoanTransactionType, Loan)
 from camp_fin.views import RacesView, RaceDetail
+from camp_fin.base_views import MaterializedViewSet
 from camp_fin.decorators import check_date_params
 from camp_fin.tests.conftest import StatelessTestCase
 
@@ -259,3 +261,93 @@ class TestUtils(TestCase):
         # This should fail
         with self.assertRaises(AssertionError):
             bad_params(since=234543698)
+
+
+class TestAPI(StatelessTestCase):
+    '''
+    Test API endpoints.
+    '''
+    def setUp(self):
+        self.request = HttpRequest()
+        self.request.method = 'GET'
+
+    def test_get_entity_id(self):
+        '''
+        Test MaterializedViewSet.get_entity_id.
+        '''
+        for ttype in ('contributions', 'expenditures'):
+            self.request.path = reverse(ttype)
+            self.request.GET = QueryDict('candidate_id=%d' % self.first_candidate.id)
+
+            mvset = MaterializedViewSet()
+
+            self.assertEqual(mvset.get_entity_id(self.request), self.first_entity.id)
+
+    def test_get_transaction_type(self):
+        '''
+        Test MaterializedViewSet.get_transaction_type.
+        '''
+        paths = ('contributions', 'expenditures')
+        ttypes = ('contribution', 'expenditure')
+
+        for path, ttype in zip(paths, ttypes):
+            self.request.path = reverse(path)
+
+            mvset = MaterializedViewSet()
+
+            self.assertEqual(mvset.get_transaction_type(self.request), ttype)
+
+    def test_bulk_contributions(self):
+        url = reverse('bulk-contributions')
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_bulk_expenditures(self):
+        url = reverse('bulk-expenditures')
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_bulk_candidates(self):
+        url = reverse('bulk-candidates')
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_bulk_pacs(self):
+        url = reverse('bulk-committees')
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_candidate_contributions(self):
+        url = reverse('api/contributions')
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_candidate_expenditures(self):
+        url = '/api/expenditures/'
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_pac_contributions(self):
+        url = '/api/contributions/'
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_pac_expenditures(self):
+        url = 'api/expenditures/'
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_search(self):
+        url = 'api/search/'
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.fail()

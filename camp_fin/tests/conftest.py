@@ -26,10 +26,10 @@ class FakeTestData(object):
     @classmethod
     def races(cls):
 
-        first_entity = Entity.objects.create(user_id=1)
-        second_entity = Entity.objects.create(user_id=2)
-        third_entity = Entity.objects.create(user_id=3)
-        fourth_entity = Entity.objects.create(user_id=4)
+        cls.first_entity = Entity.objects.create(user_id=1)
+        cls.second_entity = Entity.objects.create(user_id=2)
+        cls.third_entity = Entity.objects.create(user_id=3)
+        cls.fourth_entity = Entity.objects.create(user_id=4)
 
         first_party = PoliticalParty.objects.create(name='Democrat')
         second_party = PoliticalParty.objects.create(name='Republican')
@@ -39,20 +39,20 @@ class FakeTestData(object):
 
         cls.first_candidate = Candidate.objects.create(first_name='first',
                                                        last_name='candidate',
-                                                       entity=first_entity)
+                                                       entity=cls.first_entity)
 
         cls.second_candidate = Candidate.objects.create(first_name='second',
                                                         last_name='candidate',
-                                                        entity=second_entity)
+                                                        entity=cls.second_entity)
 
         cls.third_candidate = Candidate.objects.create(first_name='third',
                                                        last_name='candidate',
-                                                       entity=third_entity)
+                                                       entity=cls.third_entity)
 
         # We won't use this candidate in the Race. Create it to test filtering
         cls.non_race_candidate = Candidate.objects.create(first_name='non race',
                                                           last_name='candidate',
-                                                          entity=fourth_entity)
+                                                          entity=cls.fourth_entity)
 
         status = Status.objects.create()
 
@@ -130,7 +130,7 @@ class FakeTestData(object):
                                                         email_sent_status=0,
                                                         reminder_sent_status=0)
 
-        cls.first_filing = Filing.objects.create(entity=first_entity,
+        cls.first_filing = Filing.objects.create(entity=cls.first_entity,
                                                  campaign=cls.first_campaign,
                                                  filing_period=cls.filing_period,
                                                  date_added=datetime.datetime.now(pytz.utc),
@@ -171,7 +171,7 @@ class FakeTestData(object):
                                                            transaction_type=expenditure,
                                                            filing=cls.first_filing)
 
-        cls.second_filing = Filing.objects.create(entity=second_entity,
+        cls.second_filing = Filing.objects.create(entity=cls.second_entity,
                                                   campaign=cls.second_campaign,
                                                   filing_period=cls.filing_period,
                                                   date_added=datetime.datetime.now(pytz.utc),
@@ -196,7 +196,7 @@ class FakeTestData(object):
                                                             transaction_type=expenditure,
                                                             filing=cls.second_filing)
 
-        cls.third_filing = Filing.objects.create(entity=third_entity,
+        cls.third_filing = Filing.objects.create(entity=cls.third_entity,
                                                  campaign=cls.third_campaign,
                                                  filing_period=cls.filing_period,
                                                  date_added=datetime.datetime.now(pytz.utc),
@@ -230,7 +230,7 @@ class FakeTestData(object):
                                                                  email_sent_status=0,
                                                                  reminder_sent_status=0)
 
-        cls.filtered_filing = Filing.objects.create(entity=second_entity,
+        cls.filtered_filing = Filing.objects.create(entity=cls.second_entity,
                                                     campaign=cls.second_campaign,
                                                     filing_period=cls.filtered_filing_period,
                                                     date_added=two_years_ago,
