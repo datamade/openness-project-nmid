@@ -276,35 +276,21 @@ class TestAPI(StatelessTestCase):
         Test MaterializedViewSet.get_entity_id.
         '''
         for ttype in ('contributions', 'expenditures'):
-            self.request.path = reverse(ttype)
+            self.request.path = '/api/{ttype}/'.format(ttype=ttype)
             self.request.GET = QueryDict('candidate_id=%d' % self.first_candidate.id)
 
             mvset = MaterializedViewSet()
 
             self.assertEqual(mvset.get_entity_id(self.request), self.first_entity.id)
 
-    def test_get_transaction_type(self):
-        '''
-        Test MaterializedViewSet.get_transaction_type.
-        '''
-        paths = ('contributions', 'expenditures')
-        ttypes = ('contribution', 'expenditure')
-
-        for path, ttype in zip(paths, ttypes):
-            self.request.path = reverse(path)
-
-            mvset = MaterializedViewSet()
-
-            self.assertEqual(mvset.get_transaction_type(self.request), ttype)
-
     def test_bulk_contributions(self):
-        url = reverse('bulk-contributions')
+        url = '/api/bulk/contributions/'
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, 200)
 
     def test_bulk_expenditures(self):
-        url = reverse('bulk-expenditures')
+        url = '/api/bulk/expenditures/'
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, 200)
@@ -322,7 +308,7 @@ class TestAPI(StatelessTestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_candidate_contributions(self):
-        url = reverse('api/contributions')
+        url = '/api/contributions/'
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, 200)

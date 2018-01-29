@@ -1,22 +1,30 @@
 from collections import namedtuple
 from datetime import datetime
+import csv
 
 from django.views.generic import ListView, DetailView, TemplateView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.http import JsonResponse
+from django.http import JsonResponse, StreamingHttpResponse
 from django.db import connection
 from django.utils import timezone
+from django.utils.text import slugify
 
 from rest_framework import viewsets, filters, renderers
 from rest_framework.response import Response
 
-from camp_fin.models import Transaction, Candidate, PAC
+from camp_fin.models import Transaction, Candidate, PAC, Entity
 from camp_fin.api_parts import (TransactionSerializer, TopMoneySerializer,
                                 SearchCSVRenderer)
 
 from pages.models import Page
 
 TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
+
+
+class Echo(object):
+    def write(self, value):
+        return value
+
 
 class PaginatedList(ListView):
     
@@ -86,40 +94,92 @@ class TransactionDetail(DetailView):
 class MaterializedViewSet(viewsets.ViewSet):
     serializer_class = TransactionSerializer
     renderer_classes = (renderers.JSONRenderer, SearchCSVRenderer)
+    transaction_type = None  # override this in subclasses
 
     allowed_methods = ['GET']
 
     def get_entity_id(self, request):
         '''
-        Retrieve the entity ID from a request
+        Retrieve the entity ID from a request. Can be tied to either the 'candidate_id'
+        or 'pac_id' param, depending on the type of request.
         '''
-        pass
+        if request.GET.get('candidate_id'):
+            return int(request.GET.get('candidate_id'))
+        elif request.GET.get('pac_id'):
+            return (request.GET.get('pac_id'))
+        else:
+            return None
 
-    def get_transaction_type(self, request):
-        '''
-        Get the transaction type from a request
-        '''
-        pass
-
-    def transaction_query(self, entity_id, contribution_type):
+    def transaction_query(self, entity_id=None):
         '''
         Return a query corresponding to the request that the user sent in
         '''
-        pass
+        if self.transaction_type == 'contribution':
+            contribution_bool = 'TRUE'
+            subj_type = 'recipient'
+        else:
+            contribution_bool = 'FALSE'
+            subj_type = 'spender'
+
+        base_query = '''
+            SELECT
+              transaction.*,
+              entity.*,
+              fp.filing_date,
+              fp.description AS filing_name
+            FROM camp_fin_transaction AS transaction
+            JOIN camp_fin_transactiontype AS tt
+              ON transaction.transaction_type_id = tt.id
+            JOIN camp_fin_filing AS f
+              ON transaction.filing_id = f.id
+            JOIN camp_fin_filingperiod AS fp
+              ON f.filing_period_id = fp.id
+            JOIN (
+              SELECT
+                  entity_id AS {subj_type}_entity_id,
+                  {subj_type},
+                  entity_type AS {subj_type}_entity_type
+              FROM (
+                SELECT
+                  entity_id,
+                  full_name AS {subj_type},
+                  'candidate' AS entity_type
+                FROM camp_fin_candidate
+                UNION
+                SELECT
+                  entity_id,
+                  name AS {subj_type},
+                  'pac' AS entity_type
+                  FROM camp_fin_pac
+              ) AS all_entities
+            ) AS entity
+              ON f.entity_id = entity.{subj_type}_entity_id
+            WHERE tt.contribution = {contribution_bool}
+              AND fp.filing_date >= '2010-01-01'
+        '''.format(contribution_bool=contribution_bool,
+                   subj_type=subj_type)
+
+        if entity_id:
+            base_query += '''
+                AND entity_id = %s
+            '''
+
+        base_query += '''ORDER BY transaction.received_date'''
+
+        return base_query
 
     def list(self, request):
         '''
         Run a query to generate the API response to a request
         '''
         self.entity_id = self.get_entity_id(request)
-        self.contribution_type = self.get_contribution_type(self, request)
 
-        query = self.transaction_query(self.entity_id, self.contribution_type)
+        query = self.transaction_query(self.entity_id)
 
         cursor = connection.cursor()
 
-        if entity_id:
-            cursor.execute(query, [entity_id])
+        if self.entity_id:
+            cursor.execute(query, [self.entity_id])
         else:
             cursor.execute(query)
 
@@ -130,9 +190,9 @@ class MaterializedViewSet(viewsets.ViewSet):
         writer.writerow(header)
 
         response = StreamingHttpResponse((writer.writerow(row) for row in iterate_cursor(header, cursor)),
-                                        content_type='text/csv')
+                                         content_type='text/csv')
 
-        return response
+        return self.finalize_response(request, response)
 
     def finalize_response(self, request, response, *args, **kwargs):
         '''
@@ -140,23 +200,30 @@ class MaterializedViewSet(viewsets.ViewSet):
         '''
         response = super().finalize_response(request, response, *args, **kwargs)
 
-        if request.GET.get('format') == 'csv':
+        # Get the name of the requested entity
+        if self.entity_id:
+            entity = Entity.objects.get(self.entity_id)
 
-            if self.default_filter['transaction_type__contribution']:
-                ttype = 'contributions'
-            else:
-                ttype = 'expenditures'
-
-            if not self.entity_name:
-                response = HttpResponse('Use /api/bulk/{}/ to get bulk downloads'.format(ttype))
-                response.status_code = 400
+            if entity.candidate_set.first():
+                self.entity_name = entity.candidate_set.first().full_name
 
             else:
-                filename = '{0}-{1}-{2}.csv'.format(ttype,
-                                                    slugify(self.entity_name),
-                                                    timezone.now().isoformat())
+                self.entity_name = entity.pac_set.first().name
 
-                response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
+        else:
+            entity_name = 'bulk'
+
+        # Add appropriate filename and header for CSV response
+        if self.transaction_type == 'contribution':
+            ttype = 'contributions'
+        else:
+            ttype = 'expenditures'
+
+        filename = '{0}-{1}-{2}.csv'.format(ttype,
+                                            slugify(entity_name),
+                                            timezone.now().isoformat())
+
+        response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
 
         return response
 
@@ -470,3 +537,10 @@ class PagesMixin(TemplateView):
             context['page'] = None
         
         return context
+
+
+def iterate_cursor(header, cursor):
+    yield header
+    
+    for row in cursor:
+        yield row
