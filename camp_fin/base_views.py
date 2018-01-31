@@ -104,10 +104,22 @@ class MaterializedViewSet(viewsets.ViewSet):
         or 'pac_id' param, depending on the type of request.
         '''
         if request.GET.get('candidate_id'):
-            return int(request.GET.get('candidate_id'))
+            candidate_id = request.GET.get('candidate_id')
+            candidate = Candidate.objects.get(id=candidate_id)
+            self.entity_name = candidate.full_name
+            entity = candidate.entity
+            return entity.id
+
         elif request.GET.get('pac_id'):
-            return (request.GET.get('pac_id'))
+            pac_id = request.GET.get('pac_id')
+            pac = PAC.objects.get(id=pac_id)
+            self.entity_name = pac.name
+            entity = pac.entity
+            return entity.id
+
         else:
+            # Bulk download
+            self.entity_name = 'bulk'
             return None
 
     def transaction_query(self, entity_id=None):
@@ -200,30 +212,19 @@ class MaterializedViewSet(viewsets.ViewSet):
         '''
         response = super().finalize_response(request, response, *args, **kwargs)
 
-        # Get the name of the requested entity
-        if self.entity_id:
-            entity = Entity.objects.get(self.entity_id)
+        if request.GET.get('format') == 'csv':
 
-            if entity.candidate_set.first():
-                self.entity_name = entity.candidate_set.first().full_name
-
+            # Add appropriate filename and header for CSV response
+            if self.transaction_type == 'contribution':
+                ttype = 'contributions'
             else:
-                self.entity_name = entity.pac_set.first().name
+                ttype = 'expenditures'
 
-        else:
-            entity_name = 'bulk'
+            filename = '{0}-{1}-{2}.csv'.format(ttype,
+                                                slugify(self.entity_name),
+                                                timezone.now().isoformat())
 
-        # Add appropriate filename and header for CSV response
-        if self.transaction_type == 'contribution':
-            ttype = 'contributions'
-        else:
-            ttype = 'expenditures'
-
-        filename = '{0}-{1}-{2}.csv'.format(ttype,
-                                            slugify(entity_name),
-                                            timezone.now().isoformat())
-
-        response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
+            response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
 
         return response
 

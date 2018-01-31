@@ -14,7 +14,7 @@ from camp_fin.models import (Race, Campaign, Filing, Division,
 from camp_fin.views import RacesView, RaceDetail
 from camp_fin.base_views import MaterializedViewSet
 from camp_fin.decorators import check_date_params
-from camp_fin.tests.conftest import StatelessTestCase
+from camp_fin.tests.conftest import StatelessTestCase, DatabaseTestCase
 
 class TestRace(StatelessTestCase):
     '''
@@ -82,7 +82,7 @@ class TestRace(StatelessTestCase):
         self.race.save()
 
 
-class TestCampaign(StatelessTestCase):
+class TestCampaign(DatabaseTestCase):
     '''
     Test methods of the `Campaign` model.
     '''
