@@ -914,10 +914,10 @@ class TransactionViewSet(TransactionBaseViewSet):
         return response
 
 class ContributionViewSet(MaterializedViewSet):
-    transaction_type = 'contribution'
+    contribution = True
 
 class ExpenditureViewSet(MaterializedViewSet):
-    transaction_type = 'expenditure'
+    contribution = True
 
 class TopDonorsView(TopMoneyView):
     contribution = True

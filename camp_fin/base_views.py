@@ -14,7 +14,7 @@ from rest_framework.response import Response
 
 from camp_fin.models import Transaction, Candidate, PAC, Entity
 from camp_fin.api_parts import (TransactionSerializer, TopMoneySerializer,
-                                SearchCSVRenderer)
+                                SearchCSVRenderer, DataTablesPagination)
 
 from pages.models import Page
 
@@ -94,7 +94,7 @@ class TransactionDetail(DetailView):
 class MaterializedViewSet(viewsets.ViewSet):
     serializer_class = TransactionSerializer
     renderer_classes = (renderers.JSONRenderer, SearchCSVRenderer)
-    transaction_type = None  # override this in subclasses
+    contribution = True
 
     allowed_methods = ['GET']
 
@@ -126,7 +126,7 @@ class MaterializedViewSet(viewsets.ViewSet):
         '''
         Return a query corresponding to the request that the user sent in
         '''
-        if self.transaction_type == 'contribution':
+        if self.contribution is True:
             contribution_bool = 'TRUE'
             subj_type = 'recipient'
         else:
@@ -186,6 +186,11 @@ class MaterializedViewSet(viewsets.ViewSet):
         '''
         self.entity_id = self.get_entity_id(request)
 
+        if self.contribution is True:
+            ttype = 'contributions'
+        else:
+            ttype = 'expenditures'
+
         query = self.transaction_query(self.entity_id)
 
         cursor = connection.cursor()
@@ -197,36 +202,37 @@ class MaterializedViewSet(viewsets.ViewSet):
 
         header = [c[0] for c in cursor.description]
 
-        streaming_buffer = Echo()
-        writer = csv.writer(streaming_buffer)
-        writer.writerow(header)
-
-        response = StreamingHttpResponse((writer.writerow(row) for row in iterate_cursor(header, cursor)),
-                                         content_type='text/csv')
-
-        return self.finalize_response(request, response)
-
-    def finalize_response(self, request, response, *args, **kwargs):
-        '''
-        Prepare the file for the response
-        '''
-        response = super().finalize_response(request, response, *args, **kwargs)
-
         if request.GET.get('format') == 'csv':
 
-            # Add appropriate filename and header for CSV response
-            if self.transaction_type == 'contribution':
-                ttype = 'contributions'
-            else:
-                ttype = 'expenditures'
+            streaming_buffer = Echo()
+            writer = csv.writer(streaming_buffer)
+            writer.writerow(header)
 
+            response = StreamingHttpResponse((writer.writerow(row) for row in iterate_cursor(header, cursor)),
+                                            content_type='text/csv')
+
+            # Add appropriate filename and header for CSV response
             filename = '{0}-{1}-{2}.csv'.format(ttype,
                                                 slugify(self.entity_name),
                                                 timezone.now().isoformat())
 
             response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
 
+        else:
+            # Return JSON
+            result_tuple = namedtuple(ttype, header)
+            objects =  [result_tuple(*r) for r in cursor]
+
+            paginator = DataTablesPagination()
+            page = paginator.paginate_queryset(objects, self.request, view=self)
+
+            serializer = self.serializer_class(page, many=True)
+            objects = serializer.data
+
+            response = Response(objects)
+
         return response
+
 
 class TransactionBaseViewSet(viewsets.ModelViewSet):
     serializer_class = TransactionSerializer
