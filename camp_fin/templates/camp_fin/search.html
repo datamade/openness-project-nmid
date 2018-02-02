@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load staticfiles %}
 {% load helpers %}
+{% load explainer %}
 
 {% block title %}Search{% endblock %}
 
@@ -85,7 +86,10 @@
                         <th>Recipient name</th>
                         <th class='hidden-xs hidden-sm'>Date</th>
                         <th>Amount</th>
-                        <th class='hidden-xs hidden-sm'>Description</th>
+                        <th class='hidden-xs hidden-sm'>
+                            Donor occupation
+                            {% explainer "Individuals and organizations donating more than $250 must disclose their occupation." %}
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -252,7 +256,7 @@
                         }
                     },
                     {
-                        'data': 'description',
+                        'data': 'donor_occupation',
                         'className': 'hidden-xs hidden-sm'
                     }
                 ];

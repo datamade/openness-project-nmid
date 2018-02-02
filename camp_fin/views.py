@@ -1057,6 +1057,9 @@ class SearchAPIView(viewsets.ViewSet):
                 query = '''
                     SELECT
                       o.*,
+                      CASE WHEN o.occupation = 'None' THEN ''
+                           ELSE initcap(o.occupation)
+                      END AS donor_occupation,
                       tt.description AS transaction_type,
                       CASE WHEN
                         pac.name IS NULL OR TRIM(pac.name) = ''

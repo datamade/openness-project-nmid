@@ -91,6 +91,7 @@ class TransactionSerializer(serializers.ModelSerializer):
 class TransactionSearchSerializer(TransactionSerializer):
     pac_slug = serializers.StringRelatedField(read_only=True)
     candidate_slug = serializers.StringRelatedField(read_only=True)
+    donor_occupation = serializers.CharField(read_only=True)
     
     class Meta:
         model = Transaction
@@ -119,6 +120,7 @@ class TransactionSearchSerializer(TransactionSerializer):
             'country',
             'occupation',
             'expenditure_for_certified_candidate',
+            'donor_occupation',
             'transaction_subject',
             'pac_slug',
             'candidate_slug',

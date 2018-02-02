@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load helpers %}
 {% load staticfiles %}
+{% load explainer %}
 
 {% block full_content %}
 
@@ -28,6 +29,15 @@
                         <td>Address</td>
                         <td>{{ transaction.contact.address|default:transaction.full_address }}</td>
                     </tr>
+                    {% if transaction.occupation %}
+                    <tr>
+                        <td>
+                            Occupation
+                            {% explainer "Individuals and organizations donating more than $250 must disclose their occupation." %}
+                        </td>
+                        <td>{{ transaction.occupation|title }}</td>
+                    </tr>
+                    {% endif %}
                     {% if transaction.contact.contact_type %}
                         <tr>
                             <td>Donor type</td>
