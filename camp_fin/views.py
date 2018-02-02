@@ -30,8 +30,9 @@ from pages.models import Page
 
 from .models import Candidate, Office, Transaction, Campaign, Filing, PAC, \
     LoanTransaction, Race, RaceGroup, OfficeType, Entity
-from .base_views import PaginatedList, TransactionDetail, TransactionBaseViewSet, \
-    TopMoneyView, TopEarnersBase, PagesMixin
+from .base_views import (PaginatedList, TransactionDetail, TransactionBaseViewSet, \
+                         TopMoneyView, TopEarnersBase, PagesMixin, TransactionDownloadViewSet, \
+                         Echo, iterate_cursor)
 from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer, \
     TransactionSearchSerializer, CandidateSearchSerializer, PACSearchSerializer, \
     LoanTransactionSerializer, TreasurerSearchSerializer, DataTablesPagination, \
@@ -881,17 +882,34 @@ class TransactionViewSet(TransactionBaseViewSet):
         return response
 
 class ContributionViewSet(TransactionViewSet):
+    '''
+    ViewSet for the contribution API, returning JSON.
+    '''
     default_filter = {
         'transaction_type__contribution': True,
         'filing__date_added__gte': TWENTY_TEN
     }
 
 class ExpenditureViewSet(TransactionViewSet):
+    '''
+    Viewset for the expenditure API, returning JSON.
+    '''
     default_filter = {
         'transaction_type__contribution': False,
         'filing__date_added__gte': TWENTY_TEN
     }
 
+class ContributionDownloadViewSet(TransactionDownloadViewSet):
+    '''
+    Viewset for the contribution API, returning bulk downloads as CSV.
+    '''
+    contribution = True
+
+class ExpenditureDownloadViewSet(TransactionDownloadViewSet):
+    '''
+    Viewset for the expenditures API, returning bulk downloads as CSV.
+    '''
+    contribution = True
 
 class TopDonorsView(TopMoneyView):
     contribution = True
@@ -1201,16 +1219,6 @@ class TopEarnersView(PaginatedList):
 class TopEarnersWidgetView(TopEarnersBase):
     template_name = 'camp_fin/widgets/top-earners.html'
 
-class Echo(object):
-    def write(self, value):
-        return value
-
-def iterate_cursor(header, cursor):
-    yield header
-    
-    for row in cursor:
-        yield row
-
 def make_response(query, filename):
 
     cursor = connection.cursor()
@@ -1226,94 +1234,6 @@ def make_response(query, filename):
     response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
 
     return response
-
-def bulk_contributions(request):
-   
-    copy = ''' 
-        SELECT
-          transaction.*, 
-          entity.*,
-          fp.filing_date,
-          fp.description AS filing_name
-        FROM camp_fin_transaction AS transaction
-        JOIN camp_fin_transactiontype AS tt
-          ON transaction.transaction_type_id = tt.id
-        JOIN camp_fin_filing AS f
-          ON transaction.filing_id = f.id
-        JOIN camp_fin_filingperiod AS fp
-          ON f.filing_period_id = fp.id
-        JOIN (
-          SELECT 
-            entity_id AS recipient_entity_id, 
-            recipient, 
-            entity_type AS recipient_entity_type 
-          FROM (
-            SELECT 
-              entity_id, 
-              full_name AS recipient, 
-              'candidate' AS entity_type 
-            FROM camp_fin_candidate 
-            UNION 
-            SELECT 
-              entity_id, 
-              name AS recipient, 
-              'pac' AS entity_type 
-            FROM camp_fin_pac
-          ) AS all_entities
-        ) AS entity
-          ON f.entity_id = entity.recipient_entity_id
-        WHERE tt.contribution = TRUE
-          AND fp.filing_date >= '2010-01-01'
-        ORDER BY transaction.received_date
-    '''
-
-    filename = 'Contributions_{}.csv'.format(timezone.now().isoformat())
-    
-    return make_response(copy, filename)
-
-def bulk_expenditures(request):
-   
-    copy = ''' 
-        SELECT
-          transaction.*, 
-          entity.*,
-          fp.filing_date,
-          fp.description AS filing_name
-        FROM camp_fin_transaction AS transaction
-        JOIN camp_fin_transactiontype AS tt
-          ON transaction.transaction_type_id = tt.id
-        JOIN camp_fin_filing AS f
-          ON transaction.filing_id = f.id
-        JOIN camp_fin_filingperiod AS fp
-          ON f.filing_period_id = fp.id
-        JOIN (
-          SELECT 
-            entity_id AS spender_entity_id, 
-            spender, 
-            entity_type AS spender_entity_type 
-          FROM (
-            SELECT 
-              entity_id, 
-              full_name AS spender, 
-              'candidate' AS entity_type 
-            FROM camp_fin_candidate 
-            UNION 
-            SELECT 
-              entity_id, 
-              name AS spender, 
-              'pac' AS entity_type 
-            FROM camp_fin_pac
-          ) AS all_entities
-        ) AS entity
-          ON f.entity_id = entity.spender_entity_id
-        WHERE tt.contribution = FALSE
-          AND fp.filing_date >= '2010-01-01'
-        ORDER BY transaction.received_date
-    '''
-
-    filename = 'Expenditures_{}.csv'.format(timezone.now().isoformat())
-    
-    return make_response(copy, filename)
 
 def bulk_candidates(request):
     

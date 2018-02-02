@@ -20,15 +20,18 @@ from django.conf.urls import handler404, handler500
 from rest_framework import routers
 
 from camp_fin.views import IndexView, CandidateList, CandidateDetail, \
-    ContributionViewSet, ExpenditureViewSet, TransactionViewSet, TopDonorsView, \
+    ContributionViewSet, ExpenditureViewSet, ContributionDownloadViewSet, \
+    ExpenditureDownloadViewSet, TransactionViewSet, TopDonorsView, \
     TopExpensesView, CommitteeList, CommitteeDetail, ContributionDetail, DownloadView, \
     ExpenditureDetail, SearchView, SearchAPIView, DonationsView, RacesView, RaceDetail, \
-    LoanViewSet, TopEarnersView, TopEarnersWidgetView, bulk_contributions, \
-    bulk_expenditures, AboutView, flush_cache, bulk_candidates, bulk_committees
+    LoanViewSet, TopEarnersView, TopEarnersWidgetView, AboutView, \
+    flush_cache, bulk_candidates, bulk_committees
 
 router = routers.DefaultRouter()
 router.register(r'contributions', ContributionViewSet, base_name='contributions')
 router.register(r'expenditures', ExpenditureViewSet, base_name='expenditures')
+router.register(r'bulk/contributions', ContributionDownloadViewSet, base_name='bulk-contributions')
+router.register(r'bulk/expenditures', ExpenditureDownloadViewSet, base_name='bulk-expenditures')
 router.register(r'transactions', TransactionViewSet, base_name='transactions')
 router.register(r'top-donors', TopDonorsView, base_name='top-donors')
 router.register(r'top-expenses', TopExpensesView, base_name='top-expenses')
@@ -53,8 +56,6 @@ urlpatterns = [
     url(r'^races/$', RacesView.as_view(), name='races'),
     url(r'^races/(?P<pk>[\w-]+)/$', RaceDetail.as_view(), name='race-detail'),
     url(r'^downloads/$', DownloadView.as_view(), name='downloads'),
-    url(r'^api/bulk/contributions/$', bulk_contributions, name='bulk-contributions'),
-    url(r'^api/bulk/expenditures/$', bulk_expenditures, name='bulk-expenditures'),
     url(r'^api/bulk/candidates/$', bulk_candidates, name='bulk-candidates'),
     url(r'^api/bulk/committees/$', bulk_committees, name='bulk-committees'),
     url(r'^api/', include(router.urls)),

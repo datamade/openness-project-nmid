@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.db.utils import IntegrityError
 from django.contrib.auth.models import User
 from django.core.management import call_command
+from django.http import HttpRequest, QueryDict
 
 from camp_fin.models import (Race, Campaign, Filing, Division,
                              District, Office, OfficeType,
@@ -11,8 +12,9 @@ from camp_fin.models import (Race, Campaign, Filing, Division,
                              FilingType, County, Transaction, LoanTransaction,
                              TransactionType, LoanTransactionType, Loan)
 from camp_fin.views import RacesView, RaceDetail
+from camp_fin.base_views import TransactionDownloadViewSet
 from camp_fin.decorators import check_date_params
-from camp_fin.tests.conftest import StatelessTestCase
+from camp_fin.tests.conftest import StatelessTestCase, DatabaseTestCase
 
 class TestRace(StatelessTestCase):
     '''
@@ -259,3 +261,72 @@ class TestUtils(TestCase):
         # This should fail
         with self.assertRaises(AssertionError):
             bad_params(since=234543698)
+
+
+class TestAPI(StatelessTestCase):
+    '''
+    Test API endpoints.
+    '''
+    def setUp(self):
+        self.request = HttpRequest()
+        self.request.method = 'GET'
+
+    def test_get_entity_id(self):
+        '''
+        Test TransactionDownloadViewSet.get_entity_id.
+        '''
+        for ttype in ('contributions', 'expenditures'):
+            self.request.path = '/api/{ttype}/'.format(ttype=ttype)
+            self.request.GET = QueryDict('candidate_id=%d' % self.first_candidate.id)
+
+            mvset = TransactionDownloadViewSet()
+
+            self.assertEqual(mvset.get_entity_id(self.request), self.first_entity.id)
+
+    def test_bulk_contributions(self):
+        url = '/api/bulk/contributions/'
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_bulk_expenditures(self):
+        url = '/api/bulk/expenditures/'
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_bulk_candidates(self):
+        url = reverse('bulk-candidates')
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_bulk_pacs(self):
+        url = reverse('bulk-committees')
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_candidate_contributions(self):
+        url = '/api/contributions/?candidate_id=1'
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_candidate_expenditures(self):
+        url = '/api/expenditures/?candidate_id=1'
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_pac_contributions(self):
+        url = '/api/contributions/?pac_id=1'
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_pac_expenditures(self):
+        url = '/api/expenditures/?pac_id=1'
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
