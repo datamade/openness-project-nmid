@@ -31,7 +31,7 @@ from pages.models import Page
 from .models import Candidate, Office, Transaction, Campaign, Filing, PAC, \
     LoanTransaction, Race, RaceGroup, OfficeType, Entity
 from .base_views import (PaginatedList, TransactionDetail, TransactionBaseViewSet, \
-                         TopMoneyView, TopEarnersBase, PagesMixin, MaterializedViewSet, \
+                         TopMoneyView, TopEarnersBase, PagesMixin, TransactionDownloadViewSet, \
                          Echo, iterate_cursor)
 from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer, \
     TransactionSearchSerializer, CandidateSearchSerializer, PACSearchSerializer, \
@@ -874,49 +874,41 @@ class TransactionViewSet(TransactionBaseViewSet):
 
             else:
                 filename = '{0}-{1}-{2}.csv'.format(ttype,
-                                                    slugify(self.entity_name),
+                                                    slugify(self.entity_name), 
                                                     timezone.now().isoformat())
                 
                 response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
 
         return response
 
-    def list(self, request, *args, **kwargs):
+class ContributionViewSet(TransactionViewSet):
+    '''
+    ViewSet for the contribution API, returning JSON.
+    '''
+    default_filter = {
+        'transaction_type__contribution': True,
+        'filing__date_added__gte': TWENTY_TEN
+    }
 
-        candidate_id = self.request.query_params.get('candidate_id')
+class ExpenditureViewSet(TransactionViewSet):
+    '''
+    Viewset for the expenditure API, returning JSON.
+    '''
+    default_filter = {
+        'transaction_type__contribution': False,
+        'filing__date_added__gte': TWENTY_TEN
+    }
 
-        if candidate_id:
-            candidate = Candidate.objects.get(id=candidate_id)
-            entity_id = candidate.entity.id
-            self.entity_name = candidate.full_name
-        else:
-            entity_id = None
-
-        query = contributions_query(entity_id=entity_id)
-
-        cursor = connection.cursor()
-
-        if entity_id:
-            cursor.execute(query, [entity_id])
-        else:
-            cursor.execute(query)
-
-        header = [c[0] for c in cursor.description]
-
-        streaming_buffer = Echo()
-        writer = csv.writer(streaming_buffer)
-        writer.writerow(header)
-
-        response = StreamingHttpResponse((writer.writerow(row) for row in iterate_cursor(header, cursor)),
-                                        content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename=blah.csv'
-
-        return response
-
-class ContributionViewSet(MaterializedViewSet):
+class ContributionDownloadViewSet(TransactionDownloadViewSet):
+    '''
+    Viewset for the contribution API, returning bulk downloads as CSV.
+    '''
     contribution = True
 
-class ExpenditureViewSet(MaterializedViewSet):
+class ExpenditureDownloadViewSet(TransactionDownloadViewSet):
+    '''
+    Viewset for the expenditures API, returning bulk downloads as CSV.
+    '''
     contribution = True
 
 class TopDonorsView(TopMoneyView):

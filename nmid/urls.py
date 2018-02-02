@@ -20,7 +20,8 @@ from django.conf.urls import handler404, handler500
 from rest_framework import routers
 
 from camp_fin.views import IndexView, CandidateList, CandidateDetail, \
-    ContributionViewSet, ExpenditureViewSet, TransactionViewSet, TopDonorsView, \
+    ContributionViewSet, ExpenditureViewSet, ContributionDownloadViewSet, \
+    ExpenditureDownloadViewSet, TransactionViewSet, TopDonorsView, \
     TopExpensesView, CommitteeList, CommitteeDetail, ContributionDetail, DownloadView, \
     ExpenditureDetail, SearchView, SearchAPIView, DonationsView, RacesView, RaceDetail, \
     LoanViewSet, TopEarnersView, TopEarnersWidgetView, AboutView, \
@@ -29,8 +30,8 @@ from camp_fin.views import IndexView, CandidateList, CandidateDetail, \
 router = routers.DefaultRouter()
 router.register(r'contributions', ContributionViewSet, base_name='contributions')
 router.register(r'expenditures', ExpenditureViewSet, base_name='expenditures')
-router.register(r'bulk/contributions', ContributionViewSet, base_name='bulk-contributions')
-router.register(r'bulk/expenditures', ExpenditureViewSet, base_name='bulk-expenditures')
+router.register(r'bulk/contributions', ContributionDownloadViewSet, base_name='bulk-contributions')
+router.register(r'bulk/expenditures', ExpenditureDownloadViewSet, base_name='bulk-expenditures')
 router.register(r'transactions', TransactionViewSet, base_name='transactions')
 router.register(r'top-donors', TopDonorsView, base_name='top-donors')
 router.register(r'top-expenses', TopExpensesView, base_name='top-expenses')

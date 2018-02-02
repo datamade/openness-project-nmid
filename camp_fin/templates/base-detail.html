@@ -330,20 +330,26 @@
         function displayTransactionTable(transaction_type, ordering, selector){
             if(transaction_type.endsWith('contributions')){
                 var url = '/api/contributions/';
+                var bulk_url = '/api/bulk/contributions/';
             } else if (transaction_type.endsWith('expenditures')){
                 var url = '/api/expenditures/';
+                var bulk_url = '/api/bulk/contributions/';
             }
-            var params = {
+            var bulk_params = {
                 {% if pac %}
                     'pac_id': '{{ pac.id }}',
                 {% elif candidate %}
                     'candidate_id': '{{ candidate.id }}',
                 {% endif %}
-                'limit': 25,
             }
+
+            var params = $.extend({}, bulk_params);
+            params['limit'] = 25;
+
             if (ordering){
                 params['ordering'] = ordering;
             }
+
             $.when($.getJSON(url, params)).then(
                 function(data){
                     if (data.results.length > 0){
@@ -353,9 +359,7 @@
                         $('.page-link').off('click');
                         $('.page-link').on('click', getPage);
 
-                        params['limit'] = 1000000;
-                        params['format'] = 'csv'
-                        $('#csv-download').prop('href',url + '?' + $.param(params));
+                        $('#csv-download').prop('href', bulk_url + '?' + $.param(bulk_params));
                         $('#csv-download').show();
 
                         var sorter = ''

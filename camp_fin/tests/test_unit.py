@@ -12,7 +12,7 @@ from camp_fin.models import (Race, Campaign, Filing, Division,
                              FilingType, County, Transaction, LoanTransaction,
                              TransactionType, LoanTransactionType, Loan)
 from camp_fin.views import RacesView, RaceDetail
-from camp_fin.base_views import MaterializedViewSet
+from camp_fin.base_views import TransactionDownloadViewSet
 from camp_fin.decorators import check_date_params
 from camp_fin.tests.conftest import StatelessTestCase, DatabaseTestCase
 
@@ -82,7 +82,7 @@ class TestRace(StatelessTestCase):
         self.race.save()
 
 
-class TestCampaign(DatabaseTestCase):
+class TestCampaign(StatelessTestCase):
     '''
     Test methods of the `Campaign` model.
     '''
@@ -273,13 +273,13 @@ class TestAPI(StatelessTestCase):
 
     def test_get_entity_id(self):
         '''
-        Test MaterializedViewSet.get_entity_id.
+        Test TransactionDownloadViewSet.get_entity_id.
         '''
         for ttype in ('contributions', 'expenditures'):
             self.request.path = '/api/{ttype}/'.format(ttype=ttype)
             self.request.GET = QueryDict('candidate_id=%d' % self.first_candidate.id)
 
-            mvset = MaterializedViewSet()
+            mvset = TransactionDownloadViewSet()
 
             self.assertEqual(mvset.get_entity_id(self.request), self.first_entity.id)
 
@@ -308,32 +308,25 @@ class TestAPI(StatelessTestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_candidate_contributions(self):
-        url = '/api/contributions/'
+        url = '/api/contributions/?candidate_id=1'
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, 200)
 
     def test_candidate_expenditures(self):
-        url = '/api/expenditures/'
+        url = '/api/expenditures/?candidate_id=1'
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, 200)
 
     def test_pac_contributions(self):
-        url = '/api/contributions/'
+        url = '/api/contributions/?pac_id=1'
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, 200)
 
     def test_pac_expenditures(self):
-        url = 'api/expenditures/'
+        url = '/api/expenditures/?pac_id=1'
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, 200)
-
-    def test_search(self):
-        url = 'api/search/'
-        response = self.client.get(url)
-
-        self.assertEqual(response.status_code, 200)
-        self.fail()

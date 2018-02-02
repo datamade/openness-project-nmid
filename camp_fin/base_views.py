@@ -14,7 +14,8 @@ from rest_framework.response import Response
 
 from camp_fin.models import Transaction, Candidate, PAC, Entity
 from camp_fin.api_parts import (TransactionSerializer, TopMoneySerializer,
-                                SearchCSVRenderer, DataTablesPagination)
+                                SearchCSVRenderer, DataTablesPagination,
+                                TransactionCSVRenderer)
 
 from pages.models import Page
 
@@ -91,9 +92,13 @@ class TransactionDetail(DetailView):
         return context
 
 
-class MaterializedViewSet(viewsets.ViewSet):
+class TransactionDownloadViewSet(viewsets.ViewSet):
+    '''
+    Base viewset for returning bulk downloads of contributions and expenditures
+    as CSV.
+    '''
     serializer_class = TransactionSerializer
-    renderer_classes = (renderers.JSONRenderer, SearchCSVRenderer)
+    renderer_classes = (TransactionCSVRenderer,)
     contribution = True
 
     allowed_methods = ['GET']
@@ -124,7 +129,8 @@ class MaterializedViewSet(viewsets.ViewSet):
 
     def transaction_query(self, entity_id=None):
         '''
-        Return a query corresponding to the request that the user sent in
+        Return a query corresponding to the request, either for transactions by
+        candidate/PAC or for all transactions.
         '''
         if self.contribution is True:
             contribution_bool = 'TRUE'
@@ -136,6 +142,7 @@ class MaterializedViewSet(viewsets.ViewSet):
         base_query = '''
             SELECT
               transaction.*,
+              tt.description AS transaction_type,
               entity.*,
               fp.filing_date,
               fp.description AS filing_name
@@ -149,18 +156,18 @@ class MaterializedViewSet(viewsets.ViewSet):
             JOIN (
               SELECT
                   entity_id AS {subj_type}_entity_id,
-                  {subj_type},
+                  transaction_subject,
                   entity_type AS {subj_type}_entity_type
               FROM (
                 SELECT
                   entity_id,
-                  full_name AS {subj_type},
+                  full_name AS transaction_subject,
                   'candidate' AS entity_type
                 FROM camp_fin_candidate
                 UNION
                 SELECT
                   entity_id,
-                  name AS {subj_type},
+                  name AS transaction_subject,
                   'pac' AS entity_type
                   FROM camp_fin_pac
               ) AS all_entities
@@ -182,7 +189,7 @@ class MaterializedViewSet(viewsets.ViewSet):
 
     def list(self, request):
         '''
-        Run a query to generate the API response to a request
+        Generate the response to a request.
         '''
         self.entity_id = self.get_entity_id(request)
 
@@ -202,37 +209,21 @@ class MaterializedViewSet(viewsets.ViewSet):
 
         header = [c[0] for c in cursor.description]
 
-        if request.GET.get('format') == 'csv':
+        streaming_buffer = Echo()
+        writer = csv.writer(streaming_buffer)
+        writer.writerow(header)
 
-            streaming_buffer = Echo()
-            writer = csv.writer(streaming_buffer)
-            writer.writerow(header)
+        response = StreamingHttpResponse((writer.writerow(row) for row in iterate_cursor(header, cursor)),
+                                        content_type='text/csv')
 
-            response = StreamingHttpResponse((writer.writerow(row) for row in iterate_cursor(header, cursor)),
-                                            content_type='text/csv')
+        # Add appropriate filename and header for CSV response
+        filename = '{0}-{1}-{2}.csv'.format(ttype,
+                                            slugify(self.entity_name),
+                                            timezone.now().isoformat())
 
-            # Add appropriate filename and header for CSV response
-            filename = '{0}-{1}-{2}.csv'.format(ttype,
-                                                slugify(self.entity_name),
-                                                timezone.now().isoformat())
-
-            response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
-
-        else:
-            # Return JSON
-            result_tuple = namedtuple(ttype, header)
-            objects =  [result_tuple(*r) for r in cursor]
-
-            paginator = DataTablesPagination()
-            page = paginator.paginate_queryset(objects, self.request, view=self)
-
-            serializer = self.serializer_class(page, many=True)
-            objects = serializer.data
-
-            response = Response(objects)
+        response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
 
         return response
-
 
 class TransactionBaseViewSet(viewsets.ModelViewSet):
     serializer_class = TransactionSerializer
@@ -251,7 +242,7 @@ class TransactionBaseViewSet(viewsets.ModelViewSet):
         if self.default_filter:
             queryset = queryset.filter(**self.default_filter)
 
-        self.candidate_id = self.request.query_params.get('candidate_id')
+        candidate_id = self.request.query_params.get('candidate_id')
         pac_id = self.request.query_params.get('pac_id')
         
         if candidate_id:
@@ -273,7 +264,6 @@ class TransactionBaseViewSet(viewsets.ModelViewSet):
             
             elif entity.pac_set.first():
                 self.entity_name = entity.pac_set.first().name
-
 
         return queryset.order_by('-received_date')
     
