@@ -682,7 +682,31 @@ class CommitteeDetailBaseView(DetailView):
         entity_id = context['object'].entity_id
         entity = Entity.objects.get(id=entity_id)
 
-        trends = entity.trends()
+        # Determine the date of the first contribution/expenditure
+        min_date_query = '''
+            WITH all_cash AS (
+                SELECT month
+                FROM contributions_by_month
+                WHERE entity_id = %s
+                UNION
+                SELECT month
+                FROM expenditures_by_month
+                WHERE entity_id = %s
+              )
+            SELECT COALESCE(MIN(all_cash.month::date), '2010-01-01'::date)
+            FROM all_cash
+        '''
+
+        with connection.cursor() as cursor:
+            cursor.execute(min_date_query, [entity.id, entity.id])
+            row = cursor.fetchone()
+
+        if row[0].year > 2010:
+            year = str(row[0].year)
+        else:
+            year = '2010'
+
+        trends = entity.trends(since=year)
         context.update(trends)
 
         context['latest_filing'] = context['object'].entity.filing_set\

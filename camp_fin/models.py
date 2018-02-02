@@ -844,8 +844,16 @@ class Entity(models.Model):
                 balance_trend.append([filing.closing_balance, *date_array])
                 debt_trend.append([debts, *date_array])
 
-            first_opening_balance = summed_filings[0].opening_balance
-            first_debt = summed_filings[0].debt_carried_forward
+            if summed_filings[0].opening_balance:
+                first_opening_balance = summed_filings[0].opening_balance
+            else:
+                first_opening_balance = 0
+
+            if summed_filings[0].debt_carried_forward:
+                first_debt = summed_filings[0].debt_carried_forward
+            else:
+                first_debt = 0
+
             init_date = summed_filings[0].initial_date
 
             first_initial_date = [int(since), 1, 1]
@@ -857,8 +865,8 @@ class Entity(models.Model):
                 if datetime(*init_date_parts) <= datetime(*first_initial_date):
                     first_initial_date = init_date_parts
 
-            balance_trend.insert(0, [first_opening_balance, *first_initial_date])
             debt_trend.insert(0, [first_debt, *first_initial_date])
+            balance_trend.insert(0, [first_opening_balance, *first_initial_date])
 
         output_trends = {
             'balance_trend': balance_trend,
