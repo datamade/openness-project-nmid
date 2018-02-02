@@ -83,6 +83,7 @@
                 <thead>
                     <tr>
                         <th>Donor name</th>
+                        <th class="hidden-xs hidden-sm">Donor address</th>
                         <th>Recipient name</th>
                         <th class='hidden-xs hidden-sm'>Date</th>
                         <th>Amount</th>
@@ -231,6 +232,13 @@
                 var columns = [
                     {
                         'data': 'full_name',
+                    },
+                    {
+                        'data': 'address',
+                        'render': function(data, type, full, meta) {
+                            return '<a href="/addresses/' + full['address_id'] + '/">' + full['full_address'] + '</a>';
+                        },
+                        'className': 'hidden-xs hidden-sm'
                     },
                     {
                         'data': 'transaction_subject',

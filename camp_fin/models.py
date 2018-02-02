@@ -713,10 +713,15 @@ class Address(models.Model):
     from_file_id = models.IntegerField(null=True)
 
     def __str__(self):
-        address = '{0} {1}, {2} {3}'.format(self.street,
-                                            self.city,
-                                            self.state,
-                                            self.zipcode)
+        street = self.street.strip()
+        city = self.city.strip()
+        state = str(self.state).strip()
+        zipcode = self.zipcode.strip()
+
+        address = '{0} {1}, {2} {3}'.format(street,
+                                            city,
+                                            state,
+                                            zipcode)
         return address
 
 class CampaignStatus(models.Model):
@@ -1000,6 +1005,10 @@ class Contact(models.Model):
     
     def __str__(self):
         return self.full_name
+
+    @property
+    def total_contributions(self):
+        return sum(trans.amount for trans in self.transaction_set.all())
 
 class ContactType(models.Model):
     description = models.CharField(max_length=100)

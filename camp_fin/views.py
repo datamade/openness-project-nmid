@@ -29,7 +29,7 @@ from rest_framework.response import Response
 from pages.models import Page
 
 from .models import Candidate, Office, Transaction, Campaign, Filing, PAC, \
-    LoanTransaction, Race, RaceGroup, OfficeType, Entity
+    LoanTransaction, Race, RaceGroup, OfficeType, Entity, Address
 from .base_views import (PaginatedList, TransactionDetail, TransactionBaseViewSet, \
                          TopMoneyView, TopEarnersBase, PagesMixin, TransactionDownloadViewSet, \
                          Echo, iterate_cursor)
@@ -324,6 +324,37 @@ class RacesView(PaginatedList):
 
         return context
 
+class AddressDetail(DetailView):
+    template_name = 'camp_fin/address-detail.html'
+    model = Address
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        self.page_path = self.request.path
+
+        context['address'] = self.object
+        context['donors'] = sorted([donor for donor in self.object.contact_set.all()],
+                                   key=lambda trans: trans.total_contributions,
+                                   reverse=True)
+
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        seo['title'] = str(self.object)
+        seo['site_desc'] = "View campaign finance contributions for {address}".format(address=str(self.object))
+
+        context['seo'] = seo
+
+        try:
+            page = Page.objects.get(path=self.page_path)
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            context['page'] = None
+
+        return context
 
 class RaceDetail(DetailView):
     template_name = 'camp_fin/race-detail.html'
@@ -1004,7 +1035,7 @@ class SearchAPIView(viewsets.ViewSet):
                         address.city || ', ' ||
                         state.postal_code || ' ' ||
                         address.zipcode AS address
-                      FROM camp_fin_pac AS pac
+                     FROM camp_fin_pac AS pac
                       JOIN camp_fin_address AS address
                         ON pac.address_id = address.id
                       JOIN camp_fin_state AS state
@@ -1068,7 +1099,16 @@ class SearchAPIView(viewsets.ViewSet):
                       ELSE pac.name
                       END AS transaction_subject,
                       pac.slug AS pac_slug,
-                      candidate.slug AS candidate_slug
+                      candidate.slug AS candidate_slug,
+                      address.id AS address_id,
+                      CASE WHEN address.id IS NOT NULL
+                        THEN
+                          address.street || ' ' ||
+                          address.city || ', ' ||
+                          state.postal_code || ' ' ||
+                          address.zipcode
+                        ELSE ''
+                        END AS full_address
                     FROM camp_fin_transaction AS o
                     JOIN camp_fin_transactiontype AS tt
                       ON o.transaction_type_id = tt.id
@@ -1080,6 +1120,12 @@ class SearchAPIView(viewsets.ViewSet):
                       ON entity.id = pac.entity_id
                     LEFT JOIN camp_fin_candidate AS candidate
                       ON entity.id = candidate.entity_id
+                    LEFT JOIN camp_fin_contact AS contact
+                      ON o.contact_id = contact.id
+                    LEFT JOIN camp_fin_address AS address
+                      ON contact.address_id = address.id
+                    LEFT JOIN camp_fin_state AS state
+                      ON address.state_id = state.id
                     WHERE o.search_name @@ plainto_tsquery('english', %s)
                       AND tt.contribution = TRUE
                       AND o.received_date >= '2010-01-01'
@@ -1241,6 +1287,7 @@ class TopEarnersView(PaginatedList):
         context['seo'] = seo
 
         return context
+
 
 @method_decorator(xframe_options_exempt, name='dispatch')
 class TopEarnersWidgetView(TopEarnersBase):

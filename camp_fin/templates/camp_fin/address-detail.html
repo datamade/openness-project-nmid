@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load helpers %}
+{% load staticfiles %}
+{% load explainer %}
+
+{% block full_content %}
+<div class="row">
+    <div class="col-xs-12">
+        <h2>
+            <i class="fa fa-fw fa-home"></i>
+            {{ address }}
+            <small>Address</small>
+        </h2>
+        <p style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
+            See who's donating under this address.
+        </p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xs-12 col-sm-6">
+        <table class="table table-striped">
+            <thead>
+                <th>Donor</th>
+                <th>Occupation</th>
+                <th>Total contributions from this address</th>
+            </thead>
+            <tbody>
+                {% for donor in donors %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'search' %}?term={{ donor.full_name }}">
+                                {{ donor.full_name }}
+                            </a>
+                        </td>
+                        {% if donor.occupation == 'None' %}
+                            <td></td>
+                        {% else %}
+                            <td>{{ donor.occupation|title }}</td>
+                        {% endif %}
+                        <td>{{ donor.total_contributions|format_money }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

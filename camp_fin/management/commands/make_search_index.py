@@ -117,7 +117,11 @@ class Command(BaseCommand):
             'first_name',
             'middle_name',
             'last_name',
-            'suffix'
+            'suffix',
+            'address',
+            'city',
+            'state',
+            'zipcode'
         ]
         
         
