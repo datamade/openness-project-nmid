@@ -174,7 +174,7 @@ ChartHelper.donation_expenditure = function(el, title, sourceTxt, yaxisLabel, da
   var seriesData = [{
           color: color,
           data: data[0],
-          name: "Donations"
+          name: "Donations and loans"
         },{
           color: "#DD0000",
           data: data[1],

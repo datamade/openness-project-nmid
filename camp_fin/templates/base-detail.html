@@ -32,7 +32,10 @@
                     </tr>
                     {% if lastest_filing.total_loans > 0 %}
                         <tr>
-                            <td>Total loans</td>
+                            <td>
+                                Total loans
+                                {% explainer "Loans to campaigns are different from typical loans, like mortgages and credit cards. When a campaign gets a loan, it doesn't include collateral, and the lender doesn't expect to get paid back at any particular time, if ever. Because of this, we include loans as a kind of contribution: candidates sometimes pay them back if they want to, usually if they win the race, but they often don't." %}
+                            </td>
                             <td class='text-right green'>
                                 + {{ latest_filing.total_loans|format_money }}
                             </td>
