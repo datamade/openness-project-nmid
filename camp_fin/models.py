@@ -472,9 +472,6 @@ class Transaction(models.Model):
         if self.zipcode:
             full_address = '{0} {1}'.format(full_address, self.zipcode)
 
-        if self.country:
-            full_address = '{0} {1}'.format(full_address, self.country)
-
         return full_address.strip()
 
 class TransactionType(models.Model):
@@ -1005,10 +1002,6 @@ class Contact(models.Model):
     
     def __str__(self):
         return self.full_name
-
-    @property
-    def total_contributions(self):
-        return sum(trans.amount for trans in self.transaction_set.all())
 
 class ContactType(models.Model):
     description = models.CharField(max_length=100)

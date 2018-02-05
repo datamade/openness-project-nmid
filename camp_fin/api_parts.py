@@ -93,7 +93,6 @@ class TransactionSearchSerializer(TransactionSerializer):
     candidate_slug = serializers.StringRelatedField(read_only=True)
     donor_occupation = serializers.CharField(read_only=True)
     full_address = serializers.CharField(read_only=True)
-    address_id = serializers.CharField(read_only=True)
     
     class Meta:
         model = Transaction
@@ -115,7 +114,6 @@ class TransactionSearchSerializer(TransactionSerializer):
             'company_name',
             'full_name',
             'full_address',
-            'address_id',
             'address',
             'city',
             'state',

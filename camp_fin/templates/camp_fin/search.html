@@ -234,10 +234,7 @@
                         'data': 'full_name',
                     },
                     {
-                        'data': 'address',
-                        'render': function(data, type, full, meta) {
-                            return '<a href="/addresses/' + full['address_id'] + '/">' + full['full_address'] + '</a>';
-                        },
+                        'data': 'full_address',
                         'className': 'hidden-xs hidden-sm'
                     },
                     {

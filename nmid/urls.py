@@ -24,7 +24,7 @@ from camp_fin.views import IndexView, CandidateList, CandidateDetail, \
     ExpenditureDownloadViewSet, TransactionViewSet, TopDonorsView, \
     TopExpensesView, CommitteeList, CommitteeDetail, ContributionDetail, DownloadView, \
     ExpenditureDetail, SearchView, SearchAPIView, DonationsView, RacesView, RaceDetail, \
-    LoanViewSet, TopEarnersView, TopEarnersWidgetView, AboutView, AddressDetail, \
+    LoanViewSet, TopEarnersView, TopEarnersWidgetView, AboutView, \
     flush_cache, bulk_candidates, bulk_committees
 
 router = routers.DefaultRouter()
@@ -55,7 +55,6 @@ urlpatterns = [
     url(r'^committees/(?P<slug>[\w-]+)/$', CommitteeDetail.as_view(), name='committee-detail'),
     url(r'^races/$', RacesView.as_view(), name='races'),
     url(r'^races/(?P<pk>[\w-]+)/$', RaceDetail.as_view(), name='race-detail'),
-    url(r'^addresses/(?P<pk>[0-9]+)/$', AddressDetail.as_view(), name='address-detail'),
     url(r'^downloads/$', DownloadView.as_view(), name='downloads'),
     url(r'^api/bulk/candidates/$', bulk_candidates, name='bulk-candidates'),
     url(r'^api/bulk/committees/$', bulk_committees, name='bulk-committees'),

@@ -29,7 +29,7 @@ from rest_framework.response import Response
 from pages.models import Page
 
 from .models import Candidate, Office, Transaction, Campaign, Filing, PAC, \
-    LoanTransaction, Race, RaceGroup, OfficeType, Entity, Address
+    LoanTransaction, Race, RaceGroup, OfficeType, Entity
 from .base_views import (PaginatedList, TransactionDetail, TransactionBaseViewSet, \
                          TopMoneyView, TopEarnersBase, PagesMixin, TransactionDownloadViewSet, \
                          Echo, iterate_cursor)
@@ -311,38 +311,6 @@ class RacesView(PaginatedList):
 
         seo['title'] = "Contested {year} races in New Mexico".format(year=self.year)
         seo['site_desc'] = "View contested {year} races in New Mexico".format(year=self.year)
-
-        context['seo'] = seo
-
-        try:
-            page = Page.objects.get(path=self.page_path)
-            context['page'] = page
-            for blob in page.blobs.all():
-                context[blob.context_name] = blob.text
-        except Page.DoesNotExist:
-            context['page'] = None
-
-        return context
-
-class AddressDetail(DetailView):
-    template_name = 'camp_fin/address-detail.html'
-    model = Address
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        self.page_path = self.request.path
-
-        context['address'] = self.object
-        context['donors'] = sorted([donor for donor in self.object.contact_set.all()],
-                                   key=lambda trans: trans.total_contributions,
-                                   reverse=True)
-
-        seo = {}
-        seo.update(settings.SITE_META)
-
-        seo['title'] = str(self.object)
-        seo['site_desc'] = "View campaign finance contributions for {address}".format(address=str(self.object))
 
         context['seo'] = seo
 
@@ -1100,15 +1068,10 @@ class SearchAPIView(viewsets.ViewSet):
                       END AS transaction_subject,
                       pac.slug AS pac_slug,
                       candidate.slug AS candidate_slug,
-                      address.id AS address_id,
-                      CASE WHEN address.id IS NOT NULL
-                        THEN
-                          address.street || ' ' ||
-                          address.city || ', ' ||
-                          state.postal_code || ' ' ||
-                          address.zipcode
-                        ELSE ''
-                        END AS full_address
+                      o.address || ' ' ||
+                        o.city || ', ' ||
+                        o.state || ' ' ||
+                        o.zipcode AS full_address
                     FROM camp_fin_transaction AS o
                     JOIN camp_fin_transactiontype AS tt
                       ON o.transaction_type_id = tt.id

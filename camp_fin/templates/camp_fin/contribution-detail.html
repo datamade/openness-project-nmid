@@ -27,14 +27,7 @@
                     </tr>
                     <tr>
                         <td>Address</td>
-                        <td>
-                            {% if transaction.contact.address %}
-                            <a href="{% url 'address-detail' transaction.contact.address.id %}">
-                                {{ transaction.contact.address }}
-                            {% else %}
-                                {{ transaction.full_address }}
-                            {% endif %}
-                        </td>
+                        <td>{{ transaction.full_address }}</td>
                     </tr>
                     {% if transaction.occupation %}
                     <tr>
