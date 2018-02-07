@@ -52,7 +52,7 @@
         </div>
         <div id="candidate-search-results" class="col-md-12" style="display:none;">
             <h3>Candidates <small></small></h3>
-            <table class="table table-hover" id="candidate-table">
+            <table class="table table-hover datatable-table" id="candidate-table">
                 <thead>
                     <tr>
                         <th>Name</th>
@@ -66,7 +66,7 @@
         </div>
         <div id="pac-search-results" class="col-md-12" style="display:none;">
             <h3>PACs <small></small></h3>
-            <table class="table table-hover" id="pac-table">
+            <table class="table table-hover datatable-table" id="pac-table">
                 <thead>
                     <tr>
                         <th>Name</th>
@@ -79,7 +79,7 @@
         </div>
         <div id="contribution-search-results" class="col-md-12" style="display:none;">
             <h3>Contributions <small></small></h3>
-            <table class="table table-hover" id="contribution-table">
+            <table class="table table-hover datatable-table" id="contribution-table">
                 <thead>
                     <tr>
                         <th>Donor name</th>
@@ -99,7 +99,7 @@
         </div>
         <div id="expenditure-search-results" class="col-md-12" style="display:none;">
             <h3>Expenditures <small></small></h3>
-            <table class="table table-hover" id="expenditure-table">
+            <table class="table table-hover datatable-table" id="expenditure-table">
                 <thead>
                     <tr>
                         <th>Expense name</th>
@@ -305,6 +305,7 @@
         var opts = {
             "info": false,
             "searching": false,
+            "ordering": true,
             "bLengthChange": false,
             "processing": true,
             "paging": true,
