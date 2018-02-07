@@ -250,6 +250,7 @@ class Race(models.Model):
     county = models.ForeignKey('County', db_constraint=False, blank=True, null=True)
     election_season = models.ForeignKey('ElectionSeason', db_constraint=False)
     winner = models.OneToOneField('Campaign', blank=True, null=True)
+    dropouts = models.ManyToManyField('Campaign', related_name='dropout_race', blank=True, null=True)
 
     class Meta:
         unique_together = ('district', 'division', 'office_type', 'county',
@@ -297,6 +298,24 @@ class Race(models.Model):
         money they've raised.
         '''
         return sorted([camp for camp in self.campaigns],
+                      key=lambda camp: camp.funds_raised(since=self.funding_period),
+                      reverse=True)
+
+    @property
+    def active_campaigns(self):
+        '''
+        Campaigns that are still active in this race.
+        '''
+        return sorted([camp for camp in self.campaigns if camp not in self.dropouts.all()],
+                      key=lambda camp: camp.funds_raised(since=self.funding_period),
+                      reverse=True)
+
+    @property
+    def sorted_dropouts(self):
+        '''
+        Campaigns that have dropped out of this race, sorted by funds raised.
+        '''
+        return sorted([camp for camp in self.dropouts.all()],
                       key=lambda camp: camp.funds_raised(since=self.funding_period),
                       reverse=True)
 
