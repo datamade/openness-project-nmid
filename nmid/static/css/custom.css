@@ -78,6 +78,10 @@ tr.subrow.other > td > a {
     color: #bababa;
 }
 
+.clickable {
+    cursor: pointer;
+}
+
 @media screen and (max-width: 767px) {
   body, table { font-size: 14px; }
 

@@ -22,58 +22,58 @@
                         <td class='text-right'>{{ latest_filing.opening_balance|format_money }}</td>
                     </tr>
                     <tr>
-                        <td>Total contributions</td>
-                        <td class='text-right'>
+                        <td class="no-wrap green">
+                            + Total contributions
+                        </td>
+                        <td class='text-right no-wrap'>
                             <span class="green">
-                                + {{ latest_filing.total_contributions|format_money }}
+                                {{ latest_filing.total_contributions|format_money }}
                             </span>
                             {% if is_steve_pearce %}<span class="big red">*</span>{% endif %}
                         </td>
                     </tr>
-                    {% if lastest_filing.total_loans > 0 %}
+                    {% if latest_filing.total_loans > 0 %}
                         <tr>
-                            <td>
-                                Total loans
+                            <td style="padding-left:30px">
+                                Loans
                                 {% explainer "Loans to campaigns are different from typical loans, like mortgages and credit cards. When a campaign gets a loan, it doesn't include collateral, and the lender doesn't expect to get paid back at any particular time, if ever. Because of this, we include loans as a kind of contribution: candidates sometimes pay them back if they want to, usually if they win the race, but they often don't." %}
                             </td>
-                            <td class='text-right green'>
-                                + {{ latest_filing.total_loans|format_money }}
+                            <td class='text-right'>
+                                {{ latest_filing.total_loans|format_money }}
                             </td>
                         </tr>
                     {% endif %}
-                    {% if latest_filing.total_unpaid_debt > 0 %}
+                    {% if latest_filing.total_inkind > 0 %}
                         <tr>
-                            <td>Total debt</td>
-                            <td class='text-right'>{{ latest_filing.total_unpaid_debt|format_money }}</td>
+                            <td style="padding-left:30px">
+                                In-kind
+                            </td>
+                            <td class='text-right'>
+                                {{ latest_filing.total_inkind|format_money }}
+                            </td>
                         </tr>
                     {% endif %}
-                    {% if latest_filing.total_debt_paid > 0 %}
+                    {% if donations %}
                         <tr>
-                            <td>Total debt paid</td>
-                            <td class='text-right'>{{ latest_filing.total_debt_paid|format_money }}</td>
-                        </tr>
-                    {% endif %}
-                    {% if latest_filing.total_loans_forgiven > 0 %}
-                        <tr>
-                            <td>Total loans forgiven</td>
-                            <td class='text-right'>{{ latest_filing.total_loans_forgiven|format_money }}</td>
+                            <td style="padding-left:30px">
+                                Donations
+                            </td>
+                            <td class='text-right'>
+                                {{ donations|format_money }}
+                            </td>
                         </tr>
                     {% endif %}
                     <tr>
-                        <td>Total in-kind contributions</td>
-                        <td class='text-right green'>
-                            + {{ latest_filing.total_inkind|format_money }}
+                        <td class="no-wrap red">
+                            &ndash; Total expenditures
                         </td>
-                    </tr>
-                    <tr>
-                        <td>Total expenditures</td>
                         <td class='text-right red'>
-                            - {{ latest_filing.total_expenditures|format_money }}
+                            {{ latest_filing.total_expenditures|format_money }}
                         </td>
                     </tr>
                     <tr>
-                        <td>
-                            <strong>Closing balance</strong>
+                        <td class="no-wrap">
+                            <strong>= Closing balance</strong>
                             {% explainer "'Closing balance' refers to the amount of money this entity had on the reporting date." %}
                         </td>
                         <td class='text-right'><strong>{{ latest_filing.closing_balance|format_money }}</strong></td>
@@ -88,6 +88,33 @@
                     As such, his total funds raised is an underestimate until his next
                     reports are filed with the Secretary of State.
                 </p>
+            {% endif %}
+            {% if latest_filing.total_unpaid_debts > 0 or latest_filing.total_debt_paid > 0 or latest_filing.total_loans_forgiven > 0 %}
+                <br/>
+                <h3><i class="fa fa-fw fa-credit-card"></i> Debts
+                    <small>for the period ending {{ latest_filing.date_closed | date:"M j, Y"}}</small>
+                </h3>
+                <table class="table table-striped">
+                    {% if latest_filing.total_debts_paid > 0 %}
+                        <tr>
+                            <td>Debts paid</td>
+                            <td class='text-right'>{{ latest_filing.total_debts_paid|format_money }}</td>
+                        </tr>
+                    {% endif %}
+                    {% if latest_filing.total_loans_forgiven > 0 %}
+                        <tr>
+                            <td>Loans forgiven</td>
+                            <td class='text-right'>{{ latest_filing.total_loans_forgiven|format_money }}</td>
+                        </tr>
+                        {% endif %}
+                    {% if latest_filing.total_unpaid_debts > 0 %}
+                        <tr>
+                            <td>Outstanding debt</td>
+                            <td class='text-right'>{{ latest_filing.total_unpaid_debts|format_money }}</td>
+                        </tr>
+                    {% endif %}
+                </table>
+                <br/>
             {% endif %}
         {% block charts %}{% endblock %}
     </div>

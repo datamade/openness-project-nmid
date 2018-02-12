@@ -708,9 +708,17 @@ class CommitteeDetailBaseView(DetailView):
         trends = entity.trends(since=year)
         context.update(trends)
 
-        context['latest_filing'] = context['object'].entity.filing_set\
-                                                    .filter(filing_period__exclude_from_cascading=False)\
-                                                    .order_by('-date_added').first()
+        latest_filing = context['object'].entity.filing_set\
+                                                .filter(filing_period__exclude_from_cascading=False)\
+                                                .order_by('-date_added').first()
+
+        context['latest_filing'] = latest_filing
+
+        # Count pure donations, if applicable
+        if latest_filing and (latest_filing.total_loans > 0 or latest_filing.total_inkind > 0):
+            donations = latest_filing.total_contributions - (latest_filing.total_loans +
+                                                             latest_filing.total_inkind)
+            context['donations'] = donations
 
         return context
 
