@@ -60,8 +60,6 @@ urlpatterns = [
     url(r'^lobbyists/$', LobbyistList.as_view(), name='lobbyist-list'),
     url(r'^lobbyists/(?P<slug>[\w-]+)/$', LobbyistDetail.as_view(), name='lobbyist-detail'),
     url(r'^transactions/$', LobbyistTransactionList.as_view(), name='lobbyist-transaction-list'),
-    url(r'^api/bulk/contributions/$', bulk_contributions, name='bulk-contributions'),
-    url(r'^api/bulk/expenditures/$', bulk_expenditures, name='bulk-expenditures'),
     url(r'^api/bulk/candidates/$', bulk_candidates, name='bulk-candidates'),
     url(r'^api/bulk/committees/$', bulk_committees, name='bulk-committees'),
     url(r'^api/', include(router.urls)),
