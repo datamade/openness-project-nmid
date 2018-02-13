@@ -81,7 +81,7 @@ Keep an eye on money in New Mexico politics
                 </tr>
             </thead>
             <tbody>
-                {% for campaign in governor_campaigns %}
+                {% for campaign in governor_race.active_campaigns %}
                     <tr>
                         <td class="col-sm-6">
                             <a href="{% url 'candidate-detail' campaign.candidate.slug %}">

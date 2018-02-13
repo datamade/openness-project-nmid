@@ -197,12 +197,7 @@ class IndexView(TopEarnersBase, PagesMixin):
                                .filter(election_season__year=year)\
                                .first()
 
-        gov_campaigns = sorted([camp for camp in gov_race.campaigns],
-                               key=lambda camp: camp.funds_raised(since=last_year),
-                               reverse=True)
-
         context['governor_race'] = gov_race
-        context['governor_campaigns'] = gov_campaigns
 
         # Hottest races
         filtered_races = Race.objects.filter(election_season__year=year)\
@@ -337,12 +332,17 @@ class RaceDetail(DetailView):
         year = race.funding_period
 
         # Create a map of entity IDs and funding trends for each candidate
-        entities = [Entity.objects.get(id=camp.candidate.entity_id) for camp in race.sorted_campaigns]
-        context['trends'] = [entity.trends(since=year) for entity in entities]
+        active_entities = [Entity.objects.get(id=camp.candidate.entity_id)
+                           for camp in race.active_campaigns]
+        context['active_trends'] = [entity.trends(since=year) for entity in active_entities]
+
+        dropout_entities = [Entity.objects.get(id=camp.candidate.entity_id)
+                            for camp in race.sorted_dropouts]
+        context['dropout_trends'] = [entity.trends(since=year) for entity in dropout_entities]
 
         # Find max and min of contrib/expend
         context['max'], context['min'] = 0, 0
-        for cand in context['trends']:
+        for cand in context['active_trends'] + context['dropout_trends']:
             if cand['donation_trend']:
                 top_donation = max(donation[0] for donation in cand['donation_trend'])
 

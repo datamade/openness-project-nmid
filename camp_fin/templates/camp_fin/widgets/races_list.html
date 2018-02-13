@@ -86,7 +86,7 @@
                     </a>
                 </td>
                 <td class="no-wrap">
-                    {% for campaign in race.sorted_campaigns %}
+                    {% for campaign in race.active_campaigns %}
                         <p>
                             {{ campaign.candidate.full_name }}
                             {% if campaign.party_identifier %}
@@ -103,7 +103,7 @@
                     {% endfor %}
                 </td>
                 <td>
-                    {% for campaign in race.sorted_campaigns %}
+                    {% for campaign in race.active_campaigns %}
                         {% with total=races|largest_contribution %}
                             {% include 'camp_fin/widgets/funding-distribution.html' %}
                         {% endwith %}

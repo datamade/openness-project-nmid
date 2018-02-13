@@ -52,12 +52,15 @@ class RaceForm(forms.ModelForm):
 
     class Meta:
         model = Race
-        fields = ['winner']
+        fields = ['winner', 'dropouts']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['winner'].queryset = Campaign.objects\
                                                  .filter(active_race__id=self.instance.id)
+        self.fields['dropouts'].queryset = Campaign.objects\
+                                                 .filter(active_race__id=self.instance.id)
+
 
 
 @admin.register(Story)
