@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from django.db import models, connection
 from dateutil.rrule import rrule, MONTHLY
 from django.conf import settings
+from django.utils.translation import ugettext as _
 
 from camp_fin.templatetags.helpers import format_money
 from camp_fin.decorators import check_date_params
@@ -67,6 +68,12 @@ class PAC(models.Model):
         return self.name
 
 class Campaign(models.Model):
+    status_choices = (
+        ('active', _('Active')),
+        ('dropout', _('Dropped out')),
+        ('lost_primary', _('Lost primary'))
+    )
+
     olddb_id = models.IntegerField(null=True)
     candidate = models.ForeignKey('Candidate', db_constraint=False, null=True)
     election_season = models.ForeignKey('ElectionSeason', db_constraint=False)
@@ -98,6 +105,7 @@ class Campaign(models.Model):
     biannual = models.NullBooleanField()
     from_campaign = models.ForeignKey('Campaign', db_constraint=False, null=True)
     active_race = models.ForeignKey('Race', db_constraint=False, null=True)
+    race_status = models.CharField(max_length=25, default='active', choices=status_choices)
 
     def __str__(self):
         office = self.office.description
@@ -240,6 +248,18 @@ class Campaign(models.Model):
         else:
             return None
 
+    def get_status(self):
+        '''
+        Return the status for this campaign.
+        '''
+        return self.race_status
+
+    def display_status(self):
+        '''
+        Show a verbose version of the status for this campaign, e.g. in a template.
+        '''
+        return dict(self.status_choices)[self.race_status]
+
 
 class Race(models.Model):
     group = models.ForeignKey('RaceGroup', db_constraint=False, blank=True, null=True)
@@ -250,7 +270,6 @@ class Race(models.Model):
     county = models.ForeignKey('County', db_constraint=False, blank=True, null=True)
     election_season = models.ForeignKey('ElectionSeason', db_constraint=False)
     winner = models.OneToOneField('Campaign', blank=True, null=True)
-    dropouts = models.ManyToManyField('Campaign', related_name='dropout_race', blank=True, null=True)
 
     class Meta:
         unique_together = ('district', 'division', 'office_type', 'county',
@@ -306,7 +325,7 @@ class Race(models.Model):
         '''
         Campaigns that are still active in this race.
         '''
-        return sorted([camp for camp in self.campaigns if camp not in self.dropouts.all()],
+        return sorted([camp for camp in self.campaigns if camp.get_status() == 'active'],
                       key=lambda camp: camp.funds_raised(since=self.funding_period),
                       reverse=True)
 
@@ -315,7 +334,7 @@ class Race(models.Model):
         '''
         Campaigns that have dropped out of this race, sorted by funds raised.
         '''
-        return sorted([camp for camp in self.dropouts.all()],
+        return sorted([camp for camp in self.campaigns if camp.get_status() != 'active'],
                       key=lambda camp: camp.funds_raised(since=self.funding_period),
                       reverse=True)
 
@@ -729,15 +748,19 @@ class Address(models.Model):
     from_file_id = models.IntegerField(null=True)
 
     def __str__(self):
-        street = self.street.strip()
-        city = self.city.strip()
-        state = str(self.state).strip()
-        zipcode = self.zipcode.strip()
+        if self.street:
+            street = self.street.strip()
+            city = self.city.strip()
+            state = str(self.state).strip()
+            zipcode = self.zipcode.strip()
 
-        address = '{0} {1}, {2} {3}'.format(street,
-                                            city,
-                                            state,
-                                            zipcode)
+            address = '{0} {1}, {2} {3}'.format(street,
+                                                city,
+                                                state,
+                                                zipcode)
+        else:
+            address = 'No address found'
+
         return address
 
 class CampaignStatus(models.Model):

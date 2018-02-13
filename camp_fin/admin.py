@@ -52,13 +52,11 @@ class RaceForm(forms.ModelForm):
 
     class Meta:
         model = Race
-        fields = ['winner', 'dropouts']
+        fields = ['winner']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['winner'].queryset = Campaign.objects\
-                                                 .filter(active_race__id=self.instance.id)
-        self.fields['dropouts'].queryset = Campaign.objects\
                                                  .filter(active_race__id=self.instance.id)
 
 
@@ -68,6 +66,12 @@ class StoryAdmin(admin.ModelAdmin):
     relevant_fields = ('title', 'link')
     list_display = relevant_fields
     search_fields = ('title', 'link')
+
+
+class CampaignInline(admin.StackedInline):
+    model = Campaign
+    fields = ('race_status',)
+    extra = 0
 
 
 @admin.register(Race)
@@ -80,6 +84,7 @@ class RaceAdmin(admin.ModelAdmin):
     list_filter = (WinnerFilter, 'election_season__year')
     form = RaceForm
     search_fields = ('office__description',)
+    inlines = [CampaignInline]
 
     @short_description('Division')
     def display_division(self, obj):
