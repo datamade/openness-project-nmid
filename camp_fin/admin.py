@@ -1,8 +1,23 @@
 from django.contrib import admin
 from django import forms
+from django.core.management import call_command
 
 from camp_fin.models import Race, RaceGroup, Campaign, Story
 from camp_fin.decorators import short_description, boolean
+
+
+class ClearCacheMixin(object):
+    '''
+    Mixin that overrides the `save` and `delete` methods of Django's ModelAdmin
+    class to clear the cache whenever an object is added or changed.
+    '''
+    def save_model(self, request, obj, form, change):
+        call_command('clear_cache')
+        super().save_model(request, obj, form, change)
+
+    def delete_model(self, request, obj):
+        call_command('clear_cache')
+        super().delete_model(request, obj)
 
 
 def create_display(obj, attr, field):
@@ -62,20 +77,20 @@ class RaceForm(forms.ModelForm):
 
 
 @admin.register(Story)
-class StoryAdmin(admin.ModelAdmin):
+class StoryAdmin(admin.ModelAdmin, ClearCacheMixin):
     relevant_fields = ('title', 'link')
     list_display = relevant_fields
     search_fields = ('title', 'link')
 
 
-class CampaignInline(admin.StackedInline):
+class CampaignInline(admin.StackedInline, ClearCacheMixin):
     model = Campaign
     fields = ('race_status',)
     extra = 0
 
 
 @admin.register(Race)
-class RaceAdmin(admin.ModelAdmin):
+class RaceAdmin(admin.ModelAdmin, ClearCacheMixin):
     relevant_fields = ('__str__', 'display_division', 'display_district',
                        'display_office', 'display_office_type', 'display_county',
                        'display_election_season', 'display_candidates', 'has_winner')
