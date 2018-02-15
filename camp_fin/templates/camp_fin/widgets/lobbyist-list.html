@@ -9,7 +9,7 @@
             <th>Rank</th>
             <th>Lobbyist</th>
             <th>Employers</th>
-            <th>Total contributions</th>
+            <th class="text-right">Total contributions</th>
         </tr>
     </thead>
     <tbody>
@@ -23,10 +23,10 @@
                 </td>
                 <td>
                     {% with employers=lobbyist.employers %}
-                        {% for employer in employers %}
-                            {{ employer }}
+                        {% for employment in employers %}
+                            {{ employment.organization }}
                             {% if employers|length > 1 %}
-                                <small>{{ employer.year }}</small>
+                                <small>{{ employment.year }}</small>
                                 {% if not forloop.last %}
                                     <br/>
                                 {% endif %}
@@ -34,7 +34,10 @@
                         {% endfor %}
                     {% endwith %}
                 </td>
-                <td>{{ lobbyist.total_contributions }}</td>
+                <td class="text-right">
+                    <span class="hidden-sm hidden-xs">{{ lobbyist.total_expenditures|format_money }}</span>
+                    <span class="visible-sm-block visible-xs-block">{{ lobbyist.total_expenditures|format_money_short }}</span>
+                </td>
             </tr>
         {% endfor %}
     </tbody>

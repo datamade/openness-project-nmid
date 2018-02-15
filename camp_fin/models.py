@@ -1116,18 +1116,37 @@ class Lobbyist(models.Model):
     @property
     def employers(self):
         '''
-        Return a list of Organizations that have employed this Lobbyist,
-        in descending order of how recent the term of employment was.
+        Return a list of Organizations that have employed this Lobbyist in the
+        form of LobbyistEmployer objects, in descending order of how recent the
+        term of employment was.
         '''
-        return []
+        return self.lobbyistemployer_set.order_by('-year')
 
     @property
-    def total_contributions(self):
+    def total_expenditures(self):
         '''
         Return the total amount of money that this Lobbyist has spent on lobbying,
         for any purpose.
         '''
-        return 0
+        entity_id = self.entity.id
+
+        sum_contributions = '''
+            SELECT (COALESCE(meal_beverage_expenses, 0) +
+                    COALESCE(entertainment_expenses, 0) +
+                    COALESCE(gift_expenses, 0) +
+                    COALESCE(other_expenses, 0) +
+                    COALESCE(special_event_expenses, 0) +
+                    COALESCE(expenditures, 0) +
+                    COALESCE(political_contributions, 0))
+            FROM camp_fin_lobbyistreport
+            WHERE entity_id = %s;
+        '''
+
+        cursor = connection.cursor()
+        cursor.execute(sum_contributions, [entity_id])
+        amount = cursor.fetchone()[0]
+
+        return amount
 
 class LobbyistRegistration(models.Model):
     lobbyist = models.ForeignKey("Lobbyist", db_constraint=False)
@@ -1177,20 +1196,6 @@ class LobbyistTransaction(models.Model):
     amount = models.FloatField()
     date_added = models.DateTimeField(null=True)
     transaction_status = models.ForeignKey("LobbyistTransactionStatus", null=True, db_constraint=False)
-
-    @property
-    def lobbyist(self):
-        '''
-        Return the Lobbyist or Organization repsonsible for this transaction.
-        '''
-        return None
-
-    @property
-    def purpose(self):
-        '''
-        Return the reason for this Transaction.
-        '''
-        return None
 
 class LobbyistTransactionType(models.Model):
     description = models.CharField(max_length=100)
