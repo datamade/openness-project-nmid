@@ -10,6 +10,7 @@
             <th>Lobbyist</th>
             <th>Employers</th>
             <th class="text-right">Total contributions</th>
+            <th class="text-right">Total expenditures</th>
         </tr>
     </thead>
     <tbody>
@@ -24,15 +25,19 @@
                 <td>
                     {% with employers=lobbyist.employers %}
                         {% for employment in employers %}
-                            {{ employment.organization }}
-                            {% if employers|length > 1 %}
-                                <small>{{ employment.year }}</small>
-                                {% if not forloop.last %}
-                                    <br/>
-                                {% endif %}
+                            <a href="{% url 'organization-detail' employment.organization.slug %}">
+                                {{ employment.organization }}
+                            </a>
+                            <small>{{ employment.years|format_years }}</small>
+                            {% if not forloop.last %}
+                                <br/>
                             {% endif %}
                         {% endfor %}
                     {% endwith %}
+                </td>
+                <td class="text-right">
+                    <span class="hidden-sm hidden-xs">{{ lobbyist.total_contributions|format_money }}</span>
+                    <span class="visible-sm-block visible-xs-block">{{ lobbyist.total_contributions|format_money_short }}</span>
                 </td>
                 <td class="text-right">
                     <span class="hidden-sm hidden-xs">{{ lobbyist.total_expenditures|format_money }}</span>

@@ -210,7 +210,7 @@ class Command(BaseCommand):
                 self.populateEntityTable()
                 self.stdout.write(self.style.SUCCESS('Populated entity table for {}'.format(self.entity_type)))
 
-            if self.entity_type in ['candidate', 'pac', 'lobbyist']:
+            if self.entity_type in ['candidate', 'pac', 'lobbyist', 'organization']:
                 self.populateSlugField()
                 self.stdout.write(self.style.SUCCESS('Populated slug fields for {}'.format(self.entity_type)))
 
@@ -615,7 +615,7 @@ class Command(BaseCommand):
 
             name_select = " || ' ' || ".join(selects)
 
-        elif self.entity_type == 'pac':
+        elif self.entity_type in ['pac', 'organization']:
             name_select = 'name'
 
         slugify = '''

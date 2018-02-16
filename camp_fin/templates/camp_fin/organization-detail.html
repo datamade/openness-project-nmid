@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% load bootstrap_pagination %}
+{% load humanize %}
+{% load helpers %}
+
+{% block full_content %}
+<div class="container">
+    <div class="row">
+        <div class="col-xs-12">
+            <p style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;margin-top:15px">
+            <a href="{% url 'organization-list' %}">&laquo; View all lobbyist employers</a>
+            </p>
+            <h1>
+                <i class="fa fa-fw fa-users"></i>
+                {{ organization.name }}
+                <small>Lobbyist employer</small>
+            </h1>
+            {% if sos_link %}
+                <p><a href="{{sos_link}}" target="_blank">View on the New Mexico Secretary of State's website &raquo;</a></p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}

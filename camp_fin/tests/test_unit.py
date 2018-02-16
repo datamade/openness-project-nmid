@@ -14,6 +14,7 @@ from camp_fin.models import (Race, Campaign, Filing, Division,
 from camp_fin.views import RacesView, RaceDetail
 from camp_fin.base_views import TransactionDownloadViewSet
 from camp_fin.decorators import check_date_params
+from camp_fin.templatetags.helpers import format_years
 from camp_fin.tests.conftest import StatelessTestCase, DatabaseTestCase
 
 class TestRace(StatelessTestCase):
@@ -262,6 +263,13 @@ class TestUtils(TestCase):
         with self.assertRaises(AssertionError):
             bad_params(since=234543698)
 
+    def test_format_years(self):
+        assert format_years(['2017']) == '2017'
+        assert format_years(['2017', '2016', '2015']) == '2015 - 2017'
+        assert format_years(['2017', '2015', '2013']) == '2013, 2015, 2017'
+        assert format_years(['2017', '2015', '2014', '2013']) == '2013 - 2015, 2017'
+        assert (format_years(['2019', '2017', '2016', '2015', '2013', '2012']) ==
+                              '2012 - 2013, 2015 - 2017, 2019')
 
 class TestAPI(StatelessTestCase):
     '''

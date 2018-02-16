@@ -88,3 +88,77 @@ def percentage(obj, total):
     context.
     '''
     return obj.share_of_funds(total)
+
+@register.filter
+def format_years(years):
+    '''
+    Return a nicely formatted string from a list of years. For continuous years,
+    display a range; for disjoint years, return a comma-separated list.
+    '''
+    def get_ranges(current, future, final):
+        '''
+        Given a list of years, return a list of lists corresponding to the years
+        spanned, with continuous ranges represented by nested lists.
+        e.g. `[2012, 2013, 2015]` will return `[[2012, 2013], [2015]]`.
+        '''
+        # Base case
+        if len(future) == 0:
+            final.append(current)
+            return final
+
+        curr_year, next_year = current[-1], future.pop(0)
+
+        if int(curr_year) + 1 == int(next_year):
+            current.append(next_year)
+        else:
+            final.append(current)
+            current = [next_year]
+
+        return get_ranges(current, future, final)
+
+    def format_range(rng):
+        '''
+        Given a list of years, return a string representing the range of years
+        spanned. e.g. `[2012, 2013, 2014]` will return `2012-2014`.
+        '''
+        if len(rng) == 0:
+            return ''
+        elif len(rng) == 1:
+            return rng[0]
+        else:
+            start, end = rng[0], rng[-1]
+            return "{start} - {end}".format(start=start, end=end)
+
+    sorted_years = sorted(years)
+    ranges = get_ranges([sorted_years[0]], sorted_years[1:], [])
+    return ', '.join(format_range(rng) for rng in ranges)
+
+@register.simple_tag
+def lobbyist_contributions(obj, employer_id, short=False):
+    '''
+    Return the total amount of political contributions by a lobbyist working
+    under a given employer.
+    '''
+    funds = obj.total_contributions(employer_id=employer_id)
+
+    if short:
+        output = format_money_short(funds)
+    else:
+        output = format_money(funds)
+
+    return output
+
+@register.simple_tag
+def lobbyist_expenditures(obj, employer_id, short=False):
+    '''
+    Return the total amount of expenditures by a lobbyist working under a
+    given employer.
+    '''
+    funds = obj.total_expenditures(employer_id=employer_id)
+
+    if short:
+        output = format_money_short(funds)
+    else:
+        output = format_money(funds)
+
+    return output

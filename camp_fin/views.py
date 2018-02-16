@@ -29,7 +29,8 @@ from rest_framework.response import Response
 from pages.models import Page
 
 from .models import Candidate, Office, Transaction, Campaign, Filing, PAC, \
-    LoanTransaction, Race, RaceGroup, OfficeType, Entity, Lobbyist, LobbyistTransaction
+    LoanTransaction, Race, RaceGroup, OfficeType, Entity, Lobbyist, LobbyistTransaction, \
+    Organization
 from .base_views import (PaginatedList, TransactionDetail, TransactionBaseViewSet, \
                          TopMoneyView, TopEarnersBase, PagesMixin, TransactionDownloadViewSet, \
                          Echo, iterate_cursor)
@@ -209,6 +210,43 @@ class IndexView(TopEarnersBase, PagesMixin):
 
         context['top_races'] = top_races[:10]
         context['verbose_type'] = 'all'
+
+        return context
+
+class LobbyistPortal(PagesMixin):
+    template_name = 'lobbyist-portal.html'
+    page_path = '/lobbyist-portal/'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['num_lobbyists'] = Lobbyist.objects.count()
+        context['num_employers'] = Organization.objects.count()
+
+        get_total_contributions = '''
+            SELECT SUM(political_contributions)
+            FROM camp_fin_lobbyistreport
+        '''
+
+        get_total_expenditures = '''
+            SELECT SUM(expenditures)
+            FROM camp_fin_lobbyistreport
+        '''
+
+        with connection.cursor() as cursor:
+            cursor.execute(get_total_contributions)
+            context['total_contributions'] = cursor.fetchone()[0]
+
+            cursor.execute(get_total_expenditures)
+            context['total_expenditures'] = cursor.fetchone()[0]
+
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        seo['title'] = "Lobbyist portal - The Openness Project"
+        seo['site_desc'] = 'Browse lobbyists and their employers in New Mexico politics.'
+
+        context['seo'] = seo
 
         return context
 
@@ -715,6 +753,9 @@ class LobbyistDetail(DetailView):
 
         self.page_path = self.request.path
 
+        sos_link = 'https://www.cfis.state.nm.us/media/ReportLobbyist.aspx?id={id}&el=0'
+        context['sos_link'] = sos_link.format(id=context['object'].id)
+
         seo = {}
         seo.update(settings.SITE_META)
 
@@ -733,6 +774,71 @@ class LobbyistDetail(DetailView):
 
         return context
 
+
+class OrganizationList(PaginatedList):
+    template_name = 'camp_fin/organizations.html'
+    page_path = '/organizations/'
+
+    def get_queryset(self, **kwargs):
+
+        queryset = Organization.objects.all()
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        seo['title'] = "Lobbyist employers in New Mexico"
+        seo['site_desc'] = "Browse active lobbyist employers in New Mexico"
+
+        context['seo'] = seo
+
+        try:
+            page = Page.objects.get(path=self.page_path)
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            context['page'] = None
+
+        return context
+
+
+class OrganizationDetail(DetailView):
+    template_name = 'camp_fin/organization-detail.html'
+    model = Organization
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        self.page_path = self.request.path
+
+        sos_link = 'https://www.cfis.state.nm.us/media/ReportEmployer.aspx?id={id}&el=0'
+        context['sos_link'] = sos_link.format(id=context['object'].id)
+
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        name = context['object'].name
+
+        seo['title'] = "Lobbyist employer {name} in New Mexico".format(name=name)
+        seo['site_desc'] = ("View expenditures and contributions from " +
+                            "{name}, a lobbyist employer in New Mexico".format(name=name))
+
+        context['seo'] = seo
+
+        try:
+            page = Page.objects.get(path=self.page_path)
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            context['page'] = None
+
+        return context
 
 class LobbyistTransactionList(PaginatedList):
     template_name = 'camp_fin/lobbyist-transaction-list.html'
