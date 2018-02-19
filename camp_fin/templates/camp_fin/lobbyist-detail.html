@@ -21,6 +21,69 @@
             {% endif %}
         </div>
     </div>
+    <div class="row">
+        <div class="col-xs-12 col-sm-6">
+            <h2>
+                <i class="fa fa-fw fa-info-circle"></i>
+                Overview
+            </h2>
+            <table class="table table-striped">
+                <tbody>
+                    <tr>
+                        <td>
+                            <i class="fa fa-fw fa-clock-o"></i>
+                            Years active
+                        </td>
+                        <td class="text-right">
+                            {{ lobbyist.years_active|format_years }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <i class="fa fa-fw fa-users"></i>
+                            Most recent employer
+                        </td>
+                        <td class="text-right">
+                            {% with employment=lobbyist.employers|first %}
+                                <a href="{% url 'organization-detail' employment.organization.slug %}">
+                                    {{ employment.organization }}
+                                </a>
+                                <small>{{ employment.years|format_years }}</small>
+                            {% endwith %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <i class="fa fa-fw fa-usd"></i>
+                            Total contributions
+                        </td>
+                        <td class="text-right">
+                            <span class="green visible-xs visible-sm">
+                                + {{ lobbyist.total_contributions|format_money_short }}
+                            </span>
+                            <span class="green hidden-xs hidden-sm">
+                                + {{ lobbyist.total_contributions|format_money }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <i class="fa fa-fw fa-usd"></i>
+                            Total expenditures
+                        </td>
+                        <td class="text-right">
+                            <span class="red visible-xs visible-sm">
+                                - {{ lobbyist.total_expenditures|format_money_short }}
+                            </span>
+                            <span class="red hidden-xs hidden-sm">
+                                - {{ lobbyist.total_expenditures|format_money }}
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
     {% if lobbyist.employers %}
         <div class="row">
             <div class="col-xs-12">
@@ -67,7 +130,7 @@
                         {% if lobbyist.employers|length > 1 %}
                             <tr>
                                 <td><strong>Total</strong></td>
-                                <td>{{ lobbyist.years_active }}</td>
+                                <td>{{ lobbyist.years_active|format_years }}</td>
                                 <td class="text-right">
                                     <span class="hidden-sm hidden-xs">{{ lobbyist.total_contributions|format_money }}</span>
                                     <span class="visible-sm-block visible-xs-block">{{ lobbyist.total_contributions|format_money_short }}</span>

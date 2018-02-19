@@ -1185,7 +1185,19 @@ class Lobbyist(models.Model):
         '''
         The range of time that this lobbyist has been employed.
         '''
-        pass
+        years = self.lobbyistemployer_set.aggregate(min_year=models.Min('year'),
+                                                    max_year=models.Max('year'))
+
+        if years.get('min_year') and years.get('max_year'):
+            min_year, max_year = years['min_year'], years['max_year']
+            if min_year == max_year:
+                # Only active for one year
+                return [min_year]
+            else:
+                return [year for year in range(int(min_year), int(max_year) + 1)]
+        else:
+            return []
+
 
 class LobbyistRegistration(models.Model):
     lobbyist = models.ForeignKey("Lobbyist", db_constraint=False)
