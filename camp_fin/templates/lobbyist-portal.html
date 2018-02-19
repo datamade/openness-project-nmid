@@ -44,7 +44,9 @@
                 Browse {{ num_lobbyists|intcomma }}
                 <a href="{% url 'lobbyist-list' %}">lobbyists</a>
             </h3>
-            {% include 'camp_fin/widgets/lobbyist-list.html' %}
+            {% with sortable=False %}
+                {% include 'camp_fin/widgets/lobbyist-list.html' %}
+            {% endwith %}
             <p>
                 <a href="{% url 'lobbyist-list' %}" class='btn btn-danger'>
                     <i class='fa fa-fw fa-user'></i>

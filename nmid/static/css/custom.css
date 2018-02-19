@@ -88,6 +88,37 @@ tr.subrow.other > td > a {
     font-family: Helvetica,Arial,sans-serif;
 }
 
+/* =======================  *
+ * show more/less logic for *
+ * long description boxes   *
+ * =======================  */
+
+a .show-more {
+    display: none;
+}
+
+a .show-less {
+    display: inline;
+}
+
+a.collapsed .show-more {
+    display: inline;
+}
+
+a.collapsed .show-less {
+    display: none;
+}
+
+.description-text:not(.in) {
+    min-height: 7em;
+    height: 7em;
+    display: block;
+    overflow: hidden;
+    visibility: visible;
+}
+
+/* ===================== */
+
 @media screen and (max-width: 767px) {
   body, table { font-size: 14px; }
 

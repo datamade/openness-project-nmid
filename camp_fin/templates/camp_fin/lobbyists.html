@@ -14,7 +14,7 @@
             {% else %}
                 <br/>
             {% endif %}
-            {% with lobbyists=object_list %}
+            {% with lobbyists=object_list sortable=True %}
                 {% include 'camp_fin/widgets/lobbyist-list.html' %}
             {% endwith %}
         </div>

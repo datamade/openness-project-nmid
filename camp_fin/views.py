@@ -721,12 +721,60 @@ class LobbyistList(PaginatedList):
 
     def get_queryset(self, **kwargs):
 
-        queryset = Lobbyist.objects.all()
+        self.order_by = self.request.GET.get('order_by', 'rank')
+        # Handle empty string
+        if not self.order_by:
+            self.order_by = 'rank'
+
+        assert self.order_by in ['rank', 'contributions', 'expenditures']
+
+        self.sort_order = self.request.GET.get('sort_order', 'asc')
+        if not self.sort_order:
+            self.sort_order = 'asc'
+
+        assert self.sort_order in ['asc', 'desc']
+
+        with connection.cursor() as cursor:
+            cursor.execute('''
+                SELECT * FROM (
+                    SELECT
+                        DENSE_RANK() OVER (
+                            ORDER BY lobbyists.contributions + lobbyists.expenditures DESC
+                        ) AS rank,
+                        lobbyists.*
+                    FROM (
+                        SELECT DISTINCT ON (lobbyist.id)
+                            lobbyist.id,
+                            SUM(COALESCE(report.political_contributions, 0)) AS contributions,
+                            SUM(COALESCE(report.expenditures, 0)) AS expenditures
+                        FROM camp_fin_lobbyist AS lobbyist
+                        JOIN camp_fin_lobbyistreport AS report
+                        USING(entity_id)
+                        GROUP BY lobbyist.id
+                    ) AS lobbyists
+                ) AS s
+                ORDER BY {0} {1}
+            '''.format(self.order_by, self.sort_order))
+
+            columns = [c[0] for c in cursor.description]
+            lobbyist_tuple = namedtuple('Lobbyist', columns)
+
+            lobbyists =  [lobbyist_tuple(*r) for r in cursor]
+
+            queryset = [(lobbyist.rank, Lobbyist.objects.get(id=lobbyist.id)) for lobbyist in lobbyists]
 
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        context['sort_order'] = self.sort_order
+        context['order_by'] = self.order_by
+
+        if self.sort_order.lower() == 'desc':
+            context['toggle_order'] = 'asc'
+        else:
+            context['toggle_order'] = 'desc'
 
         seo = {}
         seo.update(settings.SITE_META)
