@@ -220,6 +220,9 @@ class LobbyistPortal(PagesMixin):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        context['lobbyists'] = Lobbyist.objects.all()[:5]
+        context['organizations'] = Organization.objects.all()[:5]
+
         context['num_lobbyists'] = Lobbyist.objects.count()
         context['num_employers'] = Organization.objects.count()
 

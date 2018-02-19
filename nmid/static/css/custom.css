@@ -82,6 +82,12 @@ tr.subrow.other > td > a {
     cursor: pointer;
 }
 
+.lobbyist-stats {
+    font-size: 1.2em;
+    margin-top: 10px;
+    font-family: Helvetica,Arial,sans-serif;
+}
+
 @media screen and (max-width: 767px) {
   body, table { font-size: 14px; }
 
