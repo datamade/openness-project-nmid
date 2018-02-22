@@ -146,6 +146,47 @@
             </div>
         </div>
     {% endif %}
+    {% if lobbyist.transactions %}
+        <div class="row">
+            <div class="col-xs-12">
+                <h2>
+                    <i class="fa fa-fw fa-usd"></i>
+                    Transactions
+                </h2>
+                <table class="table table-striped table-responsive">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>On behalf of</th>
+                            <th class="text-right">Amount</th>
+                            <th>Recipient</th>
+                            <th class="hidden-xs hidden-sm">Description</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in lobbyist.transactions %}
+                            <tr>
+                                <td>{{ transaction.type }}</td>
+                                <td>{{ transaction.name }}</td>
+                                <td class="text-right no-wrap">
+                                    <span class="hidden-xs hidden-sm">
+                                        {{ transaction.amount|format_money }} to
+                                    </span>
+                                    <span class="visible-xs visible-sm">
+                                        {{ transaction.amount|format_money_short }} to
+                                    </span>
+                                </td>
+                                <td>{{ transaction.recipient }}</td>
+                                <td class="hidden-xs hidden-sm">{{ transaction.description }}</td>
+                                <td>{{ transaction.date|date }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}
 
