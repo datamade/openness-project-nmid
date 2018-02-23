@@ -1165,6 +1165,45 @@ class LobbyistMethodMixin(object):
         else:
             return []
 
+    def transactions(self, order_by='amount', ordering='desc'):
+        '''
+        Return all transactions related to this entity.
+        '''
+        # Check params for validity
+        assert order_by in ['amount', 'description', 'beneficiary',
+                            'expenditure_purpose', 'received_date']
+        assert ordering in ['asc', 'desc']
+
+        entity_id = self.entity_id
+
+        get_transactions = '''
+            SELECT
+              trans.id,
+              COALESCE(ttype.description, '') AS type,
+              COALESCE(trans.name, '') AS name,
+              trans.amount,
+              COALESCE(trans.beneficiary, '') AS recipient,
+              COALESCE(trans.expenditure_purpose, '') AS description,
+              trans.received_date AS date
+            FROM camp_fin_lobbyistreport report
+            JOIN camp_fin_lobbyisttransaction trans
+              ON trans.lobbyist_report_id = report.id
+            JOIN camp_fin_lobbyisttransactiontype ttype
+              ON trans.lobbyist_transaction_type_id = ttype.id
+            WHERE entity_id = %s
+            ORDER BY {0} {1}
+        '''.format(order_by, ordering)
+
+        with connection.cursor() as cursor:
+            cursor.execute(get_transactions, [entity_id])
+
+            columns = [c[0] for c in cursor.description]
+            trans_tuple = namedtuple('Transaction', columns)
+
+            output = [trans_tuple(*r) for r in cursor]
+
+        return output
+
 
 class Lobbyist(models.Model, LobbyistMethodMixin):
     entity = models.ForeignKey("Entity", db_constraint=False)
@@ -1216,44 +1255,6 @@ class Lobbyist(models.Model, LobbyistMethodMixin):
         '''
         return self.get_employments(reverse_attr='organization')
 
-    def transactions(self, order_by='amount', ordering='desc'):
-        '''
-        Return all transactions related to this lobbyist.
-        '''
-        # Check params for validity
-        assert order_by in ['amount', 'description', 'beneficiary',
-                            'expenditure_purpose', 'received_date']
-        assert ordering in ['asc', 'desc']
-
-        entity_id = self.entity_id
-
-        get_transactions = '''
-            SELECT
-              trans.id,
-              COALESCE(ttype.description, '') AS type,
-              COALESCE(trans.name, '') AS name,
-              trans.amount,
-              COALESCE(trans.beneficiary, '') AS recipient,
-              COALESCE(trans.expenditure_purpose, '') AS description,
-              trans.received_date AS date
-            FROM camp_fin_lobbyistreport report
-            JOIN camp_fin_lobbyisttransaction trans
-              ON trans.lobbyist_report_id = report.id
-            JOIN camp_fin_lobbyisttransactiontype ttype
-              ON trans.lobbyist_transaction_type_id = ttype.id
-            WHERE entity_id = %s
-            ORDER BY {0} {1}
-        '''.format(order_by, ordering)
-
-        with connection.cursor() as cursor:
-            cursor.execute(get_transactions, [entity_id])
-
-            columns = [c[0] for c in cursor.description]
-            trans_tuple = namedtuple('Transaction', columns)
-
-            output = [trans_tuple(*r) for r in cursor]
-
-        return output
 
 class Organization(models.Model, LobbyistMethodMixin):
     entity = models.ForeignKey("Entity", db_constraint=False)
@@ -1281,6 +1282,7 @@ class Organization(models.Model, LobbyistMethodMixin):
         term of employment was.
         '''
         return self.get_employments(reverse_attr='lobbyist')
+
 
 class LobbyistRegistration(models.Model):
     lobbyist = models.ForeignKey("Lobbyist", db_constraint=False)

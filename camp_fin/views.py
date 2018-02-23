@@ -928,6 +928,17 @@ class OrganizationDetail(DetailView):
 
         self.page_path = self.request.path
 
+        # Pagination
+        paginator = Paginator(context['object'].transactions(), 25)
+        page = self.request.GET.get('page', 1)
+
+        try:
+            context['object_list'] = paginator.page(page)
+        except PageNotAnInteger:
+            context['object_list'] = paginator.page(1)
+        except EmptyPage:
+            context['object_list'] = paginator.page(paginator.num_pages)
+
         sos_link = 'https://www.cfis.state.nm.us/media/ReportEmployer.aspx?id={id}&el=0'
         context['sos_link'] = sos_link.format(id=context['object'].id)
 
@@ -951,6 +962,7 @@ class OrganizationDetail(DetailView):
             context['page'] = None
 
         return context
+
 
 class LobbyistTransactionList(PaginatedList):
     template_name = 'camp_fin/lobbyist-transaction-list.html'
