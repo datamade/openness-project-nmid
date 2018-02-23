@@ -109,8 +109,13 @@ def format_years(years):
         curr_year, next_year = current[-1], future.pop(0)
 
         if int(curr_year) + 1 == int(next_year):
+            # Continuous years -- extend the current list
             current.append(next_year)
+        elif curr_year == next_year:
+            # Duplicate -- skip this one
+            pass
         else:
+            # Disjoint years -- append the current list to the output, and restart it
             final.append(current)
             current = [next_year]
 

@@ -270,6 +270,7 @@ class TestUtils(TestCase):
         assert format_years(['2017', '2015', '2014', '2013']) == '2013 - 2015, 2017'
         assert (format_years(['2019', '2017', '2016', '2015', '2013', '2012']) ==
                               '2012 - 2013, 2015 - 2017, 2019')
+        assert (format_years(['2019', '2018', '2018', '2017']) == '2017 - 2019')
 
 class TestAPI(StatelessTestCase):
     '''

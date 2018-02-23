@@ -759,7 +759,7 @@ class LobbyistList(PaginatedList):
             columns = [c[0] for c in cursor.description]
             lobbyist_tuple = namedtuple('Lobbyist', columns)
 
-            lobbyists =  [lobbyist_tuple(*r) for r in cursor]
+            lobbyists = [lobbyist_tuple(*r) for r in cursor]
 
             queryset = [(lobbyist.rank, Lobbyist.objects.get(id=lobbyist.id)) for lobbyist in lobbyists]
 
@@ -843,12 +843,62 @@ class OrganizationList(PaginatedList):
 
     def get_queryset(self, **kwargs):
 
-        queryset = Organization.objects.all()
+        self.order_by = self.request.GET.get('order_by', 'rank')
+
+        # Handle empty string
+        if not self.order_by:
+            self.order_by = 'rank'
+
+        assert self.order_by in ['rank', 'contributions', 'expenditures']
+
+        self.sort_order = self.request.GET.get('sort_order', 'asc')
+        if not self.sort_order:
+            self.sort_order = 'asc'
+
+        assert self.sort_order in ['asc', 'desc']
+
+        with connection.cursor() as cursor:
+            cursor.execute('''
+                SELECT * FROM (
+                    SELECT
+                        DENSE_RANK() OVER (
+                            ORDER BY organizations.contributions + organizations.expenditures DESC
+                        ) AS rank,
+                        organizations.*
+                    FROM (
+                        SELECT DISTINCT ON (organization.id)
+                            organization.id,
+                            SUM(COALESCE(report.political_contributions, 0)) AS contributions,
+                            SUM(COALESCE(report.expenditures, 0)) AS expenditures
+                        FROM camp_fin_organization AS organization
+                        JOIN camp_fin_lobbyistreport AS report
+                        USING(entity_id)
+                        GROUP BY organization.id
+                    ) AS organizations
+                ) AS s
+                ORDER BY {0} {1}
+            '''.format(self.order_by, self.sort_order))
+
+            columns = [c[0] for c in cursor.description]
+            organization_tuple = namedtuple('Organization', columns)
+
+            organizations = [organization_tuple(*r) for r in cursor]
+
+            queryset = [(organization.rank, Organization.objects.get(id=organization.id))
+                        for organization in organizations]
 
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        context['sort_order'] = self.sort_order
+        context['order_by'] = self.order_by
+
+        if self.sort_order.lower() == 'desc':
+            context['toggle_order'] = 'asc'
+        else:
+            context['toggle_order'] = 'desc'
 
         seo = {}
         seo.update(settings.SITE_META)

@@ -1268,6 +1268,91 @@ class Organization(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def lobbyists(self):
+        '''
+        Return a list of Organizations that have employed this Lobbyist in the
+        form of LobbyistEmployer objects, in descending order of how recent the
+        term of employment was.
+        '''
+        # Since each year that a lobbyist registers with an employer counts as
+        # a separate employment, iterate the list and group together employers
+        sorted_employers = []
+        employer_cache = {}
+        for employer in self.lobbyistemployer_set.order_by('-year'):
+
+            org_id = employer.organization.id
+            year = employer.year
+
+            if org_id in employer_cache.keys():
+                # Org entry exists; append this year to its list of active years
+                employer_cache[org_id]['years'].append(year)
+            else:
+                # Create a new entry and initialize the list of active years
+                details = {'lobbyist': employer.lobbyist, 'years': [year]}
+                employer_cache[org_id] = details
+
+                # Keep track of the order of this organization
+                sorted_employers.append(org_id)
+
+        return [employer_cache[org] for org in sorted_employers]
+
+    def total_contributions(self, employer_id=None):
+        '''
+        Return the total amount of money that this lobbyist has contributed
+        to political campaigns.
+        '''
+        entity_id = self.entity.id
+
+        sum_contributions = '''
+            SELECT SUM(COALESCE(political_contributions, 0))
+            FROM camp_fin_lobbyistreport
+            WHERE entity_id = %s
+        '''
+
+        with connection.cursor() as cursor:
+            cursor.execute(sum_contributions, [entity_id])
+            amount = cursor.fetchone()[0]
+
+        return amount
+
+    def total_expenditures(self, employer_id=None):
+        '''
+        Return the total amount of money that this Lobbyist has spent on lobbying,
+        for any purpose.
+        '''
+        entity_id = self.entity.id
+
+        sum_contributions = '''
+            SELECT SUM(COALESCE(expenditures, 0))
+            FROM camp_fin_lobbyistreport
+            WHERE entity_id = %s
+        '''
+
+        with connection.cursor() as cursor:
+            cursor.execute(sum_contributions, [entity_id])
+            amount = cursor.fetchone()[0]
+
+        return amount
+
+    @property
+    def years_active(self):
+        '''
+        The range of time that this lobbyist has been employed.
+        '''
+        years = self.lobbyistemployer_set.aggregate(min_year=models.Min('year'),
+                                                    max_year=models.Max('year'))
+
+        if years.get('min_year') and years.get('max_year'):
+            min_year, max_year = years['min_year'], years['max_year']
+            if min_year == max_year:
+                # Only active for one year
+                return [min_year]
+            else:
+                return [year for year in range(int(min_year), int(max_year) + 1)]
+        else:
+            return []
+
 class LobbyistFilingPeriod(models.Model):
     filing_date = models.DateTimeField(null=True)
     due_date = models.DateTimeField(null=True)
