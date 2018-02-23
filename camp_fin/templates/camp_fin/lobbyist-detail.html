@@ -86,7 +86,7 @@
     </div>
     {% if lobbyist.employers %}
         <div class="row">
-            <div class="col-xs-12">
+            <div class="col-xs-12 col-sm-8">
                 <h2>
                     <i class="fa fa-fw fa-users"></i>
                     Employers
@@ -96,8 +96,6 @@
                         <tr>
                             <th>Organization</th>
                             <th>Years employed</th>
-                            <th class="text-right">Total contributions</th>
-                            <th class="text-right">Total expenditures</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -109,38 +107,8 @@
                                     </a>
                                 </td>
                                 <td>{{ employer.years|format_years }}</td>
-                                <td class="text-right">
-                                    <span class="hidden-sm hidden-xs">
-                                        {% lobbyist_contributions lobbyist employer.organization.id %}
-                                    </span>
-                                    <span class="visible-sm-block visible-xs-block">
-                                        {% lobbyist_contributions lobbyist employer.organization.id  short=True %}
-                                    </span>
-                                </td>
-                                <td class="text-right">
-                                    <span class="hidden-sm hidden-xs">
-                                        {% lobbyist_expenditures lobbyist employer.organization.id %}
-                                    </span>
-                                    <span class="visible-sm-block visible-xs-block">
-                                        {% lobbyist_expenditures lobbyist employer.organization.id short=True %}
-                                    </span>
-                                </td>
                             </tr>
                         {% endfor %}
-                        {% if lobbyist.employers|length > 1 %}
-                            <tr>
-                                <td><strong>Total</strong></td>
-                                <td>{{ lobbyist.years_active|format_years }}</td>
-                                <td class="text-right">
-                                    <span class="hidden-sm hidden-xs">{{ lobbyist.total_contributions|format_money }}</span>
-                                    <span class="visible-sm-block visible-xs-block">{{ lobbyist.total_contributions|format_money_short }}</span>
-                                </td>
-                                <td class="text-right">
-                                    <span class="hidden-sm hidden-xs">{{ lobbyist.total_expenditures|format_money }}</span>
-                                    <span class="visible-sm-block visible-xs-block">{{ lobbyist.total_expenditures|format_money_short }}</span>
-                                </td>
-                            </tr>
-                        {% endif %}
                     </tbody>
                 </table>
             </div>
@@ -165,7 +133,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for transaction in lobbyist.transactions %}
+                        {% for transaction in object_list %}
                             <tr>
                                 <td>{{ transaction.type }}</td>
                                 <td>{{ transaction.name }}</td>
@@ -184,6 +152,11 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+        </div>
+        <div class="row">
+            <div class="text-center">
+                {% bootstrap_paginate object_list range=10 %}
             </div>
         </div>
     {% endif %}
