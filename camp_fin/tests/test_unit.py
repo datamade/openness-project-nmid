@@ -339,3 +339,46 @@ class TestAPI(StatelessTestCase):
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, 200)
+
+
+class TestLobbyists(StatelessTestCase):
+    '''
+    Test methods of the Lobbyist model.
+    '''
+    def test_lobbyist_string_representation(self):
+        self.assertEqual(str(self.first_lobbyist),
+                         'mr. smitty werben')
+        self.assertEqual(str(self.second_lobbyist),
+                         'jaeger man jensen jr.')
+
+
+class TestLobbyistViews(StatelessTestCase):
+    '''
+    Test views involving lobbyists.
+    '''
+    def test_lobbyist_list_view_resolves(self):
+        found = resolve(reverse('lobbyist-list'))
+        self.assertEqual(found.func.view_class, LobbyistList)
+
+    def test_lobbyist_list_view_html(self):
+        url = reverse('lobbyist-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_lobbyist_detail_view_resolves(self):
+        found = resolve(reverse('lobbyist-detail', args=[self.first_lobbyist.slug]))
+        self.assertEqual(found.func.view_class, LobbyistDetail)
+
+    def test_lobbyist_detail_view_html(self):
+        url = reverse('lobbyist-detail', args=[self.first_lobbyist.slug])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_lobbyist_transaction_list_view_resolves(self):
+        found = resolve(reverse('lobbyist-transaction-list'))
+        self.assertEqual(found.func.view_class, LobbyistTransactionList)
+
+    def test_lobbyist_transaction_list_view_html(self):
+        url = reverse('lobbyist-transaction-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
