@@ -6,7 +6,7 @@ from rest_framework import serializers, pagination, renderers
 from rest_framework_csv.renderers import CSVStreamingRenderer
 
 from camp_fin.models import Candidate, PAC, Transaction, LoanTransaction, \
-    Loan, Treasurer, Address
+    Loan, Treasurer, Address, Lobbyist, Organization
 
 class CandidateSerializer(serializers.ModelSerializer):
 
@@ -198,6 +198,23 @@ class PACSearchSerializer(serializers.ModelSerializer):
             'slug',
             'address',
         )
+
+class LobbyistSearchSerializer(serializers.ModelSerializer):
+    name = serializers.CharField()
+
+    class Meta:
+        model = Lobbyist
+        fields = ('name',
+                  'slug')
+
+class OrganizationSearchSerializer(serializers.ModelSerializer):
+    address = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = Organization
+        fields = ('name',
+                  'slug',
+                  'address')
 
 class TopMoneySerializer(serializers.Serializer):
     name_prefix = serializers.CharField()

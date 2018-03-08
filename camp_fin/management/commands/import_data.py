@@ -15,11 +15,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.utils.text import slugify
 
-from .table_mappers import CANDIDATE, PAC, FILING, FILING_PERIOD, CONTRIB_EXP, \
-    CONTRIB_EXP_TYPE, CAMPAIGN, OFFICE_TYPE, OFFICE, CAMPAIGN_STATUS, COUNTY, \
-    DISTRICT, ELECTION_SEASON, ENTITY, ENTITY_TYPE, FILING_TYPE, LOAN, \
-    LOAN_TRANSACTION, LOAN_TRANSACTION_TYPE, POLITICAL_PARTY, SPECIAL_EVENT, \
-    TREASURER, DIVISION, ADDRESS, CONTACT_TYPE, CONTACT, STATE
+from .table_mappers import *
 
 DB_CONN = 'postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}'
 
@@ -27,6 +23,7 @@ engine = sa.create_engine(DB_CONN.format(**settings.DATABASES['default']),
                           convert_unicode=True,
                           server_side_cursors=True)
 
+# Field mappings are defined in `table_mappers.py`
 MAPPER_LOOKUP = {
     'candidate': CANDIDATE,
     'pac': PAC,
@@ -55,6 +52,17 @@ MAPPER_LOOKUP = {
     'contacttype': CONTACT_TYPE,
     'contact': CONTACT,
     'state': STATE,
+    'lobbyist': LOBBYIST,
+    'lobbyistregistration': LOBBYIST_REGISTRATION,
+    'lobbyistemployer': LOBBYIST_EMPLOYER,
+    'organization': ORGANIZATION,
+    'lobbyistfilingperiod': LOBBYIST_FILING_PERIOD,
+    'lobbyisttransaction': LOBBYIST_TRANSACTION,
+    'lobbyisttransactiontype': LOBBYIST_TRANSACTION_TYPE,
+    'lobbyistbundlingdisclosure': LOBBYIST_BUNDLING_DISCLOSURE,
+    'lobbyistbundlingdisclosurecontributor': LOBBYIST_BUNDLING_DISCLOSURE_CONTRIBUTOR,
+    'lobbyistreport': LOBBYIST_REPORT,
+    'lobbyistspecialevent': LOBBYIST_SPECIAL_EVENT,
 }
 
 FILE_LOOKUP = {
@@ -85,6 +93,17 @@ FILE_LOOKUP = {
     'contacttype': 'Cam_ContactType.xlsx',
     'contact': 'Cam_Contact.csv',
     'state': 'States.csv',
+    'lobbyist': 'Cam_Lobbyist.xlsx',
+    'lobbyistregistration': 'Cam_LobbystRegistration.xlsx',
+    'lobbyistemployer': 'Cam_LobbyistEmployer.xlsx',
+    'organization': 'Cam_Organization.xlsx',
+    'lobbyistfilingperiod': 'Cam_FilingPeriodLobbyist.xlsx',
+    'lobbyisttransaction': 'Cam_ContribExpenditureLobbyist.xlsx',
+    'lobbyisttransactiontype': 'Cam_ContribExpenditureLobbyistType.xlsx',
+    'lobbyistbundlingdisclosure': 'Cam_BundlingDisclosureLobbyist.xlsx',
+    'lobbyistbundlingdisclosurecontributor': 'Cam_BundlingDisclosureLobbyistContributor.xlsx',
+    'lobbyistreport': 'Cam_ReportLobbyist.xlsx',
+    'lobbyistspecialevent': 'Cam_SpecialEventLobbyist.xlsx',
 }
 
 class Command(BaseCommand):
@@ -191,7 +210,7 @@ class Command(BaseCommand):
                 self.populateEntityTable()
                 self.stdout.write(self.style.SUCCESS('Populated entity table for {}'.format(self.entity_type)))
 
-            if self.entity_type in ['candidate', 'pac']:
+            if self.entity_type in ['candidate', 'pac', 'lobbyist', 'organization']:
                 self.populateSlugField()
                 self.stdout.write(self.style.SUCCESS('Populated slug fields for {}'.format(self.entity_type)))
 
@@ -582,7 +601,7 @@ class Command(BaseCommand):
         self.executeTransaction(entities)
 
     def populateSlugField(self):
-        if self.entity_type == 'candidate':
+        if self.entity_type in ['candidate', 'lobbyist']:
             name_components = [
                 'first_name',
                 'last_name',
@@ -596,7 +615,7 @@ class Command(BaseCommand):
 
             name_select = " || ' ' || ".join(selects)
 
-        elif self.entity_type == 'pac':
+        elif self.entity_type in ['pac', 'organization']:
             name_select = 'name'
 
         slugify = '''

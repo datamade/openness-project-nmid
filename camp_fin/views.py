@@ -29,14 +29,16 @@ from rest_framework.response import Response
 from pages.models import Page
 
 from .models import Candidate, Office, Transaction, Campaign, Filing, PAC, \
-    LoanTransaction, Race, RaceGroup, OfficeType, Entity
+    LoanTransaction, Race, RaceGroup, OfficeType, Entity, Lobbyist, LobbyistTransaction, \
+    Organization
 from .base_views import (PaginatedList, TransactionDetail, TransactionBaseViewSet, \
                          TopMoneyView, TopEarnersBase, PagesMixin, TransactionDownloadViewSet, \
                          Echo, iterate_cursor)
 from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer, \
     TransactionSearchSerializer, CandidateSearchSerializer, PACSearchSerializer, \
     LoanTransactionSerializer, TreasurerSearchSerializer, DataTablesPagination, \
-    TransactionCSVRenderer, SearchCSVRenderer
+    TransactionCSVRenderer, SearchCSVRenderer, LobbyistSearchSerializer, \
+    OrganizationSearchSerializer
 from .templatetags.helpers import format_money, get_transaction_verb
 
 TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
@@ -209,6 +211,49 @@ class IndexView(TopEarnersBase, PagesMixin):
 
         context['top_races'] = top_races[:10]
         context['verbose_type'] = 'all'
+
+        # Lobbyists
+        context['lobbyists'] = Lobbyist.top(limit=5)
+
+        return context
+
+class LobbyistPortal(PagesMixin):
+    template_name = 'lobbyist-portal.html'
+    page_path = '/lobbyist-portal/'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['lobbyists'] = Lobbyist.top(limit=5)
+        context['organizations'] = Organization.top(limit=5)
+
+        context['num_lobbyists'] = Lobbyist.objects.count()
+        context['num_employers'] = Organization.objects.count()
+
+        get_total_contributions = '''
+            SELECT SUM(political_contributions)
+            FROM camp_fin_lobbyistreport
+        '''
+
+        get_total_expenditures = '''
+            SELECT SUM(expenditures)
+            FROM camp_fin_lobbyistreport
+        '''
+
+        with connection.cursor() as cursor:
+            cursor.execute(get_total_contributions)
+            context['total_contributions'] = cursor.fetchone()[0]
+
+            cursor.execute(get_total_expenditures)
+            context['total_expenditures'] = cursor.fetchone()[0]
+
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        seo['title'] = "Lobbyist portal - The Openness Project"
+        seo['site_desc'] = 'Browse lobbyists and their employers in New Mexico politics.'
+
+        context['seo'] = seo
 
         return context
 
@@ -673,6 +718,233 @@ class CommitteeList(PaginatedList):
 
         return context
 
+
+class LobbyistList(PaginatedList):
+    template_name = 'camp_fin/lobbyists.html'
+    page_path = '/lobbyists/'
+
+    def get_queryset(self, **kwargs):
+
+        self.order_by = self.request.GET.get('order_by', 'rank')
+        # Handle empty string
+        if not self.order_by:
+            self.order_by = 'rank'
+
+        assert self.order_by in ['rank', 'contributions', 'expenditures']
+
+        self.sort_order = self.request.GET.get('sort_order', 'asc')
+        if not self.sort_order:
+            self.sort_order = 'asc'
+
+        assert self.sort_order in ['asc', 'desc']
+
+        queryset = Lobbyist.top(order_by=self.order_by, sort_order=self.sort_order)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['sort_order'] = self.sort_order
+        context['order_by'] = self.order_by
+
+        if self.sort_order.lower() == 'desc':
+            context['toggle_order'] = 'asc'
+        else:
+            context['toggle_order'] = 'desc'
+
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        seo['title'] = "Lobbyists in New Mexico"
+        seo['site_desc'] = "Browse active lobbyists in New Mexico"
+
+        context['seo'] = seo
+
+        try:
+            page = Page.objects.get(path=self.page_path)
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            context['page'] = None
+
+        return context
+
+
+class LobbyistDetail(DetailView):
+    template_name = 'camp_fin/lobbyist-detail.html'
+    model = Lobbyist
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        self.page_path = self.request.path
+
+        # Pagination
+        paginator = Paginator(context['object'].transactions(), 25)
+        page = self.request.GET.get('page', 1)
+
+        try:
+            context['object_list'] = paginator.page(page)
+        except PageNotAnInteger:
+            context['object_list'] = paginator.page(1)
+        except EmptyPage:
+            context['object_list'] = paginator.page(paginator.num_pages)
+
+        sos_link = 'https://www.cfis.state.nm.us/media/ReportLobbyist.aspx?id={id}&el=0'
+        context['sos_link'] = sos_link.format(id=context['object'].id)
+
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        seo['title'] = "Lobbyist in New Mexico"
+        seo['site_desc'] = "View details of a lobbyist in New Mexico"
+
+        context['seo'] = seo
+
+        try:
+            page = Page.objects.get(path=self.page_path)
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            context['page'] = None
+
+        return context
+
+
+class OrganizationList(PaginatedList):
+    template_name = 'camp_fin/organizations.html'
+    page_path = '/organizations/'
+
+    def get_queryset(self, **kwargs):
+
+        self.order_by = self.request.GET.get('order_by', 'rank')
+
+        # Handle empty string
+        if not self.order_by:
+            self.order_by = 'rank'
+
+        assert self.order_by in ['rank', 'contributions', 'expenditures']
+
+        self.sort_order = self.request.GET.get('sort_order', 'asc')
+        if not self.sort_order:
+            self.sort_order = 'asc'
+
+        assert self.sort_order in ['asc', 'desc']
+
+        queryset = Organization.top(order_by=self.order_by, sort_order=self.sort_order)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['sort_order'] = self.sort_order
+        context['order_by'] = self.order_by
+
+        if self.sort_order.lower() == 'desc':
+            context['toggle_order'] = 'asc'
+        else:
+            context['toggle_order'] = 'desc'
+
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        seo['title'] = "Lobbyist employers in New Mexico"
+        seo['site_desc'] = "Browse active lobbyist employers in New Mexico"
+
+        context['seo'] = seo
+
+        try:
+            page = Page.objects.get(path=self.page_path)
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            context['page'] = None
+
+        return context
+
+
+class OrganizationDetail(DetailView):
+    template_name = 'camp_fin/organization-detail.html'
+    model = Organization
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        self.page_path = self.request.path
+
+        # Pagination
+        paginator = Paginator(context['object'].transactions(), 25)
+        page = self.request.GET.get('page', 1)
+
+        try:
+            context['object_list'] = paginator.page(page)
+        except PageNotAnInteger:
+            context['object_list'] = paginator.page(1)
+        except EmptyPage:
+            context['object_list'] = paginator.page(paginator.num_pages)
+
+        sos_link = 'https://www.cfis.state.nm.us/media/ReportEmployer.aspx?id={id}&el=0'
+        context['sos_link'] = sos_link.format(id=context['object'].id)
+
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        name = context['object'].name
+
+        seo['title'] = "Lobbyist employer {name} in New Mexico".format(name=name)
+        seo['site_desc'] = ("View expenditures and contributions from " +
+                            "{name}, a lobbyist employer in New Mexico".format(name=name))
+
+        context['seo'] = seo
+
+        try:
+            page = Page.objects.get(path=self.page_path)
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            context['page'] = None
+
+        return context
+
+
+class LobbyistTransactionList(PaginatedList):
+    template_name = 'camp_fin/lobbyist-transaction-list.html'
+    page_path = '/transactions/'
+
+    def get_queryset(self, **kwargs):
+
+        queryset = LobbyistTransaction.objects.all()
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        seo['title'] = "Lobbyist transactions in New Mexico"
+        seo['site_desc'] = "Browse contributions and expenditures of lobbyists in New Mexico"
+
+        context['seo'] = seo
+
+        try:
+            page = Page.objects.get(path=self.page_path)
+            context['page'] = page
+            for blob in page.blobs.all():
+                context[blob.context_name] = blob.text
+        except Page.DoesNotExist:
+            context['page'] = None
+
+        return context
+
+
 class CommitteeDetailBaseView(DetailView):
 
     def get_context_data(self, **kwargs):
@@ -957,6 +1229,8 @@ SERIALIZER_LOOKUP = {
     'pac': PACSearchSerializer,
     'contribution': TransactionSearchSerializer,
     'expenditure': TransactionSearchSerializer,
+    'lobbyist': LobbyistSearchSerializer,
+    'organization': OrganizationSearchSerializer
 }
 
 @method_decorator(never_cache, name='dispatch')
@@ -996,6 +1270,8 @@ class SearchAPIView(viewsets.ViewSet):
                 'pac',
                 'contribution',
                 'expenditure',
+                'lobbyist',
+                'organization'
             ]
 
         response = {}
@@ -1129,9 +1405,43 @@ class SearchAPIView(viewsets.ViewSet):
                       AND tt.contribution = FALSE
                       AND o.received_date >= '2010-01-01'
                 '''
+
+            elif table == 'lobbyist':
+                query = '''
+                    SELECT
+                        lob.slug,
+                        concat_ws(' ', lob.prefix, lob.first_name, lob.middle_name,
+                                       lob.last_name, lob.suffix)
+                        AS name
+                    FROM camp_fin_lobbyist AS lob
+                    WHERE lob.search_name @@ plainto_tsquery('english', %s)
+                '''
+
+            elif table == 'organization':
+                query = '''
+                    SELECT
+                        org.name AS name,
+                        org.slug AS slug,
+                        CASE WHEN
+                            add.street IS NULL OR TRIM(add.street) = ''
+                        THEN
+                            ''
+                        ELSE
+                            add.street || ' ' ||
+                            add.city || ', ' ||
+                            state.postal_code || ' ' ||
+                            add.zipcode
+                        END AS address
+                    FROM camp_fin_organization AS org
+                    JOIN camp_fin_address AS add
+                      ON org.permanent_address_id = add.id
+                    JOIN camp_fin_state AS state
+                      ON add.state_id = state.id
+                    WHERE org.search_name @@ plainto_tsquery('english', %s)
+                '''
             
             if order_by_col:
-                query = ''' 
+                query = '''
                     {0} ORDER BY {1} {2}
                 '''.format(query, order_by_col, sort_order)
             

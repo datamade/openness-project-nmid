@@ -38,6 +38,8 @@ class Command(BaseCommand):
         self.makePACIndex()
         self.makeTransactionIndex()
         self.makeTreasurerIndex()
+        self.makeLobbyistIndex()
+        self.makeOrganizationIndex()
 
         self.stdout.write(self.style.SUCCESS('Worked'))
         
@@ -169,3 +171,43 @@ class Command(BaseCommand):
                 AFTER INSERT OR UPDATE OF {0} ON camp_fin_transaction
                 FOR EACH ROW EXECUTE PROCEDURE update_anonymous()
             '''.format(','.join(index_fields)))
+
+    def makeLobbyistIndex(self):
+        index_fields = [
+            'first_name',
+            'middle_name',
+            'last_name',
+            'suffix'
+        ]
+
+        vector = "concat_ws(' ', {})".format(', '.join(index_fields))
+
+        with transaction.atomic():
+            cursor = connection.cursor()
+            cursor.execute(self.drop_vector.format('lobbyist'))
+            cursor.execute(self.add_vector.format('lobbyist'))
+            cursor.execute(self.populate_vector.format('lobbyist', vector))
+            cursor.execute(self.add_index.format('lobbyist'))
+
+            cursor.execute('''
+                DROP TRIGGER IF EXISTS lobbyist_search_update
+                ON camp_fin_lobbyist
+            ''')
+
+            cursor.execute(self.create_trigger.format('lobbyist',
+                                                      ','.join(index_fields)))
+
+    def makeOrganizationIndex(self):
+        with transaction.atomic():
+            cursor = connection.cursor()
+            cursor.execute(self.drop_vector.format('organization'))
+            cursor.execute(self.add_vector.format('organization'))
+            cursor.execute(self.populate_vector.format('organization', "COALESCE(name, '')"))
+            cursor.execute(self.add_index.format('organization'))
+
+            cursor.execute('''
+                DROP TRIGGER IF EXISTS organization_search_update
+                ON camp_fin_organization
+            ''')
+
+            cursor.execute(self.create_trigger.format('organization', 'name'))

@@ -247,6 +247,14 @@ Keep an eye on money in New Mexico politics
 
         <p><a href='/committees/' class='btn btn-danger'><i class='fa fa-group'></i> Browse committees ></a></p><br /><br />
 
+        <h2><a href="{% url 'lobbyist-portal' %}"><i class='fa fa-university'></i> Top lobbyists</a></h2>
+        {{ home_page_top_lobbyists|safe }}
+        {% with sortable=False %}
+            {% include 'camp_fin/widgets/lobbyist-list.html' %}
+        {% endwith %}
+
+        <p><a href="{% url 'lobbyist-portal' %}" class='btn btn-danger'><i class='fa fa-university'></i> See more on the lobbyist portal ></a></p><br /><br />
+
         <h2><a href='/about/'><i class='fa fa-fw fa-info-circle'></i> About</a></h2>
         {{ home_page_about|safe }}
     </div>

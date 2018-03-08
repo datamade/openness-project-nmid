@@ -13,16 +13,9 @@
           <h1><i class='fa fa-fw fa-dollar'></i> Donations</h1>
         </div>
         <div class="col-md-6">
-            <form action='/donations' method='GET' class='col-sm-12'>
-              <div class="input-group" id="date-search">
-                  <span class="input-group-addon" id="sizing-addon3"><i class="fa fa-calendar" aria-hidden="true"></i></span>
-                  <input type="text" id="from" name="from" class="form-control date-filter" placeholder="Select start date..." value='{{ start_date|date:"Y-m-d" }}'>
-                  <input type="text" id="to" name="to" class="form-control date-filter" placeholder="Select end date..." value='{{ end_date|date:"Y-m-d" }}'>
-                  <span class="input-group-btn">
-                      <button class="btn btn-default btn-date" id="btn-search" type="submit"><i class="fa fa-search" aria-hidden="true"></i> <span class='hidden-sm hidden-xs'>Search</span></button>
-                  </span>
-              </div>
-            </form>
+            {% with action='/donations' %}
+                {% include 'camp_fin/widgets/calendar-form.html' %}
+            {% endwith %}
         </div>
         <div class="col-md-12">
           <br />

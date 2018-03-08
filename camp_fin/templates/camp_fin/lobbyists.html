@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% load bootstrap_pagination %}
+{% load humanize %}
+{% load helpers %}
+
+{% block full_content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1><i class='fa fa-fw fa-users'></i>Lobbyists</h1>
+            {% if page.text %}
+                {{ page.text|safe }}
+            {% else %}
+                <br/>
+            {% endif %}
+            {% with lobbyists=object_list sortable=True %}
+                {% include 'camp_fin/widgets/lobbyist-list.html' %}
+            {% endwith %}
+        </div>
+    </div>
+    {% bootstrap_paginate object_list range=10 %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}

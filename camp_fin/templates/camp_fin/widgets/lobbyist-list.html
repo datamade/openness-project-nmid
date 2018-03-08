@@ -1,0 +1,80 @@
+{% load staticfiles %}
+{% load bootstrap_pagination %}
+{% load humanize %}
+{% load helpers %}
+
+<table class="table table-striped table-hover table-responsive" id="candidate-list">
+    <thead>
+        <tr>
+            <th class="no-wrap">
+                <a href="{% url 'lobbyist-list' %}?{% query_transform request order_by='rank' sort_order=toggle_order %}">
+                    Rank
+                    {% if order_by == 'rank' %}
+                        {{ sort_order|get_sort_icon|safe }}
+                    {% endif %}
+                </a>
+            </th>
+            <th>Lobbyist</th>
+            <th>Employers</th>
+            <th class="text-right no-wrap">
+                <a href="{% url 'lobbyist-list' %}?{% query_transform request order_by='contributions' sort_order=toggle_order %}">
+                    Total contributions
+                    {% if order_by == 'contributions' %}
+                        {{ sort_order|get_sort_icon|safe }}
+                    {% endif %}
+                </a>
+            </th>
+            <th class="text-right no-wrap">
+                <a href="{% url 'lobbyist-list' %}?{% query_transform request order_by='expenditures' sort_order=toggle_order %}">
+                    Total expenditures
+                    {% if order_by == 'expenditures' %}
+                        {{ sort_order|get_sort_icon|safe }}
+                    {% endif %}
+                </a>
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for rank, lobbyist in lobbyists %}
+            <tr>
+                <td>{{ rank }}</td>
+                <td>
+                    <a href="{% url 'lobbyist-detail' lobbyist.slug %}">
+                        {{ lobbyist.full_name }}
+                    </a>
+                </td>
+                <td>
+                    {% with employers=lobbyist.employers %}
+                        {% if employers|length > 5 %}
+                            <div id="description-content-{{ lobbyist.id }}" class="collapse description-text">
+                        {% endif %}
+                            {% for employment in employers %}
+                                    <a href="{% url 'organization-detail' employment.organization.slug %}">
+                                        {{ employment.organization }}
+                                    </a>
+                                    <small>{{ employment.years|format_years }}</small>
+                                    {% if not forloop.last %}
+                                        <br/>
+                                    {% endif %}
+                            {% endfor %}
+                        {% if employers|length > 5 %}
+                            </div>
+                            <a href="#description-content-{{ lobbyist.id }}" data-toggle="collapse" class="collapsed">
+                                <span class="show-more">Show more<i class="fa fa-fw fa-arrow-down"></i></span>
+                                <span class="show-less">Show less<i class="fa fa-fw fa-arrow-up"></i></span>
+                            </a>
+                        {% endif %}
+                    {% endwith %}
+                </td>
+                <td class="text-right">
+                    <span class="hidden-sm hidden-xs">{{ lobbyist.total_contributions|format_money }}</span>
+                    <span class="visible-sm-block visible-xs-block">{{ lobbyist.total_contributions|format_money_short }}</span>
+                </td>
+                <td class="text-right">
+                    <span class="hidden-sm hidden-xs">{{ lobbyist.total_expenditures|format_money }}</span>
+                    <span class="visible-sm-block visible-xs-block">{{ lobbyist.total_expenditures|format_money_short }}</span>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

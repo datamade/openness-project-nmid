@@ -20,12 +20,14 @@ from django.conf.urls import handler404, handler500
 from rest_framework import routers
 
 from camp_fin.views import IndexView, CandidateList, CandidateDetail, \
+    LobbyistList, LobbyistDetail, LobbyistTransactionList, LobbyistPortal,\
     ContributionViewSet, ExpenditureViewSet, ContributionDownloadViewSet, \
     ExpenditureDownloadViewSet, TransactionViewSet, TopDonorsView, \
     TopExpensesView, CommitteeList, CommitteeDetail, ContributionDetail, DownloadView, \
     ExpenditureDetail, SearchView, SearchAPIView, DonationsView, RacesView, RaceDetail, \
     LoanViewSet, TopEarnersView, TopEarnersWidgetView, AboutView, \
-    flush_cache, bulk_candidates, bulk_committees
+    flush_cache, bulk_candidates, bulk_committees, \
+    OrganizationList, OrganizationDetail
 
 router = routers.DefaultRouter()
 router.register(r'contributions', ContributionViewSet, base_name='contributions')
@@ -56,6 +58,12 @@ urlpatterns = [
     url(r'^races/$', RacesView.as_view(), name='races'),
     url(r'^races/(?P<pk>[\w-]+)/$', RaceDetail.as_view(), name='race-detail'),
     url(r'^downloads/$', DownloadView.as_view(), name='downloads'),
+    url(r'^lobbyist-portal/$', LobbyistPortal.as_view(), name='lobbyist-portal'),
+    url(r'^lobbyists/$', LobbyistList.as_view(), name='lobbyist-list'),
+    url(r'^lobbyists/(?P<slug>[\w-]+)/$', LobbyistDetail.as_view(), name='lobbyist-detail'),
+    url(r'^organizations/$', OrganizationList.as_view(), name='organization-list'),
+    url(r'^organizations/(?P<slug>[\w-]+)/$', OrganizationDetail.as_view(), name='organization-detail'),
+    url(r'^transactions/$', LobbyistTransactionList.as_view(), name='lobbyist-transaction-list'),
     url(r'^api/bulk/candidates/$', bulk_candidates, name='bulk-candidates'),
     url(r'^api/bulk/committees/$', bulk_committees, name='bulk-committees'),
     url(r'^api/', include(router.urls)),

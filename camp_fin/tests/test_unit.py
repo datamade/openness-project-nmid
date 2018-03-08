@@ -11,9 +11,11 @@ from camp_fin.models import (Race, Campaign, Filing, Division,
                              Entity, PoliticalParty, FilingPeriod,
                              FilingType, County, Transaction, LoanTransaction,
                              TransactionType, LoanTransactionType, Loan)
-from camp_fin.views import RacesView, RaceDetail
+from camp_fin.views import (RacesView, RaceDetail, LobbyistList, LobbyistDetail,
+                            LobbyistTransactionList)
 from camp_fin.base_views import TransactionDownloadViewSet
 from camp_fin.decorators import check_date_params
+from camp_fin.templatetags.helpers import format_years
 from camp_fin.tests.conftest import StatelessTestCase, DatabaseTestCase
 
 class TestRace(StatelessTestCase):
@@ -262,6 +264,14 @@ class TestUtils(TestCase):
         with self.assertRaises(AssertionError):
             bad_params(since=234543698)
 
+    def test_format_years(self):
+        assert format_years(['2017']) == '2017'
+        assert format_years(['2017', '2016', '2015']) == '2015 - 2017'
+        assert format_years(['2017', '2015', '2013']) == '2013, 2015, 2017'
+        assert format_years(['2017', '2015', '2014', '2013']) == '2013 - 2015, 2017'
+        assert (format_years(['2019', '2017', '2016', '2015', '2013', '2012']) ==
+                              '2012 - 2013, 2015 - 2017, 2019')
+        assert (format_years(['2019', '2018', '2018', '2017']) == '2017 - 2019')
 
 class TestAPI(StatelessTestCase):
     '''
@@ -329,4 +339,47 @@ class TestAPI(StatelessTestCase):
         url = '/api/expenditures/?pac_id=1'
         response = self.client.get(url)
 
+        self.assertEqual(response.status_code, 200)
+
+
+class TestLobbyists(StatelessTestCase):
+    '''
+    Test methods of the Lobbyist model.
+    '''
+    def test_lobbyist_string_representation(self):
+        self.assertEqual(str(self.first_lobbyist),
+                         'mr. smitty werben')
+        self.assertEqual(str(self.second_lobbyist),
+                         'jaeger man jensen jr.')
+
+
+class TestLobbyistViews(StatelessTestCase):
+    '''
+    Test views involving lobbyists.
+    '''
+    def test_lobbyist_list_view_resolves(self):
+        found = resolve(reverse('lobbyist-list'))
+        self.assertEqual(found.func.view_class, LobbyistList)
+
+    def test_lobbyist_list_view_html(self):
+        url = reverse('lobbyist-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_lobbyist_detail_view_resolves(self):
+        found = resolve(reverse('lobbyist-detail', args=[self.first_lobbyist.slug]))
+        self.assertEqual(found.func.view_class, LobbyistDetail)
+
+    def test_lobbyist_detail_view_html(self):
+        url = reverse('lobbyist-detail', args=[self.first_lobbyist.slug])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_lobbyist_transaction_list_view_resolves(self):
+        found = resolve(reverse('lobbyist-transaction-list'))
+        self.assertEqual(found.func.view_class, LobbyistTransactionList)
+
+    def test_lobbyist_transaction_list_view_html(self):
+        url = reverse('lobbyist-transaction-list')
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)

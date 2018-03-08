@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% load bootstrap_pagination %}
+{% load humanize %}
+{% load helpers %}
+
+{% block full_content %}
+<div class="container">
+    <div class="row">
+        <div class="col-xs-12">
+            <p style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;margin-top:15px">
+            <a href="{% url 'lobbyist-list' %}">&laquo; View all lobbyists</a>
+            </p>
+            <h1>
+                <i class="fa fa-fw fa-user"></i>
+                {{ lobbyist.full_name }}
+                <small>Lobbyist</small>
+            </h1>
+            {% if sos_link %}
+                <p><a href="{{sos_link}}" target="_blank">View on the New Mexico Secretary of State's website &raquo;</a></p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12 col-sm-6">
+            <h2>
+                <i class="fa fa-fw fa-info-circle"></i>
+                Overview
+            </h2>
+            <table class="table table-striped">
+                <tbody>
+                    <tr>
+                        <td>
+                            <i class="fa fa-fw fa-clock-o"></i>
+                            Years active
+                        </td>
+                        <td class="text-right">
+                            {{ lobbyist.years_active|format_years }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <i class="fa fa-fw fa-users"></i>
+                            Most recent employer
+                        </td>
+                        <td class="text-right">
+                            {% if lobbyist.employers %}
+                                {% with employment=lobbyist.employers|first %}
+                                    <a href="{% url 'organization-detail' employment.organization.slug %}">
+                                        {{ employment.organization }}
+                                    </a>
+                                    <small>{{ employment.years|format_years }}</small>
+                                {% endwith %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <i class="fa fa-fw fa-usd"></i>
+                            Total contributions
+                        </td>
+                        <td class="text-right">
+                            <span class="green visible-xs visible-sm">
+                                + {{ lobbyist.total_contributions|format_money_short }}
+                            </span>
+                            <span class="green hidden-xs hidden-sm">
+                                + {{ lobbyist.total_contributions|format_money }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <i class="fa fa-fw fa-usd"></i>
+                            Total expenditures
+                        </td>
+                        <td class="text-right">
+                            <span class="red visible-xs visible-sm">
+                                - {{ lobbyist.total_expenditures|format_money_short }}
+                            </span>
+                            <span class="red hidden-xs hidden-sm">
+                                - {{ lobbyist.total_expenditures|format_money }}
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if lobbyist.employers %}
+        <div class="row">
+            <div class="col-xs-12 col-sm-8">
+                <h2>
+                    <i class="fa fa-fw fa-users"></i>
+                    Employers
+                </h2>
+                <table class="table table-striped table-responsive">
+                    <thead>
+                        <tr>
+                            <th>Organization</th>
+                            <th>Years employed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for employer in lobbyist.employers %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'organization-detail' employer.organization.slug %}">
+                                        {{ employer.organization.name }}
+                                    </a>
+                                </td>
+                                <td>{{ employer.years|format_years }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+    {% if lobbyist.transactions %}
+        <div class="row">
+            <div class="col-xs-12">
+                <h2>
+                    <i class="fa fa-fw fa-usd"></i>
+                    Transactions
+                </h2>
+                <table class="table table-striped table-responsive">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>On behalf of</th>
+                            <th class="text-right">Amount</th>
+                            <th>Recipient</th>
+                            <th class="hidden-xs hidden-sm">Description</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in object_list %}
+                            <tr>
+                                <td>{{ transaction.type }}</td>
+                                <td>{{ transaction.name }}</td>
+                                <td class="text-right no-wrap">
+                                    <span class="hidden-xs hidden-sm">
+                                        {{ transaction.amount|format_money }} to
+                                    </span>
+                                    <span class="visible-xs visible-sm">
+                                        {{ transaction.amount|format_money_short }} to
+                                    </span>
+                                </td>
+                                <td>{{ transaction.recipient }}</td>
+                                <td class="hidden-xs hidden-sm">{{ transaction.description }}</td>
+                                <td>{{ transaction.date|date }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="row">
+            <div class="text-center">
+                {% bootstrap_paginate object_list range=10 %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}

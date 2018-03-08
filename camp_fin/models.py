@@ -1073,6 +1073,343 @@ class Story(models.Model):
     race = models.ManyToManyField('Race', blank=True)
 
 
+class LobbyistMethodMixin(object):
+    '''
+    Mixin class to provide some base methods for Lobbyists and Organizations
+    (lobbyist employers).
+    '''
+    def get_employments(self, reverse_attr='organization'):
+        '''
+        Method for traversing employments and returning either
+            - Lobbyists employed by this entity
+            - Organizations that have employed this entity
+        '''
+        # Enforce params
+        assert reverse_attr in ['organization', 'lobbyist']
+
+        # Since each year that a lobbyist registers with an employer counts as
+        # a separate employment, iterate the list and group together employers
+        sorted_employments = []
+        employment_cache = {}
+        for employment in self.lobbyistemployer_set.order_by('-year'):
+
+            entity_id = getattr(getattr(employment, reverse_attr), 'id')
+            year = employment.year
+
+            if entity_id in employment_cache.keys():
+                # Org entry exists; append this year to its list of active years
+                employment_cache[entity_id]['years'].append(year)
+            else:
+                # Create a new entry and initialize the list of active years
+                details = {reverse_attr: getattr(employment, reverse_attr), 'years': [year]}
+                employment_cache[entity_id] = details
+
+                # Keep track of the order of this organization
+                sorted_employments.append(entity_id)
+
+        return [employment_cache[entity] for entity in sorted_employments]
+
+    def total_contributions(self, employer_id=None):
+        '''
+        Return the total amount of money that this entity has contributed
+        to political campaigns.
+        '''
+        entity_id = self.entity.id
+
+        sum_contributions = '''
+            SELECT SUM(COALESCE(political_contributions, 0))
+            FROM camp_fin_lobbyistreport
+            WHERE entity_id = %s
+        '''
+
+        with connection.cursor() as cursor:
+            cursor.execute(sum_contributions, [entity_id])
+            amount = cursor.fetchone()[0]
+
+        return amount
+
+    def total_expenditures(self, employer_id=None):
+        '''
+        Return the total amount of money that this entity has spent on lobbying,
+        for any purpose.
+        '''
+        entity_id = self.entity.id
+
+        sum_contributions = '''
+            SELECT SUM(COALESCE(expenditures, 0))
+            FROM camp_fin_lobbyistreport
+            WHERE entity_id = %s
+        '''
+
+        with connection.cursor() as cursor:
+            cursor.execute(sum_contributions, [entity_id])
+            amount = cursor.fetchone()[0]
+
+        return amount
+
+    @property
+    def years_active(self):
+        '''
+        The range of time that this entity has been employed.
+        '''
+        years = self.lobbyistemployer_set.aggregate(min_year=models.Min('year'),
+                                                    max_year=models.Max('year'))
+
+        if years.get('min_year') and years.get('max_year'):
+            min_year, max_year = years['min_year'], years['max_year']
+            if min_year == max_year:
+                # Only active for one year
+                return [min_year]
+            else:
+                return [year for year in range(int(min_year), int(max_year) + 1)]
+        else:
+            return []
+
+    def transactions(self, order_by='amount', ordering='desc'):
+        '''
+        Return all transactions related to this entity.
+        '''
+        # Check params for validity
+        assert order_by in ['amount', 'description', 'beneficiary',
+                            'expenditure_purpose', 'received_date']
+        assert ordering in ['asc', 'desc']
+
+        entity_id = self.entity_id
+
+        get_transactions = '''
+            SELECT
+              trans.id,
+              COALESCE(ttype.description, '') AS type,
+              COALESCE(trans.name, '') AS name,
+              trans.amount,
+              COALESCE(trans.beneficiary, '') AS recipient,
+              COALESCE(trans.expenditure_purpose, '') AS description,
+              trans.received_date AS date
+            FROM camp_fin_lobbyistreport report
+            JOIN camp_fin_lobbyisttransaction trans
+              ON trans.lobbyist_report_id = report.id
+            JOIN camp_fin_lobbyisttransactiontype ttype
+              ON trans.lobbyist_transaction_type_id = ttype.id
+            WHERE entity_id = %s
+            ORDER BY {0} {1}
+        '''.format(order_by, ordering)
+
+        with connection.cursor() as cursor:
+            cursor.execute(get_transactions, [entity_id])
+
+            columns = [c[0] for c in cursor.description]
+            trans_tuple = namedtuple('Transaction', columns)
+
+            output = [trans_tuple(*r) for r in cursor]
+
+        return output
+
+    @classmethod
+    def top(cls, order_by='rank', sort_order='asc', limit=''):
+        '''
+        Return the top entities in this class, ordered by the `order_by` param and sorted
+        by the `sort_order` param.
+        '''
+        clsname = cls.__name__
+        etype = clsname.lower()
+
+        entity_query = '''
+            SELECT * FROM (
+                SELECT
+                    DENSE_RANK() OVER (
+                        ORDER BY {etype}s.contributions + {etype}s.expenditures DESC
+                    ) AS rank,
+                    {etype}s.*
+                FROM (
+                    SELECT DISTINCT ON ({etype}.id)
+                        {etype}.id,
+                        SUM(COALESCE(report.political_contributions, 0)) AS contributions,
+                        SUM(COALESCE(report.expenditures, 0)) AS expenditures
+                    FROM camp_fin_{etype} AS {etype}
+                    JOIN camp_fin_lobbyistreport AS report
+                    USING(entity_id)
+                    GROUP BY {etype}.id
+                ) AS {etype}s
+            ) AS s
+            ORDER BY {order_by} {sort_order}
+        '''.format(etype=etype, order_by=order_by, sort_order=sort_order)
+
+        if limit:
+            entity_query += '''
+                LIMIT {limit}
+            '''.format(limit=limit)
+
+        with connection.cursor() as cursor:
+            cursor.execute(entity_query)
+
+            columns = [c[0] for c in cursor.description]
+            entity_tuple = namedtuple(clsname, columns)
+
+            entities = [entity_tuple(*r) for r in cursor]
+
+        queryset = [(entity.rank, cls.objects.get(id=entity.id)) for entity in entities]
+
+        return queryset
+
+
+class Lobbyist(models.Model, LobbyistMethodMixin):
+    entity = models.ForeignKey("Entity", db_constraint=False)
+    status = models.ForeignKey("Status", null=True, db_constraint=False)
+    date_added = models.DateTimeField(null=True)
+    prefix = models.CharField(max_length=10, null=True)
+    first_name = models.CharField(max_length=50, null=True)
+    middle_name = models.CharField(max_length=50, null=True)
+    last_name = models.CharField(max_length=50, null=True)
+    suffix = models.CharField(max_length=10, null=True)
+    email = models.CharField(max_length=100, null=True)
+    registration_date = models.DateTimeField(null=True)
+    termination_date = models.DateTimeField(null=True)
+    filing_period = models.ForeignKey("LobbyistFilingPeriod",
+                                      db_constraint=False,
+                                      null=True)
+    permanent_address = models.ForeignKey("Address",
+                                          related_name="lobbyist_permanent_address",
+                                          null=True,
+                                          db_constraint=False)
+    lobbying_address = models.ForeignKey("Address",
+                                         related_name="lobbyist_lobbying_address",
+                                         null=True,
+                                         db_constraint=False)
+    contact = models.ForeignKey("Contact", db_constraint=False, null=True)
+    phone = models.CharField(max_length=30, null=True)
+    date_updated = models.DateTimeField(null=True)
+    slug = models.CharField(max_length=500, null=True)
+
+    def __str__(self):
+        return self.full_name
+
+    @property
+    def full_name(self):
+        '''
+        Return the full name of this lobbyist.
+        '''
+        name_parts = [self.prefix, self.first_name, self.middle_name,
+                      self.last_name, self.suffix]
+
+        return ' '.join(name.strip() for name in name_parts if name is not None)
+
+    @property
+    def employers(self):
+        '''
+        Return a list of Organizations that have employed this Lobbyist in the
+        form of LobbyistEmployer objects, in descending order of how recent the
+        term of employment was.
+        '''
+        return self.get_employments(reverse_attr='organization')
+
+
+class Organization(models.Model, LobbyistMethodMixin):
+    entity = models.ForeignKey("Entity", db_constraint=False)
+    date_added = models.DateTimeField(null=True)
+    status = models.ForeignKey("Status", null=True, db_constraint=False)
+    name = models.CharField(max_length=100)
+    email = models.CharField(max_length=100, null=True)
+    permanent_address = models.ForeignKey("Address",
+                                          related_name="organization_permanent_address",
+                                          null=True,
+                                          db_constraint=False)
+    contact = models.ForeignKey("Contact", db_constraint=False)
+    date_updated = models.DateTimeField(null=True)
+    phone = models.CharField(max_length=30, null=True)
+    slug = models.CharField(max_length=500, null=True)
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def lobbyists(self):
+        '''
+        Return a list of Organizations that have employed this Lobbyist in the
+        form of LobbyistEmployer objects, in descending order of how recent the
+        term of employment was.
+        '''
+        return self.get_employments(reverse_attr='lobbyist')
+
+
+class LobbyistRegistration(models.Model):
+    lobbyist = models.ForeignKey("Lobbyist", db_constraint=False)
+    date_added = models.DateTimeField(null=True)
+    year = models.CharField(max_length=5)
+    is_registered = models.NullBooleanField(null=True)
+
+class LobbyistEmployer(models.Model):
+    lobbyist = models.ForeignKey("Lobbyist", db_constraint=False)
+    organization = models.ForeignKey("Organization", db_constraint=False)
+    date_added = models.DateTimeField(null=True)
+    year = models.CharField(max_length=5)
+
+class LobbyistFilingPeriod(models.Model):
+    filing_date = models.DateTimeField(null=True)
+    due_date = models.DateTimeField(null=True)
+    description = models.CharField(max_length=100)
+    allow_statement_of_no_activity = models.NullBooleanField(null=True)
+    initial_date = models.DateTimeField(null=True)
+    lobbyist_filing_period_type = models.ForeignKey("LobbyistFilingPeriodType", null=True, db_constraint=False)
+    regular_filing_period =  models.ForeignKey("FilingPeriod", null=True, db_constraint=False)
+
+class LobbyistTransaction(models.Model):
+    lobbyist_report = models.ForeignKey("LobbyistReport", null=True, db_constraint=False)
+    name = models.CharField(max_length=250, null=True)
+    beneficiary = models.CharField(max_length=250, null=True)
+    expenditure_purpose = models.CharField(max_length=250, null=True)
+    lobbyist_transaction_type = models.ForeignKey("LobbyistTransactionType", null=True, db_constraint=False)
+    received_date = models.DateTimeField(null=True)
+    amount = models.FloatField()
+    date_added = models.DateTimeField(null=True)
+    transaction_status = models.ForeignKey("LobbyistTransactionStatus", null=True, db_constraint=False)
+
+class LobbyistTransactionType(models.Model):
+    description = models.CharField(max_length=100)
+    group = models.ForeignKey("LobbyistTransactionGroup", null=True, db_constraint=False)
+
+class LobbyistReport(models.Model):
+    entity = models.ForeignKey("Entity", db_constraint=False)
+    lobbyist_filing_period = models.ForeignKey("LobbyistFilingPeriod", null=True, db_constraint=False)
+    status = models.ForeignKey("Status", null=True, db_constraint=False)
+    date_added = models.DateTimeField(null=True)
+    date_closed = models.DateTimeField(null=True)
+    date_updated = models.DateTimeField(null=True)
+    pdf_report = models.CharField(max_length=50)
+    meal_beverage_expenses = models.FloatField()
+    entertainment_expenses = models.FloatField()
+    gift_expenses = models.FloatField()
+    other_expenses = models.FloatField()
+    special_event_expenses = models.FloatField()
+    expenditures = models.FloatField()
+    political_contributions = models.FloatField()
+
+class LobbyistSpecialEvent(models.Model):
+    lobbyist_report = models.ForeignKey("LobbyistReport", db_constraint=False)
+    event_type = models.CharField(max_length=100)
+    location = models.CharField(max_length=100)
+    received_date = models.DateTimeField(null=True)
+    amount = models.FloatField()
+    groups_invited = models.CharField(max_length=2000, null=True)
+    date_added = models.DateTimeField(null=True)
+    transaction_status = models.ForeignKey("LobbyistTransactionStatus", null=True, db_constraint=False)
+
+class LobbyistBundlingDisclosure(models.Model):
+    destinatary_name = models.CharField(max_length=100)
+    lobbyist_report = models.ForeignKey("LobbyistReport", db_constraint=False)
+    date_added = models.DateTimeField(null=True)
+    transaction_status = models.ForeignKey("LobbyistTransactionStatus", null=True, db_constraint=False)
+
+class LobbyistBundlingDisclosureContributor(models.Model):
+    bundling_disclosure = models.ForeignKey("LobbyistBundlingDisclosure", db_constraint=False)
+    name = models.CharField(max_length=100)
+    address = models.ForeignKey("Address",
+                                related_name="lobbyist_bundling_disclosure_contributor_address",
+                                null=True,
+                                db_constraint=False)
+    amount = models.FloatField()
+    occupation = models.CharField(max_length=250, null=True)
+    lobbyist_report = models.ForeignKey("LobbyistReport", null=True, db_constraint=False)
+
 ######################################################################
 ### Below here are normalized tables that we may or may not end up ###
 ### getting. Just stubbing them out in case we do                  ###
@@ -1085,4 +1422,13 @@ class Status(models.Model):
     pass
 
 class AddressType(models.Model):
+    pass
+
+class LobbyistFilingPeriodType(models.Model):
+    pass
+
+class LobbyistTransactionStatus(models.Model):
+    pass
+
+class LobbyistTransactionGroup(models.Model):
     pass
