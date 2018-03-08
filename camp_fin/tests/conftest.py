@@ -15,9 +15,7 @@ from camp_fin.models import (Race, Campaign, Filing, Division,
                              Candidate, ElectionSeason, Status,
                              Entity, PoliticalParty, FilingPeriod,
                              FilingType, County, Transaction, LoanTransaction,
-                             TransactionType, LoanTransactionType, Loan)
-from camp_fin.views import RacesView, RaceDetail
-from camp_fin.decorators import check_date_params
+                             TransactionType, LoanTransactionType, Loan, Lobbyist)
 
 class FakeTestData(object):
     '''
@@ -265,6 +263,32 @@ class FakeTestData(object):
                             (cls.second_expenditure, cls.filtered_expenditure),
                             (cls.third_expenditure,))
 
+    @classmethod
+    def lobbyists(cls):
+        entity_a = Entity.objects.create(user_id=1)
+        entity_b = Entity.objects.create(user_id=2)
+
+        prefix_a, first_a, last_a = 'mr.', 'smitty', 'werben'
+        first_b, mid_b, last_b, suffix_b = 'jaeger', 'man', 'jensen', 'jr.'
+
+        slug_a = '-'.join((first_a, last_a, '1'))
+        slug_b = '-'.join((first_b, last_b, '1'))
+
+        cls.first_lobbyist = Lobbyist(entity=entity_a,
+                                      prefix=prefix_a,
+                                      first_name=first_a,
+                                      last_name=last_a,
+                                      slug=slug_a)
+
+        cls.second_lobbyist = Lobbyist(entity=entity_b,
+                                       first_name=first_b,
+                                       middle_name=mid_b,
+                                       last_name=last_b,
+                                       suffix=suffix_b,
+                                       slug=slug_b)
+
+        cls.first_lobbyist.save()
+        cls.second_lobbyist.save()
 
 class StatelessTestCase(TestCase, FakeTestData):
     '''
@@ -274,6 +298,7 @@ class StatelessTestCase(TestCase, FakeTestData):
     @classmethod
     def setUpTestData(cls):
         cls.races()
+        cls.lobbyists()
 
 
 class DatabaseTestCase(TransactionTestCase, FakeTestData):
@@ -285,6 +310,7 @@ class DatabaseTestCase(TransactionTestCase, FakeTestData):
     @classmethod
     def setUp(cls):
         cls.races()
+        cls.lobbyists()
         call_command('import_data', '--add-aggregates')
 
 

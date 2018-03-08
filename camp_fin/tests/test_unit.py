@@ -11,7 +11,8 @@ from camp_fin.models import (Race, Campaign, Filing, Division,
                              Entity, PoliticalParty, FilingPeriod,
                              FilingType, County, Transaction, LoanTransaction,
                              TransactionType, LoanTransactionType, Loan)
-from camp_fin.views import RacesView, RaceDetail
+from camp_fin.views import (RacesView, RaceDetail, LobbyistList, LobbyistDetail,
+                            LobbyistTransactionList)
 from camp_fin.base_views import TransactionDownloadViewSet
 from camp_fin.decorators import check_date_params
 from camp_fin.templatetags.helpers import format_years

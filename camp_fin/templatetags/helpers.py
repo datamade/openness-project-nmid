@@ -134,9 +134,14 @@ def format_years(years):
             start, end = rng[0], rng[-1]
             return "{start} - {end}".format(start=start, end=end)
 
-    sorted_years = sorted(years)
-    ranges = get_ranges([sorted_years[0]], sorted_years[1:], [])
-    return ', '.join(format_range(rng) for rng in ranges)
+    if len(years) == 0:
+        return ''
+    elif len(years) == 1:
+        return str(years[0])
+    else:
+        sorted_years = sorted(years)
+        ranges = get_ranges([sorted_years[0]], sorted_years[1:], [])
+        return ', '.join(format_range(rng) for rng in ranges)
 
 @register.simple_tag
 def lobbyist_contributions(obj, employer_id, short=False):
