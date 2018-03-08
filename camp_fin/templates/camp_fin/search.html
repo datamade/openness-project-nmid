@@ -13,7 +13,7 @@
             <div class='jumbotron'>
                 <form method='GET'>
                     <div class="input-group input-group-lg">
-                        <input type="text" class="form-control" placeholder="Search for names of candidates, committees and donors in New Mexico" id="term" name="term" {% if term %}value="{{term}}"{% endif %}>
+                        <input type="text" class="form-control" placeholder="Search for names of candidates, committees, donors, and lobbyists in New Mexico" id="term" name="term" {% if term %}value="{{term}}"{% endif %}>
                         <span class="input-group-btn">
                             <button class="btn btn-default" type="submit"><i class='fa fa-search'></i> <span class='hidden-sm hidden-xs'>Search</span></button>
                         </span>
@@ -32,6 +32,12 @@
                         </label>
                         <label data-title='Expenditures' data-content='Any person or organization who was given money by a political committee'>
                             <input type="checkbox" name="table_name" value="expenditure" {% if 'expenditure' in table_name %}checked='checked'{% endif %}> Expenditures by committees
+                        </label>
+                        <label data-title='Lobbyists' data-content='Any person who has registered as a lobbyist'>
+                            <input type="checkbox" name="table_name" value="lobbyist" {% if 'lobbyist' in table_name %}checked='checked'{% endif %}> Lobbyists
+                        </label>
+                        <label data-title='Lobbyist employers' data-content='Any organization that has paid registered lobbyists'>
+                            <input type="checkbox" name="table_name" value="organization" {% if 'organization' in table_name %}checked='checked'{% endif %}> Lobbyist employers
                         </label>
                     </div>
                 </form>
@@ -113,6 +119,31 @@
             </table>
             <hr />
         </div>
+        <div id="lobbyist-search-results" class="col-md-12" style="display:none;">
+            <h3>Lobbyists <small></small></h3>
+            <table class="table table-hover datatable-table" id="lobbyist-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                    </tr>
+                </thead>
+                <tbody>
+            </table>
+            <hr />
+        </div>
+        <div id="organization-search-results" class="col-md-12" style="display:none;">
+            <h3>Lobbyist employers <small></small></h3>
+            <table class="table table-hover datatable-table" id="organization-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+            </table>
+            <hr />
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -133,7 +164,7 @@
         if(typeof query.table_name === 'string'){
             table_names = [query.table_name];
         } else if (typeof query.table_name === 'undefined'){
-            table_names = ['pac', 'contribution', 'expenditure', 'candidate'];
+            table_names = ['pac', 'contribution', 'expenditure', 'candidate', 'lobbyist', 'organization'];
         } else {
             table_names = query.table_name;
         }
@@ -282,6 +313,33 @@
                     }
                 ];
                 init_datatable(term, 'treasurer', columns)
+            }
+
+            if (table_names.indexOf('lobbyist') >= 0) {
+                var columns = [
+                    {
+                        'data': 'name',
+                        'render': function(data, type, full, meta) {
+                            return '<a href="/lobbyists/' + full['slug'] + '">' + full['name'] + '</a>';
+                        }
+                    },
+                ];
+                init_datatable(term, 'lobbyist', columns)
+            }
+
+            if (table_names.indexOf('organization') >= 0) {
+                var columns = [
+                    {
+                        'data': 'name',
+                        'render': function(data, type, full, meta) {
+                            return '<a href="/organizations/' + full['slug'] + '">' + full['name'] + '</a>';
+                        }
+                    },
+                    {
+                        'data': 'address'
+                    }
+                ];
+                init_datatable(term, 'organization', columns)
             }
         }
     }

@@ -37,7 +37,8 @@ from .base_views import (PaginatedList, TransactionDetail, TransactionBaseViewSe
 from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer, \
     TransactionSearchSerializer, CandidateSearchSerializer, PACSearchSerializer, \
     LoanTransactionSerializer, TreasurerSearchSerializer, DataTablesPagination, \
-    TransactionCSVRenderer, SearchCSVRenderer
+    TransactionCSVRenderer, SearchCSVRenderer, LobbyistSearchSerializer, \
+    OrganizationSearchSerializer
 from .templatetags.helpers import format_money, get_transaction_verb
 
 TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
@@ -1228,6 +1229,8 @@ SERIALIZER_LOOKUP = {
     'pac': PACSearchSerializer,
     'contribution': TransactionSearchSerializer,
     'expenditure': TransactionSearchSerializer,
+    'lobbyist': LobbyistSearchSerializer,
+    'organization': OrganizationSearchSerializer
 }
 
 @method_decorator(never_cache, name='dispatch')
@@ -1267,6 +1270,8 @@ class SearchAPIView(viewsets.ViewSet):
                 'pac',
                 'contribution',
                 'expenditure',
+                'lobbyist',
+                'organization'
             ]
 
         response = {}
@@ -1400,9 +1405,43 @@ class SearchAPIView(viewsets.ViewSet):
                       AND tt.contribution = FALSE
                       AND o.received_date >= '2010-01-01'
                 '''
+
+            elif table == 'lobbyist':
+                query = '''
+                    SELECT
+                        lob.slug,
+                        concat_ws(' ', lob.prefix, lob.first_name, lob.middle_name,
+                                       lob.last_name, lob.suffix)
+                        AS name
+                    FROM camp_fin_lobbyist AS lob
+                    WHERE lob.search_name @@ plainto_tsquery('english', %s)
+                '''
+
+            elif table == 'organization':
+                query = '''
+                    SELECT
+                        org.name AS name,
+                        org.slug AS slug,
+                        CASE WHEN
+                            add.street IS NULL OR TRIM(add.street) = ''
+                        THEN
+                            ''
+                        ELSE
+                            add.street || ' ' ||
+                            add.city || ', ' ||
+                            state.postal_code || ' ' ||
+                            add.zipcode
+                        END AS address
+                    FROM camp_fin_organization AS org
+                    JOIN camp_fin_address AS add
+                      ON org.permanent_address_id = add.id
+                    JOIN camp_fin_state AS state
+                      ON add.state_id = state.id
+                    WHERE org.search_name @@ plainto_tsquery('english', %s)
+                '''
             
             if order_by_col:
-                query = ''' 
+                query = '''
                     {0} ORDER BY {1} {2}
                 '''.format(query, order_by_col, sort_order)
             
