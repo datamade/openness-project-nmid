@@ -1204,6 +1204,53 @@ class LobbyistMethodMixin(object):
 
         return output
 
+    @classmethod
+    def top(cls, order_by='rank', sort_order='asc', limit=''):
+        '''
+        Return the top entities in this class, ordered by the `order_by` param and sorted
+        by the `sort_order` param.
+        '''
+        clsname = cls.__name__
+        etype = clsname.lower()
+
+        entity_query = '''
+            SELECT * FROM (
+                SELECT
+                    DENSE_RANK() OVER (
+                        ORDER BY {etype}s.contributions + {etype}s.expenditures DESC
+                    ) AS rank,
+                    {etype}s.*
+                FROM (
+                    SELECT DISTINCT ON ({etype}.id)
+                        {etype}.id,
+                        SUM(COALESCE(report.political_contributions, 0)) AS contributions,
+                        SUM(COALESCE(report.expenditures, 0)) AS expenditures
+                    FROM camp_fin_{etype} AS {etype}
+                    JOIN camp_fin_lobbyistreport AS report
+                    USING(entity_id)
+                    GROUP BY {etype}.id
+                ) AS {etype}s
+            ) AS s
+            ORDER BY {order_by} {sort_order}
+        '''.format(etype=etype, order_by=order_by, sort_order=sort_order)
+
+        if limit:
+            entity_query += '''
+                LIMIT {limit}
+            '''.format(limit=limit)
+
+        with connection.cursor() as cursor:
+            cursor.execute(entity_query)
+
+            columns = [c[0] for c in cursor.description]
+            entity_tuple = namedtuple(clsname, columns)
+
+            entities = [entity_tuple(*r) for r in cursor]
+
+        queryset = [(entity.rank, cls.objects.get(id=entity.id)) for entity in entities]
+
+        return queryset
+
 
 class Lobbyist(models.Model, LobbyistMethodMixin):
     entity = models.ForeignKey("Entity", db_constraint=False)

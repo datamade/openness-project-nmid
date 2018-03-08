@@ -211,6 +211,9 @@ class IndexView(TopEarnersBase, PagesMixin):
         context['top_races'] = top_races[:10]
         context['verbose_type'] = 'all'
 
+        # Lobbyists
+        context['lobbyists'] = Lobbyist.top(limit=5)
+
         return context
 
 class LobbyistPortal(PagesMixin):
@@ -220,8 +223,8 @@ class LobbyistPortal(PagesMixin):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context['lobbyists'] = Lobbyist.objects.all()[:5]
-        context['organizations'] = Organization.objects.all()[:5]
+        context['lobbyists'] = Lobbyist.top(limit=5)
+        context['organizations'] = Organization.top(limit=5)
 
         context['num_lobbyists'] = Lobbyist.objects.count()
         context['num_employers'] = Organization.objects.count()
@@ -734,34 +737,7 @@ class LobbyistList(PaginatedList):
 
         assert self.sort_order in ['asc', 'desc']
 
-        with connection.cursor() as cursor:
-            cursor.execute('''
-                SELECT * FROM (
-                    SELECT
-                        DENSE_RANK() OVER (
-                            ORDER BY lobbyists.contributions + lobbyists.expenditures DESC
-                        ) AS rank,
-                        lobbyists.*
-                    FROM (
-                        SELECT DISTINCT ON (lobbyist.id)
-                            lobbyist.id,
-                            SUM(COALESCE(report.political_contributions, 0)) AS contributions,
-                            SUM(COALESCE(report.expenditures, 0)) AS expenditures
-                        FROM camp_fin_lobbyist AS lobbyist
-                        JOIN camp_fin_lobbyistreport AS report
-                        USING(entity_id)
-                        GROUP BY lobbyist.id
-                    ) AS lobbyists
-                ) AS s
-                ORDER BY {0} {1}
-            '''.format(self.order_by, self.sort_order))
-
-            columns = [c[0] for c in cursor.description]
-            lobbyist_tuple = namedtuple('Lobbyist', columns)
-
-            lobbyists = [lobbyist_tuple(*r) for r in cursor]
-
-            queryset = [(lobbyist.rank, Lobbyist.objects.get(id=lobbyist.id)) for lobbyist in lobbyists]
+        queryset = Lobbyist.top(order_by=self.order_by, sort_order=self.sort_order)
 
         return queryset
 
@@ -857,35 +833,7 @@ class OrganizationList(PaginatedList):
 
         assert self.sort_order in ['asc', 'desc']
 
-        with connection.cursor() as cursor:
-            cursor.execute('''
-                SELECT * FROM (
-                    SELECT
-                        DENSE_RANK() OVER (
-                            ORDER BY organizations.contributions + organizations.expenditures DESC
-                        ) AS rank,
-                        organizations.*
-                    FROM (
-                        SELECT DISTINCT ON (organization.id)
-                            organization.id,
-                            SUM(COALESCE(report.political_contributions, 0)) AS contributions,
-                            SUM(COALESCE(report.expenditures, 0)) AS expenditures
-                        FROM camp_fin_organization AS organization
-                        JOIN camp_fin_lobbyistreport AS report
-                        USING(entity_id)
-                        GROUP BY organization.id
-                    ) AS organizations
-                ) AS s
-                ORDER BY {0} {1}
-            '''.format(self.order_by, self.sort_order))
-
-            columns = [c[0] for c in cursor.description]
-            organization_tuple = namedtuple('Organization', columns)
-
-            organizations = [organization_tuple(*r) for r in cursor]
-
-            queryset = [(organization.rank, Organization.objects.get(id=organization.id))
-                        for organization in organizations]
+        queryset = Organization.top(order_by=self.order_by, sort_order=self.sort_order)
 
         return queryset
 

@@ -135,10 +135,10 @@
                                     <td>{{ transaction.name }}</td>
                                     <td class="text-right no-wrap">
                                         <span class="hidden-xs hidden-sm">
-                                            {{ transaction.amount|format_money }} to
+                                            <strong>{{ transaction.amount|format_money }}</strong> to
                                         </span>
                                         <span class="visible-xs visible-sm">
-                                            {{ transaction.amount|format_money_short }} to
+                                            <strong>{{ transaction.amount|format_money_short }}</strong> to
                                         </span>
                                     </td>
                                     <td>{{ transaction.recipient }}</td>
