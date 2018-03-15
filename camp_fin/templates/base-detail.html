@@ -178,11 +178,11 @@
                     <tr>
                         <td>
                             <% if (transaction.full_name){ %>
-                                <a href='/search/?term=<%= transaction.full_name %>'>
+                                <a href='/search/?term=<%= encodeURIComponent(transaction.full_name.replace("\'", "")) %>'>
                                     <%= transaction.full_name %>
                                 </a>
                             <% } else { %>
-                                <a href='/search/?term=<%= transaction.company_name %>'>
+                                <a href='/search/?term=<%= enodeURIComponent(transaction.company_name.replace("\'", "")) %>'>
                                     <%= transaction.company_name %>
                                 </a>
                             <% } %>

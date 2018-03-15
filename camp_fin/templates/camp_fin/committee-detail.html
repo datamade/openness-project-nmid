@@ -43,7 +43,7 @@
                     <% }%>
                     <tr>
                         <td>
-                            <a href='/search/?term=<%= full_name %>'>
+                            <a href='/search/?term=<%= encodeURIComponent(full_name.replace("\'", "")) %>'>
                                 <%= full_name %>
                             </a>
                         </td>
