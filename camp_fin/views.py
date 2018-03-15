@@ -1212,7 +1212,7 @@ class ExpenditureDownloadViewSet(TransactionDownloadViewSet):
     '''
     Viewset for the expenditures API, returning bulk downloads as CSV.
     '''
-    contribution = True
+    contribution = False
 
 class TopDonorsView(TopMoneyView):
     contribution = True
