@@ -4,23 +4,45 @@
 {% block title %}{{ candidate.full_name }}{% endblock %}
 
 {% block header %}
-    <p class="breadcrumbs"><a href='/candidates'>&laquo; Candidates</a></p>
-    <h1>
-        <i class="fa fa-fw fa-user"></i>
-        {{ candidate.full_name }}
-        <small>Candidate</small>
-    </h1>
-    {% if sos_link %}
-        <p><a href="{{sos_link}}" target="_blank">View on the New Mexico Secretary of State's website &raquo;</a></p>
-    {% endif %}
-    {% if stories %}
-        <h3>Related stories</h3>
-            <ul>
-            {% for story in stories %}
-                <li><a href="{{ story.link }}">{{ story.title }}</a></li>
-            {% endfor %}
-            </ul>
-    {% endif %}
+    <div class="row">
+        <div class="col-xs-12">
+            <p class="breadcrumbs"><a href='/candidates'>&laquo; Candidates</a></p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <h1>
+                <i class="fa fa-fw fa-user"></i>
+                {{ candidate.full_name }}
+                <small>Candidate</small>
+            </h1>
+            {% if sos_link %}
+                <p><a href="{{sos_link}}" target="_blank">View on the New Mexico Secretary of State's website &raquo;</a></p>
+            {% endif %}
+            {% if stories %}
+                <h3>Related stories</h3>
+                    <ul>
+                    {% for story in stories %}
+                        <li><a href="{{ story.link }}">{{ story.title }}</a></li>
+                    {% endfor %}
+                    </ul>
+            {% endif %}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <a href="{% url 'bulk-contributions-list' %}?candidate_id={{ candidate.id }}" class="btn btn-default"
+               id="contributions-download">
+                <i class="fa fa-fw fa-download"></i>
+                Download contributions
+            </a>
+            <a href="{% url 'bulk-expenditures-list' %}?candidate_id={{ candidate.id }}" class="btn btn-default"
+               id="expenditures-download">
+                <i class="fa fa-fw fa-download"></i>
+                Download expenditures
+            </a>
+        </div>
+    </div>
 {% endblock %}
 
 {% block charts %}

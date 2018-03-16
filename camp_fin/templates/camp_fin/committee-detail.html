@@ -4,11 +4,36 @@
 {% block title %}{{ pac.name }}{% endblock %}
 
 {% block header %}
-    <p><a href='/committees'>&laquo; Committees</a></p>
-    <h1>{{ pac.name }}</h1>
-    {% if sos_link %}
-        <p><a href="{{sos_link}}" target="_blank">View on the New Mexico Secretary of State's website &raquo;</a></p>
-    {% endif %}
+    <div class="row">
+        <div class="col-xs-12">
+            <p><a href='/committees'>&laquo; Committees</a></p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <h1>
+                <i class="fa fa-fw fa-users"></i>
+                {{ pac.name }}
+            </h1>
+            {% if sos_link %}
+                <p><a href="{{sos_link}}" target="_blank">View on the New Mexico Secretary of State's website &raquo;</a></p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <a href="{% url 'bulk-contributions-list' %}?pac_id={{ pac.id }}" class="btn btn-default"
+               id="contributions-download">
+                <i class="fa fa-fw fa-download"></i>
+                Download contributions
+            </a>
+            <a href="{% url 'bulk-expenditures-list' %}?pac_id={{ pac.id }}" class="btn btn-default"
+               id="expenditures-download">
+                <i class="fa fa-fw fa-download"></i>
+                Download expenditures
+            </a>
+        </div>
+    </div>
 {% endblock %}
 {% block charts %}
     <h3>Net funds over time</h3>
