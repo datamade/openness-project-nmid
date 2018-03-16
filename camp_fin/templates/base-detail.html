@@ -17,13 +17,20 @@
                     <tr>
                         <td>
                             Opening balance
-                            {% explainer "'Opening balance' refers to the amount of money this entity had at the start of the filing period." %}
+                            {% if pac %}
+                                {% explainer "'Opening balance' refers to the amount of money this committee had at the start of the filing period." %}
+                            {% elif candidate %}
+                                {% explainer "'Opening balance' refers to the amount of money this candidate had at the start of the filing period." %}
+                            {% endif %}
                         </td>
                         <td class='text-right'>{{ latest_filing.opening_balance|format_money }}</td>
                     </tr>
                     <tr>
                         <td class="no-wrap green">
                             + Total contributions
+                            {% if pac %}
+                                {% explainer "This number represents the donations that this commitee received during the last reporting period. Committees often contribute this money directly to candidates, or spend it on lobbying." %}
+                            {% endif %}
                         </td>
                         <td class='text-right no-wrap'>
                             <span class="green">
@@ -66,6 +73,9 @@
                     <tr>
                         <td class="no-wrap red">
                             &ndash; Total expenditures
+                            {% if pac %}
+                                {% explainer "This number represents the amount of money this committee spent during the last reporting period. Often, committees will donate this money directly to candidates." %}
+                            {% endif %}
                         </td>
                         <td class='text-right red'>
                             {{ latest_filing.total_expenditures|format_money }}
@@ -74,7 +84,11 @@
                     <tr>
                         <td class="no-wrap">
                             <strong>= Closing balance</strong>
-                            {% explainer "'Closing balance' refers to the amount of money this entity had on the reporting date." %}
+                            {% if pac %}
+                                {% explainer "'Closing balance' refers to the amount of money this committee had on the reporting date." %}
+                            {% elif candidate %}
+                                {% explainer "'Closing balance' refers to the amount of money this candidate had on the reporting date." %}
+                            {% endif %}
                         </td>
                         <td class='text-right'><strong>{{ latest_filing.closing_balance|format_money }}</strong></td>
                     </tr>
