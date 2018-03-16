@@ -38,22 +38,17 @@
                             {{ lobbyist.years_active|format_years }}
                         </td>
                     </tr>
-                    <tr>
-                        <td>
-                            <i class="fa fa-fw fa-users"></i>
-                            Most recent employer
-                        </td>
-                        <td class="text-right">
-                            {% if lobbyist.employers %}
-                                {% with employment=lobbyist.employers|first %}
-                                    <a href="{% url 'organization-detail' employment.organization.slug %}">
-                                        {{ employment.organization }}
-                                    </a>
-                                    <small>{{ employment.years|format_years }}</small>
-                                {% endwith %}
-                            {% endif %}
-                        </td>
-                    </tr>
+                    {% if last_year_employed %}
+                        <tr>
+                            <td>
+                                <i class="fa fa-fw fa-users"></i>
+                                Number of employers in {{ last_year_employed }}
+                            </td>
+                            <td class="text-right">
+                                {{ num_recent_employers }}
+                            </td>
+                        </tr>
+                    {% endif %}
                     <tr>
                         <td>
                             <i class="fa fa-fw fa-usd"></i>

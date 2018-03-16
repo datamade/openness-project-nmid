@@ -9,6 +9,7 @@ from django.views.generic import ListView, TemplateView, DetailView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.http import HttpResponseNotFound, HttpResponse, StreamingHttpResponse
 from django.db import transaction, connection, connections
+from django.db.models import Max
 from django.utils import timezone
 from django.core.urlresolvers import reverse_lazy
 from django.utils.text import slugify
@@ -784,6 +785,20 @@ class LobbyistDetail(DetailView):
         # Pagination
         paginator = Paginator(context['object'].transactions(), 25)
         page = self.request.GET.get('page', 1)
+
+        # Determine how many employers
+        last_year_employed = self.object.lobbyistemployer_set.all()\
+                                        .aggregate(last_year_employed=Max('year'))\
+                                        .get('last_year_employed')
+
+        context['last_year_employed'] = last_year_employed
+
+        if last_year_employed:
+            context['num_recent_employers'] = self.object.lobbyistemployer_set\
+                                                         .filter(year=last_year_employed)\
+                                                         .count()
+        else:
+            context['num_recent_employers'] = 0
 
         try:
             context['object_list'] = paginator.page(page)
