@@ -57,9 +57,13 @@
 {% block campaigns %}
     <h3><i class="fa fa-fw fa-check-square-o"></i>Latest race</h3>
     <p style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
-        <a href="{% url 'race-detail' latest_race.id %}">
-            {{ latest_race }} &raquo;
-        </a>
+        {% if latest_race.funding_period == '2017' %}
+            <a href="{% url 'race-detail' latest_race.id %}">
+                {{ latest_race }} &raquo;
+            </a>
+        {% else %}
+            {{ latest_race }}
+        {% endif %}
     </p>
     <div class="row">
         <div class="col-xs-12">

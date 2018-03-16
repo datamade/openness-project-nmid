@@ -24,13 +24,16 @@
                     </h3>
                     <table class="table table-striped">
                         <tbody>
-                            <tr>
-                                <td>Primary election date</td>
-                                <td>June 5th, 2018</td>
-                            </tr>
-                            <tr>
-                                <td>General election date</td>
-                                <td>November 6th, 2018</td>
+                            {% if race.funding_period == '2017' %}
+                                <tr>
+                                    <td>Primary election date</td>
+                                    <td>June 5th, 2018</td>
+                                </tr>
+                                <tr>
+                                    <td>General election date</td>
+                                    <td>November 6th, 2018</td>
+                                </tr>
+                            {% endif %}
                             <tr>
                                 <td>
                                     Total funds raised in this race
