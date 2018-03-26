@@ -76,7 +76,8 @@
                     <td class="no-wrap col-sm-4">
                         <!-- Start with this candidate -->
                         <p>
-                            <strong>{{ candidate.full_name }}</strong>
+                                <strong>{{ candidate.full_name }}</strong>
+                            </a>
                             {% if latest_campaign.party_identifier %}
                                 <small>
                                     <span class="party-identifier {{ latest_campaign.party_identifier }}">
@@ -92,7 +93,9 @@
                         {% for campaign in latest_race.sorted_campaigns %}
                             {% if campaign.candidate != candidate %}
                             <p>
-                                {{ campaign.candidate.full_name }}
+                                <a href="{% url 'candidate-detail' campaign.candidate.slug %}">
+                                    {{ campaign.candidate.full_name }}
+                                </a>
                                 {% if campaign.party_identifier %}
                                     <small>
                                         <span class="party-identifier {{ campaign.party_identifier }}">
@@ -169,8 +172,21 @@
         <tbody>
             {% for campaign in candidate.campaign_set.all %}
                 <tr>
-                    <td>{{ campaign.office.description }} ({{ campaign.political_party }})</td>
-                    <td>{{ campaign.committee_name|default_if_none:"" }}</td>
+                    <td>
+                        {{ campaign.office.description }}
+                        {% if campaign.party_identifier %}
+                            <span class="party-identifier {{ latest_campaign.party_identifier }}">
+                                ({{ latest_campaign.party_identifier }})
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if campaign.committee_name %}
+                            <a href="{% url 'search' %}?term={{ campaign.committee_name|urlencode }}">
+                                {{ campaign.committee_name }}
+                            </a>
+                        {% endif %}
+                    </td>
                     <td>{{ campaign.election_season.year }}</td>
                 </tr>
             {% endfor %}
