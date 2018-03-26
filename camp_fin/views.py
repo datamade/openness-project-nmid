@@ -782,10 +782,6 @@ class LobbyistDetail(DetailView):
 
         self.page_path = self.request.path
 
-        # Pagination
-        paginator = Paginator(context['object'].transactions(), 25)
-        page = self.request.GET.get('page', 1)
-
         # Determine how many employers
         last_year_employed = self.object.lobbyistemployer_set.all()\
                                         .aggregate(last_year_employed=Max('year'))\
@@ -800,12 +796,26 @@ class LobbyistDetail(DetailView):
         else:
             context['num_recent_employers'] = 0
 
+        # Pagination
+        contrib_paginator = Paginator(context['object'].contributions(), 15)
+        contrib_page = self.request.GET.get('page', 1)
+
         try:
-            context['object_list'] = paginator.page(page)
+            context['contributions'] = contrib_paginator.page(contrib_page)
         except PageNotAnInteger:
-            context['object_list'] = paginator.page(1)
+            context['contributions'] = contrib_paginator.page(1)
         except EmptyPage:
-            context['object_list'] = paginator.page(paginator.num_pages)
+            context['contributions'] = contrib_paginator.page(contrib_paginator.num_pages)
+
+        expend_paginator = Paginator(context['object'].expenditures(), 15)
+        expend_page = self.request.GET.get('page', 1)
+
+        try:
+            context['expenditures'] = expend_paginator.page(expend_page)
+        except PageNotAnInteger:
+            context['expenditures'] = expend_paginator.page(1)
+        except EmptyPage:
+            context['expenditures'] = expend_paginator.page(expend_paginator.num_pages)
 
         sos_link = 'https://www.cfis.state.nm.us/media/ReportLobbyist.aspx?id={id}&el=0'
         context['sos_link'] = sos_link.format(id=context['object'].id)
@@ -893,15 +903,25 @@ class OrganizationDetail(DetailView):
         self.page_path = self.request.path
 
         # Pagination
-        paginator = Paginator(context['object'].transactions(), 25)
-        page = self.request.GET.get('page', 1)
+        contrib_paginator = Paginator(context['object'].contributions(), 15)
+        contrib_page = self.request.GET.get('page', 1)
 
         try:
-            context['object_list'] = paginator.page(page)
+            context['contributions'] = contrib_paginator.page(contrib_page)
         except PageNotAnInteger:
-            context['object_list'] = paginator.page(1)
+            context['contributions'] = contrib_paginator.page(1)
         except EmptyPage:
-            context['object_list'] = paginator.page(paginator.num_pages)
+            context['contributions'] = contrib_paginator.page(contrib_paginator.num_pages)
+
+        expend_paginator = Paginator(context['object'].expenditures(), 15)
+        expend_page = self.request.GET.get('page', 1)
+
+        try:
+            context['expenditures'] = expend_paginator.page(expend_page)
+        except PageNotAnInteger:
+            context['expenditures'] = expend_paginator.page(1)
+        except EmptyPage:
+            context['expenditures'] = expend_paginator.page(expend_paginator.num_pages)
 
         sos_link = 'https://www.cfis.state.nm.us/media/ReportEmployer.aspx?id={id}&el=0'
         context['sos_link'] = sos_link.format(id=context['object'].id)

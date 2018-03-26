@@ -1165,14 +1165,16 @@ class LobbyistMethodMixin(object):
         else:
             return []
 
-    def transactions(self, order_by='amount', ordering='desc'):
+    def get_transactions(self, order_by='amount', ordering='desc', ttype='contribution'):
         '''
-        Return all transactions related to this entity.
+        Base method for getting transactions (contributions and expenditures)
+        for this entity.
         '''
         # Check params for validity
         assert order_by in ['amount', 'description', 'beneficiary',
                             'expenditure_purpose', 'received_date']
         assert ordering in ['asc', 'desc']
+        assert ttype in ['contribution', 'expenditure']
 
         entity_id = self.entity_id
 
@@ -1191,6 +1193,20 @@ class LobbyistMethodMixin(object):
             JOIN camp_fin_lobbyisttransactiontype ttype
               ON trans.lobbyist_transaction_type_id = ttype.id
             WHERE entity_id = %s
+        '''
+
+        if ttype == 'contribution':
+            # Although we don't have access to that table, you can tell that
+            # transactions with the ID 2 are political contributions
+            get_transactions += '''
+                AND ttype.group_id = 2
+            '''
+        else:
+            get_transactions += '''
+                AND ttype.group_id = 1
+            '''
+
+        get_transactions += '''
             ORDER BY {0} {1}
         '''.format(order_by, ordering)
 
@@ -1203,6 +1219,18 @@ class LobbyistMethodMixin(object):
             output = [trans_tuple(*r) for r in cursor]
 
         return output
+
+    def contributions(self, order_by='amount', ordering='desc'):
+        '''
+        Return a list of all political contributions from this entity.
+        '''
+        return self.get_transactions(order_by, ordering, ttype='contribution')
+
+    def expenditures(self, order_by='amount', ordering='desc'):
+        '''
+        Return a list of all expenditures from this entity.
+        '''
+        return self.get_transactions(order_by, ordering, ttype='expenditure')
 
     @classmethod
     def top(cls, order_by='rank', sort_order='asc', limit=''):
