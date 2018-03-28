@@ -111,52 +111,6 @@
             </div>
         </div>
     {% endif %}
-    {% if contributions %}
-        <div class="row">
-            <div class="col-xs-12">
-                <h2>
-                    <i class="fa fa-fw fa-usd"></i>
-                    Contributions
-                </h2>
-                <table class="table table-striped table-responsive">
-                    <thead>
-                        <tr>
-                            <th>Type</th>
-                            <th>On behalf of</th>
-                            <th class="text-right">Amount</th>
-                            <th>Recipient</th>
-                            <th class="hidden-xs hidden-sm">Description</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for transaction in contributions %}
-                            <tr>
-                                <td>{{ transaction.type }}</td>
-                                <td>{{ transaction.name }}</td>
-                                <td class="text-right no-wrap">
-                                    <span class="hidden-xs hidden-sm">
-                                        {{ transaction.amount|format_money }} to
-                                    </span>
-                                    <span class="visible-xs visible-sm">
-                                        {{ transaction.amount|format_money_short }} to
-                                    </span>
-                                </td>
-                                <td>{{ transaction.recipient }}</td>
-                                <td class="hidden-xs hidden-sm">{{ transaction.description }}</td>
-                                <td>{{ transaction.date|date }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="row">
-            <div class="text-center">
-                {% bootstrap_paginate contributions range=10 %}
-            </div>
-        </div>
-    {% endif %}
     {% if expenditures %}
         <div class="row">
             <div class="col-xs-12">
@@ -168,9 +122,9 @@
                     <thead>
                         <tr>
                             <th>Type</th>
-                            <th>On behalf of</th>
+                            <th>Paid to</th>
                             <th class="text-right">Amount</th>
-                            <th>Recipient</th>
+                            <th>Beneficiary</th>
                             <th class="hidden-xs hidden-sm">Description</th>
                             <th>Date</th>
                         </tr>
@@ -179,16 +133,28 @@
                         {% for transaction in expenditures %}
                             <tr>
                                 <td>{{ transaction.type }}</td>
-                                <td>{{ transaction.name }}</td>
+                                <td>
+                                    {% if transaction.name %}
+                                        <a href="{% url 'search' %}?term={{ transaction.name|urlencode }}">
+                                            {{ transaction.name }}
+                                        </a>
+                                    {% endif %}
+                                </td>
                                 <td class="text-right no-wrap">
                                     <span class="hidden-xs hidden-sm">
-                                        {{ transaction.amount|format_money }} to
+                                        {{ transaction.amount|format_money }}
                                     </span>
                                     <span class="visible-xs visible-sm">
-                                        {{ transaction.amount|format_money_short }} to
+                                        {{ transaction.amount|format_money_short }}
                                     </span>
                                 </td>
-                                <td>{{ transaction.recipient }}</td>
+                                <td>
+                                    {% if transaction.recipient %}
+                                        <a href="{% url 'search' %}?term={{ transaction.recipient|urlencode }}">
+                                            {{ transaction.recipient }}
+                                        </a>
+                                    {% endif %}
+                                </td>
                                 <td class="hidden-xs hidden-sm">{{ transaction.description }}</td>
                                 <td>{{ transaction.date|date }}</td>
                             </tr>
@@ -200,6 +166,54 @@
         <div class="row">
             <div class="text-center">
                 {% bootstrap_paginate expenditures range=10 %}
+            </div>
+        </div>
+    {% endif %}
+    {% if contributions %}
+        <div class="row">
+            <div class="col-xs-12">
+                <h2>
+                    <i class="fa fa-fw fa-usd"></i>
+                    Contributions
+                </h2>
+                <table class="table table-striped table-responsive">
+                    <thead>
+                        <tr>
+                            <th class="hidden-xs hidden-sm">Description</th>
+                            <th class="text-right">Amount</th>
+                            <th>Recipient</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in contributions %}
+                            <tr>
+                                <td class="hidden-xs hidden-sm">{{ transaction.type }}</td>
+                                <td class="text-right no-wrap">
+                                    <span class="hidden-xs hidden-sm">
+                                        {{ transaction.amount|format_money }}
+                                    </span>
+                                    <span class="visible-xs visible-sm">
+                                        {{ transaction.amount|format_money_short }}
+                                    </span>
+                                </td>
+                                <td> <!-- For contributions, the recipient is stored under the 'name' attribute -->
+                                    {% if transaction.name %}
+                                        <a href="{% url 'search' %}?term={{ transaction.name|urlencode }}">
+                                            {{ transaction.name }}
+                                        </a>
+                                    {% endif %}
+                                </td>
+                                <td>{{ transaction.date|date }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="row">
+            <div class="text-center">
+                {% bootstrap_paginate contributions range=10 %}
             </div>
         </div>
     {% endif %}
