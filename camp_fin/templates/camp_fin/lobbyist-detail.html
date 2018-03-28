@@ -122,11 +122,39 @@
                     <thead>
                         <tr>
                             <th>Type</th>
-                            <th>Paid to</th>
-                            <th class="text-right">Amount</th>
-                            <th>Beneficiary</th>
+                            <th class="no-wrap">
+                                <a href="{% url 'lobbyist-detail' lobbyist.slug %}?{% query_transform request expend_order_by='name' expend_sort_order=expend_toggle_order %}">
+                                    Paid to
+                                    {% if expend_order_by == 'name' %}
+                                        {{ expend_sort_order|get_sort_icon|safe }}
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th class="text-right no-wrap">
+                                <a href="{% url 'lobbyist-detail' lobbyist.slug %}?{% query_transform request expend_order_by='amount' expend_sort_order=expend_toggle_order %}">
+                                    Amount
+                                    {% if expend_order_by == 'amount' %}
+                                        {{ expend_sort_order|get_sort_icon|safe }}
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th class="no-wrap">
+                                <a href="{% url 'lobbyist-detail' lobbyist.slug %}?{% query_transform request expend_order_by='beneficiary' expend_sort_order=expend_toggle_order %}">
+                                    Beneficiary
+                                    {% if expend_order_by == 'beneficiary' %}
+                                        {{ expend_sort_order|get_sort_icon|safe }}
+                                    {% endif %}
+                                </a>
+                            </th>
                             <th class="hidden-xs hidden-sm">Description</th>
-                            <th>Date</th>
+                            <th class="no-wrap">
+                                <a href="{% url 'lobbyist-detail' lobbyist.slug %}?{% query_transform request expend_order_by='received_date' expend_sort_order=expend_toggle_order %}">
+                                    Date
+                                    {% if expend_order_by == 'received_date' %}
+                                        {{ expend_sort_order|get_sort_icon|safe }}
+                                    {% endif %}
+                                </a>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -165,7 +193,7 @@
         </div>
         <div class="row">
             <div class="text-center">
-                {% bootstrap_paginate expenditures range=10 %}
+                {% bootstrap_paginate expenditures url_param_name='expend_page' range=10 %}
             </div>
         </div>
     {% endif %}
@@ -180,9 +208,30 @@
                     <thead>
                         <tr>
                             <th class="hidden-xs hidden-sm">Description</th>
-                            <th class="text-right">Amount</th>
-                            <th>Recipient</th>
-                            <th>Date</th>
+                            <th class="text-right no-wrap">
+                                <a href="{% url 'lobbyist-detail' lobbyist.slug %}?{% query_transform request contrib_order_by='amount' contrib_sort_order=contrib_toggle_order %}">
+                                    Amount
+                                    {% if contrib_order_by == 'amount' %}
+                                        {{ contrib_sort_order|get_sort_icon|safe }}
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th class="no-wrap">
+                                <a href="{% url 'lobbyist-detail' lobbyist.slug %}?{% query_transform request contrib_order_by='name' contrib_sort_order=contrib_toggle_order %}">
+                                    Recipient
+                                    {% if contrib_order_by == 'name' %}
+                                        {{ contrib_sort_order|get_sort_icon|safe }}
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th class="no-wrap">
+                                <a href="{% url 'lobbyist-detail' lobbyist.slug %}?{% query_transform request contrib_order_by='received_date' contrib_sort_order=contrib_toggle_order %}">
+                                    Date
+                                    {% if contrib_order_by == 'received_date' %}
+                                        {{ contrib_sort_order|get_sort_icon|safe }}
+                                    {% endif %}
+                                </a>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -213,7 +262,7 @@
         </div>
         <div class="row">
             <div class="text-center">
-                {% bootstrap_paginate contributions range=10 %}
+                {% bootstrap_paginate contributions url_param_name='contrib_page' range=10 %}
             </div>
         </div>
     {% endif %}

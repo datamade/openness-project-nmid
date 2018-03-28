@@ -1171,7 +1171,7 @@ class LobbyistMethodMixin(object):
         for this entity.
         '''
         # Check params for validity
-        assert order_by in ['amount', 'description', 'beneficiary',
+        assert order_by in ['name', 'amount', 'description', 'beneficiary',
                             'expenditure_purpose', 'received_date']
         assert ordering in ['asc', 'desc']
         assert ttype in ['contribution', 'expenditure']

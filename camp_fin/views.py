@@ -796,9 +796,55 @@ class LobbyistDetail(DetailView):
         else:
             context['num_recent_employers'] = 0
 
-        # Pagination
-        contrib_paginator = Paginator(context['object'].contributions(), 15)
-        contrib_page = self.request.GET.get('page', 1)
+        # Get variables for sorting and ordering
+        contrib_order_by = self.request.GET.get('contrib_order_by', 'amount')
+        expend_order_by = self.request.GET.get('expend_order_by', 'amount')
+
+        # Handle empty string
+        if not contrib_order_by:
+            contrib_order_by = 'amount'
+        if not expend_order_by:
+            expend_order_by = 'amount'
+
+        assert contrib_order_by in ['name', 'amount', 'received_date']
+        assert expend_order_by in ['name', 'amount', 'recipient', 'received_date']
+
+        contrib_sort_order = self.request.GET.get('contrib_sort_order', 'desc')
+        expend_sort_order = self.request.GET.get('expend_sort_order', 'desc')
+
+        if not contrib_sort_order:
+            contrib_sort_order = 'asc'
+        if not expend_sort_order:
+            expend_sort_order = 'asc'
+
+        assert contrib_sort_order in ['asc', 'desc']
+        assert expend_sort_order in ['asc', 'desc']
+
+        context['contrib_sort_order'] = contrib_sort_order
+        context['expend_sort_order'] = expend_sort_order
+
+        if contrib_sort_order == 'asc':
+            context['contrib_toggle_order'] = 'desc'
+        else:
+            context['contrib_toggle_order'] = 'asc'
+
+        if expend_sort_order == 'asc':
+            context['expend_toggle_order'] = 'desc'
+        else:
+            context['expend_toggle_order'] = 'asc'
+
+        context['contrib_order_by'] = contrib_order_by
+        context['expend_order_by'] = expend_order_by
+
+        contributions = context['object'].contributions(order_by=contrib_order_by,
+                                                        ordering=contrib_sort_order)
+
+        expenditures = context['object'].expenditures(order_by=expend_order_by,
+                                                      ordering=expend_sort_order)
+
+        # Paginate contributions and expenditures
+        contrib_paginator = Paginator(contributions, 15)
+        contrib_page = self.request.GET.get('contrib_page', 1)
 
         try:
             context['contributions'] = contrib_paginator.page(contrib_page)
@@ -807,8 +853,8 @@ class LobbyistDetail(DetailView):
         except EmptyPage:
             context['contributions'] = contrib_paginator.page(contrib_paginator.num_pages)
 
-        expend_paginator = Paginator(context['object'].expenditures(), 15)
-        expend_page = self.request.GET.get('page', 1)
+        expend_paginator = Paginator(expenditures, 15)
+        expend_page = self.request.GET.get('expend_page', 1)
 
         try:
             context['expenditures'] = expend_paginator.page(expend_page)
@@ -902,9 +948,55 @@ class OrganizationDetail(DetailView):
 
         self.page_path = self.request.path
 
-        # Pagination
-        contrib_paginator = Paginator(context['object'].contributions(), 15)
-        contrib_page = self.request.GET.get('page', 1)
+        # Get variables for sorting and ordering
+        contrib_order_by = self.request.GET.get('contrib_order_by', 'amount')
+        expend_order_by = self.request.GET.get('expend_order_by', 'amount')
+
+        # Handle empty string
+        if not contrib_order_by:
+            contrib_order_by = 'amount'
+        if not expend_order_by:
+            expend_order_by = 'amount'
+
+        assert contrib_order_by in ['name', 'amount', 'received_date']
+        assert expend_order_by in ['name', 'amount', 'recipient', 'received_date']
+
+        contrib_sort_order = self.request.GET.get('contrib_sort_order', 'desc')
+        expend_sort_order = self.request.GET.get('expend_sort_order', 'desc')
+
+        if not contrib_sort_order:
+            contrib_sort_order = 'asc'
+        if not expend_sort_order:
+            expend_sort_order = 'asc'
+
+        assert contrib_sort_order in ['asc', 'desc']
+        assert expend_sort_order in ['asc', 'desc']
+
+        context['contrib_sort_order'] = contrib_sort_order
+        context['expend_sort_order'] = expend_sort_order
+
+        if contrib_sort_order == 'asc':
+            context['contrib_toggle_order'] = 'desc'
+        else:
+            context['contrib_toggle_order'] = 'asc'
+
+        if expend_sort_order == 'asc':
+            context['expend_toggle_order'] = 'desc'
+        else:
+            context['expend_toggle_order'] = 'asc'
+
+        context['contrib_order_by'] = contrib_order_by
+        context['expend_order_by'] = expend_order_by
+
+        contributions = context['object'].contributions(order_by=contrib_order_by,
+                                                        ordering=contrib_sort_order)
+
+        expenditures = context['object'].expenditures(order_by=expend_order_by,
+                                                      ordering=expend_sort_order)
+
+        # Paginate contributions and expenditures
+        contrib_paginator = Paginator(contributions, 15)
+        contrib_page = self.request.GET.get('contrib_page', 1)
 
         try:
             context['contributions'] = contrib_paginator.page(contrib_page)
@@ -913,8 +1005,8 @@ class OrganizationDetail(DetailView):
         except EmptyPage:
             context['contributions'] = contrib_paginator.page(contrib_paginator.num_pages)
 
-        expend_paginator = Paginator(context['object'].expenditures(), 15)
-        expend_page = self.request.GET.get('page', 1)
+        expend_paginator = Paginator(expenditures, 15)
+        expend_page = self.request.GET.get('expend_page', 1)
 
         try:
             context['expenditures'] = expend_paginator.page(expend_page)
