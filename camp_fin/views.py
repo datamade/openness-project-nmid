@@ -34,7 +34,7 @@ from .models import Candidate, Office, Transaction, Campaign, Filing, PAC, \
     Organization
 from .base_views import (PaginatedList, TransactionDetail, TransactionBaseViewSet, \
                          TopMoneyView, TopEarnersBase, PagesMixin, TransactionDownloadViewSet, \
-                         Echo, iterate_cursor)
+                         Echo, iterate_cursor, LobbyistTransactionBaseViewSet)
 from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer, \
     TransactionSearchSerializer, CandidateSearchSerializer, PACSearchSerializer, \
     LoanTransactionSerializer, TreasurerSearchSerializer, DataTablesPagination, \
@@ -1341,6 +1341,12 @@ class ExpenditureDownloadViewSet(TransactionDownloadViewSet):
     '''
     contribution = False
 
+class LobbyistContributionViewSet(LobbyistTransactionBaseViewSet):
+    pass
+
+class LobbyistExpenditureViewSet(LobbyistTransactionBaseViewSet):
+    pass
+
 class TopDonorsView(TopMoneyView):
     contribution = True
 
@@ -1771,6 +1777,78 @@ def bulk_committees(request):
 
     filename = 'PACs_{}.csv'.format(timezone.now().isoformat())
     
+    return make_response(copy, filename)
+
+def bulk_lobbyists(request):
+    '''
+    Return a CSV containing all Lobbyists.
+    '''
+    copy = '''
+        SELECT
+            lobbyist.id,
+            lobbyist.date_added,
+            lobbyist.date_updated,
+            lobbyist.prefix,
+            lobbyist.first_name,
+            lobbyist.middle_name,
+            lobbyist.last_name,
+            lobbyist.suffix,
+            lobbyist.email,
+            lobbyist.phone,
+            lobbyist.registration_date,
+            lobbyist.termination_date,
+            lobbyist.entity_id
+        FROM camp_fin_lobbyist AS lobbyist
+        WHERE lobbyist.registration_date >= '2010-01-01'
+        ORDER BY lobbyist.id
+    '''
+
+    filename = 'Lobbyists_{}.csv'.format(timezone.now().isoformat())
+
+    return make_response(copy, filename)
+
+def bulk_employers(request):
+    copy = '''
+        SELECT
+            org.id,
+            org.date_added,
+            org.date_updated,
+            org.name,
+            org.email,
+            org.phone,
+            org.entity_id
+        FROM camp_fin_organization AS org
+        WHERE org.date_added >= '2010-01-01'
+        ORDER BY org.id
+    '''
+
+    filename = 'Employers_{}.csv'.format(timezone.now().isoformat())
+
+    return make_response(copy, filename)
+
+def bulk_employments(request):
+    copy = '''
+        SELECT
+            emp.id,
+            emp.date_added,
+            emp.year,
+            emp.organization_id,
+            org.name AS organization_name,
+            emp.lobbyist_id,
+            lobbyist.first_name AS lobbyist_first_name,
+            lobbyist.middle_name AS lobbyist_middle_name,
+            lobbyist.last_name AS lobbyist_last_name
+        FROM camp_fin_lobbyistemployer AS emp
+        JOIN camp_fin_lobbyist AS lobbyist
+          ON emp.lobbyist_id = lobbyist.id
+        JOIN camp_fin_organization AS org
+          ON emp.organization_id = org.id
+        WHERE year >= '2010'
+        ORDER BY emp.id
+    '''
+
+    filename = 'Lobbyist_Employment_History_{}.csv'.format(timezone.now().isoformat())
+
     return make_response(copy, filename)
 
 def four_oh_four(request):

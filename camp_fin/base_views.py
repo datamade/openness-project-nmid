@@ -92,6 +92,10 @@ class TransactionDetail(DetailView):
         return context
 
 
+class LobbyistTransactionBaseViewSet(viewsets.ViewSet):
+    pass
+
+
 class TransactionDownloadViewSet(viewsets.ViewSet):
     '''
     Base viewset for returning bulk downloads of contributions and expenditures
