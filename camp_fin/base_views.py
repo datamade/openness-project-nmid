@@ -114,7 +114,7 @@ class TransactionDownload(viewsets.ViewSet):
             if request.GET.get(param):
                 # Found a valid URL param; use this model to find the entity ID 
                 obj_id = request.GET.get(param)
-                obj = self.model.objects.get(id=obj_id)
+                obj = model.objects.get(id=obj_id)
                 self.entity_name = getattr(obj, name_attr)
                 entity = obj.entity
                 return entity.id
