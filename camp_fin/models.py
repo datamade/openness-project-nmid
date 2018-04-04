@@ -1165,9 +1165,9 @@ class LobbyistMethodMixin(object):
         else:
             return []
 
-    def get_transactions(self, order_by='amount', ordering='desc', ttype='contribution'):
+    def transaction_query(self, order_by='amount', ordering='desc', ttype='contribution', bulk=False):
         '''
-        Base method for getting transactions (contributions and expenditures)
+        Return a query we can use to get transactions (contributions and expenditures)
         for this entity.
         '''
         # Check params for validity
@@ -1175,8 +1175,7 @@ class LobbyistMethodMixin(object):
                             'expenditure_purpose', 'received_date']
         assert ordering in ['asc', 'desc']
         assert ttype in ['contribution', 'expenditure']
-
-        entity_id = self.entity_id
+        assert bulk in [True, False]  # Whether or not this is a bulk download
 
         get_transactions = '''
             SELECT
@@ -1192,8 +1191,12 @@ class LobbyistMethodMixin(object):
               ON trans.lobbyist_report_id = report.id
             JOIN camp_fin_lobbyisttransactiontype ttype
               ON trans.lobbyist_transaction_type_id = ttype.id
-            WHERE entity_id = %s
         '''
+
+        if not bulk:
+            get_transactions += '''
+                WHERE entity_id = %s
+            '''
 
         if ttype == 'contribution':
             # Although we don't have access to that table, you can tell that
@@ -1210,8 +1213,21 @@ class LobbyistMethodMixin(object):
             ORDER BY {0} {1}
         '''.format(order_by, ordering)
 
+        return get_transactions
+
+    def get_transactions(self, order_by='amount', ordering='desc', ttype='contribution', bulk=False):
+        '''
+        use `transaction_query` to generate a list of transactions (contributions
+        and expenditures) for this entity.
+        '''
+        query = self.transaction_query(order_by, ordering, ttype, bulk)
+
         with connection.cursor() as cursor:
-            cursor.execute(get_transactions, [entity_id])
+            if bulk:
+                # Bulk download -- don't specify entity ID
+                cursor.execute(query)
+            else:
+                cursor.execute(query, [self.entity_id])
 
             columns = [c[0] for c in cursor.description]
             trans_tuple = namedtuple('Transaction', columns)

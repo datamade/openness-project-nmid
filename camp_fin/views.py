@@ -34,7 +34,7 @@ from .models import Candidate, Office, Transaction, Campaign, Filing, PAC, \
     Organization
 from .base_views import (PaginatedList, TransactionDetail, TransactionBaseViewSet, \
                          TopMoneyView, TopEarnersBase, PagesMixin, TransactionDownloadViewSet, \
-                         Echo, iterate_cursor, LobbyistTransactionBaseViewSet)
+                         Echo, iterate_cursor, LobbyistTransactionDownloadViewSet)
 from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer, \
     TransactionSearchSerializer, CandidateSearchSerializer, PACSearchSerializer, \
     LoanTransactionSerializer, TreasurerSearchSerializer, DataTablesPagination, \
@@ -1341,11 +1341,17 @@ class ExpenditureDownloadViewSet(TransactionDownloadViewSet):
     '''
     contribution = False
 
-class LobbyistContributionViewSet(LobbyistTransactionBaseViewSet):
-    pass
+class LobbyistContributionViewSet(LobbyistTransactionDownloadViewSet):
+    '''
+    Viewset for Lobbyist contribution API, returning bulk downloads as CSV.
+    '''
+    contribution = True
 
-class LobbyistExpenditureViewSet(LobbyistTransactionBaseViewSet):
-    pass
+class LobbyistExpenditureViewSet(LobbyistTransactionDownloadViewSet):
+    '''
+    Viewset for Lobbyist expenditure API, returning bulk downloads as CSV.
+    '''
+    contribution = False
 
 class TopDonorsView(TopMoneyView):
     contribution = True
