@@ -12,7 +12,7 @@ from django.utils.text import slugify
 from rest_framework import viewsets, filters, renderers
 from rest_framework.response import Response
 
-from camp_fin.models import Transaction, Candidate, PAC, Entity
+from camp_fin.models import Transaction, Candidate, PAC, Entity, Lobbyist, Organization
 from camp_fin.api_parts import (TransactionSerializer, TopMoneySerializer,
                                 SearchCSVRenderer, DataTablesPagination,
                                 TransactionCSVRenderer)
@@ -92,40 +92,138 @@ class TransactionDetail(DetailView):
         return context
 
 
-class TransactionDownloadViewSet(viewsets.ViewSet):
+class TransactionDownload(viewsets.ViewSet):
+    '''
+    Some common methods for downloading Transactions as CSV.
+    '''
+    # Viewset class attributes
+    serializer_class = TransactionSerializer
+    renderer_classes = (TransactionCSVRenderer,)
+    allowed_methods = ['GET']
+
+    # Transaction download class attributes
+    contribution = True
+    entity_types = [(None, None, None)]
+
+    def get_entity_id(self, request):
+        '''
+        Given an `entity_types` tuple of (param, model, name_attr) pairs, parse URL params
+        and determine which object to use for finding the entity ID.
+        '''
+        for param, model, name_attr in self.entity_types:
+            if request.GET.get(param):
+                # Found a valid URL param; use this model to find the entity ID 
+                obj_id = request.GET.get(param)
+                obj = model.objects.get(id=obj_id)
+                self.entity_name = getattr(obj, name_attr)
+                entity = obj.entity
+                return entity.id
+
+        # No valid URL params found; default to bulk download
+        self.entity_name = 'bulk'
+        return None
+
+    def transaction_query(self, entity_id=None):
+        '''
+        Method to query transactions should be implemented on the inheriting
+        class.
+        '''
+        pass
+
+    def list(self, request):
+        '''
+        Generate the response to a request.
+        '''
+        self.entity_id = self.get_entity_id(request)
+
+        if self.contribution is True:
+            ttype = 'contributions'
+        else:
+            ttype = 'expenditures'
+
+        query = self.transaction_query(self.entity_id)
+
+        cursor = connection.cursor()
+
+        if self.entity_id:
+            cursor.execute(query, [self.entity_id])
+        else:
+            cursor.execute(query)
+
+        header = [c[0] for c in cursor.description]
+
+        streaming_buffer = Echo()
+        writer = csv.writer(streaming_buffer)
+        writer.writerow(header)
+
+        response = StreamingHttpResponse((writer.writerow(row) for row in iterate_cursor(header, cursor)),
+                                        content_type='text/csv')
+
+        # Add appropriate filename and header for CSV response
+        filename = '{0}-{1}-{2}.csv'.format(ttype,
+                                            slugify(self.entity_name),
+                                            timezone.now().isoformat())
+
+        response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
+
+        return response
+
+
+class LobbyistTransactionDownloadViewSet(TransactionDownload):
+    '''
+    Base viewset for returning bulk downloads of Lobbyist contributions and
+    expenditures as CSV.
+    '''
+    # Override transaction download class attributes
+    entity_types = [
+        # URL param / model / attribute to use to access the entity name
+        ('lobbyist_id', Lobbyist, 'full_name'),
+        ('organization_id', Organization, 'name'),
+    ]
+
+    def transaction_query(self, entity_id=None):
+        '''
+        Return a query corresponding to the request, either for transactions by
+        lobbyist/employer or for all transactions.
+        '''
+        # Determine whether or not this is a bulk download
+        if entity_id:
+            bulk = False
+        else:
+            bulk = True
+
+        if self.contribution:
+            ttype = 'contribution'
+        else:
+            ttype = 'expenditure'
+
+        # Get a model instance for this download
+        instance = None
+        if entity_id:
+            for model in (Lobbyist, Organization):
+                try:
+                    instance = model.objects.get(entity_id=entity_id)
+                except model.DoesNotExist:
+                    continue
+        else:
+            # All Lobbyist objects can perform bulk downloads, so just get the
+            # first one
+            instance = Lobbyist.objects.first()
+
+        # Generate the query
+        return instance.transaction_query(ttype=ttype, bulk=bulk)
+
+class TransactionDownloadViewSet(TransactionDownload):
     '''
     Base viewset for returning bulk downloads of contributions and expenditures
     as CSV.
     '''
-    serializer_class = TransactionSerializer
-    renderer_classes = (TransactionCSVRenderer,)
-    contribution = True
-
-    allowed_methods = ['GET']
-
-    def get_entity_id(self, request):
-        '''
-        Retrieve the entity ID from a request. Can be tied to either the 'candidate_id'
-        or 'pac_id' param, depending on the type of request.
-        '''
-        if request.GET.get('candidate_id'):
-            candidate_id = request.GET.get('candidate_id')
-            candidate = Candidate.objects.get(id=candidate_id)
-            self.entity_name = candidate.full_name
-            entity = candidate.entity
-            return entity.id
-
-        elif request.GET.get('pac_id'):
-            pac_id = request.GET.get('pac_id')
-            pac = PAC.objects.get(id=pac_id)
-            self.entity_name = pac.name
-            entity = pac.entity
-            return entity.id
-
-        else:
-            # Bulk download
-            self.entity_name = 'bulk'
-            return None
+    # Override transaction download class attributes
+    entity_types = [
+        # URL param / model / attribute to use to access the entity name
+        ('candidate_id', Candidate, 'full_name'),
+        ('pac_id', PAC, 'name'),
+    ]
 
     def transaction_query(self, entity_id=None):
         '''
@@ -187,43 +285,6 @@ class TransactionDownloadViewSet(viewsets.ViewSet):
 
         return base_query
 
-    def list(self, request):
-        '''
-        Generate the response to a request.
-        '''
-        self.entity_id = self.get_entity_id(request)
-
-        if self.contribution is True:
-            ttype = 'contributions'
-        else:
-            ttype = 'expenditures'
-
-        query = self.transaction_query(self.entity_id)
-
-        cursor = connection.cursor()
-
-        if self.entity_id:
-            cursor.execute(query, [self.entity_id])
-        else:
-            cursor.execute(query)
-
-        header = [c[0] for c in cursor.description]
-
-        streaming_buffer = Echo()
-        writer = csv.writer(streaming_buffer)
-        writer.writerow(header)
-
-        response = StreamingHttpResponse((writer.writerow(row) for row in iterate_cursor(header, cursor)),
-                                        content_type='text/csv')
-
-        # Add appropriate filename and header for CSV response
-        filename = '{0}-{1}-{2}.csv'.format(ttype,
-                                            slugify(self.entity_name),
-                                            timezone.now().isoformat())
-
-        response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
-
-        return response
 
 class TransactionBaseViewSet(viewsets.ModelViewSet):
     serializer_class = TransactionSerializer

@@ -26,8 +26,9 @@ from camp_fin.views import IndexView, CandidateList, CandidateDetail, \
     TopExpensesView, CommitteeList, CommitteeDetail, ContributionDetail, DownloadView, \
     ExpenditureDetail, SearchView, SearchAPIView, DonationsView, RacesView, RaceDetail, \
     LoanViewSet, TopEarnersView, TopEarnersWidgetView, AboutView, \
-    flush_cache, bulk_candidates, bulk_committees, \
-    OrganizationList, OrganizationDetail
+    flush_cache, bulk_candidates, bulk_committees, bulk_lobbyists, bulk_employers, \
+    bulk_employments, OrganizationList, OrganizationDetail, LobbyistContributionViewSet, \
+    LobbyistExpenditureViewSet
 
 router = routers.DefaultRouter()
 router.register(r'contributions', ContributionViewSet, base_name='contributions')
@@ -39,6 +40,8 @@ router.register(r'top-donors', TopDonorsView, base_name='top-donors')
 router.register(r'top-expenses', TopExpensesView, base_name='top-expenses')
 router.register(r'search', SearchAPIView, base_name='search')
 router.register(r'loans', LoanViewSet, base_name='loan')
+router.register(r'bulk/lobbyist-contributions', LobbyistContributionViewSet, base_name='bulk-lobbyist-contributions')
+router.register(r'bulk/lobbyist-expenditures', LobbyistExpenditureViewSet, base_name='bulk-lobbyist-expenditures')
 
 handler404 = 'camp_fin.views.four_oh_four'
 handler500 = 'camp_fin.views.five_hundred'
@@ -66,6 +69,9 @@ urlpatterns = [
     url(r'^transactions/$', LobbyistTransactionList.as_view(), name='lobbyist-transaction-list'),
     url(r'^api/bulk/candidates/$', bulk_candidates, name='bulk-candidates'),
     url(r'^api/bulk/committees/$', bulk_committees, name='bulk-committees'),
+    url(r'^api/bulk/lobbyists/$', bulk_lobbyists, name='bulk-lobbyists'),
+    url(r'^api/bulk/employers/$', bulk_employers, name='bulk-employers'),
+    url(r'^api/bulk/employments/$', bulk_employments, name='bulk-employments'),
     url(r'^api/', include(router.urls)),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^ckeditor/', include('ckeditor_uploader.urls')),
