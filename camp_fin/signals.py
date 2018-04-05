@@ -7,5 +7,4 @@ def clear_cache_on_update(sender, **kwargs):
     '''
     Clear the cache after any model has been saved or deleted.
     '''
-    print('Clearing cache after model update...')
     call_command('clear_cache')

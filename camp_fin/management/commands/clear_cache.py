@@ -17,6 +17,5 @@ class Command(BaseCommand):
         try:
             assert settings.CACHES
             cache.clear()
-            self.stdout.write('Your cache has been cleared!\n')
         except AttributeError:
             raise CommandError('You have no cache configured!\n')

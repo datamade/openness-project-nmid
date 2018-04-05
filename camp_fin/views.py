@@ -1157,7 +1157,11 @@ class CandidateDetail(CommitteeDetailBaseView):
                                            .first()
 
         context['latest_campaign'] = latest_campaign
-        context['latest_race'] = latest_campaign.active_race
+
+        if latest_campaign:
+            context['latest_race'] = latest_campaign.active_race
+
+        context['campaigns'] = context['object'].campaign_set.all()
 
         context['stories'] = self.object.story_set.all()
         
