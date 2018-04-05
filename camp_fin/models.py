@@ -1165,7 +1165,8 @@ class LobbyistMethodMixin(object):
         else:
             return []
 
-    def transaction_query(self, order_by='amount', ordering='desc', ttype='contribution', bulk=False):
+    def transaction_query(self, order_by='amount', ordering='desc', ttype='contribution',
+                          bulk=False, start_date=None, end_date=None):
         '''
         Return a query we can use to get transactions (contributions and expenditures)
         for this entity.
@@ -1207,6 +1208,17 @@ class LobbyistMethodMixin(object):
         else:
             get_transactions += '''
                 AND ttype.group_id = 1
+            '''
+
+        # Optional params for external querying methods
+        if start_date:
+            get_transactions += '''
+                AND trans.received_date >= %s
+            '''
+
+        if end_date:
+            get_transactions += '''
+                AND trans.received_date <= %s
             '''
 
         get_transactions += '''

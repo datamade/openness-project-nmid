@@ -1,8 +1,8 @@
 <form action="{{ action }}" method='GET' class='col-sm-12'>
     <div class="input-group" id="date-search">
         <span class="input-group-addon" id="sizing-addon3"><i class="fa fa-calendar" aria-hidden="true"></i></span>
-        <input type="text" id="from" name="from" class="form-control date-filter" placeholder="Select start date..." value='{{ start_date|date:"Y-m-d" }}'>
-        <input type="text" id="to" name="to" class="form-control date-filter" placeholder="Select end date..." value='{{ end_date|date:"Y-m-d" }}'>
+        <input type="text" id="{{ from_id }}" name="from" class="form-control date-filter from" placeholder="Select start date..." value='{{ start_date|date:"Y-m-d" }}'>
+        <input type="text" id="{{ to_id }}" name="to" class="form-control date-filter to" placeholder="Select end date..." value='{{ end_date|date:"Y-m-d" }}'>
         <span class="input-group-btn">
             <button class="btn btn-default btn-date" id="btn-search" type="submit"><i class="{{ icon }}" aria-hidden="true"></i> <span class='hidden-sm hidden-xs'>{{ title }}</span></button>
         </span>

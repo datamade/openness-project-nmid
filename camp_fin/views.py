@@ -1721,10 +1721,15 @@ class TopEarnersView(PaginatedList):
 class TopEarnersWidgetView(TopEarnersBase):
     template_name = 'camp_fin/widgets/top-earners.html'
 
-def make_response(query, filename):
+def make_response(query, filename, args=[]):
 
     cursor = connection.cursor()
-    cursor.execute(query)
+
+    if args:
+        cursor.execute(query, args)
+    else:
+        cursor.execute(query)
+
     header = [c[0] for c in cursor.description]
     
     streaming_buffer = Echo()
@@ -1768,12 +1773,31 @@ def bulk_candidates(request):
         LEFT JOIN camp_fin_division AS division
           ON campaign.division_id = division.id
         WHERE campaign.date_added >= '2010-01-01'
+    '''
+
+    args = []
+
+    if request.GET.get('from'):
+        start_date = request.GET.get('from')
+        args.append(start_date)
+        copy += '''
+            AND campaign.date_added >= %s
+        '''
+
+    if request.GET.get('to'):
+        end_date = request.GET.get('to')
+        args.append(end_date)
+        copy += '''
+            AND campaign.date_added <= %s
+        '''
+
+    copy += '''
         ORDER BY candidate.id, election.year DESC
     '''
 
     filename = 'Candidates_{}.csv'.format(timezone.now().isoformat())
     
-    return make_response(copy, filename)
+    return make_response(copy, filename, args)
 
 def bulk_committees(request):
     copy = ''' 
@@ -1786,12 +1810,31 @@ def bulk_committees(request):
         JOIN camp_fin_filing AS filing
           ON filing.entity_id = pac.entity_id
         WHERE filing.date_added >= '2010-01-01'
+    '''
+
+    args = []
+
+    if request.GET.get('from'):
+        start_date = request.GET.get('from')
+        args.append(start_date)
+        copy += '''
+            AND filing.date_added >= %s
+        '''
+
+    if request.GET.get('to'):
+        end_date = request.GET.get('to')
+        args.append(end_date)
+        copy += '''
+            AND filing.date_added <= %s
+        '''
+
+    copy += '''
         ORDER BY pac.id
     '''
 
     filename = 'PACs_{}.csv'.format(timezone.now().isoformat())
     
-    return make_response(copy, filename)
+    return make_response(copy, filename, args)
 
 def bulk_lobbyists(request):
     '''
@@ -1814,12 +1857,31 @@ def bulk_lobbyists(request):
             lobbyist.entity_id
         FROM camp_fin_lobbyist AS lobbyist
         WHERE lobbyist.registration_date >= '2010-01-01'
+    '''
+
+    args = []
+
+    if request.GET.get('from'):
+        start_date = request.GET.get('from')
+        args.append(start_date)
+        copy += '''
+            AND lobbyist.registration_date >= %s
+        '''
+
+    if request.GET.get('to'):
+        end_date = request.GET.get('to')
+        args.append(end_date)
+        copy += '''
+            AND lobbyist.registration_date <= %s
+        '''
+
+    copy += '''
         ORDER BY lobbyist.id
     '''
 
     filename = 'Lobbyists_{}.csv'.format(timezone.now().isoformat())
 
-    return make_response(copy, filename)
+    return make_response(copy, filename, args)
 
 def bulk_employers(request):
     copy = '''
@@ -1833,12 +1895,31 @@ def bulk_employers(request):
             org.entity_id
         FROM camp_fin_organization AS org
         WHERE org.date_added >= '2010-01-01'
+    '''
+
+    args = []
+
+    if request.GET.get('from'):
+        start_date = request.GET.get('from')
+        args.append(start_date)
+        copy += '''
+            AND org.date_added >= %s
+        '''
+
+    if request.GET.get('to'):
+        end_date = request.GET.get('to')
+        args.append(end_date)
+        copy += '''
+            AND org.date_added <= %s
+        '''
+
+    copy += '''
         ORDER BY org.id
     '''
 
     filename = 'Employers_{}.csv'.format(timezone.now().isoformat())
 
-    return make_response(copy, filename)
+    return make_response(copy, filename, args)
 
 def bulk_employments(request):
     copy = '''
@@ -1858,12 +1939,39 @@ def bulk_employments(request):
         JOIN camp_fin_organization AS org
           ON emp.organization_id = org.id
         WHERE year >= '2010'
+    '''
+
+    args = []
+
+    if request.GET.get('from'):
+        start_date = request.GET.get('from')
+
+        # Only get the year
+        start_date = start_date[:4]
+
+        args.append(start_date)
+        copy += '''
+            AND year >= %s
+        '''
+
+    if request.GET.get('to'):
+        end_date = request.GET.get('to')
+
+        # Only get the year
+        end_date = end_date[:4]
+
+        args.append(end_date)
+        copy += '''
+            AND year <= %s
+        '''
+
+    copy += '''
         ORDER BY emp.id
     '''
 
     filename = 'Lobbyist_Employment_History_{}.csv'.format(timezone.now().isoformat())
 
-    return make_response(copy, filename)
+    return make_response(copy, filename, args)
 
 def four_oh_four(request):
     return render(request, '404.html', {}, status=404)

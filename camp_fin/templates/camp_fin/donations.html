@@ -13,7 +13,7 @@
           <h1><i class='fa fa-fw fa-dollar'></i> Donations</h1>
         </div>
         <div class="col-md-6">
-            {% with action='/donations' icon='fa fa-search' title='Search '%}
+            {% with action='/donations' icon='fa fa-search' title='Search' from_id='from' to_id='to' %}
                 {% include 'camp_fin/widgets/calendar-form.html' %}
             {% endwith %}
         </div>
