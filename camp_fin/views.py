@@ -69,6 +69,10 @@ class DownloadView(PagesMixin):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        # Download defaults
+        context['start_date'] = datetime.strptime('2010-01-01', '%Y-%m-%d').date()
+        context['end_date'] = datetime.today().date()
+
         seo = {}
         seo.update(settings.SITE_META)
 

@@ -9,23 +9,136 @@
             <h1 id='download'><i class='fa fa-fw fa-download'></i> Data downloads</h1>
             <hr />
             {{ page.text|safe }}
-            <h3>Candidates and committees</h3>
-            <p>
-                <a href="/api/bulk/contributions/" class="btn btn-default"><i class='fa fa-fw fa-download'></i> Contributions</a>
-                <a href="/api/bulk/expenditures/" class="btn btn-default"><i class='fa fa-fw fa-download'></i> Expenditures</a>
-                <a href="/api/bulk/candidates/" class="btn btn-default"><i class='fa fa-fw fa-download'></i> Candidates</a>
-                <a href="/api/bulk/committees/" class="btn btn-default"><i class='fa fa-fw fa-download'></i> PACs</a>
-            </p>
+            <h3>
+                <i class="fa fa-fw fa-users"></i>
+                    Candidates and committees
+            </h3>
+            <br/>
+
+            <div class="row">
+                <h4 class="col-xs-12">
+                    <i class="fa fa-fw fa-plus-circle"></i>
+                    Contributions
+                </h4>
+                {% with action='/api/bulk/contributions/' icon='fa fa-fw fa-download' title='Contributions' %}
+                    {% include 'camp_fin/widgets/calendar-form.html' %}
+                {% endwith %}
+                <div class="col-xs-12">
+                    <br/>
+                </div>
+            </div>
+
+            <div class="row">
+                <h4 class="col-xs-12">
+                    <i class="fa fa-fw fa-minus-circle"></i>
+                    Expenditures
+                </h4>
+                {% with action='/api/bulk/expenditures/' icon='fa fa-fw fa-download' title='Expenditures' %}
+                    {% include 'camp_fin/widgets/calendar-form.html' %}
+                {% endwith %}
+                <div class="col-xs-12">
+                    <br/>
+                </div>
+            </div>
+
+            <div class="row">
+                <h4 class="col-xs-12">
+                    <i class="fa fa-fw fa-user"></i>
+                    Candidates
+                </h4>
+                {% with action='/api/bulk/candidates/' icon='fa fa-fw fa-download' title='Candidates' %}
+                    {% include 'camp_fin/widgets/calendar-form.html' %}
+                {% endwith %}
+                <div class="col-xs-12">
+                    <br/>
+                </div>
+            </div>
+
+            <div class="row">
+                <h4 class="col-xs-12">
+                    <i class="fa fa-fw fa-users"></i>
+                    PACs
+                </h4>
+                {% with action='/api/bulk/committees/' icon='fa fa-fw fa-download' title='PACs' %}
+                    {% include 'camp_fin/widgets/calendar-form.html' %}
+                {% endwith %}
+                <div class="col-xs-12">
+                    <br/>
+                </div>
+            </div>
+
             <br />
-            <h3>Lobbyists and lobbyist employers</h3>
-            <p>
-                <a href="/api/bulk/lobbyist-contributions/" class="btn btn-default"><i class='fa fa-fw fa-download'></i> Contributions</a>
-                <a href="/api/bulk/lobbyist-expenditures/" class="btn btn-default"><i class='fa fa-fw fa-download'></i> Expenditures</a>
-                <a href="{% url 'bulk-lobbyists' %}" class="btn btn-default"><i class='fa fa-fw fa-download'></i> Lobbyists</a>
-                <a href="{% url 'bulk-employers' %}" class="btn btn-default"><i class='fa fa-fw fa-download'></i> Employers</a>
-                <a href="{% url 'bulk-employments' %}" class="btn btn-default"><i class='fa fa-fw fa-download'></i> Employment histories</a>
-            </p>
-            <br />
+            <h3>
+                <i class="fa fa-fw fa-university"></i>
+                Lobbyists and lobbyist employers
+            </h3>
+            <br/>
+
+            <div class="row">
+                <h4 class="col-xs-12">
+                    <i class="fa fa-fw fa-plus-circle"></i>
+                    Contributions
+                </h4>
+                {% with action='/api/bulk/lobbyist-contributions/' icon='fa fa-fw fa-download' title='Contributions' %}
+                    {% include 'camp_fin/widgets/calendar-form.html' %}
+                {% endwith %}
+                <div class="col-xs-12">
+                    <br/>
+                </div>
+            </div>
+
+            <div class="row">
+                <h4 class="col-xs-12">
+                    <i class="fa fa-fw fa-minus-circle"></i>
+                    Expenditures
+                </h4>
+                {% with action='/api/bulk/lobbyist-expenditures/' icon='fa fa-fw fa-download' title='Expenditures' %}
+                    {% include 'camp_fin/widgets/calendar-form.html' %}
+                {% endwith %}
+                <div class="col-xs-12">
+                    <br/>
+                </div>
+            </div>
+
+            <div class="row">
+                <h4 class="col-xs-12">
+                    <i class="fa fa-fw fa-user"></i>
+                    Lobbyists
+                </h4>
+                {% with action='/api/bulk/lobbyists/' icon='fa fa-fw fa-download' title='Lobbyists' %}
+                    {% include 'camp_fin/widgets/calendar-form.html' %}
+                {% endwith %}
+                <div class="col-xs-12">
+                    <br/>
+                </div>
+            </div>
+
+            <div class="row">
+                <h4 class="col-xs-12">
+                    <i class="fa fa-fw fa-users"></i>
+                    Lobbyist employers
+                </h4>
+                {% with action='/api/bulk/employers/' icon='fa fa-fw fa-download' title='Lobbyist employers' %}
+                    {% include 'camp_fin/widgets/calendar-form.html' %}
+                {% endwith %}
+                <div class="col-xs-12">
+                    <br/>
+                </div>
+            </div>
+
+            <div class="row">
+                <h4 class="col-xs-12">
+                    <i class="fa fa-fw fa-clock-o"></i>
+                    Employment histories
+                </h4>
+                {% with action='/api/bulk/employments/' icon='fa fa-fw fa-download' title='Employment histories' %}
+                    {% include 'camp_fin/widgets/calendar-form.html' %}
+                {% endwith %}
+                <div class="col-xs-12">
+                    <br/>
+                </div>
+            </div>
+            <br/>
         </div>
     </div>
 </div>
