@@ -123,7 +123,7 @@ class TransactionDownload(viewsets.ViewSet):
         self.entity_name = 'bulk'
         return None
 
-    def transaction_query(self, entity_id=None):
+    def transaction_query(self, entity_id=None, start_date=None, end_date=None):
         '''
         Method to query transactions should be implemented on the inheriting
         class.
@@ -141,12 +141,25 @@ class TransactionDownload(viewsets.ViewSet):
         else:
             ttype = 'expenditures'
 
-        query = self.transaction_query(self.entity_id)
+        start_date = None
+        if request.GET.get('from'):
+            print('Got from:', request.GET.get('from'))
+            start_date = request.GET.get('from')
+
+        end_date = None
+        if request.GET.get('to'):
+            print('Got to:', request.GET.get('to'))
+            end_date = request.GET.get('to')
+
+        query = self.transaction_query(self.entity_id, start_date, end_date)
 
         cursor = connection.cursor()
 
-        if self.entity_id:
-            cursor.execute(query, [self.entity_id])
+        # Format args for the query
+        args = [arg for arg in (self.entity_id, start_date, end_date) if arg is not None]
+
+        if args:
+            cursor.execute(query, args)
         else:
             cursor.execute(query)
 
@@ -181,7 +194,7 @@ class LobbyistTransactionDownloadViewSet(TransactionDownload):
         ('organization_id', Organization, 'name'),
     ]
 
-    def transaction_query(self, entity_id=None):
+    def transaction_query(self, entity_id=None, start_date=None, end_date=None):
         '''
         Return a query corresponding to the request, either for transactions by
         lobbyist/employer or for all transactions.
@@ -211,7 +224,7 @@ class LobbyistTransactionDownloadViewSet(TransactionDownload):
             instance = Lobbyist.objects.first()
 
         # Generate the query
-        return instance.transaction_query(ttype=ttype, bulk=bulk)
+        return instance.transaction_query(ttype=ttype, bulk=bulk, start_date=start_date, end_date=end_date)
 
 class TransactionDownloadViewSet(TransactionDownload):
     '''
@@ -225,7 +238,7 @@ class TransactionDownloadViewSet(TransactionDownload):
         ('pac_id', PAC, 'name'),
     ]
 
-    def transaction_query(self, entity_id=None):
+    def transaction_query(self, entity_id=None, start_date=None, end_date=None):
         '''
         Return a query corresponding to the request, either for transactions by
         candidate/PAC or for all transactions.
@@ -272,13 +285,23 @@ class TransactionDownloadViewSet(TransactionDownload):
             ) AS entity
               ON f.entity_id = entity.{subj_type}_entity_id
             WHERE tt.contribution = {contribution_bool}
-              AND fp.filing_date >= '2010-01-01'
         '''.format(contribution_bool=contribution_bool,
                    subj_type=subj_type)
 
+        # Add optional params
         if entity_id:
             base_query += '''
                 AND entity_id = %s
+            '''
+
+        if start_date:
+            base_query += '''
+                AND fp.filing_date >= %s
+            '''
+
+        if end_date:
+            base_query += '''
+                AND fp.filing_date <= %s
             '''
 
         base_query += '''ORDER BY transaction.received_date'''
