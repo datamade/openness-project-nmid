@@ -52,28 +52,28 @@
                     <tr>
                         <td>
                             <i class="fa fa-fw fa-usd"></i>
-                            Total contributions
+                            Cash donations
                         </td>
                         <td class="text-right">
-                            <span class="green visible-xs visible-sm">
-                                + {{ lobbyist.total_contributions|format_money_short }}
+                            <span class="visible-xs visible-sm">
+                                {{ lobbyist.total_contributions|format_money_short }}
                             </span>
-                            <span class="green hidden-xs hidden-sm">
-                                + {{ lobbyist.total_contributions|format_money }}
+                            <span class="hidden-xs hidden-sm">
+                                {{ lobbyist.total_contributions|format_money }}
                             </span>
                         </td>
                     </tr>
                     <tr>
                         <td>
-                            <i class="fa fa-fw fa-usd"></i>
-                            Total expenditures
+                            <i class="fa fa-fw fa-gift"></i>
+                            Gifts
                         </td>
                         <td class="text-right">
-                            <span class="red visible-xs visible-sm">
-                                - {{ lobbyist.total_expenditures|format_money_short }}
+                            <span class="visible-xs visible-sm">
+                                {{ lobbyist.total_expenditures|format_money_short }}
                             </span>
-                            <span class="red hidden-xs hidden-sm">
-                                - {{ lobbyist.total_expenditures|format_money }}
+                            <span class="hidden-xs hidden-sm">
+                                {{ lobbyist.total_expenditures|format_money }}
                             </span>
                         </td>
                     </tr>
