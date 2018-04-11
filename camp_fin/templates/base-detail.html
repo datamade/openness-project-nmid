@@ -10,7 +10,7 @@
 <div class='row'>
     <div class="col-sm-6">
         <h3><i class="fa fa-fw fa-usd"></i>Cash and spending
-            <small>Reported on {{ latest_filing.date_closed | date:"M j, Y"}}</small>
+            <small>from {{ latest_filing.filing_period.initial_date | date:"M j, Y" }} to {{ latest_filing.date_closed | date:"M j, Y" }}</small>
         </h3>
             <table class="table table-striped">
                 <tbody>
