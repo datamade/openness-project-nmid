@@ -36,7 +36,6 @@
                             <span class="green">
                                 {{ latest_filing.total_contributions|format_money }}
                             </span>
-                            {% if is_steve_pearce %}<span class="big red">*</span>{% endif %}
                         </td>
                     </tr>
                     {% if latest_filing.total_loans > 0 %}
@@ -94,15 +93,6 @@
                     </tr>
                 </tbody>
             </table>
-            {% if is_steve_pearce %}
-                <p class="small">
-                    <span class="big red">*</span>
-                    U.S. District Court Judge Judith Herrera has ruled that Steve Pearce
-                    can bring roughly a million federal campaign dollars into this race.
-                    As such, his total funds raised is an underestimate until his next
-                    reports are filed with the Secretary of State.
-                </p>
-            {% endif %}
             {% if latest_filing.total_unpaid_debts > 0 or latest_filing.total_debt_paid > 0 or latest_filing.total_loans_forgiven > 0 %}
                 <br/>
                 <h3><i class="fa fa-fw fa-credit-card"></i> Debts
