@@ -25,7 +25,7 @@ class Candidate(models.Model):
     email = models.CharField(max_length=50, null=True)
     date_updated = models.DateTimeField(null=True)
     qual_candidate_id = models.IntegerField(null=True)
-    deceased = models.CharField(max_length=3)
+    deceased = models.CharField(max_length=3, null=True)
     
     full_name = models.CharField(max_length=500, null=True)
     
@@ -105,7 +105,7 @@ class Campaign(models.Model):
     biannual = models.NullBooleanField()
     from_campaign = models.ForeignKey('Campaign', db_constraint=False, null=True)
     active_race = models.ForeignKey('Race', db_constraint=False, null=True)
-    race_status = models.CharField(max_length=25, default='active', choices=status_choices)
+    race_status = models.CharField(max_length=25, default='active', choices=status_choices, blank=True, null=True)
 
     def __str__(self):
         office = self.office.description
@@ -728,7 +728,7 @@ class FilingPeriod(models.Model):
     regular_filing_period = models.ForeignKey('RegularFilingPeriod', db_constraint=False, null=True)
     initial_date = models.DateField()
     email_sent_status = models.IntegerField()
-    reminder_sent_status = models.IntegerField()
+    reminder_sent_status = models.IntegerField(blank=True, null=True)
     
     def __str__(self):
         return '{0}/{1} ({2})'.format(self.filing_date.month, 

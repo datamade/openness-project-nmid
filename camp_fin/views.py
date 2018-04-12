@@ -200,7 +200,7 @@ class IndexView(TopEarnersBase, PagesMixin):
         context['candidate_objects'] = candidate_objects
 
         # Race for governor
-        gov_race = Race.objects.filter(office__description='Governor Of New Mexico')\
+        gov_race = Race.objects.filter(office__description='Governor')\
                                .filter(election_season__year=year)\
                                .first()
 
@@ -208,7 +208,7 @@ class IndexView(TopEarnersBase, PagesMixin):
 
         # Hottest races
         filtered_races = Race.objects.filter(election_season__year=year)\
-                                     .exclude(office__description='Governor Of New Mexico')
+                                     .exclude(office__description='Governor')
 
         top_races = sorted([race for race in filtered_races],
                            key=lambda race: race.total_funds,

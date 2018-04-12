@@ -89,6 +89,11 @@ class Command(BaseCommand):
                 num_races += 1
 
             campaign.active_race = race
+
+            # Set any missing race statuses to 'active'
+            if not campaign.race_status:
+                campaign.race_status = 'active'
+
             campaign.save()
 
         msg = 'Created {num_races} races from {num_campaigns} campaigns!'
