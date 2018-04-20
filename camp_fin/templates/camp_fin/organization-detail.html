@@ -21,6 +21,20 @@
             {% endif %}
         </div>
     </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <a href="{% url 'bulk-lobbyist-contributions-list' %}?organization_id={{ organization.id }}" class="btn btn-default"
+               id="contributions-download">
+                <i class="fa fa-fw fa-download"></i>
+                Download cash donations
+            </a>
+            <a href="{% url 'bulk-lobbyist-expenditures-list' %}?organization_id={{ organization.id }}" class="btn btn-default"
+               id="expenditures-download">
+                <i class="fa fa-fw fa-download"></i>
+                Download gifts
+            </a>
+        </div>
+    </div>
     </div>
         <div class="row">
             <div class="col-xs-12 col-sm-6">
@@ -49,9 +63,9 @@
                             </td>
                         </tr>
                         <tr>
-                            <td>
+                            <td class="no-wrap">
                                 <i class="fa fa-fw fa-usd"></i>
-                                Total contributions
+                                Cash donations
                             </td>
                             <td class="text-right">
                                 <span class="green visible-xs visible-sm">
@@ -64,8 +78,8 @@
                         </tr>
                         <tr>
                             <td>
-                                <i class="fa fa-fw fa-usd"></i>
-                                Total expenditures
+                                <i class="fa fa-fw fa-gift"></i>
+                                Gift
                             </td>
                             <td class="text-right">
                                 <span class="red visible-xs visible-sm">
@@ -110,21 +124,90 @@
                 </div>
             </div>
         {% endif %}
-        {% if expenditures %}
+        {% if contributions %}
             <div class="row">
                 <div class="col-xs-12">
                     <h2>
                         <i class="fa fa-fw fa-usd"></i>
-                        Expenditures
+                        Cash donations
+                    </h2>
+                    <table class="table table-striped table-responsive">
+                        <thead>
+                            <tr>
+                                <th class="hidden-xs hidden-sm">Description</th>
+                                <th class="text-right no-wrap">
+                                    <a href="{% url 'organization-detail' organization.slug %}?{% query_transform request contrib_order_by='amount' contrib_sort_order=contrib_toggle_order %}">
+                                        Amount
+                                        {% if contrib_order_by == 'amount' %}
+                                            {{ contrib_sort_order|get_sort_icon|safe }}
+                                        {% endif %}
+                                    </a>
+                                </th>
+                                <th class="no-wrap">
+                                    <a href="{% url 'organization-detail' organization.slug %}?{% query_transform request contrib_order_by='recipient' contrib_sort_order=contrib_toggle_order %}">
+                                        Recipient
+                                        {% if contrib_order_by == 'recipient' %}
+                                            {{ contrib_sort_order|get_sort_icon|safe }}
+                                        {% endif %}
+                                    </a>
+                                </th>
+                                <th class="no-wrap">
+                                    <a href="{% url 'organization-detail' organization.slug %}?{% query_transform request contrib_order_by='received_date' contrib_sort_order=contrib_toggle_order %}">
+                                        Date
+                                        {% if contrib_order_by == 'received_date' %}
+                                            {{ contrib_sort_order|get_sort_icon|safe }}
+                                        {% endif %}
+                                    </a>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in contributions %}
+                                <tr>
+                                    <td class="hidden-xs hidden-sm">{{ transaction.type }}</td>
+                                    <td class="text-right no-wrap">
+                                        <span class="hidden-xs hidden-sm">
+                                            {{ transaction.amount|format_money }}
+                                        </span>
+                                        <span class="visible-xs visible-sm">
+                                            {{ transaction.amount|format_money_short }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if transaction.recipient %}
+                                            <a href="{% url 'search' %}?term={{ transaction.recipient|urlencode }}">
+                                                {{ transaction.recipient }}
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ transaction.date|date }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="row">
+                <div class="text-center">
+                    {% bootstrap_paginate contributions url_param_name='contrib_page' range=10 %}
+                </div>
+            </div>
+        {% endif %}
+        {% if expenditures %}
+            <div class="row">
+                <div class="col-xs-12">
+                    <h2>
+                        <i class="fa fa-fw fa-gift"></i>
+                        Gifts
                     </h2>
                     <table class="table table-striped table-responsive">
                         <thead>
                             <tr>
                                 <th>Type</th>
                                 <th class="no-wrap">
-                                    <a href="{% url 'organization-detail' organization.slug %}?{% query_transform request expend_order_by='name' expend_sort_order=expend_toggle_order %}">
+                                    <a href="{% url 'organization-detail' organization.slug %}?{% query_transform request expend_order_by='recipient' expend_sort_order=expend_toggle_order %}">
                                         Paid to
-                                        {% if expend_order_by == 'name' %}
+                                        {% if expend_order_by == 'recipient' %}
                                             {{ expend_sort_order|get_sort_icon|safe }}
                                         {% endif %}
                                     </a>
@@ -161,9 +244,9 @@
                                 <tr>
                                     <td>{{ transaction.type }}</td>
                                     <td>
-                                        {% if transaction.name %}
-                                            <a href="{% url 'search' %}?term={{ transaction.name|urlencode }}">
-                                                {{ transaction.name }}
+                                        {% if transaction.recipient %}
+                                            <a href="{% url 'search' %}?term={{ transaction.recipient|urlencode }}">
+                                                {{ transaction.recipient }}
                                             </a>
                                         {% endif %}
                                     </td>
@@ -176,9 +259,9 @@
                                         </span>
                                     </td>
                                     <td>
-                                        {% if transaction.recipient %}
-                                            <a href="{% url 'search' %}?term={{ transaction.recipient|urlencode }}">
-                                                {{ transaction.recipient }}
+                                        {% if transaction.beneficiary %}
+                                            <a href="{% url 'search' %}?term={{ transaction.beneficiary|urlencode }}">
+                                                {{ transaction.beneficiary }}
                                             </a>
                                         {% endif %}
                                     </td>
@@ -193,75 +276,6 @@
             <div class="row">
                 <div class="text-center">
                     {% bootstrap_paginate expenditures url_param_name='expend_page' range=10 %}
-                </div>
-            </div>
-        {% endif %}
-        {% if contributions %}
-            <div class="row">
-                <div class="col-xs-12">
-                    <h2>
-                        <i class="fa fa-fw fa-usd"></i>
-                        Contributions
-                    </h2>
-                    <table class="table table-striped table-responsive">
-                        <thead>
-                            <tr>
-                                <th class="hidden-xs hidden-sm">Description</th>
-                                <th class="text-right no-wrap">
-                                    <a href="{% url 'organization-detail' organization.slug %}?{% query_transform request contrib_order_by='amount' contrib_sort_order=contrib_toggle_order %}">
-                                        Amount
-                                        {% if contrib_order_by == 'amount' %}
-                                            {{ contrib_sort_order|get_sort_icon|safe }}
-                                        {% endif %}
-                                    </a>
-                                </th>
-                                <th class="no-wrap">
-                                    <a href="{% url 'organization-detail' organization.slug %}?{% query_transform request contrib_order_by='name' contrib_sort_order=contrib_toggle_order %}">
-                                        Recipient
-                                        {% if contrib_order_by == 'name' %}
-                                            {{ contrib_sort_order|get_sort_icon|safe }}
-                                        {% endif %}
-                                    </a>
-                                </th>
-                                <th class="no-wrap">
-                                    <a href="{% url 'organization-detail' organization.slug %}?{% query_transform request contrib_order_by='received_date' contrib_sort_order=contrib_toggle_order %}">
-                                        Date
-                                        {% if contrib_order_by == 'received_date' %}
-                                            {{ contrib_sort_order|get_sort_icon|safe }}
-                                        {% endif %}
-                                    </a>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for transaction in contributions %}
-                                <tr>
-                                    <td class="hidden-xs hidden-sm">{{ transaction.type }}</td>
-                                    <td class="text-right no-wrap">
-                                        <span class="hidden-xs hidden-sm">
-                                            {{ transaction.amount|format_money }}
-                                        </span>
-                                        <span class="visible-xs visible-sm">
-                                            {{ transaction.amount|format_money_short }}
-                                        </span>
-                                    </td>
-                                    <td> <!-- For contributions, the recipient is stored under the 'name' attribute -->
-                                        {% if transaction.name %}
-                                            <a href="{% url 'search' %}?term={{ transaction.name|urlencode }}">
-                                                {{ transaction.name }}
-                                            </a>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ transaction.date|date }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="row">
-                <div class="text-center">
-                    {% bootstrap_paginate contributions url_param_name='contrib_page' range=10 %}
                 </div>
             </div>
         {% endif %}

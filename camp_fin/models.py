@@ -1172,7 +1172,7 @@ class LobbyistMethodMixin(object):
         for this entity.
         '''
         # Check params for validity
-        assert order_by in ['name', 'amount', 'description', 'beneficiary',
+        assert order_by in ['recipient', 'amount', 'description', 'beneficiary',
                             'expenditure_purpose', 'received_date']
         assert ordering in ['asc', 'desc']
         assert ttype in ['contribution', 'expenditure']
@@ -1180,19 +1180,27 @@ class LobbyistMethodMixin(object):
 
         get_transactions = '''
             SELECT
-              trans.id,
-              COALESCE(ttype.description, '') AS type,
-              COALESCE(trans.name, '') AS name,
+              trans.id AS transaction_id,
+              report.entity_id AS entity_id,
+              {select_name} AS name,
+              COALESCE(trans.name, '') AS recipient,
               trans.amount,
-              COALESCE(trans.beneficiary, '') AS recipient,
+              COALESCE(trans.beneficiary, '') AS beneficiary,
+              COALESCE(ttype.description, '') AS type,
               COALESCE(trans.expenditure_purpose, '') AS description,
               trans.received_date AS date
             FROM camp_fin_lobbyistreport report
+            {join_name}
             JOIN camp_fin_lobbyisttransaction trans
               ON trans.lobbyist_report_id = report.id
             JOIN camp_fin_lobbyisttransactiontype ttype
               ON trans.lobbyist_transaction_type_id = ttype.id
         '''
+
+        # Name will differ depending on the entity type --
+        # children will need to implement the select_name and join_name attributes
+        get_transactions = get_transactions.format(select_name=self.select_name,
+                                                   join_name=self.join_name)
 
         if not bulk:
             get_transactions += '''
@@ -1358,6 +1366,31 @@ class Lobbyist(models.Model, LobbyistMethodMixin):
         '''
         return self.get_employments(reverse_attr='organization')
 
+    @property
+    def select_name(self):
+        '''
+        Return valid SQL for selecting this lobbyist's name. Used in the `transaction_query`
+        method.
+        '''
+        return '''
+            CONCAT_WS(' ', lobbyist.prefix,
+                           lobbyist.first_name,
+                           lobbyist.middle_name,
+                           lobbyist.last_name,
+                           lobbyist.suffix)
+        '''
+
+    @property
+    def join_name(self):
+        '''
+        Return valid SQL for joining this lobbyist's table to the lobbyist reports. Used in the
+        `transaction_query` method.
+        '''
+        return '''
+            JOIN camp_fin_lobbyist AS lobbyist
+                USING(entity_id)
+        '''
+
 
 class Organization(models.Model, LobbyistMethodMixin):
     entity = models.ForeignKey("Entity", db_constraint=False)
@@ -1385,6 +1418,27 @@ class Organization(models.Model, LobbyistMethodMixin):
         term of employment was.
         '''
         return self.get_employments(reverse_attr='lobbyist')
+
+    @property
+    def select_name(self):
+        '''
+        Return valid SQL for selecting this organization's name. Used in the `transaction_query`
+        method.
+        '''
+        return '''
+            organization.name
+        '''
+
+    @property
+    def join_name(self):
+        '''
+        Return valid SQL for joining this organization's table to the lobbyist reports. Used in the
+        `transaction_query` method.
+        '''
+        return '''
+            JOIN camp_fin_organization AS organization
+                USING(entity_id)
+        '''
 
 
 class LobbyistRegistration(models.Model):

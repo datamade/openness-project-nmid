@@ -143,12 +143,10 @@ class TransactionDownload(viewsets.ViewSet):
 
         start_date = None
         if request.GET.get('from'):
-            print('Got from:', request.GET.get('from'))
             start_date = request.GET.get('from')
 
         end_date = None
         if request.GET.get('to'):
-            print('Got to:', request.GET.get('to'))
             end_date = request.GET.get('to')
 
         query = self.transaction_query(self.entity_id, start_date, end_date)
@@ -216,15 +214,53 @@ class LobbyistTransactionDownloadViewSet(TransactionDownload):
             for model in (Lobbyist, Organization):
                 try:
                     instance = model.objects.get(entity_id=entity_id)
+                    return instance.transaction_query(ttype=ttype, bulk=bulk, start_date=start_date, end_date=end_date)
                 except model.DoesNotExist:
                     continue
         else:
-            # All Lobbyist objects can perform bulk downloads, so just get the
-            # first one
-            instance = Lobbyist.objects.first()
-
-        # Generate the query
-        return instance.transaction_query(ttype=ttype, bulk=bulk, start_date=start_date, end_date=end_date)
+            # Use a separate query for bulk downloads
+            return '''
+                SELECT
+                    trans.id AS transaction_id,
+                    report.entity_id AS entity_id,
+                    entity.type AS entity_type,
+                    entity.name AS name,
+                    COALESCE(trans.name, '') AS recipient,
+                    trans.amount,
+                    COALESCE(trans.beneficiary, '') AS beneficiary,
+                    COALESCE(ttype.description, '') AS type,
+                    COALESCE(trans.expenditure_purpose, '') AS description,
+                    trans.received_date AS date
+                FROM camp_fin_lobbyistreport report
+                JOIN camp_fin_lobbyisttransaction trans
+                    ON trans.lobbyist_report_id = report.id
+                JOIN camp_fin_lobbyisttransactiontype ttype
+                    ON trans.lobbyist_transaction_type_id = ttype.id
+                JOIN (
+                    SELECT
+                        entity_id,
+                        type,
+                        name
+                    FROM (
+                        SELECT
+                            entity_id,
+                            'lobbyist' AS type,
+                            CONCAT_WS(' ', prefix,
+                                           first_name,
+                                           middle_name,
+                                           last_name,
+                                           suffix) AS name
+                        FROM camp_fin_lobbyist
+                        UNION
+                        SELECT
+                            entity_id,
+                            'employer' AS type,
+                            name
+                        FROM camp_fin_organization
+                    ) AS all_entities
+                ) AS entity
+                    USING(entity_id)
+            '''
 
 class TransactionDownloadViewSet(TransactionDownload):
     '''

@@ -810,8 +810,8 @@ class LobbyistDetail(DetailView):
         if not expend_order_by:
             expend_order_by = 'amount'
 
-        assert contrib_order_by in ['name', 'amount', 'received_date']
-        assert expend_order_by in ['name', 'amount', 'recipient', 'received_date']
+        assert contrib_order_by in ['recipient', 'amount', 'received_date']
+        assert expend_order_by in ['recipient', 'amount', 'beneficiary', 'received_date']
 
         contrib_sort_order = self.request.GET.get('contrib_sort_order', 'desc')
         expend_sort_order = self.request.GET.get('expend_sort_order', 'desc')
@@ -962,8 +962,8 @@ class OrganizationDetail(DetailView):
         if not expend_order_by:
             expend_order_by = 'amount'
 
-        assert contrib_order_by in ['name', 'amount', 'received_date']
-        assert expend_order_by in ['name', 'amount', 'recipient', 'received_date']
+        assert contrib_order_by in ['recipient', 'amount', 'received_date']
+        assert expend_order_by in ['recipient', 'amount', 'beneficiary', 'received_date']
 
         contrib_sort_order = self.request.GET.get('contrib_sort_order', 'desc')
         expend_sort_order = self.request.GET.get('expend_sort_order', 'desc')

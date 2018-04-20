@@ -77,10 +77,10 @@
 
             <div class="row">
                 <h4 class="col-xs-12">
-                    <i class="fa fa-fw fa-plus-circle"></i>
-                    Contributions
+                    <i class="fa fa-fw fa-usd"></i>
+                    Cash donations
                 </h4>
-                {% with action='/api/bulk/lobbyist-contributions/' icon='fa fa-fw fa-download' title='Contributions' from_id='from5' to_id='to5' %}
+                {% with action='/api/bulk/lobbyist-contributions/' icon='fa fa-fw fa-download' title='Cash donations' from_id='from5' to_id='to5' %}
                     {% include 'camp_fin/widgets/calendar-form.html' %}
                 {% endwith %}
                 <div class="col-xs-12">
@@ -90,10 +90,10 @@
 
             <div class="row">
                 <h4 class="col-xs-12">
-                    <i class="fa fa-fw fa-minus-circle"></i>
-                    Expenditures
+                    <i class="fa fa-fw fa-gift"></i>
+                    Gifts
                 </h4>
-                {% with action='/api/bulk/lobbyist-expenditures/' icon='fa fa-fw fa-download' title='Expenditures' from_id='from6' to_id='to6' %}
+                {% with action='/api/bulk/lobbyist-expenditures/' icon='fa fa-fw fa-download' title='Gifts' from_id='from6' to_id='to6' %}
                     {% include 'camp_fin/widgets/calendar-form.html' %}
                 {% endwith %}
                 <div class="col-xs-12">
