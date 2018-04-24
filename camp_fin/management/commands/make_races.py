@@ -78,8 +78,11 @@ class Command(BaseCommand):
                 'division': campaign.division,
                 'district': campaign.district,
                 'county': campaign.county,
-                'election_season': campaign.election_season
+                'election_season': campaign.election_season,
             }
+
+            if race.total_contributions is None:
+                kwargs['total_contributions'] = race.total_funds
 
             rows_updated = Race.objects.filter(id=race.id).update(**kwargs)
 

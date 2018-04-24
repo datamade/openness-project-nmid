@@ -9,7 +9,7 @@ from django.views.generic import ListView, TemplateView, DetailView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.http import HttpResponseNotFound, HttpResponse, StreamingHttpResponse
 from django.db import transaction, connection, connections
-from django.db.models import Max
+from django.db.models import Max, prefetch_related_objects
 from django.utils import timezone
 from django.core.urlresolvers import reverse_lazy
 from django.utils.text import slugify
@@ -207,13 +207,16 @@ class IndexView(TopEarnersBase, PagesMixin):
         context['governor_race'] = gov_race
 
         # Hottest races
-        filtered_races = Race.objects.filter(election_season__year=year)\
-                                     .exclude(office__description='Governor')
+        top_races = Race.objects.filter(election_season__year=year)\
+                                     .exclude(office__description='Governor')\
+                                     .order_by('-total_contributions')\
+                                     .prefetch_related('campaign_set')\
+                                     .prefetch_related('campaign_set__race')\
+                                     .prefetch_related('campaign_set__political_party')\
+                                     .prefetch_related('campaign_set__candidate')\
+                                     .prefetch_related('campaign_set__candidate__entity')
 
-        top_races = sorted([race for race in filtered_races],
-                           key=lambda race: race.total_funds,
-                           reverse=True)
-
+        # Only get the ten top races
         context['top_races'] = top_races[:10]
         context['verbose_type'] = 'all'
 

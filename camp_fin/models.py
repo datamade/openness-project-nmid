@@ -144,6 +144,12 @@ class Campaign(models.Model):
         Accepts optional filter argument `since` with the same requirements as
         all other methods on this class.
         '''
+        # Campaigns should always have candidates, but there are occasionally
+        # errors in the SOS's system. Fail gracefully by returning 0 in this
+        # case, since we can't link contributions to this campaign
+        if self.candidate is None:
+            return 0
+
         entity_id = self.candidate.entity.id
 
         sum_contributions = '''
@@ -270,6 +276,7 @@ class Race(models.Model):
     county = models.ForeignKey('County', db_constraint=False, blank=True, null=True)
     election_season = models.ForeignKey('ElectionSeason', db_constraint=False)
     winner = models.OneToOneField('Campaign', blank=True, null=True)
+    total_contributions = models.FloatField(null=True)
 
     class Meta:
         unique_together = ('district', 'division', 'office_type', 'county',
@@ -380,7 +387,13 @@ class Race(models.Model):
         Return the total amount of money raised in this race, aggreggated from
         the total contributions to each campaign during the election season.
         '''
-        return sum(campaign.funds_raised(since=self.funding_period) for campaign in self.campaigns)
+        # Default to the attribute that should be aggregated during the `make_races`
+        # management command
+        if self.total_contributions is not None:
+            return self.total_contributions
+        else:
+            # Fallback
+            return sum(campaign.funds_raised(since=self.funding_period) for campaign in self.campaigns)
 
     @property
     def campaigns_by_party(self):
