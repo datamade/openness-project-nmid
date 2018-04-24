@@ -308,6 +308,13 @@ class RacesView(PaginatedList):
         if self.type and self.type != 'None':
             queryset = queryset.filter(office_type__id=self.type)
 
+        # Prefetch campaign sets to avoid proliferating queries
+        queryset = queryset.prefetch_related('campaign_set')\
+                           .prefetch_related('campaign_set__race')\
+                           .prefetch_related('campaign_set__political_party')\
+                           .prefetch_related('campaign_set__candidate')\
+                           .prefetch_related('campaign_set__candidate__entity')
+
         # Distinguish between columns that can be ordered in SQL, and columns
         # that need to be ordered in Python
         db_order = ('office', 'county__name', 'district__name')

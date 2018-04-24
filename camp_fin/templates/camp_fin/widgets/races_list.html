@@ -62,62 +62,66 @@
         </tr>
     </thead>
     <tbody>
-        {% for race in races %}
-            <tr>
-                {% if verbose_type != 'all' and verbose_type != 'Statewide' and verbose_type != 'Judicial' %}
-                    {% if verbose_type == 'Legislative' or verbose_type == 'Public Regulation Commission' %}
-                    <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.district }}</td>
-                    {% elif verbose_type == 'County Offices' %}
-                    <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.county }}</td>
-                    {% endif %}
-                {% endif %}
-                <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">
-                    <a href="{% url 'race-detail' race.id %}">
-                        {{ race.office }}
-                        {% if verbose_type == 'all' %}
-                            {% with office_type=race.office_type.description %}
-                                {% if office_type == 'Legislative' or office_type == 'Public Regulation Commission' %}
-                                    ({{ race.district }})
-                                {% elif office_type == 'County Offices' %}
-                                    ({{ race.county }})
-                                {% endif %}
-                            {% endwith %}
+        {% with total=races|largest_contribution %}
+            {% for race in races %}
+                <tr>
+                    {% if verbose_type != 'all' and verbose_type != 'Statewide' and verbose_type != 'Judicial' %}
+                        {% if verbose_type == 'Legislative' or verbose_type == 'Public Regulation Commission' %}
+                        <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.district }}</td>
+                        {% elif verbose_type == 'County Offices' %}
+                        <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.county }}</td>
                         {% endif %}
-                    </a>
-                </td>
-                <td class="no-wrap">
-                    {% for campaign in race.active_campaigns %}
-                        <p>
-                            {{ campaign.candidate.full_name }}
-                            {% if campaign.party_identifier %}
-                                <small>
-                                    <span class="party-identifier {{ campaign.party_identifier }}">
-                                        ({{ campaign.party_identifier }})
-                                    </span>
-                                </small>
+                    {% endif %}
+                    <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">
+                        <a href="{% url 'race-detail' race.id %}">
+                            {{ race.office }}
+                            {% if verbose_type == 'all' %}
+                                {% with office_type=race.office_type.description %}
+                                    {% if office_type == 'Legislative' or office_type == 'Public Regulation Commission' %}
+                                        ({{ race.district }})
+                                    {% elif office_type == 'County Offices' %}
+                                        ({{ race.county }})
+                                    {% endif %}
+                                {% endwith %}
                             {% endif %}
-                            {% if campaign.is_winner %}
-                                <i class="fa fa-fw fa-check-circle green"></i>
-                            {% endif %}
-                        </p>
-                    {% endfor %}
-                </td>
-                <td>
-                    {% for campaign in race.active_campaigns %}
-                        {% with total=races|largest_contribution %}
-                            {% include 'camp_fin/widgets/funding-distribution.html' %}
-                        {% endwith %}
-                    {% endfor %}
-                </td>
-                <td class="text-right {% if race.campaigns.count > 1 %}align-middle{% endif %}">
-                    <span class='hidden-sm hidden-xs'>
-                        {{ race.total_funds |format_money }}
-                    </span>
-                    <span class='visible-sm-block visible-xs-block'>
-                        {{ race.total_funds|format_money_short }}
-                    </span>
-                </td>
-            </tr>
-        {% endfor %}
+                        </a>
+                    </td>
+                    {% with active_campaigns=race.active_campaigns %}
+                        <td class="no-wrap">
+                            {% for campaign in active_campaigns %}
+                                <p>
+                                    {{ campaign.candidate.full_name }}
+                                    {% if campaign.party_identifier %}
+                                        <small>
+                                            <span class="party-identifier {{ campaign.party_identifier }}">
+                                                ({{ campaign.party_identifier }})
+                                            </span>
+                                        </small>
+                                    {% endif %}
+                                    {% if campaign.is_winner %}
+                                        <i class="fa fa-fw fa-check-circle green"></i>
+                                    {% endif %}
+                                </p>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for campaign in active_campaigns %}
+                                {% include 'camp_fin/widgets/funding-distribution.html' %}
+                            {% endfor %}
+                        </td>
+                    {% endwith %}
+                    {% with total_funds=race.total_funds %}
+                        <td class="text-right">
+                            <span class='hidden-sm hidden-xs'>
+                                {{ total_funds|format_money }}
+                            </span>
+                            <span class='visible-sm-block visible-xs-block'>
+                                {{ total_funds|format_money_short }}
+                            </span>
+                        </td>
+                    {% endwith %}
+                </tr>
+            {% endfor %}
+        {% endwith %}
     </tbody>
 </table>
