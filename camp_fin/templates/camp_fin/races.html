@@ -11,6 +11,13 @@
     <div class="row">
         <div class="col-md-12">
             <h1><i class='fa fa-fw fa-check-square-o'></i>{{ year }} Races</h1>
+            {% if page.text %}
+                <div class="row">
+                    <div class="col-xs-12 col-md-10">
+                        {{ page.text|safe }}
+                    </div>
+                </div>
+            {% endif %}
             <h3>Select a category:</h3>
             <ul class="nav nav-tabs" role="group" aria-label="Race types">
                 {% for race_type in race_types %}
@@ -22,11 +29,7 @@
                 </li>
                 {% endfor %}
             </ul>
-            {% if page.text %}
-                {{ page.text|safe }}
-            {% else %}
-                <br/>
-            {% endif %}
+            <br/>
             {% with races=object_list %}
                 {% include 'camp_fin/widgets/races_list.html' %}
             {% endwith %}

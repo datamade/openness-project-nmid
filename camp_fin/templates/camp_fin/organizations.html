@@ -10,7 +10,11 @@
         <div class="col-md-12">
             <h1><i class='fa fa-fw fa-users'></i>Lobbyist Employers</h1>
             {% if page.text %}
-                {{ page.text|safe }}
+                <div class="row">
+                    <div class="col-xs-12 col-md-10">
+                        {{ page.text|safe }}
+                    </div>
+                </div>
             {% else %}
                 <br/>
             {% endif %}

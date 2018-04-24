@@ -37,6 +37,13 @@
         </div>
         <hr/>
     </div>
+    {% if page.text %}
+    <div class="row">
+        <div class="col-xs-12 col-md-10">
+            {{ page.text|safe }}
+        </div>
+    </div>
+    {% endif %}
     <div class="row">
         <div class="col-xs-12">
             <h3>
