@@ -31,7 +31,7 @@
             <a href="{% url 'bulk-lobbyist-expenditures-list' %}?lobbyist_id={{ lobbyist.id }}" class="btn btn-default"
                id="expenditures-download">
                 <i class="fa fa-fw fa-download"></i>
-                Download gifts
+                Download expenditures and gifts
             </a>
         </div>
     </div>
@@ -64,7 +64,7 @@
                         </tr>
                     {% endif %}
                     <tr>
-                        <td>
+                        <td class="no-wrap">
                             <i class="fa fa-fw fa-usd"></i>
                             Cash donations
                         </td>
@@ -78,9 +78,9 @@
                         </td>
                     </tr>
                     <tr>
-                        <td>
+                        <td class="no-wrap">
                             <i class="fa fa-fw fa-gift"></i>
-                            Gifts
+                            Expenditures and gifts
                         </td>
                         <td class="text-right">
                             <span class="visible-xs visible-sm">
@@ -199,7 +199,7 @@
             <div class="col-xs-12">
                 <h2>
                     <i class="fa fa-fw fa-gift"></i>
-                    Gifts
+                    Expenditures and gifts
                 </h2>
                 <table class="table table-striped table-responsive">
                     <thead>
