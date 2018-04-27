@@ -17,7 +17,7 @@ UNIQUE_RACES_MAP = {
     'Judicial': ['office', 'district', 'division', 'county', 'election_season'],
     'Public Regulation Commission': ['office', 'district', 'election_season'],
     'Public Education Commission': ['office', 'district', 'election_season'],
-    'County Offices': ['office', 'county', 'election_season'],
+    'County Offices': ['office', 'county', 'election_season', 'district'],
     'School Board': ['office', 'county', 'district', 'election_season'],
     'None': ['office', 'county', 'election_season']
 }

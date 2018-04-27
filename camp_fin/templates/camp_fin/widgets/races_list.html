@@ -26,12 +26,21 @@
                                     {{ sort_order|get_sort_icon|safe }}
                                 {% endif %}
                             </th>
-                        {% elif verbose_type == 'County Offices' %}
+                        {% endif %}
+                        {% if verbose_type == 'County Offices' %}
                             <th>
                                 <a href="{% url 'races' %}?{% query_transform request order_by='county__name' sort_order=toggle_order %}">
                                     County
                                 </a>
                                 {% if order_by == 'county' %}
+                                    {{ sort_order|get_sort_icon|safe }}
+                                {% endif %}
+                            </th>
+                            <th>
+                                <a href="{% url 'races' %}?{% query_transform request order_by='district__name' sort_order=toggle_order %}">
+                                    District
+                                </a>
+                                {% if order_by == 'district' %}
                                     {{ sort_order|get_sort_icon|safe }}
                                 {% endif %}
                             </th>
@@ -67,9 +76,10 @@
                 <tr>
                     {% if verbose_type != 'all' and verbose_type != 'Statewide' and verbose_type != 'Judicial' %}
                         {% if verbose_type == 'Legislative' or verbose_type == 'Public Regulation Commission' %}
-                        <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.district }}</td>
+                            <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.district }}</td>
                         {% elif verbose_type == 'County Offices' %}
-                        <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.county }}</td>
+                            <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.county }}</td>
+                            <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.district|default:"" }}</td>
                         {% endif %}
                     {% endif %}
                     <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">

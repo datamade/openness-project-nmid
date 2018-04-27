@@ -45,13 +45,13 @@ class Command(BaseCommand):
         bizzell = Campaign.objects.filter(candidate__slug='joseph-bizzell-4091')\
                                   .filter(election_season__id='18')\
                                   .first()
-        bizzell.district_id = 25
+        bizzell.district_id = 28
         bizzell.save()
 
         hall = Campaign.objects.filter(candidate__slug='ben-hall-4094')\
                                .filter(election_season__id='18')\
                                .first()
-        hall.district_id = 25
+        hall.district_id = 28
         hall.save()
 
         #############
@@ -65,12 +65,18 @@ class Command(BaseCommand):
         allison.district_id = 72
         allison.save()
 
-        # Move correct Susan Herrera to District 41
-        herrera = Campaign.objects.filter(candidate__slug='susan-herrera-4187')\
+        # Move Debbie Rodella to the proper District 41
+        rodella = Campaign.objects.filter(candidate__slug='debbie-rodella-363')\
                                   .filter(election_season__id='18')\
                                   .first()
-        herrera.district_id = 119
-        herrera.save()
+        rodella.district_id = 119
+        rodella.save()
+
+        # Remove duplicate Susan Herrera
+        herrera = Campaign.objects.filter(candidate__id='susan-herrera-4149')\
+                                  .filter(election_season__id='18')\
+                                  .first()
+        herrera.delete()
 
         # Combine districts 25, 27, and 29
         # Combine district 25
@@ -102,12 +108,79 @@ class Command(BaseCommand):
 
         # Delete duplicate candidates
         jamarillo = Candidate.objects.get(id=4368)
-        jamarillo.delete()
+        self.delete_campaigns(jamarillo)
 
         gallegos = Candidate.objects.get(id=4453)
-        gallegos.delete()
+        self.delete_campaigns(gallegos)
 
         white = Candidate.objects.get(id=4265)
-        white.delete()
+        self.delete_campaigns(white)
 
+        garcia = Candidate.objects.get(id=4315)
+        self.delete_campaigns(garcia)
 
+        sanchez = Candidate.objects.get(id=4314)
+        self.delete_campaigns(sanchez)
+
+        chandler = Candidate.objects.get(id=4141)
+        self.delete_campaigns(chandler)
+
+        armstrong = Candidate.objects.get(id=4360)
+        self.delete_campaigns(armstrong)
+
+        zamora = Candidate.objects.get(id=4190)
+        self.delete_campaigns(zamora)
+
+        garrett = Candidate.objects.get(id=4164)
+        self.delete_campaigns(garrett)
+
+        ##########
+        # County #
+        ##########
+
+        # Delete duplicate campaigns
+        preciado = Candidate.objects.get(id=4463)
+        self.delete_campaigns(preciado)
+
+        apodaca = Campaign.objects.get(id=5789)
+        apodaca.delete()
+
+        luchini = Campaign.objects.get(id=5406)
+        luchini.delete()
+
+        saint = Campaign.objects.get(id=5473)
+        saint.delete()
+
+        garza = Campaign.objects.get(id=5523)
+        garza.delete()
+
+        armijo = Campaign.objects.get(id=5475)
+        armijo.delete()
+
+        romero = Campaign.objects.get(id=5539)
+        romero.delete()
+
+        baca = Campaign.objects.get(id=5654)
+        baca.delete()
+
+        gg_sanchez = Campaign.objects.get(id=5488)
+        gg_sanchez.delete()
+
+        ferrari = Campaign.objects.get(id=5624)
+        ferrari.delete()
+
+        anaya = Campaign.objects.get(id=5831)
+        anaya.delete()
+
+        # Gonzalez dropped out
+        gonzalez = Candidate.objects.get(id=4127).campaign_set.first()
+        gonzalez.race_status = 'dropout'
+        gonzalez.save()
+
+    def delete_campaigns(self, candidate):
+        '''
+        Given a model instance of the type `Candidate`, delete all of its
+        campaigns.
+        '''
+        for campaign in candidate.campaign_set.all():
+            campaign.delete()
