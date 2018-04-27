@@ -73,7 +73,7 @@ class Command(BaseCommand):
         rodella.save()
 
         # Remove duplicate Susan Herrera
-        herrera = Campaign.objects.filter(candidate__id='susan-herrera-4149')\
+        herrera = Campaign.objects.filter(candidate__slug='susan-k-herrera-4149')\
                                   .filter(election_season__id='18')\
                                   .first()
         herrera.delete()
