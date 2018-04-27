@@ -381,6 +381,12 @@ class Race(models.Model):
         else:
             return None
 
+    def sum_campaign_contributions(self):
+        '''
+        Get the sum of contributions from campaigns in this race.
+        '''
+        return sum(campaign.funds_raised(since=self.funding_period) for campaign in self.campaigns)
+
     @property
     def total_funds(self):
         '''
@@ -393,7 +399,7 @@ class Race(models.Model):
             return self.total_contributions
         else:
             # Fallback
-            return sum(campaign.funds_raised(since=self.funding_period) for campaign in self.campaigns)
+            return self.sum_campaign_contributions()
 
     @property
     def campaigns_by_party(self):

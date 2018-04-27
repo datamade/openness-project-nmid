@@ -17,7 +17,7 @@ UNIQUE_RACES_MAP = {
     'Judicial': ['office', 'district', 'division', 'county', 'election_season'],
     'Public Regulation Commission': ['office', 'district', 'election_season'],
     'Public Education Commission': ['office', 'district', 'election_season'],
-    'County Offices': ['office', 'county', 'election_season'],
+    'County Offices': ['office', 'county', 'election_season', 'district'],
     'School Board': ['office', 'county', 'district', 'election_season'],
     'None': ['office', 'county', 'election_season']
 }
@@ -52,7 +52,7 @@ class Command(BaseCommand):
                         UPDATE camp_fin_campaign
                         SET active_race_id = NULL
                     ''')
-                    conn.execute('''TRUNCATE camp_fin_race''')
+                    conn.execute('''TRUNCATE camp_fin_race RESTART IDENTITY CASCADE''')
 
             self.stdout.write(self.style.SUCCESS('Existing data deleted!'))
 
@@ -81,9 +81,6 @@ class Command(BaseCommand):
                 'election_season': campaign.election_season,
             }
 
-            if race.total_contributions is None:
-                kwargs['total_contributions'] = race.total_funds
-
             rows_updated = Race.objects.filter(id=race.id).update(**kwargs)
 
             assert rows_updated == 1
@@ -98,6 +95,12 @@ class Command(BaseCommand):
                 campaign.race_status = 'active'
 
             campaign.save()
+
+        for race in Race.objects.all():
+
+            # Update total contributions
+            race.total_contributions = race.sum_campaign_contributions()
+            race.save()
 
         msg = 'Created {num_races} races from {num_campaigns} campaigns!'
         self.stdout.write(self.style.SUCCESS(msg.format(num_races=num_races,
