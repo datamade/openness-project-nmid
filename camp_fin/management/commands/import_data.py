@@ -218,11 +218,6 @@ class Command(BaseCommand):
                 self.makeLoanBalanceView()
                 self.stdout.write(self.style.SUCCESS('Made loan balance view'))
 
-            # Temporary fix: populate candidate table if there are foreign keys
-            # in the campaign table that are missing
-            if self.entity_type == 'campaign':
-                self.removeMissingCandidates()
-
             self.stdout.write(self.style.SUCCESS('\n'))
 
         else:
@@ -604,22 +599,6 @@ class Command(BaseCommand):
         '''.format(table=self.django_table)
 
         self.executeTransaction(entities)
-
-    def removeMissingCandidates(self):
-        '''
-        Temporary fix to prevent missing foreign keys for candidates in the campaign
-        table until we can get an updated candidate table.
-        '''
-        self.executeTransaction('''
-            DELETE FROM camp_fin_campaign
-              WHERE candidate_id IN (
-                SELECT DISTINCT camp.candidate_id
-                FROM camp_fin_campaign AS camp
-                LEFT JOIN camp_fin_candidate AS cand
-                  ON camp.candidate_id = cand.id
-                WHERE cand.id IS NULL
-              )
-        ''')
 
     def populateSlugField(self):
         if self.entity_type in ['candidate', 'lobbyist']:

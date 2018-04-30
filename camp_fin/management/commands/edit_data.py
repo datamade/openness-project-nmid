@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.conf import settings
+from django.db import connection
 import sqlalchemy as sa
 
 from camp_fin.models import Campaign, Race, Candidate
@@ -16,6 +17,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         self.stdout.write(self.style.SUCCESS('Editing erroneous race data...'))
+
+        self.remove_missing_candidates()
 
         ################################
         # Public regulation commission #
@@ -191,3 +194,20 @@ class Command(BaseCommand):
         '''
         for campaign in candidate.campaign_set.all():
             campaign.delete()
+
+    def remove_missing_candidates(self):
+        '''
+        Temporary fix to prevent missing foreign keys for candidates in the campaign
+        table until we can get an updated candidate table.
+        '''
+        with connection.cursor() as curs:
+            curs.execute('''
+                DELETE FROM camp_fin_campaign
+                WHERE candidate_id IN (
+                    SELECT DISTINCT camp.candidate_id
+                    FROM camp_fin_campaign AS camp
+                    LEFT JOIN camp_fin_candidate AS cand
+                    ON camp.candidate_id = cand.id
+                    WHERE cand.id IS NULL
+                )
+            ''')
