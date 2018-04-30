@@ -16,23 +16,22 @@
                     </th>
                     <th class="no-wrap text-center">Total funds in race</th>
                 {% else %}
-                    {% if verbose_type != 'Statewide' and verbose_type != 'Judicial' %}
+                    {% if verbose_type != 'Statewide' %}
                         {% if verbose_type == 'Legislative' or verbose_type == 'Public Regulation Commission' %}
                             <th>
                                 <a href="{% url 'races' %}?{% query_transform request order_by='district__name' sort_order=toggle_order %}">
                                     District
                                 </a>
-                                {% if order_by == 'district' %}
+                                {% if order_by == 'district__name' %}
                                     {{ sort_order|get_sort_icon|safe }}
                                 {% endif %}
                             </th>
-                        {% endif %}
-                        {% if verbose_type == 'County Offices' %}
+                        {% elif verbose_type == 'County Offices' %}
                             <th>
                                 <a href="{% url 'races' %}?{% query_transform request order_by='county__name' sort_order=toggle_order %}">
                                     County
                                 </a>
-                                {% if order_by == 'county' %}
+                                {% if order_by == 'county__name' %}
                                     {{ sort_order|get_sort_icon|safe }}
                                 {% endif %}
                             </th>
@@ -40,7 +39,24 @@
                                 <a href="{% url 'races' %}?{% query_transform request order_by='district__name' sort_order=toggle_order %}">
                                     District
                                 </a>
-                                {% if order_by == 'district' %}
+                                {% if order_by == 'district__name' %}
+                                    {{ sort_order|get_sort_icon|safe }}
+                                {% endif %}
+                            </th>
+                        {% elif verbose_type == 'Judicial' %}
+                            <th>
+                                <a href="{% url 'races' %}?{% query_transform request order_by='county__name' sort_order=toggle_order %}">
+                                    County
+                                </a>
+                                {% if order_by == 'county__name' %}
+                                    {{ sort_order|get_sort_icon|safe }}
+                                {% endif %}
+                            </th>
+                            <th>
+                                <a href="{% url 'races' %}?{% query_transform request order_by='division__name' sort_order=toggle_order %}">
+                                    Division
+                                </a>
+                                {% if order_by == 'division__name' %}
                                     {{ sort_order|get_sort_icon|safe }}
                                 {% endif %}
                             </th>
@@ -74,12 +90,15 @@
         {% with total=races|largest_contribution %}
             {% for race in races %}
                 <tr>
-                    {% if verbose_type != 'all' and verbose_type != 'Statewide' and verbose_type != 'Judicial' %}
+                    {% if verbose_type != 'all' and verbose_type != 'Statewide' %}
                         {% if verbose_type == 'Legislative' or verbose_type == 'Public Regulation Commission' %}
                             <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.district }}</td>
                         {% elif verbose_type == 'County Offices' %}
                             <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.county }}</td>
                             <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.district|default:"" }}</td>
+                        {% elif verbose_type == 'Judicial' %}
+                            <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.county }}</td>
+                            <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.division|default:"" }}</td>
                         {% endif %}
                     {% endif %}
                     <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">

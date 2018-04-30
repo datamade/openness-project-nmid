@@ -320,7 +320,7 @@ class RacesView(PaginatedList):
 
         # Distinguish between columns that can be ordered in SQL, and columns
         # that need to be ordered in Python
-        db_order = ('office', 'county__name', 'district__name')
+        db_order = ('office', 'county__name', 'district__name', 'division__name')
         py_order = ('num_candidates', 'total_funds')
 
         if self.order_by in db_order:
