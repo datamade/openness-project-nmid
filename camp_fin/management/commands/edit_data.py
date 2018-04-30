@@ -72,11 +72,18 @@ class Command(BaseCommand):
         rodella.district_id = 119
         rodella.save()
 
-        # Remove duplicate Susan Herrera
-        herrera = Campaign.objects.filter(candidate__slug='susan-k-herrera-4149')\
+        # Move Susan Herrera to the proper District 41
+        herrera = Campaign.objects.filter(candidate__slug='susan-herrera-4187')\
                                   .filter(election_season__id='18')\
                                   .first()
-        herrera.delete()
+        herrera.district_id = 119
+        herrera.save()
+
+        # Remove duplicate Susan Herrera
+        dupe_herrera = Campaign.objects.filter(candidate__slug='susan-k-herrera-4149')\
+                                  .filter(election_season__id='18')\
+                                  .first()
+        dupe_herrera.delete()
 
         # Combine districts 25, 27, and 29
         # Combine district 25

@@ -3,7 +3,7 @@ The Openness Project - New Mexico Campaign Finance Site
 
 This site brings greater transparency to New Mexico politics by providing an overview of campaign contributions, expenditures, and the people, businesses, and organizations involved.
 
-##Setup
+## Setup
 **Install app requirements**
 
 We recommend using [virtualenv](http://virtualenv.readthedocs.org/en/latest/virtualenv.html) and [virtualenvwrapper](http://virtualenvwrapper.readthedocs.org/en/latest/install.html) for working in a virtualized development environment. [Read how to set up virtualenv](http://docs.python-guide.org/en/latest/dev/virtualenvs/).
@@ -32,15 +32,22 @@ createdb nmid
 python manage.py migrate
 ```
 
-##Data import
+## Data import
 
-To import the New Mexico campaign finance data into your database, run the `import_data` command.
+To import the New Mexico campaign finance data into your database, run the `import_data` command:
 
 ```
 python manage.py import_data
 ```
 
-Next, create races with the `make_races` command.
+The version of the data sent to us by the Secretary of State in April 2018
+contains a number of errors. To fix these errors, run the `edit_data` command:
+
+```
+python manage.py edit_data
+```
+
+Next, group campaigns into races with the `make_races` command.
 
 ```
 python manage.py make_races
@@ -52,7 +59,18 @@ Finally, run the `make_search_index` command to generate the search index.
 python manage.py make_search_index
 ```
 
-##Run the code
+## Redoing an import
+
+The data import scripts for this app will automatically recognize if you have data imported,
+and add or update new data accordingly. However, if you'd like to start over from
+scratch but don't want to delete your user and page data, you can start by running the
+`flush_camp_fin` command to flush campaign finance data from the database:
+
+```
+python manage.py flush_camp_fin
+```
+
+## Run the code
 
 Run the server with the following:
 ```bash
@@ -67,6 +85,7 @@ Then, navigate to: http://localhost:8000/
 * Eric van Zanten - developer
 * Derek Eder - developer
 * Regina Compton - developer
+* Jean Cochrane - developer
 
 ## Errors / Bugs
 
