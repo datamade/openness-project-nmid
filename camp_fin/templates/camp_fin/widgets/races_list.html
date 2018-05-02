@@ -94,11 +94,16 @@
                         {% if verbose_type == 'Legislative' or verbose_type == 'Public Regulation Commission' %}
                             <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.district }}</td>
                         {% elif verbose_type == 'County Offices' %}
-                            <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.county }}</td>
+                            <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.county|clean_county }}</td>
                             <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.district|default:"" }}</td>
                         {% elif verbose_type == 'Judicial' %}
-                            <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.county }}</td>
-                            <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.division|default:"" }}</td>
+                            <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">{{ race.county|clean_county }}</td>
+                            <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">
+                                {% if race.district and race.district.name != 'No District' %}
+                                    {{ race.district }},
+                                {% endif %}
+                                {{ race.division|default:"" }}
+                            </td>
                         {% endif %}
                     {% endif %}
                     <td class="no-wrap {% if race.campaigns.count > 1 %}align-middle{% endif %}">

@@ -2,6 +2,13 @@ from django.template import Library
 
 register = Library()
 
+@register.filter
+def clean_county(county):
+    if county.name == 'ALL':
+        return ''
+    else:
+        return county
+
 @register.filter()
 def format_money(s):
     import locale
