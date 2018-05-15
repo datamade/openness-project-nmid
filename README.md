@@ -41,7 +41,8 @@ python manage.py import_data
 ```
 
 The version of the data sent to us by the Secretary of State in April 2018
-contains a number of errors. To fix these errors, run the `edit_data` command:
+contains a number of errors - primarily candidates that are assigned to the
+wrong race. To fix these errors, run the `edit_data` command:
 
 ```
 python manage.py edit_data

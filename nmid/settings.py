@@ -146,7 +146,3 @@ SITE_META = {
 
 # Year to pull races from
 ELECTION_YEAR = '2018'
-
-# This variable prevents charts from going beyond the last date for which we
-# have data
-LAST_FILING_DATE = datetime(2018, 4, 10)

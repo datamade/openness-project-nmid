@@ -974,7 +974,7 @@ class Entity(models.Model):
             all_months = list(contributions_lookup.keys()) + list(expenditures_lookup.keys())
 
             start_month = datetime(int(since), 1, 1)
-            end_month = settings.LAST_FILING_DATE
+            end_month = FilingPeriod.objects.order_by('-filing_date').first().filing_date.date()
 
             for month in rrule(freq=MONTHLY, dtstart=start_month, until=end_month):
 
