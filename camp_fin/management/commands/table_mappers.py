@@ -72,7 +72,7 @@ FILING = OrderedDict([
     ("supplementalordinalnumber",{'field': 'supplement_count', 'data_type': 'int'}),
     ("totalsupplementalcontributions",{'field': 'total_supplemental_contributions', 'data_type': 'money::numeric::double precision'}),
     ("beenedited",{'field': 'edited', 'data_type': 'varchar'}),
-    ("regenerate",{'field': 'regenerate', 'data_type': 'boolean'}),
+    ("regenerate",{'field': 'regenerate', 'data_type': 'varchar'}),
 ])
 
 FILING_PERIOD = OrderedDict([

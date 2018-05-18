@@ -676,7 +676,7 @@ class Filing(models.Model):
     supplement_count = models.IntegerField(null=True)
     total_supplemental_contributions = models.FloatField(null=True)
     edited = models.CharField(max_length=3)
-    regenerate = models.NullBooleanField()
+    regenerate = models.CharField(max_length=3, null=True)
 
     def __str__(self):
         if self.campaign:
