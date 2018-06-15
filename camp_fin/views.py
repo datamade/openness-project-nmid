@@ -89,16 +89,16 @@ class IndexView(TopEarnersBase, PagesMixin):
     page_path = '/'
 
     def get_context_data(self, **kwargs):
-        
+
         context = super().get_context_data(**kwargs)
 
         year = settings.ELECTION_YEAR
         last_year = str(int(settings.ELECTION_YEAR) - 1)
 
         context['year'], context['last_year'] = year, last_year
-        
+
         with connection.cursor() as cursor:
-            
+
             # Largest donations
             cursor.execute('''
                 SELECT
@@ -134,7 +134,7 @@ class IndexView(TopEarnersBase, PagesMixin):
             columns = [c[0] for c in cursor.description]
             transaction_tuple = namedtuple('Transaction', columns)
             transaction_objects = [transaction_tuple(*r) for r in cursor]
-            
+
             # Committees
             cursor.execute('''
                 SELECT * FROM (
@@ -160,7 +160,7 @@ class IndexView(TopEarnersBase, PagesMixin):
             columns = [c[0] for c in cursor.description]
             pac_tuple = namedtuple('PAC', columns)
             pac_objects = [pac_tuple(*r) for r in cursor]
-            
+
             # Top candidates
             cursor.execute('''
                 SELECT * FROM (
@@ -208,13 +208,13 @@ class IndexView(TopEarnersBase, PagesMixin):
 
         # Hottest races
         top_races = Race.objects.filter(election_season__year=year)\
-                                     .exclude(office__description='Governor')\
-                                     .order_by('-total_contributions')\
-                                     .prefetch_related('campaign_set')\
-                                     .prefetch_related('campaign_set__race')\
-                                     .prefetch_related('campaign_set__political_party')\
-                                     .prefetch_related('campaign_set__candidate')\
-                                     .prefetch_related('campaign_set__candidate__entity')
+                                .exclude(office__description='Governor')\
+                                .order_by('-total_contributions')\
+                                .prefetch_related('campaign_set')\
+                                .prefetch_related('campaign_set__race')\
+                                .prefetch_related('campaign_set__political_party')\
+                                .prefetch_related('campaign_set__candidate')\
+                                .prefetch_related('campaign_set__candidate__entity')
 
         # Only get the ten top races
         context['top_races'] = top_races[:10]
@@ -447,8 +447,8 @@ class DonationsView(PaginatedList):
         with connection.cursor() as cursor:
 
             max_date_query = '''
-                SELECT 
-                  MAX(t.received_date)::date 
+                SELECT
+                  MAX(t.received_date)::date
                 FROM camp_fin_transaction AS t
                 JOIN camp_fin_transactiontype AS tt
                   ON t.transaction_type_id = tt.id
@@ -491,29 +491,29 @@ class DonationsView(PaginatedList):
                   AND company_name NOT ILIKE '%%department of finance%%'
                 ORDER BY {0} {1}
             '''.format(self.order_by, self.sort_order)
-            
+
             start_date_str = self.request.GET.get('from')
             end_date_str = self.request.GET.get('to')
 
             if start_date_str and end_date_str:
-                
+
                 self.start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
                 self.end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
 
             elif start_date_str and not end_date_str:
-                
+
                 start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
                 self.start_date = start_date
                 self.end_date = start_date + timedelta(days=1)
-            
+
             elif not start_date_str and end_date_str:
-                
+
                 end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
                 self.start_date = end_date - timedelta(days=1)
                 self.end_date = end_date
 
             else:
-                
+
                 self.end_date = max_date
                 self.start_date = max_date
 
@@ -542,26 +542,26 @@ class DonationsView(PaginatedList):
         context['end_date'] = self.end_date
         context['donation_count'] = self.donation_count
         context['donation_sum'] = self.donation_sum
-        
+
         seo = {}
         seo.update(settings.SITE_META)
-        
+
         start_date = self.start_date.strftime('%B %-d, %Y')
         end_date = self.end_date.strftime('%B %-d, %Y')
         count = '{:,}'.format(self.donation_count)
         total = format_money(self.donation_sum)
-        
+
         fmt_args = {
             'start_date': start_date,
             'count': count,
             'total': total,
             'end_date': end_date,
         }
-        
+
         if start_date != end_date:
             seo['title'] = 'Donations between {start_date} and {end_date}'.format(**fmt_args)
             seo['site_desc'] = '{count} donations between {start_date} and {end_date} totalling {total}'.format(**fmt_args)
-        
+
         else:
             seo['title'] = 'Donations on {start_date}'.format(**fmt_args)
             seo['site_desc'] = '{count} donations on {start_date} totalling {total}'.format(**fmt_args)
@@ -579,13 +579,13 @@ class SearchView(TemplateView):
 
         context['term'] = self.request.GET.get('term')
         context['table_name'] = self.request.GET.getlist('table_name')
-        
+
         seo = {}
         seo.update(settings.SITE_META)
 
         seo['title'] = "Search for '{}'".format(context['term'])
         seo['site_desc'] = 'Search for candidates, committees and donors in New Mexico'
-        
+
         context['seo'] = seo
 
         return context
@@ -639,7 +639,7 @@ class CandidateList(PaginatedList):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         context['sort_order'] = self.sort_order
 
         context['toggle_order'] = 'desc'
@@ -647,7 +647,7 @@ class CandidateList(PaginatedList):
             context['toggle_order'] = 'asc'
 
         context['order_by'] = self.order_by
-        
+
         seo = {}
         seo.update(settings.SITE_META)
 
@@ -655,7 +655,7 @@ class CandidateList(PaginatedList):
         seo['site_desc'] = 'Candidates in New Mexico'
 
         context['seo'] = seo
-        
+
         try:
             page = Page.objects.get(path=self.page_path)
             context['page'] = page
@@ -663,7 +663,7 @@ class CandidateList(PaginatedList):
                 context[blob.context_name] = blob.text
         except Page.DoesNotExist:
             context['page'] = None
-        
+
         return context
 
 class CommitteeList(PaginatedList):
@@ -713,7 +713,7 @@ class CommitteeList(PaginatedList):
             context['toggle_order'] = 'asc'
 
         context['order_by'] = self.order_by
-        
+
         seo = {}
         seo.update(settings.SITE_META)
 
@@ -721,7 +721,7 @@ class CommitteeList(PaginatedList):
         seo['site_desc'] = 'PACs in New Mexico'
 
         context['seo'] = seo
-        
+
         try:
             page = Page.objects.get(path=self.page_path)
             context['page'] = page
@@ -729,7 +729,7 @@ class CommitteeList(PaginatedList):
                 context[blob.context_name] = blob.text
         except Page.DoesNotExist:
             context['page'] = None
-        
+
 
         return context
 
@@ -1139,12 +1139,12 @@ class CommitteeDetailBaseView(DetailView):
 class CandidateDetail(CommitteeDetailBaseView):
     template_name = "camp_fin/candidate-detail.html"
     model = Candidate
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        current_loans = ''' 
-            SELECT 
+        current_loans = '''
+            SELECT
               loan.*,
               status.*
             FROM camp_fin_candidate AS c
@@ -1156,14 +1156,14 @@ class CandidateDetail(CommitteeDetailBaseView):
               ON loan.id = status.loan_id
             WHERE c.id = %s
         '''
-        
+
         cursor = connection.cursor()
-        
+
         cursor.execute(current_loans, [context['object'].id])
-        
+
         columns = [c[0] for c in cursor.description]
         loan_tuple = namedtuple('Loans', columns)
-        
+
         context['loans'] = [loan_tuple(*r) for r in cursor]
 
         latest_campaign = context['object'].campaign_set\
@@ -1178,10 +1178,10 @@ class CandidateDetail(CommitteeDetailBaseView):
         context['campaigns'] = context['object'].campaign_set.all()
 
         context['stories'] = self.object.story_set.all()
-        
+
         seo = {}
         seo.update(settings.SITE_META)
-        
+
         first_name = context['object'].first_name
         last_name = context['object'].last_name
 
@@ -1191,12 +1191,12 @@ class CandidateDetail(CommitteeDetailBaseView):
                                                                       last_name)
 
         context['seo'] = seo
-        
+
         try:
             latest_campaign = context['latest_filing'].campaign
         except (AttributeError, ObjectDoesNotExist):
             latest_campaign = None
-        
+
         sos_link = None
 
         if latest_campaign:
@@ -1208,7 +1208,7 @@ class CandidateDetail(CommitteeDetailBaseView):
                                         c=latest_campaign.candidate_id)
             except AttributeError:
                 sos_link = None
-        
+
         context['sos_link'] = sos_link
         context['entity_type'] = 'candidate'
 
@@ -1220,51 +1220,51 @@ class CommitteeDetail(CommitteeDetailBaseView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         seo = {}
         seo.update(settings.SITE_META)
-        
+
         seo['title'] = '{0}'.format(context['object'].name)
         seo['site_desc'] = "Information about '{0}' in New Mexico".format(context['object'].name)
 
         context['seo'] = seo
-        
+
         context['sos_link'] = 'https://www.cfis.state.nm.us/media/PACReport.aspx?p={}'.format(context['object'].entity_id)
-        
+
         context['entity_type'] = 'pac'
-        
+
         return context
 
 class ContributionDetail(TransactionDetail):
     template_name = 'camp_fin/contribution-detail.html'
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         seo = {}
         seo.update(settings.SITE_META)
 
         transaction_verb = get_transaction_verb(context['object'].transaction_type.description)
         contributor = context['object'].full_name
         amount = format_money(context['object'].amount)
-        
+
         if hasattr(context['entity'], 'name'):
             recipient = context['entity'].name
         else:
-            recipient = '{0} {1}'.format(context['entity'].first_name, 
+            recipient = '{0} {1}'.format(context['entity'].first_name,
                                          context['entity'].last_name)
 
-        seo['title'] = '{0} {1} to {2}'.format(contributor, 
-                                               transaction_verb, 
+        seo['title'] = '{0} {1} to {2}'.format(contributor,
+                                               transaction_verb,
                                                recipient)
-        
-        seo['site_desc'] = '{0} {1} {2} to {3}'.format(contributor, 
+
+        seo['site_desc'] = '{0} {1} {2} to {3}'.format(contributor,
                                                        transaction_verb,
                                                        amount,
                                                        recipient)
 
         context['seo'] = seo
-        
+
         return context
 
 class ExpenditureDetail(TransactionDetail):
@@ -1272,54 +1272,54 @@ class ExpenditureDetail(TransactionDetail):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         seo = {}
         seo.update(settings.SITE_META)
 
         transaction_verb = get_transaction_verb(context['object'].transaction_type.description)
         vendor = context['object'].full_name
         amount = format_money(context['object'].amount)
-        
+
         if hasattr(context['entity'], 'name'):
             pac = context['entity'].name
         else:
-            pac = '{0} {1}'.format(context['entity'].first_name, 
+            pac = '{0} {1}'.format(context['entity'].first_name,
                                          context['entity'].last_name)
 
         seo['title'] = 'Expenditure by {0}'.format(pac)
-        
+
         seo['site_desc'] = '{0} {1} {2} on {3}'.format(pac,
                                                        transaction_verb,
-                                                       amount, 
+                                                       amount,
                                                        vendor)
 
         context['seo'] = seo
-        
+
         return context
 
 class TransactionViewSet(TransactionBaseViewSet):
     serializer_class = TransactionSerializer
     renderer_classes = (renderers.JSONRenderer, TransactionCSVRenderer)
-    
+
     def finalize_response(self, request, response, *args, **kwargs):
         response = super().finalize_response(request, response, *args, **kwargs)
-        
+
         if request.GET.get('format') == 'csv':
-            
+
             if self.default_filter['transaction_type__contribution']:
                 ttype = 'contributions'
             else:
                 ttype = 'expenditures'
-            
+
             if not self.entity_name:
                 response = HttpResponse('Use /api/bulk/{}/ to get bulk downloads'.format(ttype))
                 response.status_code = 400
 
             else:
                 filename = '{0}-{1}-{2}.csv'.format(ttype,
-                                                    slugify(self.entity_name), 
+                                                    slugify(self.entity_name),
                                                     timezone.now().isoformat())
-                
+
                 response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
 
         return response
@@ -1388,31 +1388,31 @@ SERIALIZER_LOOKUP = {
 @method_decorator(never_cache, name='dispatch')
 class SearchAPIView(viewsets.ViewSet):
     renderer_classes = (renderers.JSONRenderer, SearchCSVRenderer)
-    
+
     def list(self, request):
-        
+
         table_names = request.GET.getlist('table_name')
         term = request.GET.get('term')
         datatype = request.GET.get('datatype')
-        
+
         limit = request.GET.get('limit', 50)
         offset = request.GET.get('offset', 0)
-        
+
         order_by_col = None
         sort_order = 'ASC'
 
         if request.GET.get('length'):
             limit = request.GET['length']
-        
+
         if request.GET.get('start'):
             offset = request.GET['start']
-        
+
         if request.GET.get('order[0][column]'):
             col_idx = request.GET['order[0][column]']
             order_by_col = request.GET['columns[' + str(col_idx) + '][data]']
-            
+
             sort_order = request.GET['order[0][dir]']
-        
+
         if not term:
             return Response({'error': 'term is required'}, status=400)
 
@@ -1451,7 +1451,7 @@ class SearchAPIView(viewsets.ViewSet):
                       ORDER BY pac.id
                     ) AS s
                 '''.format(table)
-            
+
             if table == 'candidate':
                 query = '''
                     SELECT * FROM (
@@ -1591,12 +1591,12 @@ class SearchAPIView(viewsets.ViewSet):
                       ON add.state_id = state.id
                     WHERE org.search_name @@ plainto_tsquery('english', %s)
                 '''
-            
+
             if order_by_col:
                 query = '''
                     {0} ORDER BY {1} {2}
                 '''.format(query, order_by_col, sort_order)
-            
+
             serializer = SERIALIZER_LOOKUP[table]
 
             cursor = connection.cursor()
@@ -1604,20 +1604,20 @@ class SearchAPIView(viewsets.ViewSet):
 
             columns = [c[0] for c in cursor.description]
             result_tuple = namedtuple(table, columns)
-            
+
             objects =  [result_tuple(*r) for r in cursor]
-            
+
             meta = OrderedDict()
 
             if not request.GET.get('format') == 'csv':
                 paginator = DataTablesPagination()
 
                 page = paginator.paginate_queryset(objects, self.request, view=self)
-                
+
                 serializer = serializer(page, many=True)
-                
+
                 objects = serializer.data
-                
+
                 draw = int(request.GET.get('draw', 0))
 
                 meta = OrderedDict([
@@ -1633,19 +1633,19 @@ class SearchAPIView(viewsets.ViewSet):
                 ('meta', meta),
                 ('objects', objects),
             ])
-        
+
         return Response(response)
-    
+
     def finalize_response(self, request, response, *args, **kwargs):
         response = super().finalize_response(request, response, *args, **kwargs)
-        
+
         if request.GET.get('format') == 'csv':
-            
+
             term = request.GET['term']
 
-            filename = '{0}-{1}.zip'.format(slugify(term), 
+            filename = '{0}-{1}.zip'.format(slugify(term),
                                             timezone.now().isoformat())
-            
+
             response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
 
         return response
@@ -1656,54 +1656,54 @@ class TopEarnersView(PaginatedList):
     per_page = 100
 
     def get_queryset(self):
-        
+
         interval = self.request.GET.get('interval', 90)
-        
+
         if int(interval) > 0:
             where_clause = "AND t.received_date >= (NOW() - INTERVAL '%s days')"
         else:
             where_clause = "AND t.received_date >= '2010-01-01'"
 
 
-        query = ''' 
+        query = '''
             SELECT * FROM (
-              SELECT 
-                dense_rank() OVER (ORDER BY new_funds DESC) AS rank, * 
+              SELECT
+                dense_rank() OVER (ORDER BY new_funds DESC) AS rank, *
               FROM (
-                SELECT 
-                  MAX(COALESCE(c.slug, p.slug)) AS slug, 
-                  MAX(COALESCE(c.full_name, p.name)) AS name, 
-                  SUM(t.amount) AS new_funds, 
-                  (array_agg(f.closing_balance ORDER BY f.id DESC))[1] AS current_funds, 
-                  CASE WHEN p.id IS NULL 
-                    THEN 'Candidate' 
-                    ELSE 'PAC' 
-                  END AS committee_type 
-                  FROM camp_fin_transaction AS t 
-                  JOIN camp_fin_transactiontype AS tt 
-                    ON t.transaction_type_id = tt.id 
-                  JOIN camp_fin_filing AS f 
-                    ON t.filing_id = f.id 
-                  LEFT JOIN camp_fin_pac AS p 
-                    ON f.entity_id = p.entity_id 
-                  LEFT JOIN camp_fin_candidate AS c 
-                    ON f.entity_id = c.entity_id 
-                  WHERE tt.contribution = TRUE 
-                    {} 
+                SELECT
+                  MAX(COALESCE(c.slug, p.slug)) AS slug,
+                  MAX(COALESCE(c.full_name, p.name)) AS name,
+                  SUM(t.amount) AS new_funds,
+                  (array_agg(f.closing_balance ORDER BY f.id DESC))[1] AS current_funds,
+                  CASE WHEN p.id IS NULL
+                    THEN 'Candidate'
+                    ELSE 'PAC'
+                  END AS committee_type
+                  FROM camp_fin_transaction AS t
+                  JOIN camp_fin_transactiontype AS tt
+                    ON t.transaction_type_id = tt.id
+                  JOIN camp_fin_filing AS f
+                    ON t.filing_id = f.id
+                  LEFT JOIN camp_fin_pac AS p
+                    ON f.entity_id = p.entity_id
+                  LEFT JOIN camp_fin_candidate AS c
+                    ON f.entity_id = c.entity_id
+                  WHERE tt.contribution = TRUE
+                    {}
                   GROUP BY c.id, p.id
-                ) AS s 
+                ) AS s
                 WHERE name NOT ILIKE '%%public election fund%%'
                   OR name NOT ILIKE '%%department of finance%%'
               ORDER BY new_funds DESC
             ) AS s
         '''.format(where_clause)
-        
+
         cursor = connection.cursor()
         cursor.execute(query, [int(interval)])
 
         columns = [c[0] for c in cursor.description]
         result_tuple = namedtuple('TopEarners', columns)
-        
+
         return [result_tuple(*r) for r in cursor]
 
     def get_context_data(self, **kwargs):
@@ -1716,7 +1716,7 @@ class TopEarnersView(PaginatedList):
 
         seo['title'] = "Top earners"
         seo['site_desc'] = 'Top earning political committees and candidates in New Mexico'
-        
+
         context['seo'] = seo
 
         return context
@@ -1736,7 +1736,7 @@ def make_response(query, filename, args=[]):
         cursor.execute(query)
 
     header = [c[0] for c in cursor.description]
-    
+
     streaming_buffer = Echo()
     writer = csv.writer(streaming_buffer)
     writer.writerow(header)
@@ -1748,8 +1748,8 @@ def make_response(query, filename, args=[]):
     return response
 
 def bulk_candidates(request):
-    
-    copy = ''' 
+
+    copy = '''
         SELECT DISTINCT ON (candidate.id)
           candidate.*,
           campaign.committee_name,
@@ -1801,14 +1801,14 @@ def bulk_candidates(request):
     '''
 
     filename = 'Candidates_{}.csv'.format(timezone.now().isoformat())
-    
+
     return make_response(copy, filename, args)
 
 def bulk_committees(request):
-    copy = ''' 
+    copy = '''
         SELECT DISTINCT ON (pac.id)
-          pac.*, 
-          treasurer.full_name AS treasurer_name 
+          pac.*,
+          treasurer.full_name AS treasurer_name
         FROM camp_fin_pac AS pac
         JOIN camp_fin_treasurer AS treasurer
           ON pac.treasurer_id = treasurer.id
@@ -1838,7 +1838,7 @@ def bulk_committees(request):
     '''
 
     filename = 'PACs_{}.csv'.format(timezone.now().isoformat())
-    
+
     return make_response(copy, filename, args)
 
 def bulk_lobbyists(request):

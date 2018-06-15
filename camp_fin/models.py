@@ -26,14 +26,14 @@ class Candidate(models.Model):
     date_updated = models.DateTimeField(null=True)
     qual_candidate_id = models.IntegerField(null=True)
     deceased = models.CharField(max_length=3, null=True)
-    
+
     full_name = models.CharField(max_length=500, null=True)
-    
+
     slug = models.CharField(max_length=500, null=True)
 
     def __str__(self):
         return self.full_name
-    
+
 class PAC(models.Model):
     entity = models.ForeignKey("Entity", db_constraint=False)
     name = models.CharField(max_length=100)
@@ -55,12 +55,12 @@ class PAC(models.Model):
     initial_balance_from_self = models.NullBooleanField(null=True)
     initial_debt = models.FloatField(null=True)
     initial_debt_from_self = models.NullBooleanField(null=True)
-    
+
     slug = models.CharField(max_length=500, null=True)
 
     def __str__(self):
         return self.name
-    
+
     @property
     def full_name(self):
         # This is here so we can treat pacs and candidates the same in
@@ -222,12 +222,19 @@ class Campaign(models.Model):
         '''
         Total amount of cash that a campaign has on hand at any given point in time.
         '''
-        last_filing = self.filing_set.order_by('-date_closed').first()
+        filings = self.filing_set.order_by('-date_closed')
 
-        if last_filing:
-            return last_filing.closing_balance
-        else:
-            return 0
+        on_hand = 0
+
+        if filings:
+
+            if filings[0].filing_period.filing_period_type.description == 'Supplemental':
+                on_hand = filings[1].closing_balance + filings[0].closing_balance
+
+            else:
+                on_hand = filings[0].closing_balance
+
+        return on_hand
 
     @property
     def is_winner(self):
@@ -449,7 +456,7 @@ class Office(models.Model):
     description = models.CharField(max_length=100)
     status = models.ForeignKey('Status', db_constraint=False)
     office_type = models.ForeignKey('OfficeType', db_constraint=False, null=True)
-    
+
     def __str__(self):
         return self.description
 
@@ -502,12 +509,12 @@ class Transaction(models.Model):
     contact_type_other = models.CharField(max_length=25, null=True)
     occupation = models.CharField(max_length=255, null=True)
     expenditure_for_certified_candidate = models.NullBooleanField()
-    
+
     full_name = models.CharField(max_length=500, null=True)
 
     def __str__(self):
         return self.full_name
-    
+
     @property
     def transaction_subject(self):
         # This is here so that the API key makes a little more sense
@@ -516,10 +523,10 @@ class Transaction(models.Model):
     @property
     def full_address(self):
         full_address = ''
-        
+
         if self.address:
             full_address = '{}'.format(self.address)
-        
+
         if self.city:
             full_address = '{0} {1}'.format(full_address, self.city)
 
@@ -535,7 +542,7 @@ class TransactionType(models.Model):
     description = models.CharField(max_length=50)
     contribution = models.BooleanField()
     anonymous = models.BooleanField()
-    
+
     def __str__(self):
         return self.description
 
@@ -570,19 +577,19 @@ class Loan(models.Model):
     occupation = models.CharField(max_length=255, null=True)
     loan_transfer_date = models.DateTimeField(null=True)
     from_file_id = models.IntegerField(null=True)
-    
+
     full_name = models.CharField(max_length=500, null=True)
 
     def __str__(self):
         return self.full_name
-    
+
     @property
     def full_address(self):
         full_address = ''
-        
+
         if self.address:
             full_address = '{}'.format(self.address)
-        
+
         if self.city:
             full_address = '{0} {1}'.format(full_address, self.city)
 
@@ -611,7 +618,7 @@ class LoanTransaction(models.Model):
     from_file_id = models.IntegerField(null=True)
 
     def __str__(self):
-        return '{0} {1}'.format(self.transaction_type, 
+        return '{0} {1}'.format(self.transaction_type,
                                 format_money(self.amount))
 
 class LoanTransactionType(models.Model):
@@ -646,7 +653,7 @@ class SpecialEvent(models.Model):
         if self.event_name:
             return self.event_name
         else:
-            return 'Event sponsored by {0} on {1}'.format(self.sponsors, 
+            return 'Event sponsored by {0} on {1}'.format(self.sponsors,
                                                           self.event_date)
 
 class Filing(models.Model):
@@ -748,9 +755,9 @@ class FilingPeriod(models.Model):
     initial_date = models.DateField()
     email_sent_status = models.IntegerField()
     reminder_sent_status = models.IntegerField(blank=True, null=True)
-    
+
     def __str__(self):
-        return '{0}/{1} ({2})'.format(self.filing_date.month, 
+        return '{0}/{1} ({2})'.format(self.filing_date.month,
                                       self.filing_date.year,
                                       self.filing_period_type.description)
 
@@ -1017,7 +1024,7 @@ class EntityType(models.Model):
 
 class FilingType(models.Model):
     description = models.CharField(max_length=25)
-    
+
     def __str__(self):
         return self.description
 
@@ -1036,7 +1043,7 @@ class Treasurer(models.Model):
     olddb_entity_id = models.IntegerField(null=True)
 
     full_name = models.CharField(max_length=500, null=True)
-    
+
     def __str__(self):
         return self.full_name
 
@@ -1060,19 +1067,19 @@ class Contact(models.Model):
     from_file_id = models.IntegerField(null=True)
 
     full_name = models.CharField(max_length=500, null=True)
-    
+
     def __str__(self):
         return self.full_name
 
 class ContactType(models.Model):
     description = models.CharField(max_length=100)
-    
+
     def __str__(self):
         return self.description
 
 class State(models.Model):
     postal_code = models.CharField(max_length=2, null=True)
-    
+
     def __str__(self):
         if self.postal_code:
             return self.postal_code
