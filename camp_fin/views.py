@@ -626,6 +626,7 @@ class CandidateList(PaginatedList):
                 JOIN camp_fin_office AS office
                   ON campaign.office_id = office.id
                 WHERE filing.date_added >= '2010-01-01'
+                  AND filing.closing_balance IS NOT NULL
                 ORDER BY candidate.id, filing.date_added DESC
               ) AS candidates
             ) AS s
@@ -692,6 +693,7 @@ class CommitteeList(PaginatedList):
                 LEFT JOIN camp_fin_filingperiod AS period
                   ON filing.filing_period_id = period.id
                 WHERE filing.date_added >= '2010-01-01'
+                  AND filing.closing_balance IS NOT NULL
                 ORDER BY pac.id, filing.date_added DESC
               ) AS pac
             ) AS s
@@ -1123,12 +1125,17 @@ class CommitteeDetailBaseView(DetailView):
 
         latest_filing = context['object'].entity.filing_set\
                                                 .filter(filing_period__exclude_from_cascading=False)\
+                                                .exclude(final__isnull=True)\
+                                                .exclude(final=False)\
                                                 .order_by('-date_added').first()
 
         context['latest_filing'] = latest_filing
 
+        total_loans = latest_filing.total_loans or 0
+        total_inkind = latest_filing.total_inkind or 0
+
         # Count pure donations, if applicable
-        if latest_filing and (latest_filing.total_loans > 0 or latest_filing.total_inkind > 0):
+        if latest_filing and (total_loans > 0 or total_inkind > 0):
             donations = latest_filing.total_contributions - (latest_filing.total_loans +
                                                              latest_filing.total_inkind)
             context['donations'] = donations
