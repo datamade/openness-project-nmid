@@ -911,8 +911,9 @@ class Entity(models.Model):
                 filing_date = filing.filing_date
                 date_array = [filing_date.year, filing_date.month, filing_date.day]
                 debts = (-1 * filing.total_unpaid_debts)
-                balance_trend.append([filing.closing_balance, *date_array])
-                debt_trend.append([debts, *date_array])
+                if filing.closing_balance:
+                    balance_trend.append([filing.closing_balance, *date_array])
+                    debt_trend.append([debts, *date_array])
 
             if summed_filings[0].opening_balance:
                 first_opening_balance = summed_filings[0].opening_balance

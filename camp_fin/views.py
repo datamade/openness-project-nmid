@@ -1126,7 +1126,6 @@ class CommitteeDetailBaseView(DetailView):
         latest_filing = context['object'].entity.filing_set\
                                                 .filter(filing_period__exclude_from_cascading=False)\
                                                 .exclude(final__isnull=True)\
-                                                .exclude(final=False)\
                                                 .order_by('-date_added').first()
 
         context['latest_filing'] = latest_filing
