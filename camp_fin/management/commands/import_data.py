@@ -176,17 +176,17 @@ class Command(BaseCommand):
             if entity_type in ['transaction', 'address', 'contact', 'campaign']:
                 self.encoding = 'windows-1252'
 
-            if self.file_path.endswith('xlsx'):
-                self.convertXLSX()
-
-            if self.file_path.endswith('zip'):
-                self.unzipFile()
-
             self.table_mapper = MAPPER_LOOKUP[self.entity_type]
 
             self.django_table = 'camp_fin_{}'.format(self.entity_type)
             self.raw_pk_col = [k for k, v in self.table_mapper.items() \
                                    if v['field'] == 'id'][0]
+
+            if self.file_path.endswith('xlsx'):
+                self.convertXLSX()
+
+            if self.file_path.endswith('zip'):
+                self.unzipFile()
 
             self.makeRawTable()
             count = self.importRawData()
@@ -572,9 +572,10 @@ class Command(BaseCommand):
 
     def convertXLSX(self):
         wb = load_workbook(self.file_path)
-        sheet = wb.get_active_sheet()
+        sheets = wb.worksheets
+        saved_pks = []
 
-        header = [r.value for r in sheet.rows[0]]
+        header = [r.value for r in sheets[0].rows[0]]
 
         base_name = os.path.basename(self.file_path.rsplit('.', 1)[0])
         csv_path = '{}.csv'.format(os.path.join('data', base_name))
@@ -582,11 +583,21 @@ class Command(BaseCommand):
         with open(csv_path, 'w') as f:
             writer = csv.writer(f)
             writer.writerow(header)
-            for row in sheet.rows[1:]:
-                row_values = [r.value for r in row]
-                writer.writerow(row_values)
 
-        self.file_path = csv_path
+            for sheet in sheets:
+
+                for row in sheet.rows[1:]:
+                    row_values = [r.value for r in row]
+                    header_lower = [v.lower() for v in header]
+
+                    row_dict = dict(zip(header_lower, row_values))
+                    row_pk = row_dict[self.raw_pk_col]
+
+                    if row_pk not in saved_pks:
+                        writer.writerow(row_values)
+                        saved_pks.append(row_pk)
+
+            self.file_path = csv_path
 
     def populateEntityTable(self):
         entities = '''
