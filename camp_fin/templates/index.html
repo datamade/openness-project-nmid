@@ -2,6 +2,7 @@
 {% load helpers %}
 {% load staticfiles %}
 {% load explainer %}
+{% load humanize %}
 
 {% block title %}
 Keep an eye on money in New Mexico politics
@@ -55,137 +56,84 @@ Keep an eye on money in New Mexico politics
         {{ page.text|safe }}
     </div>
 </div>
+<div class="row">
+    <div class='col-xs-12'>
+        <h1>
+            <i class="fa fa-fw fa-university"></i>
+            New Mexico Lobbyists
+            <br/>
+            <small>
+                Browse lobbyists and their employers in New Mexico
+            </small>
+        </h1>
+    </div>
+</div>
+<div class="row">
+    <div class="col-xs-12 lobbyist-stats">
+        <p>
+            <span class="green">
+                <i class="fa fa-fw fa-plus-circle"></i>
+                {{ total_lobbyist_contributions|format_money_short }}
+            </span>
+            raised for candidates and committees
+        </p>
+        <p>
+            <span class="red">
+                <i class="fa fa-fw fa-minus-circle"></i>
+                {{ total_lobbyist_expenditures|format_money_short }}
+            </span>
+            spent on lobbying
+        </p>
+    </div>
+    <hr/>
+</div>
+{% if page.text %}
+<div class="row">
+    <div class="col-xs-12 col-md-10">
+        {{ page.text|safe }}
+    </div>
+</div>
+{% endif %}
+<div class="row">
+    <div class="col-xs-12">
+        <h3>
+            <i class="fa fa-fw fa-user"></i>
+            Browse {{ num_lobbyists|intcomma }}
+            <a href="{% url 'lobbyist-list' %}">lobbyists</a>
+        </h3>
+        {% with sortable=False %}
+            {% include 'camp_fin/widgets/lobbyist-list.html' %}
+        {% endwith %}
+        <p>
+            <a href="{% url 'lobbyist-list' %}" class='btn btn-danger'>
+                <i class='fa fa-fw fa-user'></i>
+                See more top lobbyists >
+            </a>
+        </p>
+        <br />
+    </div>
+</div>
+<div class="row">
+    <div class="col-xs-12">
+        <h3>
+            <i class="fa fa-fw fa-users"></i>
+            Browse {{ num_employers|intcomma }}
+            <a href="{% url 'organization-list' %}">employers</a>
+            paying lobbyists
+        </h3>
+        {% include 'camp_fin/widgets/organization-list.html' %}
+        <p>
+            <a href="{% url 'organization-list' %}" class='btn btn-danger'>
+                <i class='fa fa-fw fa-user'></i>
+                See more top lobbyist employers >
+            </a>
+        </p>
+        <br /><br />
+    </div>
+</div>
 
 <div class='row'>
     <div class='col-sm-12'>
-
-        <h2>
-            <a href="{% url 'race-detail' governor_race.id %}">
-                <i class='fa fa-star'></i> {{ year }}
-                Race for Governor
-            </a>
-        </h2>
-        {{ home_page_governors_race|safe }}
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Candidate</th>
-                    <th class="text-right">
-                        Cash on hand
-                        {% explainer "The amount of available funds that the campaign reported at the time of the last filing date. This number does not include outstanding debts." %}
-                    </th>
-                    <th class="text-right">
-                        Total funds raised since {{ last_year }}
-                        {% explainer "'Funds raised' includes both contributions and loans to the campaign." %}
-                    </th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for campaign in governor_race.active_campaigns %}
-                    <tr>
-                        <td class="col-sm-6">
-                            <a href="{% url 'candidate-detail' campaign.candidate.slug %}">
-                                {{ campaign.candidate.full_name }}
-                            </a>
-                            {% if campaign.party_identifier %}
-                                <small>
-                                    <span class="party-identifier {{ campaign.party_identifier }}">
-                                        ({{ campaign.party_identifier }})
-                                    </span>
-                                </small>
-                            {% endif %}
-                            {% if campaign.is_winner %}
-                                <i class="fa fa-fw fa-check-circle green"></i>
-                            {% endif %}
-                            </a>
-                        </td>
-                        <td class="text-right">
-                            <span class="hidden-sm hidden-xs">
-                                {{ campaign.cash_on_hand | format_money }}
-                            </span>
-                            <span class="visible-sm-block visible-xs-block">
-                                {{ campaign.cash_on_hand | format_money_short }}
-                            </span>
-                        </td>
-                        <td class="text-right">
-                            <span class="hidden-sm hidden-xs">
-                                {% funds_raised campaign last_year %}
-                            </span>
-                            <span class="visible-sm-block visible-xs-block">
-                                {% funds_raised campaign last_year short=True %}
-                            </span>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <p><a href="{% url 'race-detail' governor_race.id %}" class='btn btn-danger'><i class='fa fa-star'></i> View details of the race for Governor ></a></p><br /><br />
-
-        <h2>
-            <a href="{% url 'races' %}">
-                <i class="fa fa-fw fa-check-square-o"></i>
-                Other top {{ year }} races
-            </a>
-        </h2>
-        {{ home_page_contested_races|safe }}
-        {% with races=top_races %}
-            {% include 'camp_fin/widgets/races_list.html' %}
-        {% endwith %}
-
-        <p><a href="{% url 'races' %}" class='btn btn-danger'><i class='fa fa-plus-circle'></i> More top races ></a></p><br /><br />
-
-        <h2><a href='/donations/'><i class='fa fa-dollar'></i> Largest donations</a></h2>
-        {{ home_page_largest_donations|safe }}
-        <table class='table table-striped'>
-            <thead>
-                <tr>
-                    <th>
-                        Donor
-                    </th>
-
-                    <th>
-                        Amount {{ sort_order|get_sort_icon|safe }}
-                    </th>
-                    <th>
-                        Recipient
-                    </th>
-                    <th class='hidden-sm hidden-xs'>
-                        Date
-                    </th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for transaction in transaction_objects %}
-                <tr>
-                    <td>
-                        {{ transaction.full_name }}
-                    </td>
-                    <td class='no-wrap'>
-                        <a href="{% url 'contribution-detail' transaction.id %}">
-                            <span class='hidden-sm hidden-xs'>{{transaction.transaction_type|get_transaction_verb }}</span>
-                            <strong class='hidden-sm hidden-xs'>{{ transaction.amount|format_money }}</strong>
-                            <strong class='visible-sm-block visible-xs-block'>{{ transaction.amount|format_money_short }}</strong>
-                            <span class='hidden-sm hidden-xs'>to</span>
-                        </a>
-                    </td>
-                    <td>
-                        {% if transaction.pac_slug %}
-                          <a href="{% url 'committee-detail' transaction.pac_slug %}">{{ transaction.transaction_subject }}</a>
-                        {% endif %}
-                        {% if transaction.candidate_slug %}
-                          <a href="{% url 'candidate-detail' transaction.candidate_slug %}">{{ transaction.transaction_subject }}</a>
-                        {% endif %}
-                    </td>
-                    <td class='no-wrap hidden-sm hidden-xs'>
-                        {{ transaction.received_date|date:"M j, Y" }}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <p><a href='/donations/' class='btn btn-danger'><i class='fa fa-dollar'></i> Browse donations ></a></p><br /><br />
 
         <h2><a href='/candidates/'><i class='fa fa-user'></i> Top candidates</a></h2>
         {{ home_page_top_candidates|safe }}
@@ -246,14 +194,6 @@ Keep an eye on money in New Mexico politics
         </table>
 
         <p><a href='/committees/' class='btn btn-danger'><i class='fa fa-group'></i> Browse committees ></a></p><br /><br />
-
-        <h2><a href="{% url 'lobbyist-portal' %}"><i class='fa fa-university'></i> Top lobbyists</a></h2>
-        {{ home_page_top_lobbyists|safe }}
-        {% with sortable=False %}
-            {% include 'camp_fin/widgets/lobbyist-list.html' %}
-        {% endwith %}
-
-        <p><a href="{% url 'lobbyist-portal' %}" class='btn btn-danger'><i class='fa fa-university'></i> See more on the lobbyist portal ></a></p><br /><br />
 
         <h2><a href='/about/'><i class='fa fa-fw fa-info-circle'></i> About</a></h2>
         {{ home_page_about|safe }}

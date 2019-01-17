@@ -84,7 +84,45 @@ class DownloadView(PagesMixin):
         return context
 
 
-class IndexView(TopEarnersBase, PagesMixin):
+class LobbyistContextMixin(object):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['lobbyists'] = Lobbyist.top(limit=5)
+        context['organizations'] = Organization.top(limit=5)
+
+        context['num_lobbyists'] = Lobbyist.objects.count()
+        context['num_employers'] = Organization.objects.count()
+
+        get_total_contributions = '''
+            SELECT SUM(political_contributions)
+            FROM camp_fin_lobbyistreport
+        '''
+
+        get_total_expenditures = '''
+            SELECT SUM(expenditures)
+            FROM camp_fin_lobbyistreport
+        '''
+
+        with connection.cursor() as cursor:
+            cursor.execute(get_total_contributions)
+            context['total_lobbyist_contributions'] = cursor.fetchone()[0]
+
+            cursor.execute(get_total_expenditures)
+            context['total_lobbyist_expenditures'] = cursor.fetchone()[0]
+
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        seo['title'] = "Lobbyist portal - The Openness Project"
+        seo['site_desc'] = 'Browse lobbyists and their employers in New Mexico politics.'
+
+        context['seo'] = seo
+
+        return context
+
+
+class IndexView(TopEarnersBase, LobbyistContextMixin, PagesMixin):
     template_name = 'index.html'
     page_path = '/'
 
@@ -150,6 +188,7 @@ class IndexView(TopEarnersBase, PagesMixin):
                     JOIN camp_fin_filing AS filing
                       USING(entity_id)
                     WHERE filing.date_added >= '{year}-01-01'
+                      AND filing.closing_balance IS NOT NULL
                     ORDER BY pac.id, filing.date_added desc
                   ) AS pac
                 ) AS s
@@ -185,6 +224,7 @@ class IndexView(TopEarnersBase, PagesMixin):
                     JOIN camp_fin_office AS office
                       ON campaign.office_id = office.id
                     WHERE filing.date_added >= '{year}-01-01'
+                      AND filing.closing_balance IS NOT NULL
                     ORDER BY candidate.id, filing.date_added DESC
                   ) AS candidates
                 ) AS s
@@ -199,71 +239,12 @@ class IndexView(TopEarnersBase, PagesMixin):
         context['pac_objects'] = pac_objects
         context['candidate_objects'] = candidate_objects
 
-        # Race for governor
-        gov_race = Race.objects.filter(office__description='Governor')\
-                               .filter(election_season__year=year)\
-                               .first()
-
-        context['governor_race'] = gov_race
-
-        # Hottest races
-        top_races = Race.objects.filter(election_season__year=year)\
-                                .exclude(office__description='Governor')\
-                                .order_by('-total_contributions')\
-                                .prefetch_related('campaign_set')\
-                                .prefetch_related('campaign_set__race')\
-                                .prefetch_related('campaign_set__political_party')\
-                                .prefetch_related('campaign_set__candidate')\
-                                .prefetch_related('campaign_set__candidate__entity')
-
-        # Only get the ten top races
-        context['top_races'] = top_races[:10]
-        context['verbose_type'] = 'all'
-
-        # Lobbyists
-        context['lobbyists'] = Lobbyist.top(limit=5)
-
         return context
 
-class LobbyistPortal(PagesMixin):
+
+class LobbyistPortal(LobbyistContextMixin, PagesMixin):
     template_name = 'lobbyist-portal.html'
     page_path = '/lobbyist-portal/'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        context['lobbyists'] = Lobbyist.top(limit=5)
-        context['organizations'] = Organization.top(limit=5)
-
-        context['num_lobbyists'] = Lobbyist.objects.count()
-        context['num_employers'] = Organization.objects.count()
-
-        get_total_contributions = '''
-            SELECT SUM(political_contributions)
-            FROM camp_fin_lobbyistreport
-        '''
-
-        get_total_expenditures = '''
-            SELECT SUM(expenditures)
-            FROM camp_fin_lobbyistreport
-        '''
-
-        with connection.cursor() as cursor:
-            cursor.execute(get_total_contributions)
-            context['total_contributions'] = cursor.fetchone()[0]
-
-            cursor.execute(get_total_expenditures)
-            context['total_expenditures'] = cursor.fetchone()[0]
-
-        seo = {}
-        seo.update(settings.SITE_META)
-
-        seo['title'] = "Lobbyist portal - The Openness Project"
-        seo['site_desc'] = 'Browse lobbyists and their employers in New Mexico politics.'
-
-        context['seo'] = seo
-
-        return context
 
 
 class RacesView(PaginatedList):
