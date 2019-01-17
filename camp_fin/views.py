@@ -39,7 +39,7 @@ from .api_parts import CandidateSerializer, PACSerializer, TransactionSerializer
     TransactionSearchSerializer, CandidateSearchSerializer, PACSearchSerializer, \
     LoanTransactionSerializer, TreasurerSearchSerializer, DataTablesPagination, \
     TransactionCSVRenderer, SearchCSVRenderer, LobbyistSearchSerializer, \
-    OrganizationSearchSerializer
+    OrganizationSearchSerializer, LobbyistTransactionSearchSerializer
 from .templatetags.helpers import format_money, get_transaction_verb
 
 TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
@@ -1389,7 +1389,8 @@ SERIALIZER_LOOKUP = {
     'contribution': TransactionSearchSerializer,
     'expenditure': TransactionSearchSerializer,
     'lobbyist': LobbyistSearchSerializer,
-    'organization': OrganizationSearchSerializer
+    'organization': OrganizationSearchSerializer,
+    'lobbyisttransaction': LobbyistTransactionSearchSerializer,
 }
 
 @method_decorator(never_cache, name='dispatch')
@@ -1430,7 +1431,8 @@ class SearchAPIView(viewsets.ViewSet):
                 'contribution',
                 'expenditure',
                 'lobbyist',
-                'organization'
+                'organization',
+                'lobbyisttransaction',
             ]
 
         response = {}
@@ -1536,6 +1538,7 @@ class SearchAPIView(viewsets.ViewSet):
                       AND tt.contribution = TRUE
                       AND o.received_date >= '2010-01-01'
                 '''
+
             elif table == 'expenditure':
                 query = '''
                     SELECT
@@ -1597,6 +1600,29 @@ class SearchAPIView(viewsets.ViewSet):
                     JOIN camp_fin_state AS state
                       ON add.state_id = state.id
                     WHERE org.search_name @@ plainto_tsquery('english', %s)
+                '''
+
+            elif table == 'lobbyisttransaction':
+                query = '''
+                    SELECT
+                      lobbyist.slug AS lobbyist_slug,
+                      concat_ws(' ', lobbyist.prefix, lobbyist.first_name, lobbyist.middle_name,
+                                     lobbyist.last_name, lobbyist.suffix) AS lobbyist_name,
+                      trans.name,
+                      trans.beneficiary,
+                      trans.expenditure_purpose,
+                      trans.received_date,
+                      trans.amount,
+                      trans.date_added,
+                      tt.description AS transaction_type
+                    FROM camp_fin_lobbyisttransaction AS trans
+                    JOIN camp_fin_lobbyisttransactiontype AS tt
+                      ON trans.lobbyist_transaction_type_id = tt.id
+                    JOIN camp_fin_lobbyistreport AS report
+                      ON trans.lobbyist_report_id = report.id
+                    JOIN camp_fin_lobbyist AS lobbyist
+                      ON report.entity_id = lobbyist.entity_id
+                    WHERE trans.search_name @@ plainto_tsquery('english', %s)
                 '''
 
             if order_by_col:

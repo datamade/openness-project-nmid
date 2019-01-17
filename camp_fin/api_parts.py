@@ -6,7 +6,7 @@ from rest_framework import serializers, pagination, renderers
 from rest_framework_csv.renderers import CSVStreamingRenderer
 
 from camp_fin.models import Candidate, PAC, Transaction, LoanTransaction, \
-    Loan, Treasurer, Address, Lobbyist, Organization
+    Loan, Treasurer, Address, Lobbyist, Organization, LobbyistTransaction
 
 class CandidateSerializer(serializers.ModelSerializer):
 
@@ -37,14 +37,14 @@ class LoanTransactionSerializer(serializers.ModelSerializer):
 class EntityField(serializers.RelatedField):
 
     def to_representation(self, value):
-        
+
         try:
             if value.entity.pac_set.all():
                 serializer = PACSerializer(value.entity.pac_set.first())
-            
+
             elif value.entity.candidate_set.all():
                 serializer = CandidateSerializer(value.entity.candidate_set.first())
-            
+
             else:
                 return {}
 
@@ -60,12 +60,12 @@ class TransactionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Transaction
-        
+
         fields = (
             'id',
-            'amount', 
-            'received_date', 
-            'date_added', 
+            'amount',
+            'received_date',
+            'date_added',
             'check_number',
             'memo',
             'description',
@@ -93,15 +93,15 @@ class TransactionSearchSerializer(TransactionSerializer):
     candidate_slug = serializers.StringRelatedField(read_only=True)
     donor_occupation = serializers.CharField(read_only=True)
     full_address = serializers.CharField(read_only=True)
-    
+
     class Meta:
         model = Transaction
-        
+
         fields = (
             'id',
-            'amount', 
-            'received_date', 
-            'date_added', 
+            'amount',
+            'received_date',
+            'date_added',
             'check_number',
             'memo',
             'description',
@@ -216,6 +216,23 @@ class OrganizationSearchSerializer(serializers.ModelSerializer):
                   'slug',
                   'address')
 
+class LobbyistTransactionSearchSerializer(serializers.ModelSerializer):
+    transaction_type = serializers.CharField()
+    lobbyist_name = serializers.CharField()
+    lobbyist_slug = serializers.CharField()
+
+    class Meta:
+        model = LobbyistTransaction
+        fields = ('name',
+                  'beneficiary',
+                  'expenditure_purpose',
+                  'received_date',
+                  'amount',
+                  'date_added',
+                  'transaction_type',
+                  'lobbyist_name',
+                  'lobbyist_slug')
+
 class TopMoneySerializer(serializers.Serializer):
     name_prefix = serializers.CharField()
     first_name = serializers.CharField()
@@ -233,7 +250,7 @@ class DataTablesPagination(pagination.LimitOffsetPagination):
     offset_query_param = 'start'
 
 class TransactionCSVRenderer(CSVStreamingRenderer):
-    
+
     def render(self, data, *args, **kwargs):
         return super().render(data['results'], *args, **kwargs)
 
@@ -248,14 +265,15 @@ class SearchCSVRenderer(renderers.BaseRenderer):
             'contribution',
             'expenditure',
             'treasurer',
+            'lobbyisttransaction'
         ]
-        
+
         zfoutp = BytesIO()
 
         with zipfile.ZipFile(zfoutp, 'w') as zf:
-            
+
             for table in table_names:
-                
+
                 if data.get(table):
 
                     try:
@@ -264,16 +282,16 @@ class SearchCSVRenderer(renderers.BaseRenderer):
                         continue
 
                     outp = StringIO()
-                    
-                    fieldnames = first_record._fields 
+
+                    fieldnames = first_record._fields
                     writer = csv.writer(outp)
-                    
+
                     writer.writerow(fieldnames)
                     writer.writerows(data[table]['objects'])
-                    
+
                     outp.seek(0)
                     zf.writestr('{}.csv'.format(table), outp.getvalue())
-        
+
         zfoutp.seek(0)
 
         return zfoutp.getvalue()

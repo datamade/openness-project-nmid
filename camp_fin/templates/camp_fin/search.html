@@ -39,6 +39,9 @@
                         <label data-title='Lobbyist employers' data-content='Any organization that has paid registered lobbyists'>
                             <input type="checkbox" name="table_name" value="organization" {% if 'organization' in table_name %}checked='checked'{% endif %}> Lobbyist employers
                         </label>
+                        <label data-title='Lobbyist expenditures' data-content='Expenses that lobbyists have reported'>
+                            <input type="checkbox" name="table_name" value="lobbyisttransaction" {% if 'lobbyisttransaction' in table_name %}checked='checked'{% endif %}> Lobbyist expenditures
+                        </label>
                     </div>
                 </form>
             </div>
@@ -144,6 +147,24 @@
             </table>
             <hr />
         </div>
+        <div id="lobbyisttransaction-search-results" class="col-md-12" style="display:none;">
+            <h3>Lobbyist expenditures <small></small></h3>
+            <table class="table table-hover datatable-table" id="lobbyisttransaction-table">
+                <thead>
+                    <tr>
+                        <th>Lobbyist</th>
+                        <th>Expense recipient</th>
+                        <th>Expense date</th>
+                        <th>Beneficiary</th>
+                        <th>Purpose</th>
+                        <th>Amount</th>
+                        <th>Expense type</th>
+                    </tr>
+                </thead>
+                <tbody>
+            </table>
+            <hr />
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -164,7 +185,7 @@
         if(typeof query.table_name === 'string'){
             table_names = [query.table_name];
         } else if (typeof query.table_name === 'undefined'){
-            table_names = ['pac', 'contribution', 'expenditure', 'candidate', 'lobbyist', 'organization'];
+            table_names = ['pac', 'contribution', 'expenditure', 'candidate', 'lobbyist', 'organization', 'lobbyisttransaction'];
         } else {
             table_names = query.table_name;
         }
@@ -340,6 +361,39 @@
                     }
                 ];
                 init_datatable(term, 'organization', columns)
+            }
+            if (table_names.indexOf('lobbyisttransaction') >= 0) {
+                var columns = [
+                    {
+                        'data': 'lobbyist_name',
+                        'render': function(data, type, full, meta) {
+                            return '<a href="/lobbyists/' + full['lobbyist_slug'] + '">' + full['lobbyist_name'] + '</a>';
+                        }
+                    },
+                    {
+                        'data': 'name'
+                    },
+                    {
+                        'data': 'received_date',
+                        'render': function(data, type, full, meta){
+                            return moment(data).format('MMM DD, YYYY');
+                        },
+                    },
+                    {
+                        'data': 'beneficiary'
+                    },
+                    {
+                        'data': 'expenditure_purpose'
+                    },
+                    {
+                        'data': 'amount'
+                    },
+                    {
+                        'data': 'transaction_type'
+                    }
+                ];
+                var order = [[2, 'desc']];
+                init_datatable(term, 'lobbyisttransaction', columns, order)
             }
         }
     }
