@@ -39,8 +39,8 @@
                         <label data-title='Lobbyist employers' data-content='Any organization that has paid registered lobbyists'>
                             <input type="checkbox" name="table_name" value="organization" {% if 'organization' in table_name %}checked='checked'{% endif %}> Lobbyist employers
                         </label>
-                        <label data-title='Lobbyist expenditures' data-content='Expenses that lobbyists have reported'>
-                            <input type="checkbox" name="table_name" value="lobbyisttransaction" {% if 'lobbyisttransaction' in table_name %}checked='checked'{% endif %}> Lobbyist expenditures
+                        <label data-title='Lobbyist spending' data-content='Spending that lobbyists have reported'>
+                            <input type="checkbox" name="table_name" value="lobbyisttransaction" {% if 'lobbyisttransaction' in table_name %}checked='checked'{% endif %}> Lobbyist spending
                         </label>
                     </div>
                 </form>
@@ -148,17 +148,17 @@
             <hr />
         </div>
         <div id="lobbyisttransaction-search-results" class="col-md-12" style="display:none;">
-            <h3>Lobbyist expenditures <small></small></h3>
+            <h3>Lobbyist spending <small></small></h3>
             <table class="table table-hover datatable-table" id="lobbyisttransaction-table">
                 <thead>
                     <tr>
                         <th>Lobbyist</th>
-                        <th>Expense recipient</th>
-                        <th>Expense date</th>
-                        <th>Beneficiary</th>
-                        <th>Purpose</th>
+                        <th>Type</th>
+                        <th>Paid to</th>
                         <th>Amount</th>
-                        <th>Expense type</th>
+                        <th>Beneficiary</th>
+                        <th>Description</th>
+                        <th>Date</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -371,13 +371,19 @@
                         }
                     },
                     {
-                        'data': 'name'
+                        'data': 'transaction_type'
                     },
                     {
-                        'data': 'received_date',
+                        'data': 'name',
                         'render': function(data, type, full, meta){
-                            return moment(data).format('MMM DD, YYYY');
-                        },
+                            return '<a href="/search/?term=' + data + '&table_name=candidate&table_name=pac&table_name=organization">' + data + '</a>';
+                        }
+                    },
+                    {
+                        'data': 'amount',
+                        'render': function(data, type, full, meta){
+                            return accounting.formatMoney(data);
+                        }
                     },
                     {
                         'data': 'beneficiary'
@@ -386,13 +392,13 @@
                         'data': 'expenditure_purpose'
                     },
                     {
-                        'data': 'amount'
+                        'data': 'received_date',
+                        'render': function(data, type, full, meta){
+                            return moment(data).format('MMM DD, YYYY');
+                        },
                     },
-                    {
-                        'data': 'transaction_type'
-                    }
                 ];
-                var order = [[2, 'desc']];
+                var order = [[6, 'desc']];
                 init_datatable(term, 'lobbyisttransaction', columns, order)
             }
         }

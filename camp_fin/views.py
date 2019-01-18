@@ -1430,15 +1430,15 @@ class SearchAPIView(viewsets.ViewSet):
                         state.postal_code || ' ' ||
                         address.zipcode AS address
                      FROM camp_fin_pac AS pac
-                      JOIN camp_fin_address AS address
+                     LEFT JOIN camp_fin_address AS address
                         ON pac.address_id = address.id
-                      JOIN camp_fin_state AS state
+                     LEFT JOIN camp_fin_state AS state
                         ON address.state_id = state.id
-                      JOIN camp_fin_filing AS filing
+                     JOIN camp_fin_filing AS filing
                         ON filing.entity_id = pac.entity_id
-                      WHERE pac.search_name @@ plainto_tsquery('english', %s)
+                     WHERE pac.search_name @@ plainto_tsquery('english', %s)
                         AND filing.date_added >= '2010-01-01'
-                      ORDER BY pac.id
+                     ORDER BY pac.id
                     ) AS s
                 '''.format(table)
 
@@ -1595,7 +1595,11 @@ class SearchAPIView(viewsets.ViewSet):
                       trans.received_date,
                       trans.amount,
                       trans.date_added,
-                      tt.description AS transaction_type
+                      tt.description AS transaction_type,
+                      CASE WHEN tt.group_id = 2
+                        THEN 'Political contribution'
+                      ELSE 'Candidate'
+                      END AS transaction_group
                     FROM camp_fin_lobbyisttransaction AS trans
                     JOIN camp_fin_lobbyisttransactiontype AS tt
                       ON trans.lobbyist_transaction_type_id = tt.id

@@ -218,6 +218,7 @@ class OrganizationSearchSerializer(serializers.ModelSerializer):
 
 class LobbyistTransactionSearchSerializer(serializers.ModelSerializer):
     transaction_type = serializers.CharField()
+    transaction_group = serializers.CharField()
     lobbyist_name = serializers.CharField()
     lobbyist_slug = serializers.CharField()
 
@@ -230,6 +231,7 @@ class LobbyistTransactionSearchSerializer(serializers.ModelSerializer):
                   'amount',
                   'date_added',
                   'transaction_type',
+                  'transaction_group',
                   'lobbyist_name',
                   'lobbyist_slug')
 

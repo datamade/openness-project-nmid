@@ -200,6 +200,7 @@ class Command(BaseCommand):
 
     def makeLobbyistTransactionIndex(self):
         index_fields = [
+            'name',
             'beneficiary',
             'expenditure_purpose',
         ]
