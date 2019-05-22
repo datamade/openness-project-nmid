@@ -284,7 +284,7 @@ class Command(BaseCommand):
         self.update_campaigns(dist_3_div_8, division_id=83, district_id=199)
 
         dist_6_div_1 = [
-            'tom-stewart-4335',
+            'thomas-stewart-4335',
             'william-perkins-4330'
         ]
 
@@ -358,7 +358,7 @@ class Command(BaseCommand):
 
         self.update_campaigns(chaves_div_1, division_id=109)
 
-        chaves_div_2 = ['mayna-myers-4178', 'e-fouratt-3847']
+        chaves_div_2 = ['mayna-myers-4178', 'enos-ej-fouratt-iii-3847']
 
         self.update_campaigns(chaves_div_2, division_id=110)
 
@@ -517,7 +517,7 @@ class Command(BaseCommand):
 
         self.update_campaigns(rio_2, division_id=110)
 
-        taos_1 = ['ernest-ortega-4173', 'betty-gonzales-4287']
+        taos_1 = ['ernest-ortega-4173', 'betty-martinez-gonzales-4287']
 
         self.update_campaigns(taos_1, division_id=109)
 

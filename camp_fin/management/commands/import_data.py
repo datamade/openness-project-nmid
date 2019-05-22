@@ -795,7 +795,7 @@ class Command(BaseCommand):
                     try:
                         curs.copy_expert(copy_st, f)
                     except psycopg2.IntegrityError as e:
-                        logger.error(e, exc_info=True)
+                        self.stderr.write(str(e))
                         conn.rollback()
 
         self.executeTransaction('''
