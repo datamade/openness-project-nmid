@@ -67,7 +67,7 @@ MAPPER_LOOKUP = {
 
 FILE_LOOKUP = {
     'campaign': 'Cam_Campaign.xlsx',
-    'transaction': 'cam_ContribExpenditure.zip',
+    'transaction': 'Cam_ContribExpenditure.xlsx',
     'transactiontype': 'Cam_ContribExpenditureType.xlsx',
     'office': 'Cam_ElectionOffice.xlsx',
     'filingperiod': 'Cam_FilingPeriod.xlsx',
@@ -173,7 +173,7 @@ class Command(BaseCommand):
                 self.file_path = ftp_file
 
             self.encoding = 'utf-8'
-            if entity_type in ['transaction', 'address', 'contact', 'campaign']:
+            if entity_type in ['address', 'contact', 'campaign']:
                 self.encoding = 'windows-1252'
 
             self.table_mapper = MAPPER_LOOKUP[self.entity_type]
