@@ -67,7 +67,7 @@ MAPPER_LOOKUP = {
 
 FILE_LOOKUP = {
     'campaign': 'Cam_Campaign.xlsx',
-    'transaction': 'cam_ContribExpenditure.zip',
+    'transaction': 'Cam_ContribExpenditure.zip',
     'transactiontype': 'Cam_ContribExpenditureType.xlsx',
     'office': 'Cam_ElectionOffice.xlsx',
     'filingperiod': 'Cam_FilingPeriod.xlsx',
@@ -173,7 +173,7 @@ class Command(BaseCommand):
                 self.file_path = ftp_file
 
             self.encoding = 'utf-8'
-            if entity_type in ['transaction', 'address', 'contact', 'campaign']:
+            if entity_type in ['address', 'contact', 'campaign']:
                 self.encoding = 'windows-1252'
 
             self.table_mapper = MAPPER_LOOKUP[self.entity_type]
@@ -563,7 +563,7 @@ class Command(BaseCommand):
 
 
     def unzipFile(self):
-        file_name = self.file_path.split('/')[1].rsplit('.', 1)[0]
+        file_name = self.file_path.split('/')[-1].rsplit('.', 1)[0]
         file_name = '{}.csv'.format(file_name)
         with zipfile.ZipFile(self.file_path) as zf:
             zf.extract(file_name, path='data')
@@ -571,11 +571,12 @@ class Command(BaseCommand):
         self.file_path = 'data/{}'.format(file_name)
 
     def convertXLSX(self):
-        wb = load_workbook(self.file_path)
+        wb = load_workbook(self.file_path, read_only=True)
         sheets = wb.worksheets
         saved_pks = []
 
-        header = [r.value for r in sheets[0].rows[0]]
+        header_row = next(sheets[0].rows)
+        header = [r.value for r in header_row]
 
         base_name = os.path.basename(self.file_path.rsplit('.', 1)[0])
         csv_path = '{}.csv'.format(os.path.join('data', base_name))
@@ -585,8 +586,9 @@ class Command(BaseCommand):
             writer.writerow(header)
 
             for sheet in sheets:
-
-                for row in sheet.rows[1:]:
+                rows = sheet.rows
+                next(rows)  # Strip header row
+                for row in rows:
                     row_values = [r.value for r in row]
                     header_lower = [v.lower() for v in header]
 
