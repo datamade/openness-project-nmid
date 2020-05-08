@@ -112,38 +112,6 @@ class TestCampaign(StatelessTestCase):
         self.assertEqual(self.non_race_campaign.party_identifier, 'I')
 
 
-class TestRaceView(StatelessTestCase):
-    '''
-    Test view to display contested races.
-    '''
-    @classmethod
-    def setUpTestData(cls):
-        super().setUpTestData()
-
-        # We don't actually need data here; we just need the table
-        call_command('import_data', '--add-aggregates', '--verbosity=0')
-
-    def test_race_view_resolves(self):
-        found = resolve(reverse('races'))
-        self.assertEqual(found.func.view_class, RacesView)
-
-    def test_race_detail_view_resolves(self):
-        found = resolve(reverse('race-detail', args=[self.race.id]))
-        self.assertEqual(found.func.view_class, RaceDetail)
-
-    def test_race_detail_view_404(self):
-        pk = 0
-        while pk == self.race.id:
-            pk += 1
-            if pk == 100:
-                self.fail()  # Something's gone very wrong
-
-        bogus_url = reverse('race-detail', args=[pk])
-        response = self.client.get(bogus_url)
-
-        self.assertEqual(response.status_code, 404)
-
-
 class TestAdmin(StatelessTestCase):
     '''
     Test some functionality of the Admin console.

@@ -24,7 +24,7 @@ from camp_fin.views import IndexView, CandidateList, CandidateDetail, \
     ContributionViewSet, ExpenditureViewSet, ContributionDownloadViewSet, \
     ExpenditureDownloadViewSet, TransactionViewSet, TopDonorsView, \
     TopExpensesView, CommitteeList, CommitteeDetail, ContributionDetail, DownloadView, \
-    ExpenditureDetail, SearchView, SearchAPIView, DonationsView, RacesView, RaceDetail, \
+    ExpenditureDetail, SearchView, SearchAPIView, DonationsView, \
     LoanViewSet, TopEarnersView, TopEarnersWidgetView, AboutView, \
     flush_cache, bulk_candidates, bulk_committees, bulk_lobbyists, bulk_employers, \
     bulk_employments, OrganizationList, OrganizationDetail, LobbyistContributionViewSet, \
@@ -58,8 +58,6 @@ urlpatterns = [
     url(r'^expenditures/(?P<pk>[0-9]+)/$', ExpenditureDetail.as_view(), name='expenditure-detail'),
     url(r'^committees/$', CommitteeList.as_view(), name='committee-list'),
     url(r'^committees/(?P<slug>[\w-]+)/$', CommitteeDetail.as_view(), name='committee-detail'),
-    url(r'^races/$', RacesView.as_view(), name='races'),
-    url(r'^races/(?P<pk>[\w-]+)/$', RaceDetail.as_view(), name='race-detail'),
     url(r'^downloads/$', DownloadView.as_view(), name='downloads'),
     url(r'^lobbyist-portal/$', LobbyistPortal.as_view(), name='lobbyist-portal'),
     url(r'^lobbyists/$', LobbyistList.as_view(), name='lobbyist-list'),

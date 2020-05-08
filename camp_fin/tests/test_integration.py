@@ -61,32 +61,3 @@ class TestCampaign(DatabaseTestCase):
         self.assertEqual(self.first_campaign.share_of_funds(total=total), 70)
         self.assertEqual(self.second_campaign.share_of_funds(total=total), 30)
         self.assertEqual(self.third_campaign.share_of_funds(total=total), 0)
-
-
-class TestRaceView(DatabaseTestCase):
-    '''
-    Test views of the Race class that require database access.
-    '''
-    def test_race_view_html(self):
-        year = str(self.filing_period.due_date.year)
-        response = self.client.get(reverse('races') + '?year=%s' % year
-                                                    + '&type=%d' % self.office_type.id)
-
-        html = response.content.decode('utf-8')
-
-        self.assertIn('<title>Contested %s races in New Mexico' % year, html)
-        self.assertTemplateUsed(response, 'camp_fin/races.html')
-
-        # Check that a table is loaded
-        table_list = html.split('<tr')
-        self.assertTrue(len(table_list) > 2)
-
-    def test_race_detail_view_html(self):
-        detail_url = reverse('race-detail', args=[self.race.id])
-        response = self.client.get(detail_url)
-        self.assertEqual(response.status_code, 200)
-
-        html = response.content.decode('utf-8')
-
-        self.assertIn('<title>{year} Race for test office'.format(year=self.year), html)
-        self.assertTemplateUsed(response, 'camp_fin/race-detail.html')
