@@ -59,82 +59,6 @@ Keep an eye on money in New Mexico politics
         {{ page.text|safe }}
     </div>
 </div>
-<div class="row">
-    <div class='col-xs-12'>
-        <h1>
-            <i class="fa fa-fw fa-university"></i>
-            New Mexico Lobbyists
-            <br/>
-            <small>
-                Browse lobbyists and their employers in New Mexico
-            </small>
-        </h1>
-    </div>
-</div>
-<div class="row">
-    <div class="col-xs-12 lobbyist-stats">
-        <p>
-            <span class="green">
-                <i class="fa fa-fw fa-plus-circle"></i>
-                {{ total_lobbyist_contributions|format_money_short }}
-            </span>
-            raised for candidates and committees since 2013
-        </p>
-        <p>
-            <span class="red">
-                <i class="fa fa-fw fa-minus-circle"></i>
-                {{ total_lobbyist_expenditures|format_money_short }}
-            </span>
-            spent on lobbying since 2013
-        </p>
-    </div>
-    <hr/>
-</div>
-{% if page.text %}
-<div class="row">
-    <div class="col-xs-12 col-md-10">
-        {{ page.text|safe }}
-    </div>
-</div>
-{% endif %}
-<div class="row">
-    <div class="col-xs-12">
-        <h3>
-            <i class="fa fa-fw fa-user"></i>
-            Browse {{ num_lobbyists|intcomma }}
-            <a href="{% url 'lobbyist-list' %}">lobbyists</a>
-        </h3>
-        {% with sortable=False %}
-            {% include 'camp_fin/widgets/lobbyist-list.html' %}
-        {% endwith %}
-        <p>
-            <a href="{% url 'lobbyist-list' %}" class='btn btn-danger'>
-                <i class='fa fa-fw fa-user'></i>
-                See more top lobbyists >
-            </a>
-        </p>
-        <br />
-    </div>
-</div>
-<div class="row">
-    <div class="col-xs-12">
-        <h3>
-            <i class="fa fa-fw fa-users"></i>
-            Browse {{ num_employers|intcomma }}
-            <a href="{% url 'organization-list' %}">employers</a>
-            paying lobbyists
-        </h3>
-        {% include 'camp_fin/widgets/organization-list.html' %}
-        <p>
-            <a href="{% url 'organization-list' %}" class='btn btn-danger'>
-                <i class='fa fa-fw fa-user'></i>
-                See more top lobbyist employers >
-            </a>
-        </p>
-        <br /><br />
-    </div>
-</div>
-
 <div class='row'>
     <div class='col-sm-12'>
 
@@ -198,8 +122,10 @@ Keep an eye on money in New Mexico politics
 
         <p><a href='/committees/' class='btn btn-danger'><i class='fa fa-group'></i> Browse committees ></a></p><br /><br />
 
-        <h2><a href='/about/'><i class='fa fa-fw fa-info-circle'></i> About</a></h2>
-        {{ home_page_about|safe }}
+        {% if home_page_about %}
+            <h2><a href='/about/'><i class='fa fa-fw fa-info-circle'></i> About</a></h2>
+            {{ home_page_about|safe }}
+        {% endif %}
     </div>
 </div>
 {% endblock %}
