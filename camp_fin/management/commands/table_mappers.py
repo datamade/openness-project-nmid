@@ -233,7 +233,7 @@ STATE = OrderedDict([
 LOAN = OrderedDict([
     ("loanid",{'field': 'id', 'data_type': 'bigint'}),
     ("contactid",{'field': 'contact_id', 'data_type': 'bigint'}),
-    ("amount",{'field': 'amount', 'data_type': 'double precision'}),
+    ("amount",{'field': 'amount', 'data_type': 'money::numeric::double precision'}),
     ("datereceived",{'field': 'received_date', 'data_type': 'timestamp with time zone'}),
     ("dateadded",{'field': 'date_added', 'data_type': 'timestamp with time zone'}),
     ("checknumber",{'field': 'check_number', 'data_type': 'varchar'}),
@@ -266,7 +266,7 @@ LOAN = OrderedDict([
 LOAN_TRANSACTION = OrderedDict([
     ("loantransactionid", {'field': 'id', 'data_type': 'bigint'}),
     ("loanid", {'field': 'loan_id', 'data_type': 'bigint'}),
-    ("amount", {'field': 'amount', 'data_type': 'double precision'}),
+    ("amount", {'field': 'amount', 'data_type': 'money::numeric::double precision'}),
     ("interestpaid", {'field': 'interest_paid', 'data_type': 'double precision'}),
     ("date", {'field': 'transaction_date', 'data_type': 'timestamp with time zone'}),
     ("dateadded", {'field': 'date_added', 'data_type': 'timestamp with time zone'}),
