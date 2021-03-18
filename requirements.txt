@@ -10,7 +10,7 @@ openpyxl==2.6.4
 gunicorn==19.6.0
 pytz==2016.6.1
 django-ckeditor==5.1.1
-Pillow==7.1.0
+Pillow==8.1.1
 djangorestframework-csv==1.4.1
 raven==6.10.0
 python-dateutil==2.8.1
