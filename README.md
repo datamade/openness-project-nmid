@@ -16,8 +16,8 @@ docker-compose build
 Next, load in data and build your search index:
 
 ```bash
-python manage.py import_data
-python manage.py make_search_index
+docker-compose run --rm app python manage.py import_data
+docker-compose run --rm app python manage.py make_search_index
 ```
 
 Finally, run the app:
@@ -33,8 +33,8 @@ on port 32001.
 
 The data import scripts for this app will automatically recognize if you have data imported, and add or update new data accordingly. However, if you'd like to start over from scratch but don't want to delete your user and page data, you can start by running the `flush_camp_fin` command to flush campaign finance data from the database:
 
-```
-python manage.py flush_camp_fin
+```bash
+docker-compose run --rm app python manage.py flush_camp_fin
 ```
 
 ## Errors / Bugs
