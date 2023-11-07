@@ -17,125 +17,127 @@ from django.utils.text import slugify
 
 from .table_mappers import *
 
-DB_CONN = 'postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}'
+DB_CONN = "postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}"
 
-engine = sa.create_engine(DB_CONN.format(**settings.DATABASES['default']),
-                          convert_unicode=True,
-                          server_side_cursors=True)
+engine = sa.create_engine(
+    DB_CONN.format(**settings.DATABASES["default"]),
+    convert_unicode=True,
+    server_side_cursors=True,
+)
 
 # Field mappings are defined in `table_mappers.py`
 MAPPER_LOOKUP = {
-    'candidate': CANDIDATE,
-    'pac': PAC,
-    'filing': FILING,
-    'filingperiod': FILING_PERIOD,
-    'transaction': CONTRIB_EXP,
-    'transactiontype': CONTRIB_EXP_TYPE,
-    'campaign': CAMPAIGN,
-    'officetype': OFFICE_TYPE,
-    'office': OFFICE,
-    'campaignstatus': CAMPAIGN_STATUS,
-    'county': COUNTY,
-    'district': DISTRICT,
-    'division': DIVISION,
-    'electionseason': ELECTION_SEASON,
-    'entity': ENTITY,
-    'entitytype': ENTITY_TYPE,
-    'filingtype': FILING_TYPE,
-    'loan': LOAN,
-    'loantransaction': LOAN_TRANSACTION,
-    'loantransactiontype': LOAN_TRANSACTION_TYPE,
-    'politicalparty': POLITICAL_PARTY,
-    'specialevent': SPECIAL_EVENT,
-    'treasurer': TREASURER,
-    'address': ADDRESS,
-    'contacttype': CONTACT_TYPE,
-    'contact': CONTACT,
-    'state': STATE,
-    'lobbyist': LOBBYIST,
-    'lobbyistregistration': LOBBYIST_REGISTRATION,
-    'lobbyistemployer': LOBBYIST_EMPLOYER,
-    'organization': ORGANIZATION,
-    'lobbyistfilingperiod': LOBBYIST_FILING_PERIOD,
-    'lobbyisttransaction': LOBBYIST_TRANSACTION,
-    'lobbyisttransactiontype': LOBBYIST_TRANSACTION_TYPE,
-    'lobbyistbundlingdisclosure': LOBBYIST_BUNDLING_DISCLOSURE,
-    'lobbyistbundlingdisclosurecontributor': LOBBYIST_BUNDLING_DISCLOSURE_CONTRIBUTOR,
-    'lobbyistreport': LOBBYIST_REPORT,
-    'lobbyistspecialevent': LOBBYIST_SPECIAL_EVENT,
+    "candidate": CANDIDATE,
+    "pac": PAC,
+    "filing": FILING,
+    "filingperiod": FILING_PERIOD,
+    "transaction": CONTRIB_EXP,
+    "transactiontype": CONTRIB_EXP_TYPE,
+    "campaign": CAMPAIGN,
+    "officetype": OFFICE_TYPE,
+    "office": OFFICE,
+    "campaignstatus": CAMPAIGN_STATUS,
+    "county": COUNTY,
+    "district": DISTRICT,
+    "division": DIVISION,
+    "electionseason": ELECTION_SEASON,
+    "entity": ENTITY,
+    "entitytype": ENTITY_TYPE,
+    "filingtype": FILING_TYPE,
+    "loan": LOAN,
+    "loantransaction": LOAN_TRANSACTION,
+    "loantransactiontype": LOAN_TRANSACTION_TYPE,
+    "politicalparty": POLITICAL_PARTY,
+    "specialevent": SPECIAL_EVENT,
+    "treasurer": TREASURER,
+    "address": ADDRESS,
+    "contacttype": CONTACT_TYPE,
+    "contact": CONTACT,
+    "state": STATE,
+    "lobbyist": LOBBYIST,
+    "lobbyistregistration": LOBBYIST_REGISTRATION,
+    "lobbyistemployer": LOBBYIST_EMPLOYER,
+    "organization": ORGANIZATION,
+    "lobbyistfilingperiod": LOBBYIST_FILING_PERIOD,
+    "lobbyisttransaction": LOBBYIST_TRANSACTION,
+    "lobbyisttransactiontype": LOBBYIST_TRANSACTION_TYPE,
+    "lobbyistbundlingdisclosure": LOBBYIST_BUNDLING_DISCLOSURE,
+    "lobbyistbundlingdisclosurecontributor": LOBBYIST_BUNDLING_DISCLOSURE_CONTRIBUTOR,
+    "lobbyistreport": LOBBYIST_REPORT,
+    "lobbyistspecialevent": LOBBYIST_SPECIAL_EVENT,
 }
 
 FILE_LOOKUP = {
-    'campaign': 'Cam_Campaign.csv',
-    'transaction': 'Cam_ContribExpenditure.zip',
-    'transactiontype': 'Cam_ContribExpenditureType.xlsx',
-    'office': 'Cam_ElectionOffice.xlsx',
-    'filingperiod': 'Cam_FilingPeriod.csv',
-    'officetype': 'Cam_OfficeType.xlsx',
-    'filing': 'Cam_Report.csv',
-    'candidate': 'Cam_Candidate.csv',
-    'pac': 'Cam_PoliticalActionCommittee.csv',
-    'campaignstatus': 'Cam_CampaignStatus.xlsx',
-    'county': 'Cam_County.xlsx',
-    'district': 'Cam_District.xlsx',
-    'division': 'Cam_Division.xlsx',
-    'electionseason': 'Cam_ElectionSeason.xlsx',
-    'entity': 'Cam_Entity.xlsx',
-    'entitytype': 'Cam_EntityType.xlsx',
-    'filingtype': 'Cam_FilingPeriodType.xlsx',
-    'loan': 'Cam_Loan.csv',
-    'loantransaction': 'Cam_LoanTransaction.csv',
-    'loantransactiontype': 'Cam_LoanTransactionType.xlsx',
-    'politicalparty': 'Cam_PoliticalParty.xlsx',
-    'specialevent': 'Cam_SpecialEvent.xlsx',
-    'treasurer': 'Cam_Treasurer.xlsx',
-    'address': 'Cam_Address.csv',
-    'contacttype': 'Cam_ContactType.xlsx',
-    'contact': 'Cam_Contact.csv',
-    'state': 'States.csv',
-    'lobbyist': 'Cam_Lobbyist.csv',
-    'lobbyistregistration': 'Cam_LobbystRegistration.xlsx',
-    'lobbyistemployer': 'Cam_LobbyistEmployer.csv',
-    'organization': 'Cam_Organization.xlsx',
-    'lobbyistfilingperiod': 'Cam_FilingPeriodLobbyist.csv',
-    'lobbyisttransaction': 'Cam_ContribExpenditureLobbyist.csv',
-    'lobbyisttransactiontype': 'Cam_ContribExpenditureLobbyistType.csv',
-    'lobbyistbundlingdisclosure': 'Cam_BundlingDisclosureLobbyist.csv',
-    'lobbyistbundlingdisclosurecontributor': 'Cam_BundlingDisclosureLobbyistContributor.csv',
-    'lobbyistreport': 'Cam_ReportLobbyist.csv',
-    'lobbyistspecialevent': 'Cam_SpecialEventLobbyist.csv',
+    "campaign": "Cam_Campaign.csv",
+    "transaction": "Cam_ContribExpenditure.zip",
+    "transactiontype": "Cam_ContribExpenditureType.xlsx",
+    "office": "Cam_ElectionOffice.xlsx",
+    "filingperiod": "Cam_FilingPeriod.csv",
+    "officetype": "Cam_OfficeType.xlsx",
+    "filing": "Cam_Report.csv",
+    "candidate": "Cam_Candidate.csv",
+    "pac": "Cam_PoliticalActionCommittee.csv",
+    "campaignstatus": "Cam_CampaignStatus.xlsx",
+    "county": "Cam_County.xlsx",
+    "district": "Cam_District.xlsx",
+    "division": "Cam_Division.xlsx",
+    "electionseason": "Cam_ElectionSeason.xlsx",
+    "entity": "Cam_Entity.xlsx",
+    "entitytype": "Cam_EntityType.xlsx",
+    "filingtype": "Cam_FilingPeriodType.xlsx",
+    "loan": "Cam_Loan.csv",
+    "loantransaction": "Cam_LoanTransaction.csv",
+    "loantransactiontype": "Cam_LoanTransactionType.xlsx",
+    "politicalparty": "Cam_PoliticalParty.xlsx",
+    "specialevent": "Cam_SpecialEvent.xlsx",
+    "treasurer": "Cam_Treasurer.xlsx",
+    "address": "Cam_Address.csv",
+    "contacttype": "Cam_ContactType.xlsx",
+    "contact": "Cam_Contact.csv",
+    "state": "States.csv",
+    "lobbyist": "Cam_Lobbyist.csv",
+    "lobbyistregistration": "Cam_LobbystRegistration.xlsx",
+    "lobbyistemployer": "Cam_LobbyistEmployer.csv",
+    "organization": "Cam_Organization.xlsx",
+    "lobbyistfilingperiod": "Cam_FilingPeriodLobbyist.csv",
+    "lobbyisttransaction": "Cam_ContribExpenditureLobbyist.csv",
+    "lobbyisttransactiontype": "Cam_ContribExpenditureLobbyistType.csv",
+    "lobbyistbundlingdisclosure": "Cam_BundlingDisclosureLobbyist.csv",
+    "lobbyistbundlingdisclosurecontributor": "Cam_BundlingDisclosureLobbyistContributor.csv",
+    "lobbyistreport": "Cam_ReportLobbyist.csv",
+    "lobbyistspecialevent": "Cam_SpecialEventLobbyist.csv",
 }
 
+
 class Command(BaseCommand):
-    help = 'Import New Mexico Campaign Finance data'
+    help = "Import New Mexico Campaign Finance data"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--entity-types',
-            dest='entity_types',
-            default='all',
-            help='Comma separated list of entity types to import'
+            "--entity-types",
+            dest="entity_types",
+            default="all",
+            help="Comma separated list of entity types to import",
         )
 
         parser.add_argument(
-            '--add-aggregates',
-            dest='add_aggregates',
-            action='store_true',
-            help='Just add the aggregates'
+            "--add-aggregates",
+            dest="add_aggregates",
+            action="store_true",
+            help="Just add the aggregates",
         )
 
     def handle(self, *args, **options):
-
         self.connection = engine.connect()
 
-        if options['add_aggregates']:
+        if options["add_aggregates"]:
             self.makeTransactionAggregates()
-            self.stdout.write(self.style.SUCCESS('Aggregates complete!'))
+            self.stdout.write(self.style.SUCCESS("Aggregates complete!"))
             return
 
-        entity_types = options['entity_types'].split(',')
+        entity_types = options["entity_types"].split(",")
 
-        if entity_types == ['all']:
+        if entity_types == ["all"]:
             entity_types = FILE_LOOKUP.keys()
 
         self.makeETLTracker()
@@ -153,86 +155,111 @@ class Command(BaseCommand):
 
         # Make or refresh materialized views
         self.makeTransactionAggregates()
-        self.stdout.write(self.style.SUCCESS('Made transaction aggregate views'))
+        self.stdout.write(self.style.SUCCESS("Made transaction aggregate views"))
 
-        self.stdout.write(self.style.SUCCESS('Import complete!'.format(self.entity_type)))
+        self.stdout.write(
+            self.style.SUCCESS("Import complete!".format(self.entity_type))
+        )
 
     def doETL(self, entity_type):
         self.entity_type = entity_type
         file_name = FILE_LOOKUP.get(entity_type)
 
         if file_name:
+            self.stdout.write(self.style.SUCCESS("Importing {}".format(file_name)))
 
-            self.stdout.write(self.style.SUCCESS('Importing {}'.format(file_name)))
-
-            self.file_path = 'data/{}'.format(file_name)
+            self.file_path = "data/{}".format(file_name)
 
             ftp_file = os.path.join(settings.FTP_DIRECTORY, file_name)
 
             if os.path.exists(ftp_file):
                 self.file_path = ftp_file
 
-            self.encoding = 'utf-8'
-            if entity_type in ['address', 'contact', 'campaign']:
-                self.encoding = 'windows-1252'
+            self.encoding = "utf-8"
+            if entity_type in ["address", "contact", "campaign"]:
+                self.encoding = "windows-1252"
 
             self.table_mapper = MAPPER_LOOKUP[self.entity_type]
 
-            self.django_table = 'camp_fin_{}'.format(self.entity_type)
-            self.raw_pk_col = [k for k, v in self.table_mapper.items() \
-                                   if v['field'] == 'id'][0]
+            self.django_table = "camp_fin_{}".format(self.entity_type)
+            self.raw_pk_col = [
+                k for k, v in self.table_mapper.items() if v["field"] == "id"
+            ][0]
 
-            if self.file_path.endswith('xlsx'):
+            if self.file_path.endswith("xlsx"):
                 self.convertXLSX()
 
-            if self.file_path.endswith('zip'):
+            if self.file_path.endswith("zip"):
                 self.unzipFile()
 
             self.makeRawTable()
             count = self.importRawData()
 
-            self.stdout.write(self.style.SUCCESS('Found {0} records in {1}'.format(count, file_name)))
+            self.stdout.write(
+                self.style.SUCCESS("Found {0} records in {1}".format(count, file_name))
+            )
 
             count = self.updateExistingRecords()
 
-            self.stdout.write(self.style.SUCCESS('Updated {0} records in {1}'.format(count, self.django_table)))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    "Updated {0} records in {1}".format(count, self.django_table)
+                )
+            )
 
             self.makeNewTable()
             count = self.findNewRecords()
 
             self.addNewRecords()
 
-            self.stdout.write(self.style.SUCCESS('Inserted {0} new records into {1}'.format(count, self.django_table)))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    "Inserted {0} new records into {1}".format(count, self.django_table)
+                )
+            )
 
             # This should only be necessary until we get the actual entity table
 
-            if self.entity_type in ['candidate', 'pac', 'filing']:
+            if self.entity_type in ["candidate", "pac", "filing"]:
                 self.populateEntityTable()
-                self.stdout.write(self.style.SUCCESS('Populated entity table for {}'.format(self.entity_type)))
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        "Populated entity table for {}".format(self.entity_type)
+                    )
+                )
 
-            if self.entity_type in ['candidate', 'pac', 'lobbyist', 'organization']:
+            if self.entity_type in ["candidate", "pac", "lobbyist", "organization"]:
                 self.populateSlugField()
-                self.stdout.write(self.style.SUCCESS('Populated slug fields for {}'.format(self.entity_type)))
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        "Populated slug fields for {}".format(self.entity_type)
+                    )
+                )
 
-            if self.entity_type == 'loan':
+            if self.entity_type == "loan":
                 self.makeLoanBalanceView()
-                self.stdout.write(self.style.SUCCESS('Made loan balance view'))
+                self.stdout.write(self.style.SUCCESS("Made loan balance view"))
 
-            self.stdout.write(self.style.SUCCESS('\n'))
+            self.stdout.write(self.style.SUCCESS("\n"))
 
         else:
-            self.stdout.write(self.style.ERROR('"{}" is not a valid entity'.format(self.entity_type)))
-            self.stdout.write(self.style.SUCCESS('\n'))
+            self.stdout.write(
+                self.style.ERROR('"{}" is not a valid entity'.format(self.entity_type))
+            )
+            self.stdout.write(self.style.SUCCESS("\n"))
 
     def makeTransactionAggregates(self):
-
-        for interval in ['day', 'week', 'month']:
+        for interval in ["day", "week", "month"]:
             try:
-                self.executeTransaction('''
+                self.executeTransaction(
+                    """
                     REFRESH MATERIALIZED VIEW contributions_by_{}
-                '''.format(interval))
+                """.format(
+                        interval
+                    )
+                )
             except sa.exc.ProgrammingError:
-                view = '''
+                view = """
                     CREATE MATERIALIZED VIEW contributions_by_{0} AS (
                       SELECT
                         SUM(amount) AS amount,
@@ -264,16 +291,22 @@ class Command(BaseCommand):
                       ) AS s
                       GROUP BY entity_id, {0}
                     )
-                '''.format(interval)
+                """.format(
+                    interval
+                )
 
                 self.executeTransaction(view)
 
             try:
-                self.executeTransaction('''
+                self.executeTransaction(
+                    """
                     REFRESH MATERIALIZED VIEW expenditures_by_{}
-                '''.format(interval))
+                """.format(
+                        interval
+                    )
+                )
             except sa.exc.ProgrammingError:
-                view = '''
+                view = """
                     CREATE MATERIALIZED VIEW expenditures_by_{0} AS (
                       SELECT
                         entity_id,
@@ -314,24 +347,25 @@ class Command(BaseCommand):
                       ) AS s
                       GROUP BY entity_id, {0}
                     )
-                '''.format(interval)
+                """.format(
+                    interval
+                )
 
                 self.executeTransaction(view)
 
-
     def makeETLTracker(self):
-        create = '''
+        create = """
             CREATE TABLE IF NOT EXISTS etl_tracker (
               id SERIAL,
               entity_type VARCHAR,
               last_update timestamp with time zone,
               PRIMARY KEY (id)
             )
-        '''
+        """
         self.executeTransaction(create)
 
     def updateTracker(self, entity_type):
-        update = '''
+        update = """
             INSERT INTO etl_tracker (
               entity_type,
               last_update
@@ -339,30 +373,35 @@ class Command(BaseCommand):
               :entity_type,
               NOW()
             )
-        '''
-        self.executeTransaction(sa.text(update),
-                                entity_type=entity_type)
+        """
+        self.executeTransaction(sa.text(update), entity_type=entity_type)
 
     def loadLoanTransactions(self):
         timezone = pytz.timezone(settings.TIME_ZONE)
 
-        transactions_updated = self.connection.execute('''
+        transactions_updated = (
+            self.connection.execute(
+                """
             SELECT MAX(last_update) AS last_update
             FROM etl_tracker
             WHERE entity_type = 'loantransaction'
-        ''').first().last_update
+        """
+            )
+            .first()
+            .last_update
+        )
 
         if transactions_updated:
             an_hour_ago = timezone.localize(datetime.now()) - timedelta(hours=1)
             if transactions_updated < an_hour_ago:
-                self.doETL('loantransaction')
+                self.doETL("loantransaction")
         else:
-            self.doETL('loantransaction')
+            self.doETL("loantransaction")
 
     def makeAllExpenditureView(self):
         self.loadLoanTransactions()
 
-        view = '''
+        view = """
             SELECT
               transaction.filing_id,
               transaction.id,
@@ -388,17 +427,21 @@ class Command(BaseCommand):
             JOIN camp_fin_loan AS loan
               ON loan_transaction.loan_id = loan.id
             WHERE loan_transaction_type.description = 'Payment'
-        '''
+        """
 
     def makeLoanBalanceView(self):
         self.loadLoanTransactions()
 
         try:
-            self.executeTransaction('''
+            self.executeTransaction(
+                """
                 REFRESH MATERIALIZED VIEW current_loan_status
-            ''', raise_exc=True)
+            """,
+                raise_exc=True,
+            )
         except sa.exc.ProgrammingError:
-            self.executeTransaction('''
+            self.executeTransaction(
+                """
                 CREATE MATERIALIZED VIEW current_loan_status AS (
                   SELECT
                     loan.id AS loan_id,
@@ -411,10 +454,11 @@ class Command(BaseCommand):
                   GROUP BY loan.id
                   HAVING ((MAX(loan.amount::numeric::money) - SUM(loantrans.amount::numeric::money)) > 0::money)
                 )
-            ''')
+            """
+            )
 
     def addTransactionFullName(self):
-        update = '''
+        update = """
             UPDATE camp_fin_transaction SET
               full_name = s.full_name
             FROM (
@@ -441,12 +485,12 @@ class Command(BaseCommand):
                 OR n.id IS NOT NULL
             ) AS s
             WHERE camp_fin_transaction.id = s.id
-        '''
+        """
 
         self.executeTransaction(update)
 
     def addLoanFullName(self):
-        update = '''
+        update = """
             UPDATE camp_fin_loan SET
               full_name = s.full_name
             FROM (
@@ -473,12 +517,12 @@ class Command(BaseCommand):
                 OR n.id IS NOT NULL
             ) AS s
             WHERE camp_fin_loan.id = s.id
-        '''
+        """
 
         self.executeTransaction(update)
 
     def addTreasurerFullName(self):
-        update = '''
+        update = """
             UPDATE camp_fin_treasurer SET
               full_name = s.full_name
             FROM (
@@ -499,12 +543,12 @@ class Command(BaseCommand):
                 OR n.id IS NOT NULL
             ) AS s
             WHERE camp_fin_treasurer.id = s.id
-        '''
+        """
 
         self.executeTransaction(update)
 
     def addCandidateFullName(self):
-        update = '''
+        update = """
             UPDATE camp_fin_candidate SET
               full_name = s.full_name
             FROM (
@@ -525,12 +569,12 @@ class Command(BaseCommand):
                 OR n.id IS NOT NULL
             ) AS s
             WHERE camp_fin_candidate.id = s.id
-        '''
+        """
 
         self.executeTransaction(update)
 
     def addContactFullName(self):
-        update = '''
+        update = """
             UPDATE camp_fin_contact SET
               full_name = s.full_name
             FROM (
@@ -557,18 +601,17 @@ class Command(BaseCommand):
                 OR n.id IS NOT NULL
             ) AS s
             WHERE camp_fin_contact.id = s.id
-        '''
+        """
 
         self.executeTransaction(update)
 
-
     def unzipFile(self):
-        file_name = self.file_path.split('/')[-1].rsplit('.', 1)[0]
-        file_name = '{}.csv'.format(file_name)
+        file_name = self.file_path.split("/")[-1].rsplit(".", 1)[0]
+        file_name = "{}.csv".format(file_name)
         with zipfile.ZipFile(self.file_path) as zf:
-            zf.extract(file_name, path='data')
+            zf.extract(file_name, path="data")
 
-        self.file_path = 'data/{}'.format(file_name)
+        self.file_path = "data/{}".format(file_name)
 
     def convertXLSX(self):
         wb = load_workbook(self.file_path, read_only=True)
@@ -578,16 +621,19 @@ class Command(BaseCommand):
         header_row = next(sheets[0].rows)
         header = [r.value for r in header_row]
 
-        base_name = os.path.basename(self.file_path.rsplit('.', 1)[0])
-        csv_path = '{}.csv'.format(os.path.join('data', base_name))
+        base_name = os.path.basename(self.file_path.rsplit(".", 1)[0])
+        csv_path = "{}.csv".format(os.path.join("data", base_name))
 
-        with open(csv_path, 'w') as f:
+        with open(csv_path, "w") as f:
             writer = csv.writer(f)
             writer.writerow(header)
 
-            for sheet in sheets:
+            for idx, sheet in enumerate(sheets):
                 rows = sheet.rows
-                next(rows)  # Strip header row
+                # We've already popped the header row off the first sheet, above.
+                # Skip header row for subsequent sheets.
+                if idx > 0:
+                    next(rows)
                 for row in rows:
                     row_values = [r.value for r in row]
                     header_lower = [v.lower() for v in header]
@@ -602,22 +648,24 @@ class Command(BaseCommand):
             self.file_path = csv_path
 
     def populateEntityTable(self):
-        entities = '''
+        entities = """
             INSERT INTO camp_fin_entity
               SELECT DISTINCT d.entity_id
               FROM {table} AS d
               LEFT JOIN camp_fin_entity AS e
                 ON d.entity_id = e.id
               WHERE e.id IS NULL
-        '''.format(table=self.django_table)
+        """.format(
+            table=self.django_table
+        )
 
         self.executeTransaction(entities)
 
     def populateSlugField(self):
-        if self.entity_type in ['candidate', 'lobbyist']:
+        if self.entity_type in ["candidate", "lobbyist"]:
             name_components = [
-                'first_name',
-                'last_name',
+                "first_name",
+                "last_name",
             ]
 
             selects = []
@@ -628,10 +676,10 @@ class Command(BaseCommand):
 
             name_select = " || ' ' || ".join(selects)
 
-        elif self.entity_type in ['pac', 'organization']:
-            name_select = 'name'
+        elif self.entity_type in ["pac", "organization"]:
+            name_select = "name"
 
-        slugify = '''
+        slugify = """
             UPDATE {django_table} SET
               slug = s.slug
             FROM (
@@ -641,19 +689,23 @@ class Command(BaseCommand):
               FROM {django_table}
             ) AS s
             WHERE {django_table}.id = s.id
-        '''.format(django_table=self.django_table,
-                   name_select=name_select)
+        """.format(
+            django_table=self.django_table, name_select=name_select
+        )
 
         self.executeTransaction(slugify)
 
     def addNewRecords(self):
+        select_fields = ", ".join(
+            [
+                'raw."{0}"::{2} AS {1}'.format(k, v["field"], v["data_type"])
+                for k, v in self.table_mapper.items()
+            ]
+        )
 
-        select_fields = ', '.join(['raw."{0}"::{2} AS {1}'.format(k,v['field'], v['data_type']) for k,v in \
-                                    self.table_mapper.items()])
+        dat_fields = ", ".join([c["field"] for c in self.table_mapper.values()])
 
-        dat_fields = ', '.join([c['field'] for c in self.table_mapper.values()])
-
-        insert_new = '''
+        insert_new = """
             INSERT INTO {django_table} (
               {dat_fields}
             )
@@ -661,55 +713,68 @@ class Command(BaseCommand):
               FROM raw_{entity_type} AS raw
               JOIN new_{entity_type} AS new
                 ON raw."{raw_pk_col}" = new.id
-        '''.format(django_table=self.django_table,
-                   dat_fields=dat_fields,
-                   select_fields=select_fields,
-                   entity_type=self.entity_type,
-                   raw_pk_col=self.raw_pk_col)
+        """.format(
+            django_table=self.django_table,
+            dat_fields=dat_fields,
+            select_fields=select_fields,
+            entity_type=self.entity_type,
+            raw_pk_col=self.raw_pk_col,
+        )
 
         self.executeTransaction(insert_new)
 
     def updateExistingRecords(self):
-        changes = '''
+        changes = """
             CREATE TABLE change_{} (
                 id BIGINT,
                 PRIMARY KEY (id)
             )
-        '''.format(self.entity_type)
+        """.format(
+            self.entity_type
+        )
 
-        self.executeTransaction('DROP TABLE IF EXISTS change_{}'.format(self.entity_type))
+        self.executeTransaction(
+            "DROP TABLE IF EXISTS change_{}".format(self.entity_type)
+        )
         self.executeTransaction(changes)
 
         wheres = []
 
         for raw_col, mapping in self.table_mapper.items():
-            condition = '''
+            condition = """
                 ((raw."{0}" IS NOT NULL OR dat.{1} IS NOT NULL) AND raw."{0}"::{2} <> dat.{1})
-            '''.format(raw_col, mapping['field'], mapping['data_type'])
+            """.format(
+                raw_col, mapping["field"], mapping["data_type"]
+            )
             wheres.append(condition)
 
-        where_clause = ' OR '.join(wheres)
+        where_clause = " OR ".join(wheres)
 
-        find_changes = '''
+        find_changes = """
             INSERT INTO change_{entity_type}
               SELECT raw."{raw_pk_col}" AS id
               FROM raw_{entity_type} AS raw
               JOIN {django_table} AS dat
                 ON raw."{raw_pk_col}" = dat.id
               WHERE {where_clause}
-        '''.format(entity_type=self.entity_type,
-                   raw_pk_col=self.raw_pk_col,
-                   django_table=self.django_table,
-                   where_clause=where_clause)
+        """.format(
+            entity_type=self.entity_type,
+            raw_pk_col=self.raw_pk_col,
+            django_table=self.django_table,
+            where_clause=where_clause,
+        )
 
         self.executeTransaction(find_changes)
 
-        set_fields = ', '.join(['{1}=s."{0}"::{2}'.format(k,v['field'], v['data_type']) for k,v in \
-                                    self.table_mapper.items()])
+        set_fields = ", ".join(
+            [
+                '{1}=s."{0}"::{2}'.format(k, v["field"], v["data_type"])
+                for k, v in self.table_mapper.items()
+            ]
+        )
 
-        raw_fields = ', '.join(['raw."{}"'.format(c) for c in \
-                                  self.table_mapper.keys()])
-        update_dat = '''
+        raw_fields = ", ".join(['raw."{}"'.format(c) for c in self.table_mapper.keys()])
+        update_dat = """
             UPDATE {django_table} SET
               {set_fields}
             FROM (
@@ -719,79 +784,92 @@ class Command(BaseCommand):
                 ON raw."{raw_pk_col}" = change.id
             ) AS s
             WHERE {django_table}.id = s."{raw_pk_col}"
-        '''.format(django_table=self.django_table,
-                   set_fields=set_fields,
-                   raw_fields=raw_fields,
-                   entity_type=self.entity_type,
-                   raw_pk_col=self.raw_pk_col)
+        """.format(
+            django_table=self.django_table,
+            set_fields=set_fields,
+            raw_fields=raw_fields,
+            entity_type=self.entity_type,
+            raw_pk_col=self.raw_pk_col,
+        )
 
         self.executeTransaction(update_dat)
 
-        change_count = self.connection.execute('SELECT COUNT(*) AS count FROM change_{}'.format(self.entity_type))
+        change_count = self.connection.execute(
+            "SELECT COUNT(*) AS count FROM change_{}".format(self.entity_type)
+        )
 
         return change_count.first().count
 
     def findNewRecords(self):
-
-        find = '''
+        find = """
             INSERT INTO new_{entity_type}
               SELECT raw."{raw_pk_col}" AS id
               FROM raw_{entity_type} AS raw
               LEFT JOIN {django_table} AS dat
                 ON raw."{raw_pk_col}" = dat.id
               WHERE dat.id IS NULL
-        '''.format(entity_type=self.entity_type,
-                   django_table=self.django_table,
-                   raw_pk_col=self.raw_pk_col)
+        """.format(
+            entity_type=self.entity_type,
+            django_table=self.django_table,
+            raw_pk_col=self.raw_pk_col,
+        )
 
         self.executeTransaction(find)
 
-        new_count = self.connection.execute('SELECT COUNT(*) AS count FROM new_{}'.format(self.entity_type))
+        new_count = self.connection.execute(
+            "SELECT COUNT(*) AS count FROM new_{}".format(self.entity_type)
+        )
         return new_count.first().count
 
     def makeNewTable(self):
-        create = '''
+        create = """
             CREATE TABLE new_{0} (
                 id BIGINT,
                 PRIMARY KEY (id)
             )
-        '''.format(self.entity_type)
+        """.format(
+            self.entity_type
+        )
 
-        self.executeTransaction('DROP TABLE IF EXISTS new_{0}'.format(self.entity_type))
+        self.executeTransaction("DROP TABLE IF EXISTS new_{0}".format(self.entity_type))
         self.executeTransaction(create)
 
     def makeRawTable(self):
-
-        with open(self.file_path, 'r', encoding=self.encoding) as f:
+        with open(self.file_path, "r", encoding=self.encoding) as f:
             reader = csv.reader(f)
             fields = next(reader)
 
-        fields = ', '.join(['"{}" VARCHAR'.format(f.lower()) for f in fields \
-                                if f.lower() != self.raw_pk_col])
+        fields = ", ".join(
+            [
+                '"{}" VARCHAR'.format(f.lower())
+                for f in fields
+                if f.lower() != self.raw_pk_col
+            ]
+        )
 
-        create_table = '''
+        create_table = """
             CREATE TABLE raw_{0} (
                 {1} BIGINT,
                 {2},
                 PRIMARY KEY ({1})
             )
-        '''.format(self.entity_type,
-                   self.raw_pk_col,
-                   fields)
+        """.format(
+            self.entity_type, self.raw_pk_col, fields
+        )
 
-
-        self.executeTransaction('DROP TABLE IF EXISTS raw_{0}'.format(self.entity_type))
+        self.executeTransaction("DROP TABLE IF EXISTS raw_{0}".format(self.entity_type))
         self.executeTransaction(create_table)
 
     def importRawData(self):
+        DB_CONN_STR = DB_CONN.format(**settings.DATABASES["default"])
 
-        DB_CONN_STR = DB_CONN.format(**settings.DATABASES['default'])
-
-        copy_st = '''
+        copy_st = """
             COPY raw_{0} FROM STDIN WITH CSV HEADER
-        '''.format(self.entity_type)
+        """.format(
+            self.entity_type
+        )
 
-        with open(self.file_path, 'r', encoding=self.encoding) as f:
+        with open(self.file_path, "r", encoding=self.encoding) as f:
             with psycopg2.connect(DB_CONN_STR) as conn:
                 with conn.cursor() as curs:
                     try:
@@ -800,18 +878,25 @@ class Command(BaseCommand):
                         self.stderr.write(str(e))
                         conn.rollback()
 
-        self.executeTransaction('''
+        self.executeTransaction(
+            """
             ALTER TABLE raw_{0} ADD PRIMARY KEY ("{1}")
-        '''.format(self.entity_type, self.raw_pk_col), raise_exc=False)
+        """.format(
+                self.entity_type, self.raw_pk_col
+            ),
+            raise_exc=False,
+        )
 
-        import_count = self.connection.execute('SELECT COUNT(*) AS count FROM raw_{}'.format(self.entity_type))
+        import_count = self.connection.execute(
+            "SELECT COUNT(*) AS count FROM raw_{}".format(self.entity_type)
+        )
 
         return import_count.first().count
 
     def executeTransaction(self, query, *args, **kwargs):
         trans = self.connection.begin()
 
-        raise_exc = kwargs.get('raise_exc', True)
+        raise_exc = kwargs.get("raise_exc", True)
 
         try:
             self.connection.execute("SET local timezone to 'America/Denver'")

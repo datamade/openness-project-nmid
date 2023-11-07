@@ -14,3 +14,4 @@ Pillow==7.1.0
 djangorestframework-csv==1.4.1
 raven==6.10.0
 python-dateutil==2.8.1
+dj-database-url
