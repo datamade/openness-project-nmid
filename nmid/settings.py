@@ -67,6 +67,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.cache.UpdateCacheMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -96,6 +97,11 @@ TEMPLATES = [
 ]
 
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "nmid/static")]
+STATICFILES_STORAGE = os.getenv(
+    "DJANGO_STATICFILES_STORAGE",
+    "whitenoise.storage.CompressedManifestStaticFilesStorage",
+)
+
 
 WSGI_APPLICATION = "nmid.wsgi.application"
 
@@ -169,6 +175,10 @@ SITE_META = {
 # Year to pull races from
 ELECTION_YEAR = "2018"
 
+# This is an optional directory where the import data process will check for
+# files before looking in the "data" directory within the project.
+FTP_DIRECTORY = ""
+
 # Databases
 
 DATABASES = {}
@@ -189,6 +199,20 @@ CACHES = {
     }
 }
 
-# This is an optional directory where the import data process will check for
-# files before looking in the "data" directory within the project.
-FTP_DIRECTORY = ""
+# Logging
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,  # Preserve default loggers
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
+        },
+    },
+}
