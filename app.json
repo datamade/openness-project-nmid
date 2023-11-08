@@ -1,0 +1,28 @@
+{
+  "name": "openness-project-nmid",
+  "scripts": {},
+  "env": {
+    "DJANGO_SECRET_KEY": {
+      "required": true
+    },
+    "DJANGO_FLUSH_CACHE_KEY": {
+      "required": true
+    },
+    "DJANGO_ALLOWED_HOSTS": {
+      "required": true
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "environments": {
+    "review": {
+      "addons": ["heroku-postgresql:mini"]
+    }
+  },
+  "buildpacks": [],
+  "stack": "container"
+}

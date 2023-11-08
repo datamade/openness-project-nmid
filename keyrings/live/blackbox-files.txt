@@ -1,8 +1,0 @@
-configs/nginx.production.conf
-configs/nginx.staging.conf
-configs/settings_local.py
-configs/supervisor.production.conf
-configs/supervisor.staging.conf
-scripts/after_install.sh
-scripts/app_start.sh
-scripts/app_stop.sh

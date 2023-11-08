@@ -3,7 +3,7 @@ FROM python:3.6
 LABEL maintainer "DataMade <info@datamade.us>"
 
 RUN apt-get update && \
-	apt-get install -y --no-install-recommends postgresql-client locales && \
+	apt-get install -y --no-install-recommends postgresql-client locales curl && \
 	rm -rf /var/lib/apt/lists/* && \
 	sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales
