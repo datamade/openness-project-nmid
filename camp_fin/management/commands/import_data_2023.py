@@ -6,6 +6,7 @@ from dateutil.parser import parse
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.management.base import BaseCommand
 from django.db.models import Max
+from django.utils.text import slugify
 
 from camp_fin import models
 
@@ -33,8 +34,10 @@ class Command(BaseCommand):
             for record in reader:
                 contributor = self.make_contributor(record)
                 filing = self.make_filing(record)
-                # transaction = self.make_transaction(contributor, filing)
-                self.stdout.write(f"{str(contributor)} {str(filing)}")
+                contribution = self.make_contribution(record, contributor, filing)
+                self.stdout.write(
+                    f"{str(contributor)} - {str(filing)} - {str(contribution)}"
+                )
 
     def make_contributor(self, record):
         state, _ = models.State.objects.get_or_create(
@@ -94,6 +97,7 @@ class Command(BaseCommand):
             }
 
         else:
+            # This is where the organization name is stored.
             contact_kwargs = {"full_name": record["Last Name"]}
 
         try:
@@ -131,13 +135,33 @@ class Command(BaseCommand):
                 user_id=record["OrgID"], entity_type=entity_type
             )
 
+            full_name = re.sub(
+                r"\s{2,}",
+                " ",
+                " ".join(
+                    [
+                        record["Candidate Prefix"],
+                        record["Candidate First Name"],
+                        record["Candidate Middle Name"],
+                        record["Candidate Last Name"],
+                        record["Candidate Suffix"],
+                    ]
+                ),
+            ).strip()
+
             candidate, _ = models.Candidate.objects.get_or_create(
                 prefix=record["Candidate Prefix"],
                 first_name=record["Candidate First Name"],
                 middle_name=record["Candidate Middle Name"],
                 last_name=record["Candidate Last Name"],
                 suffix=record["Candidate Suffix"],
+                full_name=full_name,
                 entity=entity,
+                slug=slugify(
+                    " ".join(
+                        [record["Candidate First Name"], record["Candidate Last Name"]]
+                    )
+                ),
             )
 
             election_season, _ = models.ElectionSeason.objects.get_or_create(
@@ -170,19 +194,19 @@ class Command(BaseCommand):
                 name=record["Committee Name"],
                 entity=entity,
                 date_added=self.utcnow,
+                slug=slugify(record["Committee Name"]),
             )
 
             filing_kwargs = {"entity": entity}
 
         filing_type, _ = models.FilingType.objects.get_or_create(
-            description=record["Report Name"],
+            description=record["Report Name"][:24],
         )
 
         filing_period, _ = models.FilingPeriod.objects.get_or_create(
             description=record["Report Name"],
             filing_date=parse(record["Filed Date"]).date(),
             initial_date=parse(record["Start of Period"]).date(),
-            due_date=parse(record["End of Period"]).date(),
             allow_no_activity=False,
             exclude_from_cascading=False,
             email_sent_status=0,
@@ -192,13 +216,81 @@ class Command(BaseCommand):
         filing, _ = models.Filing.objects.get_or_create(
             filing_period=filing_period,
             date_added=self.utcnow,
+            date_closed=parse(record["End of Period"]).date(),
             **filing_kwargs,
         )
 
         return filing
 
-    def make_transaction(self, contributor, recipient):
-        """
-        Contribution, Loan, SpecialEvent
-        """
-        ...
+    def make_contribution(self, record, contributor, filing):
+        if record["Contribution Type"] == "Loans Received":
+            transaction_type, _ = models.LoanTransactionType.objects.get_or_create(
+                description="Payment"
+            )
+
+            loan = models.Loan.objects.create(
+                amount=record["Transaction Amount"],
+                received_date=parse(record["Transaction Date"]).date(),
+                check_number=record["Check Number"],
+                status_id=0,
+                date_added=self.utcnow,
+                contact=contributor,
+                company_name=contributor.company_name or "Not specified",
+                filing=filing,
+            )
+
+            contribution = models.LoanTransaction.objects.create(
+                amount=record["Transaction Amount"],
+                transaction_date=parse(record["Transaction Date"]).date(),
+                transaction_status_id=0,
+                date_added=self.utcnow,
+                loan=loan,
+                filing=filing,
+                transaction_type=transaction_type,
+            )
+
+        elif record["Contribution Type"] == "Special Event":
+            contribution = models.SpecialEvent.objects.create(
+                anonymous_contributions=record["Transaction Amount"],
+                event_date=parse(record["Transaction Date"]).date(),
+                admission_price=0,
+                attendance=0,
+                total_admissions=0,
+                total_expenditures=0,
+                transaction_status_id=0,
+                date_added=self.utcnow,
+                sponsors=contributor.company_name or "Not specified",
+                filing=filing,
+            )
+
+        elif "Contribution" in record["Contribution Type"]:
+            transaction_type, _ = models.TransactionType.objects.get_or_create(
+                description=(
+                    "Forgiven Amount"
+                    if record["Contribution Type"] == "Return Contribution"
+                    else "Payment"
+                ),
+                contribution=True,
+                anonymous=False,
+            )
+
+            contribution = models.Transaction.objects.create(
+                amount=record["Transaction Amount"],
+                received_date=parse(record["Transaction Date"]).date(),
+                check_number=record["Check Number"],
+                description=record["Description"][:74],
+                date_added=self.utcnow,
+                contact=contributor,
+                company_name=contributor.full_name,
+                full_name=contributor.full_name,
+                filing=filing,
+                transaction_type=transaction_type,
+            )
+
+        else:
+            self.stderr.write(
+                f"Could not determine contribution type from record: {record['Contribution Type']}"
+            )
+            contribution = None
+
+        return contribution

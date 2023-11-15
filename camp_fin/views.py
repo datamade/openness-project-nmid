@@ -567,6 +567,7 @@ class DonationsView(PaginatedList):
 
             self.donation_count = len(donation_objects)
             self.donation_sum = sum([d.amount for d in donation_objects])
+
             return donation_objects
 
     def get_context_data(self, **kwargs):
