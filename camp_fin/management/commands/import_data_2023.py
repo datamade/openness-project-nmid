@@ -1,5 +1,6 @@
 import csv
 from datetime import datetime
+import os
 import re
 
 from dateutil.parser import parse
@@ -71,7 +72,10 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        with open(options["source_file"], "r") as f:
+        project_directory = os.path.join(
+            os.path.abspath(os.path.dirname(__file__)), "..", "..", ".."
+        )
+        with open(os.path.join(project_directory, options["source_file"]), "r") as f:
             reader = csv.DictReader(f)
             for record in tqdm(reader):
                 contributor = self.make_contributor(record)
