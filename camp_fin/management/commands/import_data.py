@@ -131,6 +131,7 @@ class Command(BaseCommand):
         self.connection = engine.connect()
 
         if options["add_aggregates"]:
+            self.makeLoanBalanceView(aggregates_only=True)
             self.makeTransactionAggregates()
             self.stdout.write(self.style.SUCCESS("Aggregates complete!"))
             return
@@ -429,8 +430,9 @@ class Command(BaseCommand):
             WHERE loan_transaction_type.description = 'Payment'
         """
 
-    def makeLoanBalanceView(self):
-        self.loadLoanTransactions()
+    def makeLoanBalanceView(self, aggregates_only=False):
+        if not aggregates_only:
+            self.loadLoanTransactions()
 
         try:
             self.executeTransaction(

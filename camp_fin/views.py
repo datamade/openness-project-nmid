@@ -675,7 +675,7 @@ class CandidateList(PaginatedList):
                   ON filing.filing_period_id = period.id
                 JOIN camp_fin_campaign AS campaign
                   ON filing.campaign_id = campaign.id
-                JOIN camp_fin_office AS office
+                LEFT JOIN camp_fin_office AS office
                   ON campaign.office_id = office.id
                 WHERE filing.date_added >= '2010-01-01'
                   AND filing.closing_balance IS NOT NULL
@@ -1223,6 +1223,9 @@ class CommitteeDetailBaseView(DetailView):
                 )
                 context["donations"] = donations
 
+        print(context)
+        print(entity_id)
+
         return context
 
 
@@ -1286,7 +1289,9 @@ class CandidateDetail(CommitteeDetailBaseView):
 
         sos_link = None
 
-        if latest_campaign:
+        if latest_campaign and latest_campaign in Campaign.objects.exclude(
+            office__id=0
+        ):
             try:
                 sos_link = "https://www.cfis.state.nm.us/media/CandidateReportH.aspx?es={es}&ot={ot}&o={o}&c={c}"
                 sos_link = sos_link.format(
