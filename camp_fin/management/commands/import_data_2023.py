@@ -9,17 +9,52 @@ from django.core.management.base import BaseCommand
 from django.db.models import Max, Sum
 from django.utils.text import slugify
 
+from tqdm import tqdm
+
 from camp_fin import models
 
 
 class Command(BaseCommand):
     help = "https://docs.google.com/spreadsheets/d/1bKF74KRMXiUaWttamG0lHHh2yLTSE7ctpkm6i8wSwaM/edit?usp=sharing"
 
-    @property
-    def utcnow(self):
-        if not getattr(self, "_utcnow", None):
-            self._utcnow = datetime.utcnow()
-        return self._utcnow
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        try:
+            self._next_entity_id = (
+                models.Entity.objects.aggregate(max_id=Max("user_id"))["max_id"] + 1
+            )
+        except TypeError:
+            self._next_entity_id = 1
+
+        self._cache = {
+            "state": {obj.postal_code: obj for obj in models.State.objects.iterator()},
+            "contact_type": {
+                obj.description: obj for obj in models.ContactType.objects.iterator()
+            },
+            "entity_type": {
+                obj.description: obj for obj in models.EntityType.objects.iterator()
+            },
+            "filing_type": {
+                obj.description: obj for obj in models.FilingType.objects.iterator()
+            },
+            "transaction_type": {
+                obj.description: obj
+                for obj in models.TransactionType.objects.iterator()
+            },
+            "loan_transaction_type": {
+                obj.description: obj
+                for obj in models.LoanTransactionType.objects.iterator()
+            },
+            "entity": {},
+            "candidate": {},
+            "campaign": {},
+            "pac": {},
+            "election_season": {},
+            "filing_period": {},
+            "filing": {},
+            "address": {},
+        }
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -36,51 +71,58 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        with open("_data/raw/CON_2023.csv", "r") as f:
+        with open(options["source_file"], "r") as f:
             reader = csv.DictReader(f)
-            for count, record in enumerate(reader):
+            for record in tqdm(reader):
                 contributor = self.make_contributor(record)
                 filing = self.make_filing(record)
                 contribution = self.make_contribution(record, contributor, filing)
-                self.stdout.write(
-                    f"{str(contributor)} - {str(filing)} - {str(contribution)}"
-                )
-                if count == 5000:
-                    break
 
         self.total_filings()
 
         call_command("import_data", "--add-aggregates")
 
+    def fetch_from_cache(self, cache_entity, cache_key, model, model_kwargs):
+        try:
+            return self._cache[cache_entity][cache_key]
+        except KeyError:
+            try:
+                obj, _ = model.objects.get_or_create(**model_kwargs)
+            except model.MultipleObjectsReturned:
+                obj = model.objects.filter(**model_kwargs).first()
+            self._cache[cache_entity][cache_key] = obj
+            return obj
+
     def make_contributor(self, record):
-        state, _ = models.State.objects.get_or_create(
-            postal_code=record["Contributor State"]
+        state = self.fetch_from_cache(
+            "state",
+            record["Contributor State"],
+            models.State,
+            {"postal_code": record["Contributor State"]},
         )
 
-        try:
-            address = models.Address.objects.get(
+        address = self.fetch_from_cache(
+            "address",
+            (
+                f"{record['Contributor Address Line 1']}{' ' + record['Contributor Address Line 2'] if record['Contributor Address Line 2'] else ''}",
+                record["Contributor City"],
+                state,
+                record["Contributor Zip Code"],
+            ),
+            models.Address,
+            dict(
                 street=f"{record['Contributor Address Line 1']}{' ' + record['Contributor Address Line 2'] if record['Contributor Address Line 2'] else ''}",
                 city=record["Contributor City"],
                 state=state,
                 zipcode=record["Contributor Zip Code"],
-            )
-        except models.Address.DoesNotExist:
-            address = models.Address.objects.create(
-                street=f"{record['Contributor Address Line 1']}{' ' + record['Contributor Address Line 2'] if record['Contributor Address Line 2'] else ''}",
-                city=record["Contributor City"],
-                state=state,
-                zipcode=record["Contributor Zip Code"],
-            )
-        except:
-            address = models.Address.objects.filter(
-                street=f"{record['Contributor Address Line 1']}{' ' + record['Contributor Address Line 2'] if record['Contributor Address Line 2'] else ''}",
-                city=record["Contributor City"],
-                state=state,
-                zipcode=record["Contributor Zip Code"],
-            ).first()
+            ),
+        )
 
-        contact_type, _ = models.ContactType.objects.get_or_create(
-            description=record["Contributor Code"]
+        contact_type = self.fetch_from_cache(
+            "contact_type",
+            record["Contributor Code"],
+            models.ContactType,
+            {"description": record["Contributor Code"]},
         )
 
         if record["Contributor Code"] == "Individual":
@@ -121,18 +163,15 @@ class Command(BaseCommand):
                 contact_type=contact_type,
             )
         except models.Contact.DoesNotExist:
-            entity_ids = models.Entity.objects.aggregate(max_id=Max("user_id"))
-
-            try:
-                user_id = entity_ids["max_id"] + 1
-            except TypeError:
-                user_id = 1
-
-            entity_type, _ = models.EntityType.objects.get_or_create(
-                description=record["Contributor Code"][:24]
+            entity_type = self.fetch_from_cache(
+                "entity_type",
+                record["Contributor Code"][:24],
+                models.EntityType,
+                {"description": record["Contributor Code"][:24]},
             )
+
             entity = models.Entity.objects.create(
-                user_id=user_id,
+                user_id=self._next_entity_id,
                 entity_type=entity_type,
             )
             contact = models.Contact.objects.create(
@@ -143,15 +182,24 @@ class Command(BaseCommand):
                 entity=entity,
             )
 
+            self._next_entity_id += 1
+
         return contact
 
     def make_filing(self, record):
         if record["Report Entity Type"] == "Candidate":
-            entity_type, _ = models.EntityType.objects.get_or_create(
-                description="Candidate"
+            entity_type = self.fetch_from_cache(
+                "entity_type",
+                "Candidate",
+                models.EntityType,
+                {"description": "Candidate"},
             )
-            entity, _ = models.Entity.objects.get_or_create(
-                user_id=record["OrgID"], entity_type=entity_type
+
+            entity = self.fetch_from_cache(
+                "entity",
+                (record["OrgID"], "Candidate"),
+                models.Entity,
+                {"user_id": record["OrgID"], "entity_type": entity_type},
             )
 
             full_name = re.sub(
@@ -168,214 +216,195 @@ class Command(BaseCommand):
                 ),
             ).strip()
 
-            candidate, _ = models.Candidate.objects.get_or_create(
-                prefix=record["Candidate Prefix"],
-                first_name=record["Candidate First Name"],
-                middle_name=record["Candidate Middle Name"],
-                last_name=record["Candidate Last Name"],
-                suffix=record["Candidate Suffix"],
-                full_name=full_name,
-                entity=entity,
-                slug=slugify(
-                    " ".join(
-                        [record["Candidate First Name"], record["Candidate Last Name"]]
-                    )
+            candidate = self.fetch_from_cache(
+                "candidate",
+                entity.user_id,
+                models.Candidate,
+                dict(
+                    prefix=record["Candidate Prefix"],
+                    first_name=record["Candidate First Name"],
+                    middle_name=record["Candidate Middle Name"],
+                    last_name=record["Candidate Last Name"],
+                    suffix=record["Candidate Suffix"],
+                    full_name=full_name,
+                    entity=entity,
+                    slug=slugify(
+                        " ".join(
+                            [
+                                record["Candidate First Name"],
+                                record["Candidate Last Name"],
+                            ]
+                        )
+                    ),
                 ),
             )
 
-            election_season, _ = models.ElectionSeason.objects.get_or_create(
-                year=parse(record["Start of Period"]).date().year,
-                special=False,
-                status_id=0,
+            election_year = parse(record["Start of Period"]).date().year
+
+            election_season = self.fetch_from_cache(
+                "election_season",
+                (election_year, False, 0),
+                models.ElectionSeason,
+                dict(
+                    year=parse(record["Start of Period"]).date().year,
+                    special=False,
+                    status_id=0,
+                ),
             )
 
-            try:
-                campaign = models.Campaign.objects.get(
+            campaign = self.fetch_from_cache(
+                "campaign",
+                (record["Committee Name"], candidate.full_name, election_season.year),
+                models.Campaign,
+                dict(
                     committee_name=record["Committee Name"],
                     candidate=candidate,
                     election_season=election_season,
-                    date_added=self.utcnow,
                     office_id=0,
                     political_party_id=0,
-                )
-            except models.Campaign.DoesNotExist:
-                campaign = models.Campaign.objects.create(
-                    committee_name=record["Committee Name"],
-                    candidate=candidate,
-                    election_season=election_season,
-                    date_added=self.utcnow,
-                    office_id=0,
-                    political_party_id=0,
-                )
+                ),
+            )
 
             filing_kwargs = {"entity": entity, "campaign": campaign}
 
         else:
-            entity_type, _ = models.EntityType.objects.get_or_create(
-                description=record["Report Entity Type"][:24]
+            entity_type = self.fetch_from_cache(
+                "entity_type",
+                record["Report Entity Type"][:24],
+                models.EntityType,
+                {"description": record["Report Entity Type"][:24]},
             )
 
-            entity, _ = models.Entity.objects.get_or_create(
-                user_id=record["OrgID"], entity_type=entity_type
+            entity = self.fetch_from_cache(
+                "entity",
+                (record["OrgID"], entity_type.description),
+                models.Entity,
+                {"user_id": record["OrgID"], "entity_type": entity_type},
             )
 
-            try:
-                pac = models.PAC.objects.get(
+            pac = self.fetch_from_cache(
+                "pac",
+                entity.user_id,
+                models.PAC,
+                dict(
                     name=record["Committee Name"],
                     entity=entity,
                     slug=slugify(record["Committee Name"]),
-                )
-
-            except models.PAC.DoesNotExist:
-                pac = models.PAC.objects.create(
-                    name=record["Committee Name"],
-                    entity=entity,
-                    slug=slugify(record["Committee Name"]),
-                    date_added=self.utcnow,
-                )
+                ),
+            )
 
             filing_kwargs = {"entity": entity}
 
-        filing_type, _ = models.FilingType.objects.get_or_create(
-            description=record["Report Name"][:24],
+        filing_type = self.fetch_from_cache(
+            "filing_type",
+            record["Report Name"][:24],
+            models.FilingType,
+            {"description": record["Report Name"][:24]},
         )
 
-        filing_period, _ = models.FilingPeriod.objects.get_or_create(
-            description=record["Report Name"],
-            filing_date=parse(record["Filed Date"]).date(),
-            initial_date=parse(record["Start of Period"]).date(),
-            due_date=parse(record["End of Period"]).date(),
-            allow_no_activity=False,
-            exclude_from_cascading=False,
-            email_sent_status=0,
-            filing_period_type=filing_type,
+        filing_period = self.fetch_from_cache(
+            "filing_period",
+            (
+                record["Report Name"],
+                parse(record["Filed Date"]).date(),
+                parse(record["Start of Period"]).date(),
+                parse(record["End of Period"]).date(),
+            ),
+            models.FilingPeriod,
+            dict(
+                description=record["Report Name"],
+                filing_date=parse(record["Filed Date"]).date(),
+                initial_date=parse(record["Start of Period"]).date(),
+                due_date=parse(record["End of Period"]).date(),
+                allow_no_activity=False,
+                exclude_from_cascading=False,
+                email_sent_status=0,
+                filing_period_type=filing_type,
+            ),
         )
 
-        try:
-            filing = models.Filing.objects.get(
+        filing = self.fetch_from_cache(
+            "filing",
+            (
+                filing_kwargs["entity"].user_id,
+                filing_period.id,
+                parse(record["End of Period"]).date(),
+            ),
+            models.Filing,
+            dict(
                 filing_period=filing_period,
                 date_closed=parse(record["End of Period"]).date(),
                 final=True,
                 **filing_kwargs,
-            )
-        except models.Filing.DoesNotExist:
-            filing = models.Filing.objects.create(
-                filing_period=filing_period,
-                date_added=self.utcnow,
-                date_closed=parse(record["End of Period"]).date(),
-                final=True,
-                **filing_kwargs,
-            )
+            ),
+        )
 
         return filing
 
     def make_contribution(self, record, contributor, filing):
         if record["Contribution Type"] == "Loans Received":
-            transaction_type, _ = models.LoanTransactionType.objects.get_or_create(
-                description="Payment"
+            transaction_type = self.fetch_from_cache(
+                "loan_transaction_type",
+                "Payment",
+                models.LoanTransactionType,
+                {"description": "Payment"},
             )
 
-            try:
-                loan = models.Loan.objects.get(
-                    amount=record["Transaction Amount"],
-                    received_date=parse(record["Transaction Date"]).date(),
-                    check_number=record["Check Number"],
-                    status_id=0,
-                    contact=contributor,
-                    company_name=contributor.company_name or "Not specified",
-                    filing=filing,
-                )
-            except models.Loan.DoesNotExist:
-                loan = models.Loan.objects.create(
-                    amount=record["Transaction Amount"],
-                    received_date=parse(record["Transaction Date"]).date(),
-                    check_number=record["Check Number"],
-                    status_id=0,
-                    date_added=self.utcnow,
-                    contact=contributor,
-                    company_name=contributor.company_name or "Not specified",
-                    filing=filing,
-                )
+            loan, _ = models.Loan.objects.get_or_create(
+                amount=record["Transaction Amount"],
+                received_date=parse(record["Transaction Date"]).date(),
+                check_number=record["Check Number"],
+                status_id=0,
+                contact=contributor,
+                company_name=contributor.company_name or "Not specified",
+                filing=filing,
+            )
 
-            try:
-                contribution = models.LoanTransaction.objects.get(
-                    amount=record["Transaction Amount"],
-                    transaction_date=parse(record["Transaction Date"]).date(),
-                    transaction_status_id=0,
-                    loan=loan,
-                    filing=filing,
-                    transaction_type=transaction_type,
-                )
-            except models.LoanTransaction.DoesNotExist:
-                contribution = models.LoanTransaction.objects.create(
-                    amount=record["Transaction Amount"],
-                    transaction_date=parse(record["Transaction Date"]).date(),
-                    transaction_status_id=0,
-                    date_added=self.utcnow,
-                    loan=loan,
-                    filing=filing,
-                    transaction_type=transaction_type,
-                )
+            contribution, _ = models.LoanTransaction.objects.get_or_create(
+                amount=record["Transaction Amount"],
+                transaction_date=parse(record["Transaction Date"]).date(),
+                transaction_status_id=0,
+                loan=loan,
+                filing=filing,
+                transaction_type=transaction_type,
+            )
 
         elif record["Contribution Type"] == "Special Event":
-            try:
-                contribution = models.SpecialEvent.objects.get(
-                    anonymous_contributions=record["Transaction Amount"],
-                    event_date=parse(record["Transaction Date"]).date(),
-                    admission_price=0,
-                    attendance=0,
-                    total_admissions=0,
-                    total_expenditures=0,
-                    transaction_status_id=0,
-                    sponsors=contributor.company_name or "Not specified",
-                    filing=filing,
-                )
-            except models.SpecialEvent.DoesNotExist:
-                contribution = models.SpecialEvent.objects.create(
-                    anonymous_contributions=record["Transaction Amount"],
-                    event_date=parse(record["Transaction Date"]).date(),
-                    admission_price=0,
-                    attendance=0,
-                    total_admissions=0,
-                    total_expenditures=0,
-                    transaction_status_id=0,
-                    date_added=self.utcnow,
-                    sponsors=contributor.company_name or "Not specified",
-                    filing=filing,
-                )
-
-        elif "Contribution" in record["Contribution Type"]:
-            transaction_type, _ = models.TransactionType.objects.get_or_create(
-                description="Monetary contribution",
-                contribution=True,
-                anonymous=False,
+            contribution, _ = models.SpecialEvent.objects.get_or_create(
+                anonymous_contributions=record["Transaction Amount"],
+                event_date=parse(record["Transaction Date"]).date(),
+                admission_price=0,
+                attendance=0,
+                total_admissions=0,
+                total_expenditures=0,
+                transaction_status_id=0,
+                sponsors=contributor.company_name or "Not specified",
+                filing=filing,
             )
 
-            try:
-                contribution = models.Transaction.objects.get(
-                    amount=record["Transaction Amount"],
-                    received_date=parse(record["Transaction Date"]).date(),
-                    check_number=record["Check Number"],
-                    description=record["Description"][:74],
-                    contact=contributor,
-                    company_name=contributor.full_name,
-                    full_name=contributor.full_name,
-                    filing=filing,
-                    transaction_type=transaction_type,
-                )
-            except models.Transaction.DoesNotExist:
-                contribution = models.Transaction.objects.create(
-                    amount=record["Transaction Amount"],
-                    received_date=parse(record["Transaction Date"]).date(),
-                    check_number=record["Check Number"],
-                    description=record["Description"][:74],
-                    date_added=self.utcnow,
-                    contact=contributor,
-                    company_name=contributor.full_name,
-                    full_name=contributor.full_name,
-                    filing=filing,
-                    transaction_type=transaction_type,
-                )
+        elif "Contribution" in record["Contribution Type"]:
+            transaction_type = self.fetch_from_cache(
+                "transaction_type",
+                "Monetary contribution",
+                models.TransactionType,
+                {
+                    "description": "Monetary contribution",
+                    "contribution": True,
+                    "anonymous": False,
+                },
+            )
+
+            contribution, _ = models.Transaction.objects.get_or_create(
+                amount=record["Transaction Amount"],
+                received_date=parse(record["Transaction Date"]).date(),
+                check_number=record["Check Number"],
+                description=record["Description"][:74],
+                contact=contributor,
+                company_name=contributor.full_name,
+                full_name=contributor.full_name,
+                filing=filing,
+                transaction_type=transaction_type,
+            )
 
         else:
             self.stderr.write(
@@ -386,7 +415,7 @@ class Command(BaseCommand):
         return contribution
 
     def total_filings(self):
-        for filing in models.Filing.objects.all():
+        for filing in models.Filing.objects.iterator():
             contributions = filing.contributions().aggregate(total=Sum("amount"))
             expenditures = filing.expenditures().aggregate(total=Sum("amount"))
             loans = filing.loans().aggregate(total=Sum("amount"))

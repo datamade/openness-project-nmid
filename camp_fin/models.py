@@ -5,6 +5,7 @@ from django.db import models, connection
 from dateutil.rrule import rrule, MONTHLY
 from django.conf import settings
 from django.utils.translation import ugettext as _
+from django.utils import timezone
 
 from camp_fin.templatetags.helpers import format_money
 from camp_fin.decorators import check_date_params
@@ -21,7 +22,7 @@ class Candidate(models.Model):
     home_phone = models.CharField(max_length=50, null=True)
     address = models.ForeignKey("Address", null=True, db_constraint=False)
     status = models.ForeignKey("Status", null=True, db_constraint=False)
-    date_added = models.DateTimeField(null=True)
+    date_added = models.DateTimeField(null=True, default=timezone.now)
     contact = models.ForeignKey("Contact", null=True, db_constraint=False)
     email = models.CharField(max_length=50, null=True)
     date_updated = models.DateTimeField(null=True)
@@ -47,7 +48,7 @@ class PAC(models.Model):
         "Address", related_name="address", db_constraint=False, null=True
     )
     treasurer = models.ForeignKey("Treasurer", db_constraint=False, null=True)
-    date_added = models.DateTimeField()
+    date_added = models.DateTimeField(default=timezone.now)
     status = models.ForeignKey("Status", db_constraint=False, null=True)
     contact = models.ForeignKey("Contact", db_constraint=False, null=True)
     date_updated = models.DateTimeField(null=True)
@@ -89,7 +90,7 @@ class Campaign(models.Model):
     district = models.ForeignKey("District", db_constraint=False, null=True)
     treasurer = models.ForeignKey("Treasurer", db_constraint=False, null=True)
     status = models.ForeignKey("CampaignStatus", db_constraint=False, null=True)
-    date_added = models.DateTimeField()
+    date_added = models.DateTimeField(default=timezone.now)
     county = models.ForeignKey("County", db_constraint=False, null=True)
     political_party = models.ForeignKey("PoliticalParty", db_constraint=False)
     last_updated = models.DateTimeField(null=True)
@@ -543,7 +544,7 @@ class Transaction(models.Model):
     contact = models.ForeignKey("Contact", db_constraint=False, null=True)
     amount = models.FloatField(db_index=True)
     received_date = models.DateTimeField(db_index=True)
-    date_added = models.DateTimeField()
+    date_added = models.DateTimeField(default=timezone.now)
     check_number = models.CharField(max_length=100, null=True)
     memo = models.TextField(null=True)
     description = models.CharField(max_length=75, null=True)
@@ -610,7 +611,7 @@ class TransactionType(models.Model):
 class Loan(models.Model):
     contact = models.ForeignKey("Contact", db_constraint=False, null=True)
     status = models.ForeignKey("Status", db_constraint=False)
-    date_added = models.DateTimeField()
+    date_added = models.DateTimeField(default=timezone.now)
     amount = models.FloatField()
     check_number = models.CharField(max_length=30, null=True)
     memo = models.CharField(max_length=500, null=True)
@@ -671,7 +672,7 @@ class LoanTransaction(models.Model):
     amount = models.FloatField()
     interest_paid = models.FloatField(null=True)
     transaction_date = models.DateTimeField()
-    date_added = models.DateTimeField()
+    date_added = models.DateTimeField(default=timezone.now)
     check_number = models.CharField(max_length=50, null=True)
     memo = models.TextField(null=True)
     transaction_type = models.ForeignKey("LoanTransactionType", db_constraint=False)
@@ -693,7 +694,7 @@ class LoanTransactionType(models.Model):
 class SpecialEvent(models.Model):
     event_name = models.CharField(max_length=255, null=True)
     transaction_status = models.ForeignKey("Status", db_constraint=False)
-    date_added = models.DateTimeField()
+    date_added = models.DateTimeField(default=timezone.now)
     event_date = models.DateField()
     admission_price = models.FloatField()
     attendance = models.IntegerField()
@@ -727,7 +728,7 @@ class Filing(models.Model):
     olddb_profile_id = models.IntegerField(null=True)
     filing_period = models.ForeignKey("FilingPeriod", db_constraint=False)
     status = models.ForeignKey("Status", db_constraint=False, null=True)
-    date_added = models.DateTimeField()
+    date_added = models.DateTimeField(default=timezone.now)
     olddb_ethics_report_id = models.IntegerField(null=True)
     campaign = models.ForeignKey("Campaign", db_constraint=False, null=True)
     date_closed = models.DateTimeField(null=True)
@@ -758,7 +759,9 @@ class Filing(models.Model):
                 self.filing_period,
             )
         else:
-            return self.entity.pac_set.first().name
+            if self.entity.pac_set.first():
+                return self.entity.pac_set.first().name
+            return str(self.entity)
 
     @check_date_params
     def contributions(self, since=None):
@@ -842,7 +845,7 @@ class Address(models.Model):
     country = models.CharField(max_length=50, null=True)
     address_type = models.ForeignKey("AddressType", null=True, db_constraint=False)
     olddb_id = models.IntegerField(null=True)
-    date_added = models.DateTimeField(null=True)
+    date_added = models.DateTimeField(null=True, default=timezone.now)
     from_file_id = models.IntegerField(null=True)
 
     def __str__(self):
@@ -1115,7 +1118,7 @@ class Treasurer(models.Model):
     alt_phone = models.CharField(max_length=50, null=True)
     email = models.CharField(max_length=255, null=True)
     address = models.ForeignKey("Address", db_constraint=False)
-    date_added = models.DateTimeField()
+    date_added = models.DateTimeField(default=timezone.now)
     status = models.ForeignKey("Status", db_constraint=False)
     olddb_entity_id = models.IntegerField(null=True)
 
@@ -1140,7 +1143,7 @@ class Contact(models.Model):
     contact_type = models.ForeignKey("ContactType", db_constraint=False)
     status = models.ForeignKey("Status", db_constraint=False)
     olddb_id = models.IntegerField(null=True)
-    date_added = models.DateTimeField(null=True)
+    date_added = models.DateTimeField(null=True, default=timezone.now)
     entity = models.ForeignKey("Entity", db_constraint=False)
     from_file_id = models.IntegerField(null=True)
 
@@ -1452,7 +1455,7 @@ class LobbyistMethodMixin(object):
 class Lobbyist(models.Model, LobbyistMethodMixin):
     entity = models.ForeignKey("Entity", db_constraint=False)
     status = models.ForeignKey("Status", null=True, db_constraint=False)
-    date_added = models.DateTimeField(null=True)
+    date_added = models.DateTimeField(null=True, default=timezone.now)
     prefix = models.CharField(max_length=10, null=True)
     first_name = models.CharField(max_length=50, null=True)
     middle_name = models.CharField(max_length=50, null=True)
@@ -1536,7 +1539,7 @@ class Lobbyist(models.Model, LobbyistMethodMixin):
 
 class Organization(models.Model, LobbyistMethodMixin):
     entity = models.ForeignKey("Entity", db_constraint=False)
-    date_added = models.DateTimeField(null=True)
+    date_added = models.DateTimeField(null=True, default=timezone.now)
     status = models.ForeignKey("Status", null=True, db_constraint=False)
     name = models.CharField(max_length=100)
     email = models.CharField(max_length=100, null=True)
@@ -1587,7 +1590,7 @@ class Organization(models.Model, LobbyistMethodMixin):
 
 class LobbyistRegistration(models.Model):
     lobbyist = models.ForeignKey("Lobbyist", db_constraint=False)
-    date_added = models.DateTimeField(null=True)
+    date_added = models.DateTimeField(null=True, default=timezone.now)
     year = models.CharField(max_length=5)
     is_registered = models.NullBooleanField(null=True)
 
@@ -1595,7 +1598,7 @@ class LobbyistRegistration(models.Model):
 class LobbyistEmployer(models.Model):
     lobbyist = models.ForeignKey("Lobbyist", db_constraint=False)
     organization = models.ForeignKey("Organization", db_constraint=False)
-    date_added = models.DateTimeField(null=True)
+    date_added = models.DateTimeField(null=True, default=timezone.now)
     year = models.CharField(max_length=5)
 
 
@@ -1625,7 +1628,7 @@ class LobbyistTransaction(models.Model):
     )
     received_date = models.DateTimeField(null=True)
     amount = models.FloatField()
-    date_added = models.DateTimeField(null=True)
+    date_added = models.DateTimeField(null=True, default=timezone.now)
     transaction_status = models.ForeignKey(
         "LobbyistTransactionStatus", null=True, db_constraint=False
     )
@@ -1644,7 +1647,7 @@ class LobbyistReport(models.Model):
         "LobbyistFilingPeriod", null=True, db_constraint=False
     )
     status = models.ForeignKey("Status", null=True, db_constraint=False)
-    date_added = models.DateTimeField(null=True)
+    date_added = models.DateTimeField(null=True, default=timezone.now)
     date_closed = models.DateTimeField(null=True)
     date_updated = models.DateTimeField(null=True)
     pdf_report = models.CharField(max_length=50, null=True)
@@ -1664,7 +1667,7 @@ class LobbyistSpecialEvent(models.Model):
     received_date = models.DateTimeField(null=True)
     amount = models.FloatField()
     groups_invited = models.CharField(max_length=2000, null=True)
-    date_added = models.DateTimeField(null=True)
+    date_added = models.DateTimeField(null=True, default=timezone.now)
     transaction_status = models.ForeignKey(
         "LobbyistTransactionStatus", null=True, db_constraint=False
     )
@@ -1673,7 +1676,7 @@ class LobbyistSpecialEvent(models.Model):
 class LobbyistBundlingDisclosure(models.Model):
     destinatary_name = models.CharField(max_length=100)
     lobbyist_report = models.ForeignKey("LobbyistReport", db_constraint=False)
-    date_added = models.DateTimeField(null=True)
+    date_added = models.DateTimeField(null=True, default=timezone.now)
     transaction_status = models.ForeignKey(
         "LobbyistTransactionStatus", null=True, db_constraint=False
     )
