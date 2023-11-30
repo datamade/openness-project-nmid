@@ -270,6 +270,9 @@ class Command(BaseCommand):
                 ),
             ).strip()
 
+            # Annoyingly, some campaigns seem to have the different OrgIDs
+            # for the same thing... e.g., Antonio "Moe" Maestas. We should add
+            # a unique constraint to slug?
             candidate = self.fetch_from_cache(
                 "candidate",
                 entity.user_id,
