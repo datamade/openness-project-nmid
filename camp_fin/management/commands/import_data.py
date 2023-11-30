@@ -13,6 +13,7 @@ import pytz
 
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
+from django.db import connection as django_connection
 from django.utils.text import slugify
 
 from .table_mappers import *
@@ -157,6 +158,13 @@ class Command(BaseCommand):
         # Make or refresh materialized views
         self.makeTransactionAggregates()
         self.stdout.write(self.style.SUCCESS("Made transaction aggregate views"))
+
+        file_path = os.path.join(os.path.dirname(__file__), "sql", "reset_sequence.sql")
+
+        with open(file_path, "r") as statement, django_connection.cursor() as c:
+            c.execute(statement.read())
+
+        self.stdout.write(self.style.SUCCESS("Reset model ID sequences"))
 
         self.stdout.write(
             self.style.SUCCESS("Import complete!".format(self.entity_type))
