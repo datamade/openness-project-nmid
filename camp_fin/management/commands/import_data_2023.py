@@ -100,6 +100,9 @@ class Command(BaseCommand):
                 for i, record in enumerate(records):
                     if i == 0:
                         filing = self.make_filing(record)
+                        models.LoanTransaction.objects.filter(filing=filing).delete()
+                        models.SpecialEvent.objects.filter(filing=filing).delete()
+                        models.Transaction.objects.filter(filing=filing).delete()
 
                     contributor = self.make_contributor(record)
 
@@ -181,35 +184,30 @@ class Command(BaseCommand):
             {"description": record["Contributor Code"]},
         )
 
-        if record["Contributor Code"] == "Individual":
-            full_name = re.sub(
-                r"\s{2,}",
-                " ",
-                " ".join(
-                    [
-                        record["Prefix"],
-                        record["First Name"],
-                        record["Middle Name"],
-                        record["Last Name"],
-                        record["Suffix"],
-                    ]
-                ),
-            ).strip()
+        full_name = re.sub(
+            r"\s{2,}",
+            " ",
+            " ".join(
+                [
+                    record["Prefix"],
+                    record["First Name"],
+                    record["Middle Name"],
+                    record["Last Name"],
+                    record["Suffix"],
+                ]
+            ),
+        ).strip()
 
-            contact_kwargs = {
-                "prefix": record["Prefix"],
-                "first_name": record["First Name"],
-                "middle_name": record["Middle Name"],
-                "last_name": record["Last Name"],
-                "suffix": record["Suffix"],
-                "occupation": record["Contributor Occupation"],
-                "company_name": record["Contributor Employer"],
-                "full_name": full_name,
-            }
-
-        else:
-            # This is where the organization name is stored.
-            contact_kwargs = {"full_name": record["Last Name"]}
+        contact_kwargs = {
+            "prefix": record["Prefix"],
+            "first_name": record["First Name"],
+            "middle_name": record["Middle Name"],
+            "last_name": record["Last Name"],
+            "suffix": record["Suffix"],
+            "occupation": record["Contributor Occupation"],
+            "company_name": record["Contributor Employer"],
+            "full_name": full_name,
+        }
 
         try:
             contact = models.Contact.objects.get(
@@ -398,6 +396,12 @@ class Command(BaseCommand):
         return filing
 
     def make_contribution(self, record, contributor, filing):
+        address_kwargs = dict(
+            address=f"{record['Contributor Address Line 1']}{' ' + record['Contributor Address Line 2'] if record['Contributor Address Line 2'] else ''}",
+            city=record["Contributor City"],
+            state=record["Contributor State"],
+            zipcode=record["Contributor Zip Code"],
+        )
         if record["Contribution Type"] == "Loans Received":
             transaction_type = self.fetch_from_cache(
                 "loan_transaction_type",
@@ -414,6 +418,7 @@ class Command(BaseCommand):
                 contact=contributor,
                 company_name=contributor.company_name or "Not specified",
                 filing=filing,
+                **address_kwargs,
             )
 
             contribution = models.LoanTransaction(
@@ -426,6 +431,8 @@ class Command(BaseCommand):
             )
 
         elif record["Contribution Type"] == "Special Event":
+            address_kwargs.pop("state")
+
             contribution = models.SpecialEvent(
                 anonymous_contributions=record["Transaction Amount"],
                 event_date=parse(record["Transaction Date"]).date(),
@@ -436,6 +443,7 @@ class Command(BaseCommand):
                 transaction_status_id=0,
                 sponsors=contributor.company_name or "Not specified",
                 filing=filing,
+                **address_kwargs,
             )
 
         elif "Contribution" in record["Contribution Type"]:
@@ -456,10 +464,12 @@ class Command(BaseCommand):
                 check_number=record["Check Number"],
                 description=record["Description"][:74],
                 contact=contributor,
-                company_name=contributor.full_name,
                 full_name=contributor.full_name,
                 filing=filing,
                 transaction_type=transaction_type,
+                **address_kwargs,
+                company_name=contributor.full_name,
+                occupation=record["Contributor Occupation"],
             )
 
         return contribution

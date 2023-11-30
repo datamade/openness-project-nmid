@@ -212,23 +212,29 @@
                     {
                         'data': 'full_name',
                         'render': function(data, type, full, meta){
-                            return '<a href="/candidates/' + full['slug'] + '/">' + full['full_name'] + '</a>' + ' (' + full['party_name'].charAt(0) + ')';
+                            return full['party_name']
+                                ? '<a href="/candidates/' + full['slug'] + '/">' + full['full_name'] + '</a>' + ' (' + full['party_name'].charAt(0) + ')'
+                                : '<a href="/candidates/' + full['slug'] + '/">' + full['full_name'] + '</a>';
                         }
                     },
                     {
                         'data': 'office_name',
                         'render': function(data, type, full, meta){
-                            var name = full['office_name'];
-                            if (full['county_name'] != '' && full['county_name'] != 'ALL'){
-                                name += ' ' + full['county_name'] + ' County';
+                            if (!full['office_name']) {
+                                return 'Not specified'
+                            } else {
+                                var name = full['office_name'];
+                                if (full['county_name'] != '' && full['county_name'] != 'ALL'){
+                                    name += ' ' + full['county_name'] + ' County';
+                                }
+                                if (full['district_name']){
+                                    name += ' ' + full['district_name'];
+                                }
+                                if (full['division_name']){
+                                    name += ' ' + full['division_name'];
+                                }
+                                return name;
                             }
-                            if (full['district_name']){
-                                name += ' ' + full['district_name'];
-                            }
-                            if (full['division_name']){
-                                name += ' ' + full['division_name'];
-                            }
-                            return name;
                         }
                     },
                     {
@@ -287,6 +293,11 @@
                     },
                     {
                         'data': 'full_address',
+                        'render': function(data, type, full, meta){
+                            return full['address']
+                                ? full['full_address']
+                                : 'Not provided';
+                        },
                         'className': 'hidden-xs hidden-sm'
                     },
                     {

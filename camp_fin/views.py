@@ -265,7 +265,7 @@ class IndexView(TopEarnersBase, LobbyistContextMixin, PagesMixin):
                       USING(entity_id)
                     JOIN camp_fin_campaign AS campaign
                       ON filing.campaign_id = campaign.id
-                    JOIN camp_fin_office AS office
+                    LEFT JOIN camp_fin_office AS office
                       ON campaign.office_id = office.id
                     WHERE filing.date_added >= '{year}-01-01'
                       AND filing.closing_balance IS NOT NULL
@@ -1521,6 +1521,8 @@ class SearchAPIView(viewsets.ViewSet):
         term = request.GET.get("term")
         datatype = request.GET.get("datatype")
 
+        print(term)
+
         limit = request.GET.get("limit", 50)
         offset = request.GET.get("offset", 0)
 
@@ -1598,13 +1600,13 @@ class SearchAPIView(viewsets.ViewSet):
                         ON candidate.id = campaign.candidate_id
                       JOIN camp_fin_electionseason AS election
                         ON campaign.election_season_id = election.id
-                      JOIN camp_fin_politicalparty AS party
+                      LEFT JOIN camp_fin_politicalparty AS party
                         ON campaign.political_party_id = party.id
                       LEFT JOIN camp_fin_county AS county
                         ON campaign.county_id = county.id
-                      JOIN camp_fin_office AS office
+                      LEFT JOIN camp_fin_office AS office
                         ON campaign.office_id = office.id
-                      JOIN camp_fin_officetype AS officetype
+                      LEFT JOIN camp_fin_officetype AS officetype
                         ON office.office_type_id = officetype.id
                       LEFT JOIN camp_fin_district AS district
                         ON campaign.district_id = district.id
@@ -1935,7 +1937,7 @@ def bulk_candidates(request):
           ON campaign.political_party_id = party.id
         LEFT JOIN camp_fin_county AS county
           ON campaign.county_id = county.id
-        JOIN camp_fin_office AS office
+        LEFT JOIN camp_fin_office AS office
           ON campaign.office_id = office.id
         JOIN camp_fin_officetype AS officetype
           ON office.office_type_id = officetype.id
