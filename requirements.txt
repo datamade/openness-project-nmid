@@ -18,3 +18,5 @@ dj-database-url
 whitenoise
 tqdm
 requests
+awscli
+boto3

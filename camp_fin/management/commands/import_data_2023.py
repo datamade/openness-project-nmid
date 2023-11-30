@@ -1,7 +1,6 @@
-from contextlib import closing
 import csv
-from codecs import iterdecode
 from datetime import datetime
+import gzip
 import os
 import re
 
@@ -12,6 +11,7 @@ from django.core.management.base import BaseCommand
 from django.db.models import Max, Sum
 from django.utils.text import slugify
 
+import boto3
 import requests
 from tqdm import tqdm
 
@@ -73,26 +73,22 @@ class Command(BaseCommand):
             default="2023",
             help="Year to scrape",
         )
+        # TODO: Add argument to optionally import from local file
 
     def handle(self, *args, **options):
-        file_url = (
-            "https://login.cfis.sos.state.nm.us/api/DataDownload/GetCSVDownloadReport"
-        )
-        with closing(
-            requests.get(
-                file_url,
-                params={
-                    "year": options["year"],
-                    "transactionType": options["transaction_type"],
-                    "reportFormat": "csv",
-                    "fileName": f"{options['transaction_type']}_{options['year']}.csv",
-                },
-                stream=True,
+        s3 = boto3.client("s3")
+
+        resource_name = f"{options['transaction_type']}_{options['year']}.gz"
+
+        with open(resource_name, "wb") as f:
+            s3.download_fileobj(
+                os.getenv("AWS_STORAGE_BUCKET_NAME", "openness-project-nmid"),
+                resource_name,
+                f,
             )
-        ) as response:
-            reader = csv.DictReader(
-                iterdecode(response.iter_lines(), encoding="utf-8"),
-            )
+
+        with gzip.open(resource_name, "rt") as f:
+            reader = csv.DictReader(f)
 
             for record in tqdm(reader):
                 contributor = self.make_contributor(record)
