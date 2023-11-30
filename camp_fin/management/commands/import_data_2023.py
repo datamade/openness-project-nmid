@@ -1,4 +1,6 @@
+from contextlib import closing
 import csv
+from codecs import iterdecode
 from datetime import datetime
 import os
 import re
@@ -10,6 +12,7 @@ from django.core.management.base import BaseCommand
 from django.db.models import Max, Sum
 from django.utils.text import slugify
 
+import requests
 from tqdm import tqdm
 
 from camp_fin import models
@@ -59,30 +62,44 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--entity-types",
-            dest="entity_types",
-            default="all",
-            help="Comma separated list of entity types to import",
+            "--transaction-type",
+            dest="transaction_type",
+            default="CON",
+            help="Comma separated list of transaction types to import",
         )
         parser.add_argument(
-            "--source-file",
-            dest="source_file",
-            default="all",
-            help="Path to file containing data to import",
+            "--year",
+            dest="year",
+            default="2023",
+            help="Year to scrape",
         )
 
     def handle(self, *args, **options):
-        project_directory = os.path.join(
-            os.path.abspath(os.path.dirname(__file__)), "..", "..", ".."
+        file_url = (
+            "https://login.cfis.sos.state.nm.us/api/DataDownload/GetCSVDownloadReport"
         )
-        with open(os.path.join(project_directory, options["source_file"]), "r") as f:
-            reader = csv.DictReader(f)
+        with closing(
+            requests.get(
+                file_url,
+                params={
+                    "year": options["year"],
+                    "transactionType": options["transaction_type"],
+                    "reportFormat": "csv",
+                    "fileName": f"{options['transaction_type']}_{options['year']}.csv",
+                },
+                stream=True,
+            )
+        ) as response:
+            reader = csv.DictReader(
+                iterdecode(response.iter_lines(), encoding="utf-8"),
+            )
+
             for record in tqdm(reader):
                 contributor = self.make_contributor(record)
                 filing = self.make_filing(record)
                 contribution = self.make_contribution(record, contributor, filing)
 
-        self.total_filings()
+        self.total_filings(options["year"])
 
         call_command("import_data", "--add-aggregates")
 
@@ -418,8 +435,10 @@ class Command(BaseCommand):
 
         return contribution
 
-    def total_filings(self):
-        for filing in models.Filing.objects.iterator():
+    def total_filings(self, year):
+        for filing in models.Filing.objects.filter(
+            filing_period__filing_date__year=year
+        ).iterator():
             contributions = filing.contributions().aggregate(total=Sum("amount"))
             expenditures = filing.expenditures().aggregate(total=Sum("amount"))
             loans = filing.loans().aggregate(total=Sum("amount"))
