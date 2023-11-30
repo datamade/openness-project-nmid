@@ -1,6 +1,7 @@
 import csv
 from datetime import datetime
 import gzip
+from itertools import groupby
 import os
 import re
 
@@ -90,10 +91,48 @@ class Command(BaseCommand):
         with gzip.open(resource_name, "rt") as f:
             reader = csv.DictReader(f)
 
-            for record in tqdm(reader):
-                contributor = self.make_contributor(record)
-                filing = self.make_filing(record)
-                contribution = self.make_contribution(record, contributor, filing)
+            key_func = lambda record: (record["OrgID"], record["Report Name"])
+            sorted_records = sorted(reader, key=key_func)
+
+            loans, special_events, transactions = [], [], []
+
+            for filing_group, records in groupby(tqdm(sorted_records), key=key_func):
+                for i, record in enumerate(records):
+                    if i == 0:
+                        filing = self.make_filing(record)
+
+                    contributor = self.make_contributor(record)
+
+                    if record["Contribution Type"] == "Loans Received":
+                        loans.append(
+                            self.make_contribution(record, contributor, filing)
+                        )
+
+                    elif record["Contribution Type"] == "Special Event":
+                        special_events.append(
+                            self.make_contribution(record, contributor, filing)
+                        )
+
+                    elif "Contribution" in record["Contribution Type"]:
+                        transactions.append(
+                            self.make_contribution(record, contributor, filing)
+                        )
+
+                    else:
+                        self.stderr.write(
+                            f"Could not determine contribution type from record: {record['Contribution Type']}"
+                        )
+
+                if len(transactions) >= 2500:
+                    models.Transaction.objects.bulk_create(transactions)
+                    transactions = []
+                    self.stdout.write("Wrote 2500 contributions")
+
+        models.LoanTransaction.objects.bulk_create(loans)
+        models.SpecialEvent.objects.bulk_create(special_events)
+        models.Transaction.objects.bulk_create(transactions)
+
+        self.stdout.write("Wrote remaining contributions, loans, and special events")
 
         self.total_filings(options["year"])
 
@@ -377,7 +416,7 @@ class Command(BaseCommand):
                 filing=filing,
             )
 
-            contribution, _ = models.LoanTransaction.objects.get_or_create(
+            contribution = models.LoanTransaction(
                 amount=record["Transaction Amount"],
                 transaction_date=parse(record["Transaction Date"]).date(),
                 transaction_status_id=0,
@@ -387,7 +426,7 @@ class Command(BaseCommand):
             )
 
         elif record["Contribution Type"] == "Special Event":
-            contribution, _ = models.SpecialEvent.objects.get_or_create(
+            contribution = models.SpecialEvent(
                 anonymous_contributions=record["Transaction Amount"],
                 event_date=parse(record["Transaction Date"]).date(),
                 admission_price=0,
@@ -411,7 +450,7 @@ class Command(BaseCommand):
                 },
             )
 
-            contribution, _ = models.Transaction.objects.get_or_create(
+            contribution = models.Transaction(
                 amount=record["Transaction Amount"],
                 received_date=parse(record["Transaction Date"]).date(),
                 check_number=record["Check Number"],
@@ -422,12 +461,6 @@ class Command(BaseCommand):
                 filing=filing,
                 transaction_type=transaction_type,
             )
-
-        else:
-            self.stderr.write(
-                f"Could not determine contribution type from record: {record['Contribution Type']}"
-            )
-            contribution = None
 
         return contribution
 
