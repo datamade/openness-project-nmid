@@ -265,7 +265,7 @@ class IndexView(TopEarnersBase, LobbyistContextMixin, PagesMixin):
                       USING(entity_id)
                     JOIN camp_fin_campaign AS campaign
                       ON filing.campaign_id = campaign.id
-                    JOIN camp_fin_office AS office
+                    LEFT JOIN camp_fin_office AS office
                       ON campaign.office_id = office.id
                     WHERE filing.date_added >= '{year}-01-01'
                       AND filing.closing_balance IS NOT NULL
@@ -567,6 +567,7 @@ class DonationsView(PaginatedList):
 
             self.donation_count = len(donation_objects)
             self.donation_sum = sum([d.amount for d in donation_objects])
+
             return donation_objects
 
     def get_context_data(self, **kwargs):
@@ -674,7 +675,7 @@ class CandidateList(PaginatedList):
                   ON filing.filing_period_id = period.id
                 JOIN camp_fin_campaign AS campaign
                   ON filing.campaign_id = campaign.id
-                JOIN camp_fin_office AS office
+                LEFT JOIN camp_fin_office AS office
                   ON campaign.office_id = office.id
                 WHERE filing.date_added >= '2010-01-01'
                   AND filing.closing_balance IS NOT NULL
@@ -1222,6 +1223,9 @@ class CommitteeDetailBaseView(DetailView):
                 )
                 context["donations"] = donations
 
+        print(context)
+        print(entity_id)
+
         return context
 
 
@@ -1285,7 +1289,9 @@ class CandidateDetail(CommitteeDetailBaseView):
 
         sos_link = None
 
-        if latest_campaign:
+        if latest_campaign and latest_campaign in Campaign.objects.exclude(
+            office__id=0
+        ):
             try:
                 sos_link = "https://www.cfis.state.nm.us/media/CandidateReportH.aspx?es={es}&ot={ot}&o={o}&c={c}"
                 sos_link = sos_link.format(
@@ -1515,6 +1521,8 @@ class SearchAPIView(viewsets.ViewSet):
         term = request.GET.get("term")
         datatype = request.GET.get("datatype")
 
+        print(term)
+
         limit = request.GET.get("limit", 50)
         offset = request.GET.get("offset", 0)
 
@@ -1592,13 +1600,13 @@ class SearchAPIView(viewsets.ViewSet):
                         ON candidate.id = campaign.candidate_id
                       JOIN camp_fin_electionseason AS election
                         ON campaign.election_season_id = election.id
-                      JOIN camp_fin_politicalparty AS party
+                      LEFT JOIN camp_fin_politicalparty AS party
                         ON campaign.political_party_id = party.id
                       LEFT JOIN camp_fin_county AS county
                         ON campaign.county_id = county.id
-                      JOIN camp_fin_office AS office
+                      LEFT JOIN camp_fin_office AS office
                         ON campaign.office_id = office.id
-                      JOIN camp_fin_officetype AS officetype
+                      LEFT JOIN camp_fin_officetype AS officetype
                         ON office.office_type_id = officetype.id
                       LEFT JOIN camp_fin_district AS district
                         ON campaign.district_id = district.id
@@ -1929,7 +1937,7 @@ def bulk_candidates(request):
           ON campaign.political_party_id = party.id
         LEFT JOIN camp_fin_county AS county
           ON campaign.county_id = county.id
-        JOIN camp_fin_office AS office
+        LEFT JOIN camp_fin_office AS office
           ON campaign.office_id = office.id
         JOIN camp_fin_officetype AS officetype
           ON office.office_type_id = officetype.id
