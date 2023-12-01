@@ -20,7 +20,12 @@ from camp_fin import models
 
 
 class Command(BaseCommand):
-    help = "https://docs.google.com/spreadsheets/d/1bKF74KRMXiUaWttamG0lHHh2yLTSE7ctpkm6i8wSwaM/edit?usp=sharing"
+    help = """
+        Import data from the New Mexico Campaign Finance System:
+        https://login.cfis.sos.state.nm.us/#/dataDownload
+
+        Data will be retrieved from S3 unless a local CSV is specified as --file
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -66,80 +71,51 @@ class Command(BaseCommand):
             "--transaction-type",
             dest="transaction_type",
             default="CON",
-            help="Comma separated list of transaction types to import",
+            help="Type of transaction to import: CON, EXP (Default: CON)",
         )
         parser.add_argument(
             "--year",
             dest="year",
             default="2023",
-            help="Year to scrape",
+            help="Year to import (Default: 2023)",
         )
-        # TODO: Add argument to optionally import from local file
+        parser.add_argument(
+            "--file",
+            dest="file",
+            help="Absolute path of CSV file to import",
+            required=False,
+        )
 
     def handle(self, *args, **options):
-        s3 = boto3.client("s3")
+        if options["transaction_type"] not in ("EXP", "CON"):
+            raise ValueError("Transaction type must be one of: EXP, CON")
 
-        resource_name = f"{options['transaction_type']}_{options['year']}.gz"
+        if options["file"]:
+            f = open(options["file"], "r")
 
-        with open(resource_name, "wb") as f:
-            s3.download_fileobj(
-                os.getenv("AWS_STORAGE_BUCKET_NAME", "openness-project-nmid"),
-                resource_name,
-                f,
-            )
+        else:
+            s3 = boto3.client("s3")
 
-        with gzip.open(resource_name, "rt") as f:
-            reader = csv.DictReader(f)
+            resource_name = f"{options['transaction_type']}_{options['year']}.gz"
 
-            key_func = lambda record: (record["OrgID"], record["Report Name"])
-            sorted_records = sorted(reader, key=key_func)
+            with open(resource_name, "wb") as f:
+                s3.download_fileobj(
+                    os.getenv("AWS_STORAGE_BUCKET_NAME", "openness-project-nmid"),
+                    resource_name,
+                    f,
+                )
 
-            loans, special_events, transactions = [], [], []
+            f = open(resource_name, "rt")
 
-            for filing_group, records in groupby(tqdm(sorted_records), key=key_func):
-                for i, record in enumerate(records):
-                    if i == 0:
-                        filing = self.make_filing(record)
-                        models.LoanTransaction.objects.filter(filing=filing).delete()
-                        models.SpecialEvent.objects.filter(filing=filing).delete()
-                        models.Transaction.objects.filter(filing=filing).delete()
+        try:
+            if options["transaction_type"] == "CON":
+                self.import_contributions(f)
 
-                    contributor = self.make_contributor(record)
+            elif options["transaction_type"] == "EXP":
+                self.import_expenditures(f)
 
-                    if record["Contribution Type"] == "Loans Received":
-                        loans.append(
-                            self.make_contribution(record, contributor, filing)
-                        )
-
-                    elif record["Contribution Type"] == "Special Event":
-                        special_events.append(
-                            self.make_contribution(record, contributor, filing)
-                        )
-
-                    elif "Contribution" in record["Contribution Type"]:
-                        transactions.append(
-                            self.make_contribution(record, contributor, filing)
-                        )
-
-                    else:
-                        self.stderr.write(
-                            f"Could not determine contribution type from record: {record['Contribution Type']}"
-                        )
-
-                if len(transactions) >= 2500:
-                    models.Transaction.objects.bulk_create(transactions)
-                    transactions = []
-                    self.stdout.write("Wrote 2500 contributions")
-
-        models.LoanTransaction.objects.bulk_create(loans)
-        models.SpecialEvent.objects.bulk_create(special_events)
-        models.Transaction.objects.bulk_create(transactions)
-
-        self.stdout.write("Wrote remaining contributions, loans, and special events")
-
-        self.total_filings(options["year"])
-
-        call_command("import_data", "--add-aggregates")
+        finally:
+            f.close()
 
     def fetch_from_cache(self, cache_entity, cache_key, model, model_kwargs):
         try:
@@ -151,6 +127,61 @@ class Command(BaseCommand):
                 obj = model.objects.filter(**model_kwargs).first()
             self._cache[cache_entity][cache_key] = obj
             return obj
+
+    def import_contributions(self, f):
+        reader = csv.DictReader(f)
+
+        key_func = lambda record: (record["OrgID"], record["Report Name"])
+        sorted_records = sorted(reader, key=key_func)
+
+        loans, special_events, transactions = [], [], []
+
+        for filing_group, records in groupby(tqdm(sorted_records), key=key_func):
+            for i, record in enumerate(records):
+                if i == 0:
+                    filing = self.make_filing(record)
+                    models.LoanTransaction.objects.filter(filing=filing).delete()
+                    models.SpecialEvent.objects.filter(filing=filing).delete()
+                    models.Transaction.objects.filter(filing=filing).delete()
+
+                contributor = self.make_contributor(record)
+
+                if record["Contribution Type"] == "Loans Received":
+                    loans.append(self.make_contribution(record, contributor, filing))
+
+                elif record["Contribution Type"] == "Special Event":
+                    special_events.append(
+                        self.make_contribution(record, contributor, filing)
+                    )
+
+                elif "Contribution" in record["Contribution Type"]:
+                    transactions.append(
+                        self.make_contribution(record, contributor, filing)
+                    )
+
+                else:
+                    self.stderr.write(
+                        f"Could not determine contribution type from record: {record['Contribution Type']}"
+                    )
+
+            if len(transactions) >= 2500:
+                models.Transaction.objects.bulk_create(transactions)
+                transactions = []
+                self.stdout.write("Wrote 2500 contributions")
+
+        models.LoanTransaction.objects.bulk_create(loans)
+        models.SpecialEvent.objects.bulk_create(special_events)
+        models.Transaction.objects.bulk_create(transactions)
+
+        self.stdout.write("Wrote remaining contributions, loans, and special events")
+
+        self.total_filings(options["year"])
+
+        call_command("import_data", "--add-aggregates")
+
+    def import_expenditures(self, f):
+        self.stdout.write("Importing expenditures")
+        ...
 
     def make_contributor(self, record):
         state = self.fetch_from_cache(
