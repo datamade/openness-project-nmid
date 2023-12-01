@@ -117,6 +117,9 @@ class Command(BaseCommand):
         finally:
             f.close()
 
+        self.total_filings(options["year"])
+        call_command("import_data", "--add-aggregates")
+
     def fetch_from_cache(self, cache_entity, cache_key, model, model_kwargs):
         try:
             return self._cache[cache_entity][cache_key]
@@ -142,7 +145,9 @@ class Command(BaseCommand):
                     filing = self.make_filing(record)
                     models.LoanTransaction.objects.filter(filing=filing).delete()
                     models.SpecialEvent.objects.filter(filing=filing).delete()
-                    models.Transaction.objects.filter(filing=filing).delete()
+                    models.Transaction.objects.filter(filing=filing).exclude(
+                        transaction_type__description="Monetary Expenditure"
+                    ).delete()
 
                 contributor = self.make_contributor(record)
 
@@ -167,21 +172,35 @@ class Command(BaseCommand):
             if len(transactions) >= 2500:
                 models.Transaction.objects.bulk_create(transactions)
                 transactions = []
-                self.stdout.write("Wrote 2500 contributions")
 
         models.LoanTransaction.objects.bulk_create(loans)
         models.SpecialEvent.objects.bulk_create(special_events)
         models.Transaction.objects.bulk_create(transactions)
 
-        self.stdout.write("Wrote remaining contributions, loans, and special events")
-
-        self.total_filings(options["year"])
-
-        call_command("import_data", "--add-aggregates")
-
     def import_expenditures(self, f):
-        self.stdout.write("Importing expenditures")
-        ...
+        reader = csv.DictReader(f)
+
+        key_func = lambda record: (record["OrgID"], record["Report Name"])
+        sorted_records = sorted(reader, key=key_func)
+
+        expenditures = []
+
+        for filing_group, records in groupby(tqdm(sorted_records), key=key_func):
+            for i, record in enumerate(records):
+                if i == 0:
+                    filing = self.make_filing(record)
+                    models.Transaction.objects.filter(
+                        filing=filing,
+                        transaction_type__description="Monetary Expenditure",
+                    ).delete()
+
+                expenditures.append(self.make_contribution(record, None, filing))
+
+            if len(expenditures) >= 2500:
+                models.Transaction.objects.bulk_create(expenditures)
+                expenditures = []
+
+        models.Transaction.objects.bulk_create(expenditures)
 
     def make_contributor(self, record):
         state = self.fetch_from_cache(
@@ -430,80 +449,126 @@ class Command(BaseCommand):
         return filing
 
     def make_contribution(self, record, contributor, filing):
-        address_kwargs = dict(
-            address=f"{record['Contributor Address Line 1']}{' ' + record['Contributor Address Line 2'] if record['Contributor Address Line 2'] else ''}",
-            city=record["Contributor City"],
-            state=record["Contributor State"],
-            zipcode=record["Contributor Zip Code"],
-        )
-        if record["Contribution Type"] == "Loans Received":
-            transaction_type = self.fetch_from_cache(
-                "loan_transaction_type",
-                "Payment",
-                models.LoanTransactionType,
-                {"description": "Payment"},
+        if contributor:
+            address_kwargs = dict(
+                address=f"{record['Contributor Address Line 1']}{' ' + record['Contributor Address Line 2'] if record['Contributor Address Line 2'] else ''}",
+                city=record["Contributor City"],
+                state=record["Contributor State"],
+                zipcode=record["Contributor Zip Code"],
             )
 
-            loan, _ = models.Loan.objects.get_or_create(
-                amount=record["Transaction Amount"],
-                received_date=parse(record["Transaction Date"]).date(),
-                check_number=record["Check Number"],
-                status_id=0,
-                contact=contributor,
-                company_name=contributor.company_name or "Not specified",
-                filing=filing,
-                **address_kwargs,
+            if record["Contribution Type"] == "Loans Received":
+                transaction_type = self.fetch_from_cache(
+                    "loan_transaction_type",
+                    "Payment",
+                    models.LoanTransactionType,
+                    {"description": "Payment"},
+                )
+
+                loan, _ = models.Loan.objects.get_or_create(
+                    amount=record["Transaction Amount"],
+                    received_date=parse(record["Transaction Date"]).date(),
+                    check_number=record["Check Number"],
+                    status_id=0,
+                    contact=contributor,
+                    company_name=contributor.company_name or "Not specified",
+                    filing=filing,
+                    **address_kwargs,
+                )
+
+                contribution = models.LoanTransaction(
+                    amount=record["Transaction Amount"],
+                    transaction_date=parse(record["Transaction Date"]).date(),
+                    transaction_status_id=0,
+                    loan=loan,
+                    filing=filing,
+                    transaction_type=transaction_type,
+                )
+
+            elif record["Contribution Type"] == "Special Event":
+                address_kwargs.pop("state")
+
+                contribution = models.SpecialEvent(
+                    anonymous_contributions=record["Transaction Amount"],
+                    event_date=parse(record["Transaction Date"]).date(),
+                    admission_price=0,
+                    attendance=0,
+                    total_admissions=0,
+                    total_expenditures=0,
+                    transaction_status_id=0,
+                    sponsors=contributor.company_name or "Not specified",
+                    filing=filing,
+                    **address_kwargs,
+                )
+
+            elif "Contribution" in record["Contribution Type"]:
+                transaction_type = self.fetch_from_cache(
+                    "transaction_type",
+                    "Monetary contribution",
+                    models.TransactionType,
+                    {
+                        "description": "Monetary contribution",
+                        "contribution": True,
+                        "anonymous": False,
+                    },
+                )
+
+                contribution = models.Transaction(
+                    amount=record["Transaction Amount"],
+                    received_date=parse(record["Transaction Date"]).date(),
+                    check_number=record["Check Number"],
+                    description=record["Description"][:74],
+                    contact=contributor,
+                    full_name=contributor.full_name,
+                    filing=filing,
+                    transaction_type=transaction_type,
+                    **address_kwargs,
+                    company_name=contributor.full_name,
+                    occupation=record["Contributor Occupation"],
+                )
+
+        else:
+            address_kwargs = dict(
+                address=f"{record['Payee Address 1']}{' ' + record['Payee Address 2'] if record['Payee Address 2'] else ''}",
+                city=record["Payee City"],
+                state=record["Payee State"],
+                zipcode=record["Payee Zip Code"],
             )
 
-            contribution = models.LoanTransaction(
-                amount=record["Transaction Amount"],
-                transaction_date=parse(record["Transaction Date"]).date(),
-                transaction_status_id=0,
-                loan=loan,
-                filing=filing,
-                transaction_type=transaction_type,
-            )
-
-        elif record["Contribution Type"] == "Special Event":
-            address_kwargs.pop("state")
-
-            contribution = models.SpecialEvent(
-                anonymous_contributions=record["Transaction Amount"],
-                event_date=parse(record["Transaction Date"]).date(),
-                admission_price=0,
-                attendance=0,
-                total_admissions=0,
-                total_expenditures=0,
-                transaction_status_id=0,
-                sponsors=contributor.company_name or "Not specified",
-                filing=filing,
-                **address_kwargs,
-            )
-
-        elif "Contribution" in record["Contribution Type"]:
             transaction_type = self.fetch_from_cache(
                 "transaction_type",
-                "Monetary contribution",
+                "Monetary Expenditure",
                 models.TransactionType,
                 {
-                    "description": "Monetary contribution",
-                    "contribution": True,
+                    "description": "Monetary Expenditure",
+                    "contribution": False,
                     "anonymous": False,
                 },
             )
 
+            payee_full_name = re.sub(
+                r"\s{2,}",
+                " ",
+                " ".join(
+                    [
+                        record["Payee Prefix"],
+                        record["Payee First Name"],
+                        record["Payee Middle Name"],
+                        record["Payee Last Name"],
+                        record["Payee Suffix"],
+                    ]
+                ),
+            ).strip()
+
             contribution = models.Transaction(
-                amount=record["Transaction Amount"],
-                received_date=parse(record["Transaction Date"]).date(),
-                check_number=record["Check Number"],
-                description=record["Description"][:74],
-                contact=contributor,
-                full_name=contributor.full_name,
+                amount=record["Expenditure Amount"],
+                received_date=parse(record["Expenditure Date"]).date(),
+                description=(record["Description"] or record["Expenditure Type"])[:74],
+                full_name=payee_full_name,
+                company_name=payee_full_name,
                 filing=filing,
                 transaction_type=transaction_type,
                 **address_kwargs,
-                company_name=contributor.full_name,
-                occupation=record["Contributor Occupation"],
             )
 
         return contribution
