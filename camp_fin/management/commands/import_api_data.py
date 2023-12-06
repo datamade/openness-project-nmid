@@ -98,14 +98,14 @@ class Command(BaseCommand):
 
             resource_name = f"{options['transaction_type']}_{options['year']}.gz"
 
-            with open(resource_name, "wb") as f:
+            with open(resource_name, "wb") as download_location:
                 s3.download_fileobj(
                     os.getenv("AWS_STORAGE_BUCKET_NAME", "openness-project-nmid"),
                     resource_name,
-                    f,
+                    download_location,
                 )
 
-            f = open(resource_name, "rt")
+            f = gzip.open(resource_name, "rt")
 
         try:
             if options["transaction_type"] == "CON":
