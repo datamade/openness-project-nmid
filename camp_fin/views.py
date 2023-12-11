@@ -1219,7 +1219,7 @@ class CommitteeDetailBaseView(DetailView):
             # Count pure donations, if applicable
             if total_loans > 0 or total_inkind > 0:
                 donations = latest_filing.total_contributions - (
-                    latest_filing.total_loans + latest_filing.total_inkind
+                    (latest_filing.total_loans or 0) + (latest_filing.total_inkind or 0)
                 )
                 context["donations"] = donations
 
