@@ -221,7 +221,7 @@
                         'data': 'office_name',
                         'render': function(data, type, full, meta){
                             if (!full['office_name']) {
-                                return 'Not specified'
+                                return ''
                             } else {
                                 var name = full['office_name'];
                                 if (full['county_name'] != '' && full['county_name'] != 'ALL'){

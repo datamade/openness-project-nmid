@@ -124,10 +124,17 @@ class Command(BaseCommand):
         try:
             return self._cache[cache_entity][cache_key]
         except KeyError:
+            deidentified_model_kwargs = {
+                k: v for k, v in model_kwargs.items() if k not in ("entity", "slug")
+            }
+
             try:
-                obj, _ = model.objects.get_or_create(**model_kwargs)
+                obj = model.objects.get(**deidentified_model_kwargs)
+            except model.DoesNotExist:
+                obj = model.objects.create(**model_kwargs)
             except model.MultipleObjectsReturned:
-                obj = model.objects.filter(**model_kwargs).first()
+                obj = model.objects.filter(**deidentified_model_kwargs).first()
+
             self._cache[cache_entity][cache_key] = obj
             return obj
 
@@ -320,19 +327,16 @@ class Command(BaseCommand):
                 ),
             ).strip()
 
-            # Annoyingly, some campaigns seem to have the different OrgIDs
-            # for the same thing... e.g., Antonio "Moe" Maestas. We should add
-            # a unique constraint to slug?
             candidate = self.fetch_from_cache(
                 "candidate",
-                entity.user_id,
+                full_name,
                 models.Candidate,
                 dict(
-                    prefix=record["Candidate Prefix"],
-                    first_name=record["Candidate First Name"],
-                    middle_name=record["Candidate Middle Name"],
-                    last_name=record["Candidate Last Name"],
-                    suffix=record["Candidate Suffix"],
+                    prefix=record["Candidate Prefix"] or None,
+                    first_name=record["Candidate First Name"] or None,
+                    middle_name=record["Candidate Middle Name"] or None,
+                    last_name=record["Candidate Last Name"] or None,
+                    suffix=record["Candidate Suffix"] or None,
                     full_name=full_name,
                     entity=entity,
                     slug=slugify(
@@ -345,6 +349,10 @@ class Command(BaseCommand):
                     ),
                 ),
             )
+
+            # If an existing candidate was found, grab its entity.
+            if candidate.entity.user_id != record["OrgID"]:
+                entity = candidate.entity
 
             election_year = parse(record["Start of Period"]).date().year
 
@@ -391,7 +399,7 @@ class Command(BaseCommand):
 
             pac = self.fetch_from_cache(
                 "pac",
-                entity.user_id,
+                record["Committee Name"],
                 models.PAC,
                 dict(
                     name=record["Committee Name"],
@@ -399,6 +407,9 @@ class Command(BaseCommand):
                     slug=slugify(record["Committee Name"]),
                 ),
             )
+            # If an existing PAC was found, grab its entity.
+            if pac.entity.user_id != record["OrgID"]:
+                entity = pac.entity
 
             filing_kwargs = {"entity": entity}
 
