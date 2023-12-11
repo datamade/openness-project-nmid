@@ -64,6 +64,8 @@ class Command(BaseCommand):
             "filing_period": {},
             "filing": {},
             "address": {},
+            "office": {},
+            "party": {},
         }
 
     def add_arguments(self, parser):
@@ -195,7 +197,11 @@ class Command(BaseCommand):
         for filing_group, records in groupby(tqdm(sorted_records), key=key_func):
             for i, record in enumerate(records):
                 if i == 0:
-                    filing = self.make_filing(record)
+                    try:
+                        filing = self.make_filing(record)
+                    except ValueError:
+                        continue
+
                     models.Transaction.objects.filter(
                         filing=filing,
                         transaction_type__description="Monetary Expenditure",
@@ -313,46 +319,75 @@ class Command(BaseCommand):
                 {"user_id": record["OrgID"], "entity_type": entity_type},
             )
 
-            full_name = re.sub(
-                r"\s{2,}",
-                " ",
-                " ".join(
-                    [
-                        record["Candidate Prefix"],
-                        record["Candidate First Name"],
-                        record["Candidate Middle Name"],
-                        record["Candidate Last Name"],
-                        record["Candidate Suffix"],
-                    ]
-                ),
-            ).strip()
-
-            candidate = self.fetch_from_cache(
-                "candidate",
-                full_name,
-                models.Candidate,
-                dict(
-                    prefix=record["Candidate Prefix"] or None,
-                    first_name=record["Candidate First Name"] or None,
-                    middle_name=record["Candidate Middle Name"] or None,
-                    last_name=record["Candidate Last Name"] or None,
-                    suffix=record["Candidate Suffix"] or None,
-                    full_name=full_name,
-                    entity=entity,
-                    slug=slugify(
-                        " ".join(
-                            [
-                                record["Candidate First Name"],
-                                record["Candidate Last Name"],
-                            ]
-                        )
+            if any(
+                [
+                    record["Candidate First Name"],
+                    record["Candidate Last Name"],
+                ]
+            ):
+                full_name = re.sub(
+                    r"\s{2,}",
+                    " ",
+                    " ".join(
+                        [
+                            record["Candidate First Name"],
+                            record["Candidate Middle Name"],
+                            record["Candidate Last Name"],
+                            record["Candidate Suffix"],
+                        ]
                     ),
-                ),
-            )
+                ).strip()
 
-            # If an existing candidate was found, grab its entity.
-            if candidate.entity.user_id != record["OrgID"]:
-                entity = candidate.entity
+                candidate = self.fetch_from_cache(
+                    "candidate",
+                    full_name,
+                    models.Candidate,
+                    dict(
+                        prefix=record["Candidate Prefix"] or None,
+                        first_name=record["Candidate First Name"] or None,
+                        middle_name=record["Candidate Middle Name"] or None,
+                        last_name=record["Candidate Last Name"] or None,
+                        suffix=record["Candidate Suffix"] or None,
+                        full_name=full_name,
+                        entity=entity,
+                        slug=slugify(
+                            " ".join(
+                                [
+                                    record["Candidate First Name"],
+                                    record["Candidate Last Name"],
+                                ]
+                            )
+                        ),
+                    ),
+                )
+
+                # If an existing candidate was found, grab its entity.
+                if candidate.entity.user_id != record["OrgID"]:
+                    entity = candidate.entity
+
+            else:
+                try:
+                    candidate = (
+                        models.Candidate.objects.filter(
+                            campaign__committee_name=record["Committee Name"]
+                        )
+                        .distinct()
+                        .get()
+                    )
+                except models.Candidate.DoesNotExist:
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"Could not find candidate associated with committee {record['Committee Name']}. Skipping..."
+                        )
+                    )
+                    raise ValueError
+                except models.Candidate.MultipleObjectsReturned:
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"Found more than one candidate associated with committee {record['Committee Name']}. Skipping..."
+                        )
+                    )
+                    raise ValueError
 
             election_year = parse(record["Start of Period"]).date().year
 
@@ -367,16 +402,34 @@ class Command(BaseCommand):
                 ),
             )
 
+            office = self.fetch_from_cache(
+                "office",
+                None,
+                models.Office,
+                dict(description="Not specified", status_id=0),
+            )
+
+            party = self.fetch_from_cache(
+                "party",
+                None,
+                models.PoliticalParty,
+                dict(name="Not specified"),
+            )
+
             campaign = self.fetch_from_cache(
                 "campaign",
-                (record["Committee Name"], candidate.full_name, election_season.year),
+                (
+                    record["Committee Name"],
+                    candidate.full_name,
+                    election_season.year,
+                ),
                 models.Campaign,
                 dict(
                     committee_name=record["Committee Name"],
                     candidate=candidate,
                     election_season=election_season,
-                    office_id=0,
-                    political_party_id=0,
+                    office=office,
+                    political_party=party,
                 ),
             )
 

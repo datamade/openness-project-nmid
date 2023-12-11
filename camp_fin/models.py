@@ -129,6 +129,8 @@ class Campaign(models.Model):
                 self.candidate.first_name, self.candidate.last_name
             )
             return "{0} ({1})".format(candidate_name, office)
+        elif self.committee_name:
+            return "{0} ({1})".format(self.committee_name, office)
         else:
             party = self.political_party.name
             return "{0} ({1})".format(party, office)
@@ -273,15 +275,16 @@ class Campaign(models.Model):
         """
         Return a shortened version of the Campaign's party.
         """
-        if self.political_party.name:
+        if self.political_party.name == "Not specified":
+            return None
+
+        elif self.political_party.name:
             if self.political_party.name == "Democrat":
                 return "D"
             elif self.political_party.name == "Republican":
                 return "R"
             else:
                 return "I"
-        else:
-            return None
 
     def get_status(self):
         """
@@ -752,7 +755,7 @@ class Filing(models.Model):
     regenerate = models.CharField(max_length=3, null=True)
 
     def __str__(self):
-        if self.campaign:
+        if self.campaign and self.campaign.candidate:
             return "{0} {1} {2}".format(
                 self.campaign.candidate.first_name,
                 self.campaign.candidate.last_name,

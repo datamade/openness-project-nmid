@@ -71,8 +71,8 @@
                         <td>
                             {{ campaign.office.description }}
                             {% if campaign.party_identifier %}
-                                <span class="party-identifier {{ latest_campaign.party_identifier }}">
-                                    ({{ latest_campaign.party_identifier }})
+                                <span class="party-identifier {{ campaign.party_identifier }}">
+                                    ({{ campaign.party_identifier }})
                                 </span>
                             {% endif %}
                         </td>
