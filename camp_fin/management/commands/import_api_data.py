@@ -477,7 +477,9 @@ class Command(BaseCommand):
             "filing_period",
             (
                 record["Report Name"],
-                parse(record["Filed Date"]).date(),
+                parse(
+                    record["Filed Date"]
+                ).date(),  # TODO: Handle case where date cannot be parsed
                 parse(record["Start of Period"]).date(),
                 parse(record["End of Period"]).date(),
             ),

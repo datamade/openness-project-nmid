@@ -1050,6 +1050,7 @@ class Entity(models.Model):
 
         expenditures = [amount_tuple(*r) for r in cursor]
 
+        # TODO: Investigate why this date range extends past available filings
         donation_trend, expend_trend = [], []
 
         if contributions or expenditures:
