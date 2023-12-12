@@ -160,7 +160,11 @@ class Command(BaseCommand):
         for filing_group, records in groupby(tqdm(sorted_records), key=key_func):
             for i, record in enumerate(records):
                 if i == 0:
-                    filing = self.make_filing(record)
+                    try:
+                        filing = self.make_filing(record)
+                    except ValueError:
+                        continue
+
                     models.LoanTransaction.objects.filter(filing=filing).delete()
                     models.SpecialEvent.objects.filter(filing=filing).delete()
                     models.Transaction.objects.filter(filing=filing).exclude(
@@ -312,8 +316,37 @@ class Command(BaseCommand):
 
         return contact
 
+    def make_pac(self, record, entity_type=None):
+        entity_type = self.fetch_from_cache(
+            "entity_type",
+            entity_type or record["Report Entity Type"],
+            models.EntityType,
+            {"description": entity_type or record["Report Entity Type"]},
+        )
+
+        entity = self.fetch_from_cache(
+            "entity",
+            (record["OrgID"], entity_type.description),
+            models.Entity,
+            {"user_id": record["OrgID"], "entity_type": entity_type},
+        )
+
+        return self.fetch_from_cache(
+            "pac",
+            record["Committee Name"],
+            models.PAC,
+            dict(
+                name=record["Committee Name"],
+                entity=entity,
+                slug=slugify(record["Committee Name"]),
+            ),
+        )
+
     def make_filing(self, record):
         if record["Report Entity Type"] == "Candidate":
+            # Create PAC associated with candidate
+            self.make_pac(record, entity_type="Political Committee")
+
             entity_type = self.fetch_from_cache(
                 "entity_type",
                 "Candidate",
@@ -375,6 +408,10 @@ class Command(BaseCommand):
                     entity = candidate.entity
 
             else:
+                # Sometimes, a record says it is associated with a candidate,
+                # but a candidate name is not provided. This block attempts to
+                # look up the candidate based on committee name. If we cannot
+                # identify one candidate, we skip the record.
                 try:
                     candidate = (
                         models.Candidate.objects.filter(
@@ -398,59 +435,57 @@ class Command(BaseCommand):
                     )
                     raise ValueError
 
-            entity_type = self.fetch_from_cache(
-                "entity_type",
-                "Political Committee",
-                models.EntityType,
-                {"description": "Political Committee"},
-            )
+            # This is fudged and should be drawn instead from a canonical list of offices and races.
+            # We need a campaign for committee finances to be associated with the candidate.
+            election_year = self.parse_date(record["Start of Period"]).year
 
-            pac_entity = self.fetch_from_cache(
-                "entity",
-                (record["OrgID"], entity_type.description),
-                models.Entity,
-                {"user_id": record["OrgID"], "entity_type": entity_type},
-            )
-
-            # Create associated PAC
-            self.fetch_from_cache(
-                "pac",
-                record["Committee Name"],
-                models.PAC,
+            election_season = self.fetch_from_cache(
+                "election_season",
+                (election_year, False, 0),
+                models.ElectionSeason,
                 dict(
-                    name=record["Committee Name"],
-                    entity=pac_entity,
-                    slug=slugify(record["Committee Name"]),
+                    year=self.parse_date(record["Start of Period"]).year,
+                    special=False,
+                    status_id=0,
                 ),
             )
 
-            filing_kwargs = {"entity": entity}
+            office = self.fetch_from_cache(
+                "office",
+                None,
+                models.Office,
+                dict(description="Not specified", status_id=0),
+            )
+
+            party = self.fetch_from_cache(
+                "party",
+                None,
+                models.PoliticalParty,
+                dict(name="Not specified"),
+            )
+
+            campaign = self.fetch_from_cache(
+                "campaign",
+                (
+                    record["Committee Name"],
+                    candidate.full_name,
+                    election_season.year,
+                ),
+                models.Campaign,
+                dict(
+                    committee_name=record["Committee Name"],
+                    candidate=candidate,
+                    election_season=election_season,
+                    office=office,
+                    political_party=party,
+                ),
+            )
+
+            filing_kwargs = {"entity": entity, "campaign": campaign}
 
         elif record["Report Entity Type"]:
-            entity_type = self.fetch_from_cache(
-                "entity_type",
-                record["Report Entity Type"][:24],
-                models.EntityType,
-                {"description": record["Report Entity Type"][:24]},
-            )
+            pac = self.make_pac(record)
 
-            entity = self.fetch_from_cache(
-                "entity",
-                (record["OrgID"], entity_type.description),
-                models.Entity,
-                {"user_id": record["OrgID"], "entity_type": entity_type},
-            )
-
-            pac = self.fetch_from_cache(
-                "pac",
-                record["Committee Name"],
-                models.PAC,
-                dict(
-                    name=record["Committee Name"],
-                    entity=entity,
-                    slug=slugify(record["Committee Name"]),
-                ),
-            )
             # If an existing PAC was found, grab its entity.
             if pac.entity.user_id != record["OrgID"]:
                 entity = pac.entity
