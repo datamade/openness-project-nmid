@@ -398,51 +398,33 @@ class Command(BaseCommand):
                     )
                     raise ValueError
 
-            election_year = self.parse_date(record["Start of Period"]).year
+            entity_type = self.fetch_from_cache(
+                "entity_type",
+                "Political Committee",
+                models.EntityType,
+                {"description": "Political Committee"},
+            )
 
-            election_season = self.fetch_from_cache(
-                "election_season",
-                (election_year, False, 0),
-                models.ElectionSeason,
+            pac_entity = self.fetch_from_cache(
+                "entity",
+                (record["OrgID"], entity_type.description),
+                models.Entity,
+                {"user_id": record["OrgID"], "entity_type": entity_type},
+            )
+
+            # Create associated PAC
+            self.fetch_from_cache(
+                "pac",
+                record["Committee Name"],
+                models.PAC,
                 dict(
-                    year=self.parse_date(record["Start of Period"]).year,
-                    special=False,
-                    status_id=0,
+                    name=record["Committee Name"],
+                    entity=pac_entity,
+                    slug=slugify(record["Committee Name"]),
                 ),
             )
 
-            office = self.fetch_from_cache(
-                "office",
-                None,
-                models.Office,
-                dict(description="Not specified", status_id=0),
-            )
-
-            party = self.fetch_from_cache(
-                "party",
-                None,
-                models.PoliticalParty,
-                dict(name="Not specified"),
-            )
-
-            campaign = self.fetch_from_cache(
-                "campaign",
-                (
-                    record["Committee Name"],
-                    candidate.full_name,
-                    election_season.year,
-                ),
-                models.Campaign,
-                dict(
-                    committee_name=record["Committee Name"],
-                    candidate=candidate,
-                    election_season=election_season,
-                    office=office,
-                    political_party=party,
-                ),
-            )
-
-            filing_kwargs = {"entity": entity, "campaign": campaign}
+            filing_kwargs = {"entity": entity}
 
         elif record["Report Entity Type"]:
             entity_type = self.fetch_from_cache(
