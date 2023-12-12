@@ -5,7 +5,7 @@ from itertools import groupby
 import os
 import re
 
-from dateutil.parser import parse
+from dateutil.parser import parse, ParserError
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
@@ -139,6 +139,15 @@ class Command(BaseCommand):
 
             self._cache[cache_entity][cache_key] = obj
             return obj
+
+    def parse_date(self, date_str):
+        try:
+            return parse(date_str).date()
+        except ParserError:
+            self.stderr.write(
+                self.style.ERROR(f"Could not parse date from string '{date_str}'")
+            )
+            return None
 
     def import_contributions(self, f):
         reader = csv.DictReader(f)
@@ -389,14 +398,14 @@ class Command(BaseCommand):
                     )
                     raise ValueError
 
-            election_year = parse(record["Start of Period"]).date().year
+            election_year = self.parse_date(record["Start of Period"]).year
 
             election_season = self.fetch_from_cache(
                 "election_season",
                 (election_year, False, 0),
                 models.ElectionSeason,
                 dict(
-                    year=parse(record["Start of Period"]).date().year,
+                    year=self.parse_date(record["Start of Period"]).year,
                     special=False,
                     status_id=0,
                 ),
@@ -435,7 +444,7 @@ class Command(BaseCommand):
 
             filing_kwargs = {"entity": entity, "campaign": campaign}
 
-        else:
+        elif record["Report Entity Type"]:
             entity_type = self.fetch_from_cache(
                 "entity_type",
                 record["Report Entity Type"][:24],
@@ -466,6 +475,14 @@ class Command(BaseCommand):
 
             filing_kwargs = {"entity": entity}
 
+        else:
+            self.stderr.write(
+                self.style.ERROR(
+                    f"Report entity type not provided. Skipping record {record}..."
+                )
+            )
+            raise ValueError
+
         filing_type = self.fetch_from_cache(
             "filing_type",
             record["Report Name"][:24],
@@ -477,18 +494,19 @@ class Command(BaseCommand):
             "filing_period",
             (
                 record["Report Name"],
-                parse(
-                    record["Filed Date"]
-                ).date(),  # TODO: Handle case where date cannot be parsed
-                parse(record["Start of Period"]).date(),
-                parse(record["End of Period"]).date(),
+                self.parse_date(record["Filed Date"]),
+                self.parse_date(record["Start of Period"]),
+                self.parse_date(record["End of Period"]),
             ),
             models.FilingPeriod,
             dict(
                 description=record["Report Name"],
-                filing_date=parse(record["Filed Date"]).date(),
-                initial_date=parse(record["Start of Period"]).date(),
-                due_date=parse(record["End of Period"]).date(),
+                filing_date=(
+                    self.parse_date(record["Filed Date"])
+                    or self.parse_date(record["End of Period"])
+                ),
+                initial_date=self.parse_date(record["Start of Period"]),
+                due_date=self.parse_date(record["End of Period"]),
                 allow_no_activity=False,
                 exclude_from_cascading=False,
                 email_sent_status=0,
@@ -501,12 +519,12 @@ class Command(BaseCommand):
             (
                 filing_kwargs["entity"].user_id,
                 filing_period.id,
-                parse(record["End of Period"]).date(),
+                self.parse_date(record["End of Period"]),
             ),
             models.Filing,
             dict(
                 filing_period=filing_period,
-                date_closed=parse(record["End of Period"]).date(),
+                date_closed=self.parse_date(record["End of Period"]),
                 final=True,
                 **filing_kwargs,
             ),
@@ -533,7 +551,7 @@ class Command(BaseCommand):
 
                 loan, _ = models.Loan.objects.get_or_create(
                     amount=record["Transaction Amount"],
-                    received_date=parse(record["Transaction Date"]).date(),
+                    received_date=self.parse_date(record["Transaction Date"]),
                     check_number=record["Check Number"],
                     status_id=0,
                     contact=contributor,
@@ -544,7 +562,7 @@ class Command(BaseCommand):
 
                 contribution = models.LoanTransaction(
                     amount=record["Transaction Amount"],
-                    transaction_date=parse(record["Transaction Date"]).date(),
+                    transaction_date=self.parse_date(record["Transaction Date"]),
                     transaction_status_id=0,
                     loan=loan,
                     filing=filing,
@@ -556,7 +574,7 @@ class Command(BaseCommand):
 
                 contribution = models.SpecialEvent(
                     anonymous_contributions=record["Transaction Amount"],
-                    event_date=parse(record["Transaction Date"]).date(),
+                    event_date=self.parse_date(record["Transaction Date"]),
                     admission_price=0,
                     attendance=0,
                     total_admissions=0,
@@ -581,7 +599,7 @@ class Command(BaseCommand):
 
                 contribution = models.Transaction(
                     amount=record["Transaction Amount"],
-                    received_date=parse(record["Transaction Date"]).date(),
+                    received_date=self.parse_date(record["Transaction Date"]),
                     check_number=record["Check Number"],
                     description=record["Description"][:74],
                     contact=contributor,
@@ -628,7 +646,7 @@ class Command(BaseCommand):
 
             contribution = models.Transaction(
                 amount=record["Expenditure Amount"],
-                received_date=parse(record["Expenditure Date"]).date(),
+                received_date=self.parse_date(record["Expenditure Date"]),
                 description=(record["Description"] or record["Expenditure Type"])[:74],
                 full_name=payee_full_name,
                 company_name=payee_full_name,
