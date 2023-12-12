@@ -1062,9 +1062,19 @@ class Entity(models.Model):
             )
 
             start_month = datetime(int(since), 1, 1)
-            end_month = (
-                FilingPeriod.objects.order_by("-filing_date").first().filing_date.date()
-            )
+
+            try:
+                end_month = (
+                    self.filing_set.order_by("-filing_period__filing_date")
+                    .first()
+                    .filing_period.filing_date.date()
+                )
+            except:
+                end_month = (
+                    FilingPeriod.objects.order_by("-filing_date")
+                    .first()
+                    .filing_date.date()
+                )
 
             for month in rrule(freq=MONTHLY, dtstart=start_month, until=end_month):
                 replacements = {"month": month.month - 1}
