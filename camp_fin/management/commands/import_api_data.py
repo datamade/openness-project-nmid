@@ -385,7 +385,6 @@ class Command(BaseCommand):
                     full_name,
                     models.Candidate,
                     dict(
-                        prefix=record["Candidate Prefix"] or None,
                         first_name=record["Candidate First Name"] or None,
                         middle_name=record["Candidate Middle Name"] or None,
                         last_name=record["Candidate Last Name"] or None,
