@@ -486,11 +486,7 @@ class Command(BaseCommand):
         elif record["Report Entity Type"]:
             pac = self.make_pac(record)
 
-            # If an existing PAC was found, grab its entity.
-            if pac.entity.user_id != record["OrgID"]:
-                entity = pac.entity
-
-            filing_kwargs = {"entity": entity}
+            filing_kwargs = {"entity": pac.entity}
 
         else:
             self.stderr.write(
