@@ -20,7 +20,7 @@ from django.views.decorators.cache import never_cache
 from django.utils.decorators import method_decorator
 from django.shortcuts import render
 from django.core.cache import cache
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 
 from dateutil.rrule import rrule, MONTHLY
 
@@ -1374,6 +1374,12 @@ class ContributionDetail(FormView, TransactionDetail):
         context["seo"] = seo
 
         return context
+
+    def post(self, *args, **kwargs):
+        if not self.request.user.is_authenticated:
+            raise PermissionDenied
+
+        return super().post(*args, **kwargs)
 
     def get_initial(self):
         return {"redact": self.get_object().redact}

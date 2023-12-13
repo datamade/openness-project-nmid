@@ -17,6 +17,7 @@
             </h3>
         </div>
     </div>
+    {% if user.is_authenticated %}
     <div class="row">
         <div class="col-md-12">
             <div class="alert alert-info" role="alert"> 
@@ -29,6 +30,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
     <div class="row">
         <div class="col-md-8">
             <table class="table table-hover">
