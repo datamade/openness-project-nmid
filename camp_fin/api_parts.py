@@ -5,26 +5,37 @@ import zipfile
 from rest_framework import serializers, pagination, renderers
 from rest_framework_csv.renderers import CSVStreamingRenderer
 
-from camp_fin.models import Candidate, PAC, Transaction, LoanTransaction, \
-    Loan, Treasurer, Address, Lobbyist, Organization, LobbyistTransaction
+from camp_fin.models import (
+    Candidate,
+    PAC,
+    Transaction,
+    LoanTransaction,
+    Loan,
+    Treasurer,
+    Address,
+    Lobbyist,
+    Organization,
+    LobbyistTransaction,
+)
+
 
 class CandidateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Candidate
-        fields = '__all__'
+        fields = "__all__"
+
 
 class PACSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = PAC
-        fields = '__all__'
+        fields = "__all__"
+
 
 class LoanSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Loan
-        fields = '__all__'
+        fields = "__all__"
+
 
 class LoanTransactionSerializer(serializers.ModelSerializer):
     loan = LoanSerializer(read_only=True)
@@ -32,12 +43,11 @@ class LoanTransactionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LoanTransaction
-        fields = '__all__'
+        fields = "__all__"
+
 
 class EntityField(serializers.RelatedField):
-
     def to_representation(self, value):
-
         try:
             if value.entity.pac_set.all():
                 serializer = PACSerializer(value.entity.pac_set.first())
@@ -53,6 +63,7 @@ class EntityField(serializers.RelatedField):
             return value
 
 
+# TODO: Redact
 class TransactionSerializer(serializers.ModelSerializer):
     transaction_type = serializers.StringRelatedField(read_only=True)
     full_name = serializers.StringRelatedField(read_only=True)
@@ -62,31 +73,51 @@ class TransactionSerializer(serializers.ModelSerializer):
         model = Transaction
 
         fields = (
-            'id',
-            'amount',
-            'received_date',
-            'date_added',
-            'check_number',
-            'memo',
-            'description',
-            'transaction_type',
-            'name_prefix',
-            'first_name',
-            'middle_name',
-            'last_name',
-            'suffix',
-            'company_name',
-            'full_name',
-            'address',
-            'city',
-            'state',
-            'zipcode',
-            'full_address',
-            'country',
-            'occupation',
-            'expenditure_for_certified_candidate',
-            'transaction_subject'
+            "id",
+            "amount",
+            "received_date",
+            "date_added",
+            "check_number",
+            "memo",
+            "description",
+            "transaction_type",
+            "name_prefix",
+            "first_name",
+            "middle_name",
+            "last_name",
+            "suffix",
+            "company_name",
+            "full_name",
+            "address",
+            "city",
+            "state",
+            "zipcode",
+            "full_address",
+            "country",
+            "occupation",
+            "expenditure_for_certified_candidate",
+            "transaction_subject",
         )
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        if instance.redact:
+            ret.update(
+                {
+                    "first_name": "Redacted by donor request",
+                    "middle_name": "Redacted by donor request",
+                    "last_name": "Redacted by donor request",
+                    "suffix": "Redacted by donor request",
+                    "full_name": "Redacted by donor request",
+                    "address": "Redacted by donor request",
+                    "city": "Redacted by donor request",
+                    "state": "Redacted by donor request",
+                    "zipcode": "Redacted by donor request",
+                    "full_address": "Redacted by donor request",
+                }
+            )
+        return ret
+
 
 class TransactionSearchSerializer(TransactionSerializer):
     pac_slug = serializers.StringRelatedField(read_only=True)
@@ -98,35 +129,36 @@ class TransactionSearchSerializer(TransactionSerializer):
         model = Transaction
 
         fields = (
-            'id',
-            'amount',
-            'received_date',
-            'date_added',
-            'check_number',
-            'memo',
-            'description',
-            'transaction_type',
-            'name_prefix',
-            'first_name',
-            'middle_name',
-            'last_name',
-            'suffix',
-            'company_name',
-            'full_name',
-            'full_address',
-            'address',
-            'city',
-            'state',
-            'zipcode',
-            'full_address',
-            'country',
-            'occupation',
-            'expenditure_for_certified_candidate',
-            'donor_occupation',
-            'transaction_subject',
-            'pac_slug',
-            'candidate_slug',
+            "id",
+            "amount",
+            "received_date",
+            "date_added",
+            "check_number",
+            "memo",
+            "description",
+            "transaction_type",
+            "name_prefix",
+            "first_name",
+            "middle_name",
+            "last_name",
+            "suffix",
+            "company_name",
+            "full_name",
+            "full_address",
+            "address",
+            "city",
+            "state",
+            "zipcode",
+            "full_address",
+            "country",
+            "occupation",
+            "expenditure_for_certified_candidate",
+            "donor_occupation",
+            "transaction_subject",
+            "pac_slug",
+            "candidate_slug",
         )
+
 
 class TreasurerSearchSerializer(serializers.Serializer):
     full_name = serializers.CharField()
@@ -136,6 +168,7 @@ class TreasurerSearchSerializer(serializers.Serializer):
     zipcode = serializers.CharField()
     related_entity_name = serializers.CharField()
     related_entity_url = serializers.CharField()
+
 
 class CandidateSearchSerializer(serializers.ModelSerializer):
     county_name = serializers.StringRelatedField(read_only=True)
@@ -150,29 +183,30 @@ class CandidateSearchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Candidate
         fields = (
-            'id',
-            'prefix',
-            'first_name',
-            'middle_name',
-            'last_name',
-            'full_name',
-            'suffix',
-            'business_phone',
-            'home_phone',
-            'date_added',
-            'email',
-            'date_updated',
-            'deceased',
-            'slug',
-            'county_name',
-            'election_year',
-            'party_name',
-            'office_name',
-            'office_type',
-            'district_name',
-            'division_name',
-            'committee_name',
+            "id",
+            "prefix",
+            "first_name",
+            "middle_name",
+            "last_name",
+            "full_name",
+            "suffix",
+            "business_phone",
+            "home_phone",
+            "date_added",
+            "email",
+            "date_updated",
+            "deceased",
+            "slug",
+            "county_name",
+            "election_year",
+            "party_name",
+            "office_name",
+            "office_type",
+            "district_name",
+            "division_name",
+            "committee_name",
         )
+
 
 class PACSearchSerializer(serializers.ModelSerializer):
     address = serializers.StringRelatedField(read_only=True)
@@ -180,41 +214,41 @@ class PACSearchSerializer(serializers.ModelSerializer):
     class Meta:
         model = PAC
         fields = (
-            'id',
-            'name',
-            'acronym',
-            'business_phone',
-            'home_phone',
-            'email',
-            'date_added',
-            'date_updated',
-            'bank_name',
-            'bank_phone',
-            'fax_number',
-            'initial_balance',
-            'initial_balance_from_self',
-            'initial_debt',
-            'initial_debt_from_self',
-            'slug',
-            'address',
+            "id",
+            "name",
+            "acronym",
+            "business_phone",
+            "home_phone",
+            "email",
+            "date_added",
+            "date_updated",
+            "bank_name",
+            "bank_phone",
+            "fax_number",
+            "initial_balance",
+            "initial_balance_from_self",
+            "initial_debt",
+            "initial_debt_from_self",
+            "slug",
+            "address",
         )
+
 
 class LobbyistSearchSerializer(serializers.ModelSerializer):
     name = serializers.CharField()
 
     class Meta:
         model = Lobbyist
-        fields = ('name',
-                  'slug')
+        fields = ("name", "slug")
+
 
 class OrganizationSearchSerializer(serializers.ModelSerializer):
     address = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = Organization
-        fields = ('name',
-                  'slug',
-                  'address')
+        fields = ("name", "slug", "address")
+
 
 class LobbyistTransactionSearchSerializer(serializers.ModelSerializer):
     transaction_type = serializers.CharField()
@@ -224,16 +258,19 @@ class LobbyistTransactionSearchSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LobbyistTransaction
-        fields = ('name',
-                  'beneficiary',
-                  'expenditure_purpose',
-                  'received_date',
-                  'amount',
-                  'date_added',
-                  'transaction_type',
-                  'transaction_group',
-                  'lobbyist_name',
-                  'lobbyist_slug')
+        fields = (
+            "name",
+            "beneficiary",
+            "expenditure_purpose",
+            "received_date",
+            "amount",
+            "date_added",
+            "transaction_type",
+            "transaction_group",
+            "lobbyist_name",
+            "lobbyist_slug",
+        )
+
 
 class TopMoneySerializer(serializers.Serializer):
     name_prefix = serializers.CharField()
@@ -247,39 +284,38 @@ class TopMoneySerializer(serializers.Serializer):
     rank = serializers.CharField()
     latest_date = serializers.DateTimeField()
 
+
 class DataTablesPagination(pagination.LimitOffsetPagination):
-    limit_query_param = 'length'
-    offset_query_param = 'start'
+    limit_query_param = "length"
+    offset_query_param = "start"
+
 
 class TransactionCSVRenderer(CSVStreamingRenderer):
-
     def render(self, data, *args, **kwargs):
-        return super().render(data['results'], *args, **kwargs)
+        return super().render(data["results"], *args, **kwargs)
+
 
 class SearchCSVRenderer(renderers.BaseRenderer):
-    media_type = 'application/zip'
-    format = 'csv'
+    media_type = "application/zip"
+    format = "csv"
 
     def render(self, data, media_type=None, renderer_context=None):
         table_names = [
-            'candidate',
-            'pac',
-            'contribution',
-            'expenditure',
-            'treasurer',
-            'lobbyisttransaction'
+            "candidate",
+            "pac",
+            "contribution",
+            "expenditure",
+            "treasurer",
+            "lobbyisttransaction",
         ]
 
         zfoutp = BytesIO()
 
-        with zipfile.ZipFile(zfoutp, 'w') as zf:
-
+        with zipfile.ZipFile(zfoutp, "w") as zf:
             for table in table_names:
-
                 if data.get(table):
-
                     try:
-                        first_record = data[table]['objects'][0]
+                        first_record = data[table]["objects"][0]
                     except IndexError:
                         continue
 
@@ -289,10 +325,10 @@ class SearchCSVRenderer(renderers.BaseRenderer):
                     writer = csv.writer(outp)
 
                     writer.writerow(fieldnames)
-                    writer.writerows(data[table]['objects'])
+                    writer.writerows(data[table]["objects"])
 
                     outp.seek(0)
-                    zf.writestr('{}.csv'.format(table), outp.getvalue())
+                    zf.writestr("{}.csv".format(table), outp.getvalue())
 
         zfoutp.seek(0)
 

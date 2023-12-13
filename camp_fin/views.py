@@ -1224,9 +1224,6 @@ class CommitteeDetailBaseView(DetailView):
                 )
                 context["donations"] = donations
 
-        print(context)
-        print(entity_id)
-
         return context
 
 
@@ -1354,11 +1351,12 @@ class ContributionDetail(FormView, TransactionDetail):
         seo = {}
         seo.update(settings.SITE_META)
 
+        transaction = context["object"]
         transaction_verb = get_transaction_verb(
-            context["object"].transaction_type.description
+            transaction.transaction_type.description
         )
-        contributor = context["object"].full_name
-        amount = format_money(context["object"].amount)
+        contributor = str(transaction)
+        amount = format_money(transaction.amount)
 
         if hasattr(context["entity"], "name"):
             recipient = context["entity"].name
@@ -1544,8 +1542,6 @@ class SearchAPIView(viewsets.ViewSet):
         term = request.GET.get("term")
         datatype = request.GET.get("datatype")
 
-        print(term)
-
         limit = request.GET.get("limit", 50)
         offset = request.GET.get("offset", 0)
 
@@ -1682,6 +1678,7 @@ class SearchAPIView(viewsets.ViewSet):
                       ON address.state_id = state.id
                     WHERE o.search_name @@ plainto_tsquery('english', %s)
                       AND tt.contribution = TRUE
+                      AND o.redact = FALSE
                       AND o.received_date >= '2010-01-01'
                 """
 

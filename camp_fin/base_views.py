@@ -320,7 +320,17 @@ class TransactionDownloadViewSet(TransactionDownload):
 
         base_query = """
             SELECT
-              transaction.*,
+              CASE WHEN transaction.redact THEN 'Redacted by donor request'
+                ELSE transaction.full_name
+              END as name,
+              CASE WHEN transaction.redact THEN 'Redacted by donor request' ELSE (
+                transaction.address || ' ' || transaction.city || ', ' || transaction.state || ' ' || transaction.zipcode
+              ) END as address,
+              transaction.occupation AS occupation,
+              transaction.amount,
+              transaction.received_date,
+              transaction.check_number,
+              transaction.description,
               tt.description AS transaction_type,
               entity.*,
               fp.filing_date,
