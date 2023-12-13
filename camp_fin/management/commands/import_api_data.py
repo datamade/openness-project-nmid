@@ -66,6 +66,7 @@ class Command(BaseCommand):
             "address": {},
             "office": {},
             "party": {},
+            "contact": {},
         }
 
     def add_arguments(self, parser):
@@ -274,45 +275,57 @@ class Command(BaseCommand):
             ),
         ).strip()
 
-        contact_kwargs = {
-            "prefix": record["Prefix"],
-            "first_name": record["First Name"],
-            "middle_name": record["Middle Name"],
-            "last_name": record["Last Name"],
-            "suffix": record["Suffix"],
-            "occupation": record["Contributor Occupation"],
-            "company_name": record["Contributor Employer"],
-            "full_name": full_name,
-        }
+        if record["Contributor Code"] not in ("Individual", "Candidate"):
+            contact_kwargs = {
+                "company_name": full_name,
+            }
+
+        else:
+            contact_kwargs = {
+                "prefix": record["Prefix"],
+                "first_name": record["First Name"],
+                "middle_name": record["Middle Name"],
+                "last_name": record["Last Name"],
+                "suffix": record["Suffix"],
+                "occupation": record["Contributor Occupation"],
+                "company_name": record["Contributor Employer"] or "",
+                "full_name": full_name,
+            }
 
         try:
-            contact = models.Contact.objects.get(
-                **contact_kwargs,
-                status_id=0,
-                address=address,
-                contact_type=contact_type,
-            )
-        except models.Contact.DoesNotExist:
-            entity_type = self.fetch_from_cache(
-                "entity_type",
-                record["Contributor Code"][:24],
-                models.EntityType,
-                {"description": record["Contributor Code"][:24]},
-            )
+            contact = self._cache["contact"][tuple(contact_kwargs.values())]
+        except KeyError:
+            try:
+                contact = models.Contact.objects.get(
+                    **contact_kwargs,
+                    status_id=0,
+                    address=address,
+                    contact_type=contact_type,
+                )
+            except models.Contact.DoesNotExist:
+                entity_type = self.fetch_from_cache(
+                    "entity_type",
+                    record["Contributor Code"][:24],
+                    models.EntityType,
+                    {"description": record["Contributor Code"][:24]},
+                )
 
-            entity = models.Entity.objects.create(
-                user_id=self._next_entity_id,
-                entity_type=entity_type,
-            )
-            contact = models.Contact.objects.create(
-                **contact_kwargs,
-                status_id=0,
-                address=address,
-                contact_type=contact_type,
-                entity=entity,
-            )
+                entity = models.Entity.objects.create(
+                    user_id=self._next_entity_id,
+                    entity_type=entity_type,
+                )
 
-            self._next_entity_id += 1
+                contact = models.Contact.objects.create(
+                    **contact_kwargs,
+                    status_id=0,
+                    address=address,
+                    contact_type=contact_type,
+                    entity=entity,
+                )
+
+                self._next_entity_id += 1
+
+            self._cache["contact"][tuple(contact_kwargs.values())] = contact
 
         return contact
 
@@ -567,7 +580,7 @@ class Command(BaseCommand):
                     check_number=record["Check Number"],
                     status_id=0,
                     contact=contributor,
-                    company_name=contributor.company_name or "Not specified",
+                    company_name=contributor.company_name or "",
                     filing=filing,
                     **address_kwargs,
                 )
@@ -616,11 +629,16 @@ class Command(BaseCommand):
                     description=record["Description"][:74],
                     contact=contributor,
                     full_name=contributor.full_name,
+                    name_prefix=contributor.prefix,
+                    first_name=contributor.first_name,
+                    middle_name=contributor.middle_name,
+                    last_name=contributor.last_name,
+                    suffix=contributor.suffix,
                     filing=filing,
                     transaction_type=transaction_type,
+                    company_name=contributor.company_name or "",
+                    occupation=contributor.occupation,
                     **address_kwargs,
-                    company_name=contributor.full_name,
-                    occupation=record["Contributor Occupation"],
                 )
 
         else:
@@ -661,6 +679,11 @@ class Command(BaseCommand):
                 received_date=self.parse_date(record["Expenditure Date"]),
                 description=(record["Description"] or record["Expenditure Type"])[:74],
                 full_name=payee_full_name,
+                name_prefix=record["Payee Prefix"],
+                first_name=record["Payee First Name"],
+                middle_name=record["Payee Middle Name"],
+                last_name=record["Payee Last Name"],
+                suffix=record["Payee Suffix"],
                 company_name=payee_full_name,
                 filing=filing,
                 transaction_type=transaction_type,

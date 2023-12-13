@@ -581,7 +581,7 @@ class Transaction(models.Model):
         if self.redact:
             return "Redacted by donor request"
 
-        return self.full_name
+        return self.full_name or self.company_name
 
     @property
     def transaction_subject(self):

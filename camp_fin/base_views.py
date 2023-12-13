@@ -450,7 +450,9 @@ class TopMoneyView(viewsets.ViewSet):
                   transaction.last_name,
                   transaction.suffix,
                   transaction.company_name,
-                  election_season.year 
+                  election_season.year,
+                  redact,
+                  ct.description
                 FROM camp_fin_transaction AS transaction 
                 JOIN camp_fin_transactiontype AS tt 
                   ON transaction.transaction_type_id = tt.id 
@@ -460,6 +462,10 @@ class TopMoneyView(viewsets.ViewSet):
                   ON f.campaign_id = c.id 
                 JOIN camp_fin_electionseason AS election_season
                   ON c.election_season_id = election_season.id
+                JOIN camp_fin_contact AS contact
+                  ON transaction.contact_id = contact.id
+                JOIN camp_fin_contacttype AS ct
+                  ON contact.contact_type_id = ct.id
                 WHERE tt.contribution = %s 
                   AND year >= '2010' 
                 GROUP BY 
@@ -469,7 +475,9 @@ class TopMoneyView(viewsets.ViewSet):
                   transaction.last_name,
                   transaction.suffix,
                   transaction.company_name,
-                  year 
+                  year,
+                  redact,
+                  ct.description
                 ORDER BY SUM(amount) DESC
               ) AS ranked_list 
               ORDER BY year DESC, amount DESC
@@ -494,12 +502,18 @@ class TopMoneyView(viewsets.ViewSet):
                       transaction.middle_name, 
                       transaction.last_name,
                       transaction.suffix,
-                      transaction.company_name
+                      transaction.company_name,
+                      transaction.redact,
+                      ct.description
                     FROM camp_fin_transaction AS transaction 
                     JOIN camp_fin_transactiontype AS tt 
                       ON transaction.transaction_type_id = tt.id 
                     JOIN camp_fin_filing AS f 
                       ON transaction.filing_id = f.id 
+                    JOIN camp_fin_contact AS contact
+                      ON transaction.contact_id = contact.id
+                    JOIN camp_fin_contacttype AS ct
+                      ON contact.contact_type_id = ct.id
                     WHERE tt.contribution = %s 
                       AND transaction.received_date >= '2010-01-01'
                     GROUP BY 
@@ -508,7 +522,9 @@ class TopMoneyView(viewsets.ViewSet):
                       transaction.middle_name, 
                       transaction.last_name,
                       transaction.suffix,
-                      transaction.company_name
+                      transaction.company_name,
+                      transaction.redact,
+                      ct.description
                     ORDER BY SUM(amount) DESC
                   ) AS ranked_list 
                   ORDER BY amount DESC
@@ -548,7 +564,9 @@ class TopMoneyView(viewsets.ViewSet):
                   transaction.last_name,
                   transaction.suffix,
                   transaction.company_name,
-                  election_season.year 
+                  election_season.year,
+                  transaction.redact,
+                  ct.description
                 FROM camp_fin_transaction AS transaction 
                 JOIN camp_fin_transactiontype AS tt 
                   ON transaction.transaction_type_id = tt.id 
@@ -560,6 +578,10 @@ class TopMoneyView(viewsets.ViewSet):
                   ON c.candidate_id = candidate.id
                 JOIN camp_fin_electionseason AS election_season
                   ON c.election_season_id = election_season.id
+                JOIN camp_fin_contact AS contact
+                  ON transaction.contact_id = contact.id
+                JOIN camp_fin_contacttype AS ct
+                  ON contact.contact_type_id = ct.id
                 WHERE tt.contribution = %s 
                   AND candidate.id = %s
                   AND transaction.received_date >= '2010-01-01' 
@@ -570,7 +592,9 @@ class TopMoneyView(viewsets.ViewSet):
                   transaction.last_name,
                   transaction.suffix,
                   transaction.company_name,
-                  election_season.year 
+                  election_season.year,
+                  transaction.redact,
+                  ct.description
                 ORDER BY SUM(amount) DESC
               ) AS ranked_list 
               ORDER BY year DESC, amount DESC
@@ -594,7 +618,9 @@ class TopMoneyView(viewsets.ViewSet):
                       transaction.middle_name, 
                       transaction.last_name,
                       transaction.suffix,
-                      transaction.company_name
+                      transaction.company_name,
+                      transaction.redact,
+                      ct.description
                     FROM camp_fin_transaction AS transaction 
                     JOIN camp_fin_transactiontype AS tt 
                       ON transaction.transaction_type_id = tt.id 
@@ -602,6 +628,10 @@ class TopMoneyView(viewsets.ViewSet):
                       ON transaction.filing_id = f.id 
                     JOIN camp_fin_pac AS pac
                       ON f.entity_id = pac.entity_id
+                    JOIN camp_fin_contact AS contact
+                      ON transaction.contact_id = contact.id
+                    JOIN camp_fin_contacttype AS ct
+                      ON contact.contact_type_id = ct.id
                     WHERE tt.contribution = %s 
                       AND pac.id = %s
                       AND transaction.received_date >= '2010-01-01' 
@@ -611,7 +641,9 @@ class TopMoneyView(viewsets.ViewSet):
                       transaction.middle_name, 
                       transaction.last_name,
                       transaction.suffix,
-                      transaction.company_name
+                      transaction.company_name,
+                      transaction.redact,
+                      ct.description
                     ORDER BY SUM(amount) DESC
                   ) AS ranked_list 
                   ORDER BY amount DESC

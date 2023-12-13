@@ -64,13 +64,21 @@
                     <% if (transaction.company_name && transaction.company_name != 'N/A'){ %>
                         <% var full_name = transaction.company_name %>
                     <% } else { %>
-                        <% var full_name = getPersonName(transaction) %>
+                        <% if (transaction.redact) { %>
+                            Redacted by donor request
+                        <% } else { %>
+                            <% var full_name = getPersonName(transaction) %>
+                        <% } %>
                     <% }%>
                     <tr>
                         <td>
-                            <a href='/search/?term=<%= encodeURIComponent(full_name.replace("\'", "")) %>'>
+                            <% if (transaction.redact) { %>
                                 <%= full_name %>
-                            </a>
+                            <% } else { %>
+                                <a href='/search/?term=<%= encodeURIComponent(full_name.replace("\'", "")) %>'>
+                                    <%= full_name %>
+                                </a>
+                            <% } %>
                         </td>
                         <td class='nowrap'>
                             <%= moment(transaction.latest_date).format('MMM DD, YYYY') %>

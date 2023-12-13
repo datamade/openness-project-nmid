@@ -63,7 +63,6 @@ class EntityField(serializers.RelatedField):
             return value
 
 
-# TODO: Redact
 class TransactionSerializer(serializers.ModelSerializer):
     transaction_type = serializers.StringRelatedField(read_only=True)
     full_name = serializers.StringRelatedField(read_only=True)
@@ -97,6 +96,7 @@ class TransactionSerializer(serializers.ModelSerializer):
             "occupation",
             "expenditure_for_certified_candidate",
             "transaction_subject",
+            "redact",
         )
 
     def to_representation(self, instance):
@@ -278,11 +278,33 @@ class TopMoneySerializer(serializers.Serializer):
     middle_name = serializers.CharField()
     last_name = serializers.CharField()
     suffix = serializers.CharField()
-    company_name = serializers.CharField()
+    company_name = serializers.SerializerMethodField()
     amount = serializers.CharField()
     year = serializers.CharField()
     rank = serializers.CharField()
     latest_date = serializers.DateTimeField()
+    redact = serializers.BooleanField()
+    description = serializers.CharField()
+
+    def get_company_name(self, instance):
+        if instance.company_name.lower() == "none":
+            return ""
+
+        return instance.company_name
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        if instance.redact:
+            ret.update(
+                {
+                    "name_prefix": "Redacted by donor request",
+                    "first_name": "Redacted by donor request",
+                    "middle_name": "Redacted by donor request",
+                    "last_name": "Redacted by donor request",
+                    "suffix": "Redacted by donor request",
+                }
+            )
+        return ret
 
 
 class DataTablesPagination(pagination.LimitOffsetPagination):
