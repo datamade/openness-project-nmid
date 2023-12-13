@@ -575,7 +575,12 @@ class Transaction(models.Model):
 
     full_name = models.CharField(max_length=500, null=True)
 
+    redact = models.BooleanField(default=False)
+
     def __str__(self):
+        if self.redact:
+            return "Redacted by donor request"
+
         return self.full_name
 
     @property
@@ -585,6 +590,9 @@ class Transaction(models.Model):
 
     @property
     def full_address(self):
+        if self.redact:
+            return "Redacted by donor request"
+
         full_address = ""
 
         if self.address:

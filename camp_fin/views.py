@@ -5,7 +5,8 @@ import time
 import csv
 from urllib.parse import urlencode
 
-from django.views.generic import ListView, TemplateView, DetailView
+from django import forms
+from django.views.generic import ListView, TemplateView, DetailView, FormView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.http import HttpResponseNotFound, HttpResponse, StreamingHttpResponse
 from django.db import transaction, connection, connections
@@ -1337,8 +1338,15 @@ class CommitteeDetail(CommitteeDetailBaseView):
         return context
 
 
-class ContributionDetail(TransactionDetail):
+class RedactTransactionForm(forms.Form):
+    redact = forms.BooleanField(
+        label="Redact donor name and address from contributions", required=False
+    )
+
+
+class ContributionDetail(FormView, TransactionDetail):
     template_name = "camp_fin/contribution-detail.html"
+    form_class = RedactTransactionForm
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1368,6 +1376,21 @@ class ContributionDetail(TransactionDetail):
         context["seo"] = seo
 
         return context
+
+    def get_initial(self):
+        return {"redact": self.get_object().redact}
+
+    def form_valid(self, form):
+        transaction = self.get_object()
+
+        redact = True if form.data.get("redact", False) else False
+
+        Transaction.objects.filter(contact=transaction.contact).update(redact=redact)
+
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return self.request.path
 
 
 class ExpenditureDetail(TransactionDetail):
