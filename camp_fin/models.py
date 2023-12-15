@@ -129,6 +129,8 @@ class Campaign(models.Model):
                 self.candidate.first_name, self.candidate.last_name
             )
             return "{0} ({1})".format(candidate_name, office)
+        elif self.committee_name:
+            return "{0} ({1})".format(self.committee_name, office)
         else:
             party = self.political_party.name
             return "{0} ({1})".format(party, office)
@@ -273,15 +275,16 @@ class Campaign(models.Model):
         """
         Return a shortened version of the Campaign's party.
         """
-        if self.political_party.name:
+        if self.political_party.name == "Not specified":
+            return None
+
+        elif self.political_party.name:
             if self.political_party.name == "Democrat":
                 return "D"
             elif self.political_party.name == "Republican":
                 return "R"
             else:
                 return "I"
-        else:
-            return None
 
     def get_status(self):
         """
@@ -752,7 +755,7 @@ class Filing(models.Model):
     regenerate = models.CharField(max_length=3, null=True)
 
     def __str__(self):
-        if self.campaign:
+        if self.campaign and self.campaign.candidate:
             return "{0} {1} {2}".format(
                 self.campaign.candidate.first_name,
                 self.campaign.candidate.last_name,
@@ -1058,9 +1061,19 @@ class Entity(models.Model):
             )
 
             start_month = datetime(int(since), 1, 1)
-            end_month = (
-                FilingPeriod.objects.order_by("-filing_date").first().filing_date.date()
-            )
+
+            try:
+                end_month = (
+                    self.filing_set.order_by("-filing_period__filing_date")
+                    .first()
+                    .filing_period.filing_date.date()
+                )
+            except:
+                end_month = (
+                    FilingPeriod.objects.order_by("-filing_date")
+                    .first()
+                    .filing_date.date()
+                )
 
             for month in rrule(freq=MONTHLY, dtstart=start_month, until=end_month):
                 replacements = {"month": month.month - 1}
@@ -1095,7 +1108,7 @@ class Entity(models.Model):
 
 
 class EntityType(models.Model):
-    description = models.CharField(max_length=25)
+    description = models.CharField(max_length=256)
 
     def __str__(self):
         return self.description

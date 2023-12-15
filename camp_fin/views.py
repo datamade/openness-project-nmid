@@ -265,7 +265,7 @@ class IndexView(TopEarnersBase, LobbyistContextMixin, PagesMixin):
                       USING(entity_id)
                     JOIN camp_fin_campaign AS campaign
                       ON filing.campaign_id = campaign.id
-                    LEFT JOIN camp_fin_office AS office
+                    JOIN camp_fin_office AS office
                       ON campaign.office_id = office.id
                     WHERE filing.date_added >= '{year}-01-01'
                       AND filing.closing_balance IS NOT NULL
@@ -1219,7 +1219,7 @@ class CommitteeDetailBaseView(DetailView):
             # Count pure donations, if applicable
             if total_loans > 0 or total_inkind > 0:
                 donations = latest_filing.total_contributions - (
-                    latest_filing.total_loans + latest_filing.total_inkind
+                    (latest_filing.total_loans or 0) + (latest_filing.total_inkind or 0)
                 )
                 context["donations"] = donations
 
@@ -1604,7 +1604,7 @@ class SearchAPIView(viewsets.ViewSet):
                         ON campaign.political_party_id = party.id
                       LEFT JOIN camp_fin_county AS county
                         ON campaign.county_id = county.id
-                      LEFT JOIN camp_fin_office AS office
+                      JOIN camp_fin_office AS office
                         ON campaign.office_id = office.id
                       LEFT JOIN camp_fin_officetype AS officetype
                         ON office.office_type_id = officetype.id
@@ -1937,7 +1937,7 @@ def bulk_candidates(request):
           ON campaign.political_party_id = party.id
         LEFT JOIN camp_fin_county AS county
           ON campaign.county_id = county.id
-        LEFT JOIN camp_fin_office AS office
+        JOIN camp_fin_office AS office
           ON campaign.office_id = office.id
         JOIN camp_fin_officetype AS officetype
           ON office.office_type_id = officetype.id
