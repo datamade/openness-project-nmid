@@ -19,13 +19,29 @@
     </div>
     {% if user.is_authenticated %}
     <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-8">
             <div class="alert alert-info" role="alert"> 
-                <p><strong>{% if transaction.redact %}Uncheck the box below to include the donor's name and address with contributions displayed across the site.{% else %}Check the box below to redact the donor's name and address from contributions displayed across the site. This will also remove their contributions from search results on the site.{% endif %}</p></strong><br />
+                <h4>
+                    {{ transaction.full_name }} <small>{{ transaction.address }}, {{ transaction.city }}, {{ transaction.state }}</small>
+                </h4>
+
                 <form action="{{ request.path }}" method="post">
+                    <table id="redaction-form">
+                        <tr>
+                            <td>
+                                {{ form.redact }}
+                            </td>
+                            <td>
+                                <label for="id_redact">
+                                    {% if transaction.redact %}Uncheck this box to include the donor's name and address with contributions displayed across the site.{% else %}Check this box below to redact the donor's name and address from contributions displayed across the site. This will also prevent their contributions from appearing in site search results.{% endif %}
+                                </label>
+                            </td>
+                        </tr>
+                    </table>
                     {% csrf_token %}
-                    {{ form.as_p }}
-                    <input type="submit" value="Submit" class="btn btn-primary" />
+                    <div align="center">
+                        <input type="submit" value="Submit" class="btn btn-primary" />
+                    </div>
                 </form>
             </div>
         </div>
