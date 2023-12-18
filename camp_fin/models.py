@@ -575,7 +575,7 @@ class Transaction(models.Model):
 
     full_name = models.CharField(max_length=500, null=True)
 
-    redact = models.BooleanField(default=False, null=True)
+    redact = models.NullBooleanField(default=False)
 
     def __str__(self):
         if self.redact:
