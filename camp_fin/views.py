@@ -1697,7 +1697,7 @@ class SearchAPIView(viewsets.ViewSet):
                       ON address.state_id = state.id
                     WHERE o.search_name @@ plainto_tsquery('english', %s)
                       AND tt.contribution = TRUE
-                      AND o.redact = FALSE
+                      AND (o.redact = FALSE OR o.redact IS NULL)
                       AND o.received_date >= '2010-01-01'
                 """
 

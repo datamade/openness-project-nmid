@@ -462,9 +462,9 @@ class TopMoneyView(viewsets.ViewSet):
                   ON f.campaign_id = c.id 
                 JOIN camp_fin_electionseason AS election_season
                   ON c.election_season_id = election_season.id
-                JOIN camp_fin_contact AS contact
+                LEFT JOIN camp_fin_contact AS contact
                   ON transaction.contact_id = contact.id
-                JOIN camp_fin_contacttype AS ct
+                LEFT JOIN camp_fin_contacttype AS ct
                   ON contact.contact_type_id = ct.id
                 WHERE tt.contribution = %s 
                   AND year >= '2010' 
@@ -510,9 +510,9 @@ class TopMoneyView(viewsets.ViewSet):
                       ON transaction.transaction_type_id = tt.id 
                     JOIN camp_fin_filing AS f 
                       ON transaction.filing_id = f.id 
-                    JOIN camp_fin_contact AS contact
+                    LEFT JOIN camp_fin_contact AS contact
                       ON transaction.contact_id = contact.id
-                    JOIN camp_fin_contacttype AS ct
+                    LEFT JOIN camp_fin_contacttype AS ct
                       ON contact.contact_type_id = ct.id
                     WHERE tt.contribution = %s 
                       AND transaction.received_date >= '2010-01-01'
@@ -578,9 +578,9 @@ class TopMoneyView(viewsets.ViewSet):
                   ON c.candidate_id = candidate.id
                 JOIN camp_fin_electionseason AS election_season
                   ON c.election_season_id = election_season.id
-                JOIN camp_fin_contact AS contact
+                LEFT JOIN camp_fin_contact AS contact
                   ON transaction.contact_id = contact.id
-                JOIN camp_fin_contacttype AS ct
+                LEFT JOIN camp_fin_contacttype AS ct
                   ON contact.contact_type_id = ct.id
                 WHERE tt.contribution = %s 
                   AND candidate.id = %s
@@ -628,9 +628,9 @@ class TopMoneyView(viewsets.ViewSet):
                       ON transaction.filing_id = f.id 
                     JOIN camp_fin_pac AS pac
                       ON f.entity_id = pac.entity_id
-                    JOIN camp_fin_contact AS contact
+                    LEFT JOIN camp_fin_contact AS contact
                       ON transaction.contact_id = contact.id
-                    JOIN camp_fin_contacttype AS ct
+                    LEFT JOIN camp_fin_contacttype AS ct
                       ON contact.contact_type_id = ct.id
                     WHERE tt.contribution = %s 
                       AND pac.id = %s
