@@ -287,10 +287,10 @@ class TopMoneySerializer(serializers.Serializer):
     description = serializers.CharField()
 
     def get_company_name(self, instance):
-        if instance.company_name.lower() == "none":
+        if instance.company_name and instance.company_name.lower() == "none":
             return ""
 
-        return instance.company_name
+        return instance.company_name or ""
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)

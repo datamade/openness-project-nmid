@@ -10,7 +10,7 @@ from django.views.generic import ListView, TemplateView, DetailView, FormView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.http import HttpResponseNotFound, HttpResponse, StreamingHttpResponse
 from django.db import transaction, connection, connections
-from django.db.models import Max, prefetch_related_objects
+from django.db.models import Max, prefetch_related_objects, Q
 from django.utils import timezone
 from django.core.urlresolvers import reverse_lazy
 from django.utils.text import slugify
@@ -1382,14 +1382,27 @@ class ContributionDetail(FormView, TransactionDetail):
         return super().post(*args, **kwargs)
 
     def get_initial(self):
-        return {"redact": self.get_object().redact}
+        return {"redact": not self.get_object().redact}
 
     def form_valid(self, form):
         transaction = self.get_object()
 
-        redact = True if form.data.get("redact", False) else False
+        redact = form.data["redact"]
 
-        Transaction.objects.filter(contact=transaction.contact).update(redact=redact)
+        if transaction.contact:
+            Transaction.objects.filter(contact=transaction.contact).update(
+                redact=redact
+            )
+        else:
+            person_name_matches = Q(
+                first_name=transaction.first_name, last_name=transaction.last_name
+            )
+            company_name_matches = Q(company_name=transaction.company_name)
+            address_matches = Q(address=transaction.address)
+
+            Transaction.objects.filter(contact__isnull=True).filter(
+                (person_name_matches | company_name_matches) & address_matches
+            ).update(redact=redact)
 
         return super().form_valid(form)
 

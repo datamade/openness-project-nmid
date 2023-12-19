@@ -26,21 +26,11 @@
                 </h4>
 
                 <form action="{{ request.path }}" method="post">
-                    <table id="redaction-form">
-                        <tr>
-                            <td>
-                                {{ form.redact }}
-                            </td>
-                            <td>
-                                <label for="id_redact">
-                                    {% if transaction.redact %}Uncheck this box to include the donor's name and address with contributions displayed across the site.{% else %}Check this box below to redact the donor's name and address from contributions displayed across the site. This will also prevent their contributions from appearing in site search results.{% endif %}
-                                </label>
-                            </td>
-                        </tr>
-                    </table>
+                    {{ form.redact.as_hidden }}
+                    <p>{% if transaction.redact %}Click the button below to include the donor's name and address with contributions displayed across the site.{% else %}Click the button below to redact the donor's name and address from contributions displayed across the site. This will also prevent their contributions from appearing in site search results.{% endif %}</p>
                     {% csrf_token %}
                     <div align="center">
-                        <input type="submit" value="Submit" class="btn btn-primary" />
+                        <input type="submit" value="{% if transaction.redact %}Unredact{% else %}Redact{% endif %}" class="btn btn-primary" />
                     </div>
                 </form>
             </div>
