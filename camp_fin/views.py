@@ -1375,6 +1375,23 @@ class ContributionDetail(FormView, TransactionDetail):
 
         return context
 
+    def _redact_by_contact(self, transaction, redact):
+        if transaction.contact:
+            Transaction.objects.filter(contact=transaction.contact).update(
+                redact=redact
+            )
+
+    def _redact_by_name_and_address(self, transaction, redact):
+        person_name_matches = Q(
+            first_name=transaction.first_name, last_name=transaction.last_name
+        )
+        company_name_matches = Q(company_name=transaction.company_name)
+        address_matches = Q(address=transaction.address)
+
+        Transaction.objects.filter(
+            (person_name_matches | company_name_matches) & address_matches
+        ).update(redact=redact)
+
     def post(self, *args, **kwargs):
         if not self.request.user.is_authenticated:
             raise PermissionDenied
@@ -1386,23 +1403,12 @@ class ContributionDetail(FormView, TransactionDetail):
 
     def form_valid(self, form):
         transaction = self.get_object()
-
         redact = form.data["redact"]
 
-        if transaction.contact:
-            Transaction.objects.filter(contact=transaction.contact).update(
-                redact=redact
-            )
-        else:
-            person_name_matches = Q(
-                first_name=transaction.first_name, last_name=transaction.last_name
-            )
-            company_name_matches = Q(company_name=transaction.company_name)
-            address_matches = Q(address=transaction.address)
-
-            Transaction.objects.filter(contact__isnull=True).filter(
-                (person_name_matches | company_name_matches) & address_matches
-            ).update(redact=redact)
+        try:
+            self._redact_by_contact(transaction, redact)
+        except ObjectDoesNotExist:
+            self._redact_by_name_and_address(transaction, redact)
 
         return super().form_valid(form)
 
