@@ -1380,6 +1380,11 @@ class ContributionDetail(FormView, TransactionDetail):
             Transaction.objects.filter(contact=transaction.contact).update(
                 redact=redact
             )
+        else:
+            # Will be raised by reference if transaction references invalid contact,
+            # otherwise raise synthetically for transactions with no contact reference
+            # so we can then redact by name and address
+            raise ObjectDoesNotExist
 
     def _redact_by_name_and_address(self, transaction, redact):
         person_name_matches = Q(
