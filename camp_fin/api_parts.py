@@ -1,5 +1,6 @@
 import csv
 from io import StringIO, BytesIO
+import re
 import zipfile
 
 from rest_framework import serializers, pagination, renderers
@@ -285,12 +286,36 @@ class TopMoneySerializer(serializers.Serializer):
     latest_date = serializers.DateTimeField()
     redact = serializers.BooleanField()
     description = serializers.CharField()
+    display_name = serializers.SerializerMethodField()
 
     def get_company_name(self, instance):
         if instance.company_name and instance.company_name.lower() == "none":
             return ""
 
         return instance.company_name or ""
+
+    def get_display_name(self, instance):
+        if instance.redact:
+            return "Redacted by donor request"
+
+        if (
+            instance.description and instance.description in ("Individual", "Candidate")
+        ) or not instance.company_name:
+            return re.sub(
+                r"\s{2,}",
+                " ",
+                " ".join(
+                    [
+                        instance.name_prefix or "",
+                        instance.first_name or "",
+                        instance.middle_name or "",
+                        instance.last_name or "",
+                        instance.suffix or "",
+                    ]
+                ),
+            ).strip()
+
+        return instance.company_name
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
