@@ -182,11 +182,15 @@
                     <tr>
                         <td>
                             <% if (transaction.full_name){ %>
-                                <a href='/search/?term=<%= encodeURIComponent(transaction.full_name.replace("\'", "")) %>'>
-                                    <%= transaction.full_name %>
-                                </a>
+                                <% if (transaction.redact) { %>
+                                    Redacted by donor request
+                                <% } else { %>
+                                    <a href='/search/?term=<%= encodeURIComponent(transaction.full_name.replace("\'", "")) %>'>
+                                        <%= transaction.full_name %>
+                                    </a>
+                                <% } %>
                             <% } else { %>
-                                <a href='/search/?term=<%= enodeURIComponent(transaction.company_name.replace("\'", "")) %>'>
+                                <a href='/search/?term=<%= encodeURIComponent(transaction.company_name.replace("\'", "")) %>'>
                                     <%= transaction.company_name %>
                                 </a>
                             <% } %>
@@ -280,6 +284,9 @@
     </script>
     <script type="text/javascript">
         function getPersonName(object){
+            if (object.redact) {
+                return "Redacted by donor request"
+            }
             var person_name = '';
             if (object.name_prefix){
                 person_name += object.name_prefix + ' ';

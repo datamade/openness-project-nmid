@@ -456,3 +456,19 @@ button#btn-search { border-radius: 5px; }
     transform: rotate(359deg);
   }
 }
+
+.alert, .btn {
+    border-radius: 5px;
+}
+
+.alert p, label {
+    font-size: 14px;
+}
+
+h4 small {
+    color: #fff;
+}
+
+#redaction-form td {
+    padding: 10px;
+}

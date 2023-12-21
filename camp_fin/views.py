@@ -5,11 +5,12 @@ import time
 import csv
 from urllib.parse import urlencode
 
-from django.views.generic import ListView, TemplateView, DetailView
+from django import forms
+from django.views.generic import ListView, TemplateView, DetailView, FormView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.http import HttpResponseNotFound, HttpResponse, StreamingHttpResponse
 from django.db import transaction, connection, connections
-from django.db.models import Max, prefetch_related_objects
+from django.db.models import Max, prefetch_related_objects, Q
 from django.utils import timezone
 from django.core.urlresolvers import reverse_lazy
 from django.utils.text import slugify
@@ -19,7 +20,7 @@ from django.views.decorators.cache import never_cache
 from django.utils.decorators import method_decorator
 from django.shortcuts import render
 from django.core.cache import cache
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 
 from dateutil.rrule import rrule, MONTHLY
 
@@ -1223,9 +1224,6 @@ class CommitteeDetailBaseView(DetailView):
                 )
                 context["donations"] = donations
 
-        print(context)
-        print(entity_id)
-
         return context
 
 
@@ -1337,8 +1335,15 @@ class CommitteeDetail(CommitteeDetailBaseView):
         return context
 
 
-class ContributionDetail(TransactionDetail):
+class RedactTransactionForm(forms.Form):
+    redact = forms.BooleanField(
+        label="Redact donor name and address from contributions", required=False
+    )
+
+
+class ContributionDetail(FormView, TransactionDetail):
     template_name = "camp_fin/contribution-detail.html"
+    form_class = RedactTransactionForm
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1346,11 +1351,12 @@ class ContributionDetail(TransactionDetail):
         seo = {}
         seo.update(settings.SITE_META)
 
+        transaction = context["object"]
         transaction_verb = get_transaction_verb(
-            context["object"].transaction_type.description
+            transaction.transaction_type.description
         )
-        contributor = context["object"].full_name
-        amount = format_money(context["object"].amount)
+        contributor = str(transaction)
+        amount = format_money(transaction.amount)
 
         if hasattr(context["entity"], "name"):
             recipient = context["entity"].name
@@ -1368,6 +1374,51 @@ class ContributionDetail(TransactionDetail):
         context["seo"] = seo
 
         return context
+
+    def _redact_by_contact(self, transaction, redact):
+        if transaction.contact:
+            Transaction.objects.filter(contact=transaction.contact).update(
+                redact=redact
+            )
+        else:
+            # Will be raised by reference if transaction references invalid contact,
+            # otherwise raise synthetically for transactions with no contact reference
+            # so we can then redact by name and address
+            raise ObjectDoesNotExist
+
+    def _redact_by_name_and_address(self, transaction, redact):
+        person_name_matches = Q(
+            first_name=transaction.first_name, last_name=transaction.last_name
+        )
+        company_name_matches = Q(company_name=transaction.company_name)
+        address_matches = Q(address=transaction.address)
+
+        Transaction.objects.filter(
+            (person_name_matches | company_name_matches) & address_matches
+        ).update(redact=redact)
+
+    def post(self, *args, **kwargs):
+        if not self.request.user.is_authenticated:
+            raise PermissionDenied
+
+        return super().post(*args, **kwargs)
+
+    def get_initial(self):
+        return {"redact": not self.get_object().redact}
+
+    def form_valid(self, form):
+        transaction = self.get_object()
+        redact = form.data["redact"]
+
+        try:
+            self._redact_by_contact(transaction, redact)
+        except ObjectDoesNotExist:
+            self._redact_by_name_and_address(transaction, redact)
+
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return self.request.path
 
 
 class ExpenditureDetail(TransactionDetail):
@@ -1521,8 +1572,6 @@ class SearchAPIView(viewsets.ViewSet):
         term = request.GET.get("term")
         datatype = request.GET.get("datatype")
 
-        print(term)
-
         limit = request.GET.get("limit", 50)
         offset = request.GET.get("offset", 0)
 
@@ -1659,6 +1708,7 @@ class SearchAPIView(viewsets.ViewSet):
                       ON address.state_id = state.id
                     WHERE o.search_name @@ plainto_tsquery('english', %s)
                       AND tt.contribution = TRUE
+                      AND (o.redact = FALSE OR o.redact IS NULL)
                       AND o.received_date >= '2010-01-01'
                 """
 

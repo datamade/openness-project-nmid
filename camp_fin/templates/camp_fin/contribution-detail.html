@@ -17,13 +17,34 @@
             </h3>
         </div>
     </div>
+    {% if user.is_authenticated %}
+    <div class="row">
+        <div class="col-md-8">
+            <div class="alert alert-info" role="alert"> 
+                <h4>
+                    {{ transaction.full_name }} <small>{{ transaction.address }}, {{ transaction.city }}, {{ transaction.state }}</small>
+                </h4>
+
+                <form action="{{ request.path }}" method="post">
+                    {{ form.redact.as_hidden }}
+                    <p>{% if transaction.redact %}Click the button below to include the donor's name and address with contributions displayed across the site.{% else %}Click the button below to redact the donor's name and address from contributions displayed across the site. This will also prevent their contributions from appearing in site search results.{% endif %}</p>
+                    {% csrf_token %}
+                    <div align="center">
+                        <input type="submit" value="{% if transaction.redact %}Unredact{% else %}Redact{% endif %}" class="btn btn-primary" />
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
     <div class="row">
         <div class="col-md-8">
             <table class="table table-hover">
                 <tbody>
                     <tr>
                         <td>Donor</td>
-                        <td><a href="/search/?term={{ transaction }}">{{ transaction }}</a></td>
+                        <td>
+                            {% if not transaction.redact %}<a href="/search/?term={{ transaction }}">{{ transaction }}</a>{% else %}{{ transaction }}{% endif %}</td>
                     </tr>
                     <tr>
                         <td>Address</td>

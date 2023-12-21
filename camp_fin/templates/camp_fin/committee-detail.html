@@ -61,16 +61,15 @@
             </thead>
             <tbody>
                 <% $.each(transactions, function(i, transaction){ %>
-                    <% if (transaction.company_name && transaction.company_name != 'N/A'){ %>
-                        <% var full_name = transaction.company_name %>
-                    <% } else { %>
-                        <% var full_name = getPersonName(transaction) %>
-                    <% }%>
                     <tr>
                         <td>
-                            <a href='/search/?term=<%= encodeURIComponent(full_name.replace("\'", "")) %>'>
-                                <%= full_name %>
-                            </a>
+                            <% if (transaction.redact) { %>
+                                <%= transaction.display_name %>
+                            <% } else { %>
+                                <a href='/search/?term=<%= encodeURIComponent(transaction.display_name.replace("\'", "")) %>'>
+                                    <%= transaction.display_name %>
+                                </a>
+                            <% } %>
                         </td>
                         <td class='nowrap'>
                             <%= moment(transaction.latest_date).format('MMM DD, YYYY') %>
