@@ -9,7 +9,10 @@ import/local/% : _data/raw/%.csv
 		--year $(word 2, $(subst _, , $*)) \
 		--file $<
 
-import/local/offices : _data/raw/candidates.csv
+import/offices :
+	python manage.py import_office_api_data
+
+import/local/offices : _data/raw/offices.csv
 	python manage.py import_office_api_data --file $<
 
 s3/$(AWS_STORAGE_BUCKET_NAME)/%.gz : %.gz

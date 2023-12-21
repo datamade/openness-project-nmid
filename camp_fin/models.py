@@ -275,14 +275,13 @@ class Campaign(models.Model):
         """
         Return a shortened version of the Campaign's party.
         """
-        if self.political_party.name == "Not specified":
-            return None
-
-        elif self.political_party.name:
-            if self.political_party.name == "Democrat":
+        if self.political_party.name:
+            if "democrat" in self.political_party.name.lower():
                 return "D"
-            elif self.political_party.name == "Republican":
+            elif "republican" in self.political_party.name.lower():
                 return "R"
+            elif self.political_party.name.lower() == "non-partisan":
+                return "NP"
             else:
                 return "I"
 

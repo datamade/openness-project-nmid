@@ -447,51 +447,41 @@ class Command(BaseCommand):
                     )
                     raise ValueError
 
-            # TODO: This is fudged and should be drawn instead from a canonical list of offices and races.
-            # We need a campaign for committee finances to be associated with the candidate.
-            election_year = self.parse_date(record["Start of Period"]).year
-
-            election_season = self.fetch_from_cache(
-                "election_season",
-                (election_year, False, 0),
-                models.ElectionSeason,
-                dict(
-                    year=self.parse_date(record["Start of Period"]).year,
-                    special=False,
-                    status_id=0,
-                ),
+            transaction_date = (
+                record["Transaction Date"]
+                if "Transaction Date" in record
+                else record["Expenditure Date"]
             )
 
-            office = self.fetch_from_cache(
-                "office",
-                None,
-                models.Office,
-                dict(description="Not specified", status_id=0),
-            )
+            transaction_year = self.parse_date(transaction_date).year
 
-            party = self.fetch_from_cache(
-                "party",
-                None,
-                models.PoliticalParty,
-                dict(name="Not specified"),
-            )
+            try:
+                campaign = self._cache["campaign"][
+                    (candidate.full_name, transaction_year)
+                ]
 
-            campaign = self.fetch_from_cache(
-                "campaign",
-                (
-                    record["Committee Name"],
-                    candidate.full_name,
-                    election_season.year,
-                ),
-                models.Campaign,
-                dict(
-                    committee_name=record["Committee Name"],
-                    candidate=candidate,
-                    election_season=election_season,
-                    office=office,
-                    political_party=party,
-                ),
-            )
+            except KeyError:
+                try:
+                    campaign = candidate.campaign_set.get(
+                        election_season__year=transaction_year
+                    )
+                except models.Campaign.MultipleObjectsReturned:
+                    campaign = candidate.campaign_set.filter(
+                        election_season__year=transaction_year
+                    ).first()
+                except models.Campaign.DoesNotExist:
+                    self.stderr.write(
+                        f"Could not find campaign for {candidate} in {transaction_year}"
+                    )
+                    campaign = None
+
+                if campaign and campaign.committee_name != record["Committee Name"]:
+                    campaign.committee_name = record["Committee Name"]
+                    campaign.save()
+
+                self._cache["campaign"][
+                    (candidate.full_name, transaction_year)
+                ] = campaign
 
             filing_kwargs = {"entity": entity, "campaign": campaign}
 

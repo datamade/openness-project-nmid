@@ -15,7 +15,7 @@ from camp_fin import models
 class Command(BaseCommand):
     help = """
         Import data from the New Mexico Campaign Finance System:
-        https://login.cfis.sos.state.nm.us/#/dataDownload
+        https://github.com/datamade/nmid-scrapers/pull/2
 
         Data will be retrieved from S3 unless a local CSV is specified as --file
     """
@@ -64,7 +64,22 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        f = open(options["file"], "r")
+        if options["file"]:
+            f = open(options["file"], "r")
+
+        else:
+            s3 = boto3.client("s3")
+
+            resource_name = "offices.gz"
+
+            with open(resource_name, "wb") as download_location:
+                s3.download_fileobj(
+                    os.getenv("AWS_STORAGE_BUCKET_NAME", "openness-project-nmid"),
+                    resource_name,
+                    download_location,
+                )
+
+            f = gzip.open(resource_name, "rt")
 
         try:
             reader = csv.DictReader(f)
@@ -115,7 +130,6 @@ class Command(BaseCommand):
                     try:
                         candidate = models.Candidate.objects.get(full_name=full_name)
                         self._cache["candidate"][candidate.full_name] = candidate
-                        self.stderr.write(f"Linked and cached {candidate}")
                         candidates_linked += 1
 
                     except models.Candidate.MultipleObjectsReturned:
@@ -123,7 +137,6 @@ class Command(BaseCommand):
                             full_name=full_name
                         ).first()
                         self._cache["candidate"][candidate.full_name] = candidate
-                        self.stderr.write(f"Linked and cached {candidate}")
                         candidates_linked += 1
 
                     except models.Candidate.DoesNotExist:
@@ -165,14 +178,15 @@ class Command(BaseCommand):
 
                         self._next_entity_id += 1
 
-                        self.stderr.write(f"Created candidate {candidate}")
                         candidates_created += 1
+
+                election_year = re.match(r"\d{4}", record["ElectionName"]).group(0)
 
                 election_season = self.fetch_from_cache(
                     "election_season",
-                    (record["ElectionYear"], False),
+                    (election_year, False),
                     models.ElectionSeason,
-                    {"year": record["ElectionYear"], "special": False, "status_id": 0},
+                    {"year": election_year, "special": False, "status_id": 0},
                 )
                 office = self.fetch_from_cache(
                     "office",
@@ -220,10 +234,7 @@ class Command(BaseCommand):
                     )
                 )
 
-                if len(campaigns) == 2500:
-                    models.Campaign.objects.bulk_create(campaigns)
-                    campaigns = []
-
+            models.Campaign.objects.filter(election_season__year__gte=2021).delete()
             models.Campaign.objects.bulk_create(campaigns)
 
         finally:
