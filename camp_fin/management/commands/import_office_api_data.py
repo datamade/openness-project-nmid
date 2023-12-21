@@ -1,4 +1,6 @@
 import csv
+import gzip
+import os
 import re
 
 from django.core.management.base import BaseCommand
@@ -6,6 +8,7 @@ from django.db.models import Max
 from django.db.utils import IntegrityError
 from django.utils.text import slugify
 
+import boto3
 from tqdm import tqdm
 import probablepeople
 
@@ -124,7 +127,6 @@ class Command(BaseCommand):
                     candidate = self.fetch_from_cache(
                         "candidate", full_name, models.Candidate, {}, create=False
                     )
-                    self.stderr.write(f"Found cached {candidate}")
                     candidates_linked += 1
                 except KeyError:
                     try:
