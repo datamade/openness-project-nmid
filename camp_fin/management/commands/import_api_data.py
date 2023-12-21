@@ -356,6 +356,14 @@ class Command(BaseCommand):
         )
 
     def make_filing(self, record):
+        if not any(
+            (
+                self.parse_date(record["Filed Date"])
+                or self.parse_date(record["End of Period"])
+            )
+        ):
+            raise ValueError
+
         if record["Report Entity Type"] == "Candidate":
             # Create PAC associated with candidate
             self.make_pac(record, entity_type="Political Committee")
