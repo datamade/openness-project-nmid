@@ -447,7 +447,7 @@ class Command(BaseCommand):
                     )
                     raise ValueError
 
-            # This is fudged and should be drawn instead from a canonical list of offices and races.
+            # TODO: This is fudged and should be drawn instead from a canonical list of offices and races.
             # We need a campaign for committee finances to be associated with the candidate.
             election_year = self.parse_date(record["Start of Period"]).year
 
