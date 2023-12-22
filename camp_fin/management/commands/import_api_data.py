@@ -358,8 +358,8 @@ class Command(BaseCommand):
     def make_filing(self, record):
         if not any(
             (
-                self.parse_date(record["Filed Date"])
-                or self.parse_date(record["End of Period"])
+                self.parse_date(record["Filed Date"]),
+                self.parse_date(record["End of Period"]),
             )
         ):
             raise ValueError
