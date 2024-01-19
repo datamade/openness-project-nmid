@@ -5,9 +5,15 @@ import/% : s3/$(AWS_STORAGE_BUCKET_NAME)/%.gz
 		--year $(word 2, $(subst _, , $*))
 
 import/local/% : _data/raw/%.csv
-		python manage.py import_api_data --transaction-type $(word 1, $(subst _, , $*)) \
-			--year $(word 2, $(subst _, , $*)) \
-			--file $<
+	python manage.py import_api_data --transaction-type $(word 1, $(subst _, , $*)) \
+		--year $(word 2, $(subst _, , $*)) \
+		--file $<
+
+import/offices :
+	python manage.py import_office_api_data
+
+import/local/offices : _data/raw/offices.csv
+	python manage.py import_office_api_data --file $<
 
 s3/$(AWS_STORAGE_BUCKET_NAME)/%.gz : %.gz
 	aws s3 cp $< s3://$$AWS_STORAGE_BUCKET_NAME

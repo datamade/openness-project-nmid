@@ -34,7 +34,7 @@ class Candidate(models.Model):
     slug = models.CharField(max_length=500, null=True)
 
     def __str__(self):
-        return self.full_name or " ".join([self.first_name, self.last_name])
+        return self.full_name or " ".join([self.first_name or "", self.last_name or ""])
 
 
 class PAC(models.Model):
@@ -275,14 +275,13 @@ class Campaign(models.Model):
         """
         Return a shortened version of the Campaign's party.
         """
-        if self.political_party.name == "Not specified":
-            return None
-
-        elif self.political_party.name:
-            if self.political_party.name == "Democrat":
+        if self.political_party.name:
+            if "democrat" in self.political_party.name.lower():
                 return "D"
-            elif self.political_party.name == "Republican":
+            elif "republican" in self.political_party.name.lower():
                 return "R"
+            elif self.political_party.name.lower() == "non-partisan":
+                return "NP"
             else:
                 return "I"
 
@@ -522,7 +521,7 @@ class Office(models.Model):
 
 class District(models.Model):
     office = models.ForeignKey("Office", db_constraint=False)
-    name = models.CharField(max_length=25)
+    name = models.CharField(max_length=256)
     status = models.ForeignKey("Status", db_constraint=False)
 
     def __str__(self):
@@ -537,7 +536,7 @@ class County(models.Model):
 
 
 class PoliticalParty(models.Model):
-    name = models.CharField(max_length=25)
+    name = models.CharField(max_length=256)
 
     def __str__(self):
         return self.name

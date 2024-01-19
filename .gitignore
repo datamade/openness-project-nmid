@@ -4,3 +4,4 @@ __pycache__
 /static
 *.csv
 .env
+!_data/raw/offices.csv
