@@ -37,38 +37,6 @@ class Command(BaseCommand):
         except TypeError:
             self._next_entity_id = 1
 
-        self._cache = {
-            "state": {obj.postal_code: obj for obj in models.State.objects.iterator()},
-            "contact_type": {
-                obj.description: obj for obj in models.ContactType.objects.iterator()
-            },
-            "entity_type": {
-                obj.description: obj for obj in models.EntityType.objects.iterator()
-            },
-            "filing_type": {
-                obj.description: obj for obj in models.FilingType.objects.iterator()
-            },
-            "transaction_type": {
-                obj.description: obj
-                for obj in models.TransactionType.objects.iterator()
-            },
-            "loan_transaction_type": {
-                obj.description: obj
-                for obj in models.LoanTransactionType.objects.iterator()
-            },
-            "entity": {},
-            "candidate": {},
-            "campaign": {},
-            "pac": {},
-            "election_season": {},
-            "filing_period": {},
-            "filing": {},
-            "address": {},
-            "office": {},
-            "party": {},
-            "contact": {},
-        }
-
     def add_arguments(self, parser):
         parser.add_argument(
             "--transaction-type",
@@ -124,22 +92,18 @@ class Command(BaseCommand):
         call_command("import_data", "--add-aggregates")
 
     def fetch_from_cache(self, cache_entity, cache_key, model, model_kwargs):
+        deidentified_model_kwargs = {
+            k: v for k, v in model_kwargs.items() if k not in ("entity", "slug")
+        }
+
         try:
-            return self._cache[cache_entity][cache_key]
-        except KeyError:
-            deidentified_model_kwargs = {
-                k: v for k, v in model_kwargs.items() if k not in ("entity", "slug")
-            }
+            obj = model.objects.get(**deidentified_model_kwargs)
+        except model.DoesNotExist:
+            obj = model.objects.create(**model_kwargs)
+        except model.MultipleObjectsReturned:
+            obj = model.objects.filter(**deidentified_model_kwargs).first()
 
-            try:
-                obj = model.objects.get(**deidentified_model_kwargs)
-            except model.DoesNotExist:
-                obj = model.objects.create(**model_kwargs)
-            except model.MultipleObjectsReturned:
-                obj = model.objects.filter(**deidentified_model_kwargs).first()
-
-            self._cache[cache_entity][cache_key] = obj
-            return obj
+        return obj
 
     def parse_date(self, date_str):
         try:
@@ -293,39 +257,34 @@ class Command(BaseCommand):
             }
 
         try:
-            contact = self._cache["contact"][tuple(contact_kwargs.values())]
-        except KeyError:
-            try:
-                contact = models.Contact.objects.get(
-                    **contact_kwargs,
-                    status_id=0,
-                    address=address,
-                    contact_type=contact_type,
-                )
-            except models.Contact.DoesNotExist:
-                entity_type = self.fetch_from_cache(
-                    "entity_type",
-                    record["Contributor Code"][:24],
-                    models.EntityType,
-                    {"description": record["Contributor Code"][:24]},
-                )
+            contact = models.Contact.objects.get(
+                **contact_kwargs,
+                status_id=0,
+                address=address,
+                contact_type=contact_type,
+            )
+        except models.Contact.DoesNotExist:
+            entity_type = self.fetch_from_cache(
+                "entity_type",
+                record["Contributor Code"][:24],
+                models.EntityType,
+                {"description": record["Contributor Code"][:24]},
+            )
 
-                entity = models.Entity.objects.create(
-                    user_id=self._next_entity_id,
-                    entity_type=entity_type,
-                )
+            entity = models.Entity.objects.create(
+                user_id=self._next_entity_id,
+                entity_type=entity_type,
+            )
 
-                contact = models.Contact.objects.create(
-                    **contact_kwargs,
-                    status_id=0,
-                    address=address,
-                    contact_type=contact_type,
-                    entity=entity,
-                )
+            contact = models.Contact.objects.create(
+                **contact_kwargs,
+                status_id=0,
+                address=address,
+                contact_type=contact_type,
+                entity=entity,
+            )
 
-                self._next_entity_id += 1
-
-            self._cache["contact"][tuple(contact_kwargs.values())] = contact
+            self._next_entity_id += 1
 
         return contact
 
@@ -428,32 +387,33 @@ class Command(BaseCommand):
                     entity = candidate.entity
 
             else:
+                candidate = None
                 # Sometimes, a record says it is associated with a candidate,
                 # but a candidate name is not provided. This block attempts to
                 # look up the candidate based on committee name. If we cannot
                 # identify one candidate, we skip the record.
-                try:
-                    candidate = (
-                        models.Candidate.objects.filter(
-                            campaign__committee_name=record["Committee Name"]
-                        )
-                        .distinct()
-                        .get()
-                    )
-                except models.Candidate.DoesNotExist:
-                    self.stdout.write(
-                        self.style.ERROR(
-                            f"Could not find candidate associated with committee {record['Committee Name']}. Skipping..."
-                        )
-                    )
-                    raise ValueError
-                except models.Candidate.MultipleObjectsReturned:
-                    self.stdout.write(
-                        self.style.ERROR(
-                            f"Found more than one candidate associated with committee {record['Committee Name']}. Skipping..."
-                        )
-                    )
-                    raise ValueError
+            #                try:
+            #                    candidate = (
+            #                        models.Candidate.objects.filter(
+            #                            campaign__committee_name=record["Committee Name"]
+            #                        )
+            #                        .distinct()
+            #                        .get()
+            #                    )
+            #                except models.Candidate.DoesNotExist:
+            #                    self.stdout.write(
+            #                        self.style.ERROR(
+            #                            f"Could not find candidate associated with committee {record['Committee Name']}. Skipping..."
+            #                        )
+            #                    )
+            #                    raise ValueError
+            #                except models.Candidate.MultipleObjectsReturned:
+            #                    self.stdout.write(
+            #                        self.style.ERROR(
+            #                            f"Found more than one candidate associated with committee {record['Committee Name']}. Skipping..."
+            #                        )
+            #                    )
+            #                    raise ValueError
 
             transaction_date = (
                 record["Transaction Date"]
@@ -463,12 +423,10 @@ class Command(BaseCommand):
 
             transaction_year = self.parse_date(transaction_date).year
 
-            try:
-                campaign = self._cache["campaign"][
-                    (candidate.full_name, transaction_year)
-                ]
+            if not candidate:
+                campaign = None
 
-            except KeyError:
+            else:
                 try:
                     campaign = candidate.campaign_set.get(
                         election_season__year=transaction_year
@@ -483,13 +441,9 @@ class Command(BaseCommand):
                     )
                     campaign = None
 
-                if campaign and campaign.committee_name != record["Committee Name"]:
-                    campaign.committee_name = record["Committee Name"]
-                    campaign.save()
-
-                self._cache["campaign"][
-                    (candidate.full_name, transaction_year)
-                ] = campaign
+            if campaign and campaign.committee_name != record["Committee Name"]:
+                campaign.committee_name = record["Committee Name"]
+                campaign.save()
 
             filing_kwargs = {"entity": entity, "campaign": campaign}
 

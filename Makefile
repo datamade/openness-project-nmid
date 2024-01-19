@@ -1,3 +1,5 @@
+DATABASE_URL=postgres://postgres:postgres@postgres:5432/nmid
+
 .PRECIOUS : _data/raw/%.csv
 
 import/% : s3/$(AWS_STORAGE_BUCKET_NAME)/%.gz
@@ -14,6 +16,10 @@ import/offices :
 
 import/local/offices : _data/raw/offices.csv
 	python manage.py import_office_api_data --file $<
+
+psql/% : _data/raw/%.csv
+	psql $(DATABASE_URL) -v table_name=$* -f sql/raw_$(word 1, $(subst _, , $*)).sql
+	cat $< | psql $(DATABASE_URL) -c "COPY $* FROM STDIN WITH CSV HEADER"
 
 s3/$(AWS_STORAGE_BUCKET_NAME)/%.gz : %.gz
 	aws s3 cp $< s3://$$AWS_STORAGE_BUCKET_NAME

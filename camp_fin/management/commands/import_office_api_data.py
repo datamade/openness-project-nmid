@@ -33,31 +33,6 @@ class Command(BaseCommand):
         except TypeError:
             self._next_entity_id = 1
 
-        self._cache = {
-            "office": {
-                obj.description: obj for obj in models.Office.objects.iterator()
-            },
-            "office_type": {
-                obj.description: obj for obj in models.OfficeType.objects.iterator()
-            },
-            "political_party": {
-                obj.name: obj for obj in models.PoliticalParty.objects.iterator()
-            },
-            "district": {
-                (obj.name, obj.office.description): obj
-                for obj in models.District.objects.iterator()
-            },
-            "county": {obj.name: obj for obj in models.County.objects.iterator()},
-            "election_season": {
-                (obj.year, obj.special): obj
-                for obj in models.ElectionSeason.objects.iterator()
-            },
-            "candidate": {},
-            "entity_type": {
-                obj.description: obj for obj in models.EntityType.objects.iterator()
-            },
-        }
-
     def add_arguments(self, parser):
         parser.add_argument(
             "--file",
@@ -124,63 +99,55 @@ class Command(BaseCommand):
                 ).strip()
 
                 try:
-                    candidate = self.fetch_from_cache(
-                        "candidate", full_name, models.Candidate, {}, create=False
-                    )
+                    candidate = models.Candidate.objects.get(full_name=full_name)
                     candidates_linked += 1
-                except KeyError:
-                    try:
-                        candidate = models.Candidate.objects.get(full_name=full_name)
-                        self._cache["candidate"][candidate.full_name] = candidate
-                        candidates_linked += 1
 
-                    except models.Candidate.MultipleObjectsReturned:
-                        candidate = models.Candidate.objects.filter(
-                            full_name=full_name
-                        ).first()
-                        self._cache["candidate"][candidate.full_name] = candidate
-                        candidates_linked += 1
+                except models.Candidate.MultipleObjectsReturned:
+                    candidate = models.Candidate.objects.filter(
+                        full_name=full_name
+                    ).first()
+                    candidates_linked += 1
 
-                    except models.Candidate.DoesNotExist:
-                        entity_type = self.fetch_from_cache(
-                            "entity_type",
-                            "Candidate",
-                            models.EntityType,
-                            {"description": "Candidate"},
-                        )
+                except models.Candidate.DoesNotExist:
+                    entity_type = self.fetch_from_cache(
+                        "entity_type",
+                        "Candidate",
+                        models.EntityType,
+                        {"description": "Candidate"},
+                    )
 
-                        entity = models.Entity.objects.create(
-                            user_id=self._next_entity_id,
-                            entity_type=entity_type,
-                        )
+                    entity = models.Entity.objects.create(
+                        user_id=self._next_entity_id,
+                        entity_type=entity_type,
+                    )
 
-                        candidate = self.fetch_from_cache(
-                            "candidate",
-                            full_name,
-                            models.Candidate,
-                            dict(
-                                first_name=candidate_name.get("GivenName", None),
-                                middle_name=candidate_name.get("MiddleName", None)
-                                or candidate_name.get("MiddleInitial", None),
-                                last_name=candidate_name.get("Surname", None),
-                                suffix=candidate_name.get("SuffixGenerational", None)
-                                or candidate_name.get("SuffixOther", None),
-                                full_name=full_name,
-                                slug=slugify(
-                                    " ".join(
-                                        [
-                                            candidate_name.get("GivenName", ""),
-                                            candidate_name.get("Surname", ""),
-                                        ]
-                                    )
-                                ),
-                                entity=entity,
+                    candidate = self.fetch_from_cache(
+                        "candidate",
+                        full_name,
+                        models.Candidate,
+                        dict(
+                            first_name=candidate_name.get("GivenName", None),
+                            middle_name=candidate_name.get("MiddleName", None)
+                            or candidate_name.get("MiddleInitial", None),
+                            last_name=candidate_name.get("Surname", None),
+                            suffix=candidate_name.get("SuffixGenerational", None)
+                            or candidate_name.get("SuffixOther", None),
+                            full_name=full_name,
+                            slug=slugify(
+                                " ".join(
+                                    [
+                                        candidate_name.get("GivenName", ""),
+                                        candidate_name.get("Surname", ""),
+                                    ]
+                                )
                             ),
-                        )
+                            entity=entity,
+                        ),
+                    )
 
-                        self._next_entity_id += 1
+                    self._next_entity_id += 1
 
-                        candidates_created += 1
+                    candidates_created += 1
 
                 election_year = re.match(r"\d{4}", record["ElectionName"]).group(0)
 
@@ -249,22 +216,15 @@ class Command(BaseCommand):
     def fetch_from_cache(
         self, cache_entity, cache_key, model, model_kwargs, create=True
     ):
+        deidentified_model_kwargs = {
+            k: v for k, v in model_kwargs.items() if k not in ("entity", "slug")
+        }
+
         try:
-            return self._cache[cache_entity][cache_key]
-        except KeyError:
-            if not create:
-                raise
+            obj = model.objects.get(**deidentified_model_kwargs)
+        except model.DoesNotExist:
+            obj = model.objects.create(**model_kwargs)
+        except model.MultipleObjectsReturned:
+            obj = model.objects.filter(**deidentified_model_kwargs).first()
 
-            deidentified_model_kwargs = {
-                k: v for k, v in model_kwargs.items() if k not in ("entity", "slug")
-            }
-
-            try:
-                obj = model.objects.get(**deidentified_model_kwargs)
-            except model.DoesNotExist:
-                obj = model.objects.create(**model_kwargs)
-            except model.MultipleObjectsReturned:
-                obj = model.objects.filter(**deidentified_model_kwargs).first()
-
-            self._cache[cache_entity][cache_key] = obj
-            return obj
+        return obj
