@@ -33,15 +33,6 @@
                         <label data-title='Expenditures' data-content='Any person or organization who was given money by a political committee'>
                             <input type="checkbox" name="table_name" value="expenditure" {% if 'expenditure' in table_name %}checked='checked'{% endif %}> Expenditures by committees
                         </label>
-                        <label data-title='Lobbyists' data-content='Any person who has registered as a lobbyist'>
-                            <input type="checkbox" name="table_name" value="lobbyist" {% if 'lobbyist' in table_name %}checked='checked'{% endif %}> Lobbyists
-                        </label>
-                        <label data-title='Lobbyist employers' data-content='Any organization that has paid registered lobbyists'>
-                            <input type="checkbox" name="table_name" value="organization" {% if 'organization' in table_name %}checked='checked'{% endif %}> Lobbyist employers
-                        </label>
-                        <label data-title='Lobbyist spending' data-content='Spending that lobbyists have reported'>
-                            <input type="checkbox" name="table_name" value="lobbyisttransaction" {% if 'lobbyisttransaction' in table_name %}checked='checked'{% endif %}> Lobbyist spending
-                        </label>
                     </div>
                 </form>
             </div>
@@ -116,49 +107,6 @@
                         <th class='hidden-xs hidden-sm'>Date</th>
                         <th>Amount</th>
                         <th class='hidden-xs hidden-sm'>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-            </table>
-            <hr />
-        </div>
-        <div id="lobbyist-search-results" class="col-md-12" style="display:none;">
-            <h3>Lobbyists <small></small></h3>
-            <table class="table table-hover datatable-table" id="lobbyist-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                    </tr>
-                </thead>
-                <tbody>
-            </table>
-            <hr />
-        </div>
-        <div id="organization-search-results" class="col-md-12" style="display:none;">
-            <h3>Lobbyist employers <small></small></h3>
-            <table class="table table-hover datatable-table" id="organization-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Address</th>
-                    </tr>
-                </thead>
-                <tbody>
-            </table>
-            <hr />
-        </div>
-        <div id="lobbyisttransaction-search-results" class="col-md-12" style="display:none;">
-            <h3>Lobbyist spending <small></small></h3>
-            <table class="table table-hover datatable-table" id="lobbyisttransaction-table">
-                <thead>
-                    <tr>
-                        <th>Lobbyist</th>
-                        <th>Type</th>
-                        <th>Paid to</th>
-                        <th>Amount</th>
-                        <th>Beneficiary</th>
-                        <th>Description</th>
-                        <th>Date</th>
                     </tr>
                 </thead>
                 <tbody>

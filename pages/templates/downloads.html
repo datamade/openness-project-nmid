@@ -64,82 +64,9 @@
                     {% include 'camp_fin/widgets/calendar-form.html' %}
                 {% endwith %}
                 <div class="col-xs-12">
-                    <br/>
+                    <br/><br />
                 </div>
             </div>
-
-            <br />
-            <h3>
-                <i class="fa fa-fw fa-university"></i>
-                Lobbyists and lobbyist employers
-            </h3>
-            <br/>
-
-            <div class="row">
-                <h4 class="col-xs-12">
-                    <i class="fa fa-fw fa-usd"></i>
-                    Cash donations
-                </h4>
-                {% with action='/api/bulk/lobbyist-contributions/' icon='fa fa-fw fa-download' title='Cash donations' from_id='from5' to_id='to5' %}
-                    {% include 'camp_fin/widgets/calendar-form.html' %}
-                {% endwith %}
-                <div class="col-xs-12">
-                    <br/>
-                </div>
-            </div>
-
-            <div class="row">
-                <h4 class="col-xs-12">
-                    <i class="fa fa-fw fa-gift"></i>
-                    Expenditures and gifts
-                </h4>
-                {% with action='/api/bulk/lobbyist-expenditures/' icon='fa fa-fw fa-download' title='Expenditures and gifts' from_id='from6' to_id='to6' %}
-                    {% include 'camp_fin/widgets/calendar-form.html' %}
-                {% endwith %}
-                <div class="col-xs-12">
-                    <br/>
-                </div>
-            </div>
-
-            <div class="row">
-                <h4 class="col-xs-12">
-                    <i class="fa fa-fw fa-user"></i>
-                    Lobbyists
-                </h4>
-                {% with action='/api/bulk/lobbyists/' icon='fa fa-fw fa-download' title='Lobbyists' from_id='from7' to_id='to7' %}
-                    {% include 'camp_fin/widgets/calendar-form.html' %}
-                {% endwith %}
-                <div class="col-xs-12">
-                    <br/>
-                </div>
-            </div>
-
-            <div class="row">
-                <h4 class="col-xs-12">
-                    <i class="fa fa-fw fa-users"></i>
-                    Lobbyist employers
-                </h4>
-                {% with action='/api/bulk/employers/' icon='fa fa-fw fa-download' title='Lobbyist employers' from_id='from8' to_id='to8' %}
-                    {% include 'camp_fin/widgets/calendar-form.html' %}
-                {% endwith %}
-                <div class="col-xs-12">
-                    <br/>
-                </div>
-            </div>
-
-            <div class="row">
-                <h4 class="col-xs-12">
-                    <i class="fa fa-fw fa-clock-o"></i>
-                    Employment histories
-                </h4>
-                {% with action='/api/bulk/employments/' icon='fa fa-fw fa-download' title='Employment histories' from_id='from9' to_id='to9' %}
-                    {% include 'camp_fin/widgets/calendar-form.html' %}
-                {% endwith %}
-                <div class="col-xs-12">
-                    <br/>
-                </div>
-            </div>
-            <br/>
         </div>
     </div>
 </div>

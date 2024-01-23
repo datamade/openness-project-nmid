@@ -1,0 +1,35 @@
+[
+{
+    "model": "pages.page",
+    "pk": 1,
+    "fields": {
+        "text": "Here is the About page! You can add text, <strong>bold text</strong>, <a href=\"#\">links</a>, and all kinds of other content here using HTML markup. Need help? Contact DataMade for assistance.",
+        "title": "About",
+        "path": "/about/",
+        "template": "about.html",
+        "blobs": []
+    }
+},
+{
+    "model": "pages.page",
+    "pk": 2,
+    "fields": {
+        "text": "Here is the Financial Disclosures page! You can add text, <strong>bold text</strong>, <a href=\"#\">links</a>, and all kinds of other content here using HTML markup. Need help? Contact DataMade for assistance.",
+        "title": "Financial Disclosures",
+        "path": "/financial-disclosures/",
+        "template": "generic.html",
+        "blobs": []
+    }
+},
+{
+    "model": "pages.page",
+    "pk": 3,
+    "fields": {
+        "text": "Here is the Lobbyists page! You can add text, <strong>bold text</strong>, <a href=\"#\">links</a>, and all kinds of other content here using HTML markup. Need help? Contact DataMade for assistance.,",
+        "title": "Lobbyists",
+        "path": "/lobbyists/",
+        "template": "generic.html",
+        "blobs": []
+    }
+}
+]

@@ -96,6 +96,46 @@ class AboutView(PagesMixin):
         return context
 
 
+class FinancialDisclosuresView(PagesMixin):
+    template_name = "generic.html"
+    page_path = "/financial-disclosures/"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        seo["title"] = "Financial Disclosures"
+        seo[
+            "site_desc"
+        ] = "Download financial disclosure data filed by elected and appointed officials in New Mexico"
+
+        context["seo"] = seo
+
+        return context
+
+
+class LobbyistsView(PagesMixin):
+    template_name = "generic.html"
+    page_path = "/lobbyists/"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        seo["title"] = "Lobbyists"
+        seo[
+            "site_desc"
+        ] = "Download contribution and expenditure data filed by lobbyists in New Mexico"
+
+        context["seo"] = seo
+
+        return context
+
+
 class DownloadView(PagesMixin):
     template_name = "downloads.html"
     page_path = "/downloads/"
