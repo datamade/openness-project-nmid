@@ -85,11 +85,16 @@ class Command(BaseCommand):
                     " ".join(
                         [
                             candidate_name.get("GivenName", ""),
-                            candidate_name.get("MiddleName", "")
-                            or candidate_name.get("MiddleInitial", ""),
+                            (
+                                candidate_name.get("MiddleName", "")
+                                or candidate_name.get("MiddleInitial", "")
+                                or candidate_name.get("Nickname", "")
+                            ),
                             candidate_name.get("Surname", ""),
-                            candidate_name.get("SuffixGenerational", "")
-                            or candidate_name.get("SuffixOther", ""),
+                            (
+                                candidate_name.get("SuffixGenerational", "")
+                                or candidate_name.get("SuffixOther", "")
+                            ),
                         ]
                     ),
                 ).strip()
@@ -118,14 +123,7 @@ class Command(BaseCommand):
                             or candidate_name.get("SuffixOther")
                         ),
                         full_name=full_name,
-                        slug=slugify(
-                            " ".join(
-                                [
-                                    candidate_name.get("GivenName", ""),
-                                    candidate_name.get("Surname", ""),
-                                ]
-                            )
-                        ),
+                        slug=slugify(full_name),
                         entity=person,
                     )
 

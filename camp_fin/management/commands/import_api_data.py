@@ -147,7 +147,10 @@ class Command(BaseCommand):
         reader = csv.DictReader(f)
 
         key_func = lambda record: (record["OrgID"], record["Report Name"])
-        sorted_records = sorted(reader, key=key_func)
+
+        sorted_records = sorted(
+            (row for row in reader if None not in key_func(row)), key=key_func
+        )
 
         expenditures = []
 
@@ -296,20 +299,24 @@ class Command(BaseCommand):
             transaction_year = self.parse_date(transaction_date).year
 
             try:
-                campaign = candidate.campaign_set.get(
-                    election_season__year=transaction_year
+                campaign = models.Campaign.objects.get(
+                    candidate=candidate, election_season__year=transaction_year
                 )
             except models.Campaign.DoesNotExist:
                 self.stderr.write(
                     f"Could not find campaign for {candidate} in {transaction_year}"
                 )
+
                 campaign = None
 
             if campaign and campaign.committee_name != record["Committee Name"]:
                 campaign.committee_name = record["Committee Name"]
                 campaign.save()
 
-            filing_kwargs = {"entity": candidate.entity, "campaign": campaign}
+            if campaign:
+                filing_kwargs = {"entity": candidate.entity, "campaign": campaign}
+            else:
+                filing_kwargs = {"entity": candidate.entity}
 
         else:
             pac = self.make_pac(record)
@@ -527,14 +534,7 @@ class Command(BaseCommand):
                     last_name=record["Candidate Last Name"] or None,
                     suffix=record["Candidate Suffix"] or None,
                     full_name=full_name,
-                    slug=slugify(
-                        " ".join(
-                            [
-                                record["Candidate First Name"],
-                                record["Candidate Last Name"],
-                            ]
-                        )
-                    ),
+                    slug=slugify(full_name),
                     entity=person,
                 )
 
