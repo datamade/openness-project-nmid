@@ -3,16 +3,20 @@ import gzip
 import os
 import re
 
+import boto3
+import probablepeople
 from django.core.management.base import BaseCommand
 from django.db.models import Max
-from django.db.utils import IntegrityError
 from django.utils.text import slugify
-
-import boto3
 from tqdm import tqdm
-import probablepeople
 
 from camp_fin import models
+
+from ._cache_get_patch import cache_patch
+
+# Monkey patch Model.objects.get with an in-memory cache to
+# speed up the script while keeping things readable.
+cache_patch()
 
 
 class Command(BaseCommand):
@@ -32,31 +36,6 @@ class Command(BaseCommand):
             )
         except TypeError:
             self._next_entity_id = 1
-
-        self._cache = {
-            "office": {
-                obj.description: obj for obj in models.Office.objects.iterator()
-            },
-            "office_type": {
-                obj.description: obj for obj in models.OfficeType.objects.iterator()
-            },
-            "political_party": {
-                obj.name: obj for obj in models.PoliticalParty.objects.iterator()
-            },
-            "district": {
-                (obj.name, obj.office.description): obj
-                for obj in models.District.objects.iterator()
-            },
-            "county": {obj.name: obj for obj in models.County.objects.iterator()},
-            "election_season": {
-                (obj.year, obj.special): obj
-                for obj in models.ElectionSeason.objects.iterator()
-            },
-            "candidate": {},
-            "entity_type": {
-                obj.description: obj for obj in models.EntityType.objects.iterator()
-            },
-        }
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -124,103 +103,77 @@ class Command(BaseCommand):
                 ).strip()
 
                 try:
-                    candidate = self.fetch_from_cache(
-                        "candidate", full_name, models.Candidate, {}, create=False
-                    )
+                    candidate = models.Candidate.objects.filter(
+                        full_name=full_name
+                    ).first()
                     candidates_linked += 1
-                except KeyError:
-                    try:
-                        candidate = models.Candidate.objects.get(full_name=full_name)
-                        self._cache["candidate"][candidate.full_name] = candidate
-                        candidates_linked += 1
 
-                    except models.Candidate.MultipleObjectsReturned:
-                        candidate = models.Candidate.objects.filter(
-                            full_name=full_name
-                        ).first()
-                        self._cache["candidate"][candidate.full_name] = candidate
-                        candidates_linked += 1
+                except models.Candidate.DoesNotExist:
+                    candidate_type = models.EntityType.objects.get(
+                        description="Candidate"
+                    )
+                    person = models.Entity.objects.create(
+                        user_id=self._next_entity_id,
+                        entity_type=candidate_type,
+                    )
 
-                    except models.Candidate.DoesNotExist:
-                        entity_type = self.fetch_from_cache(
-                            "entity_type",
-                            "Candidate",
-                            models.EntityType,
-                            {"description": "Candidate"},
-                        )
+                    candidate = models.Candidate(
+                        first_name=candidate_name.get("GivenName"),
+                        middle_name=(
+                            candidate_name.get("MiddleName")
+                            or candidate_name.get("MiddleInitial")
+                        ),
+                        last_name=candidate_name.get("Surname"),
+                        suffix=(
+                            candidate_name.get("SuffixGenerational")
+                            or candidate_name.get("SuffixOther")
+                        ),
+                        full_name=full_name,
+                        slug=slugify(
+                            " ".join(
+                                [
+                                    candidate_name.get("GivenName", ""),
+                                    candidate_name.get("Surname", ""),
+                                ]
+                            )
+                        ),
+                        entity=person,
+                    )
+                    candidate.save()
 
-                        entity = models.Entity.objects.create(
-                            user_id=self._next_entity_id,
-                            entity_type=entity_type,
-                        )
+                    self._next_entity_id += 1
 
-                        candidate = self.fetch_from_cache(
-                            "candidate",
-                            full_name,
-                            models.Candidate,
-                            dict(
-                                first_name=candidate_name.get("GivenName", None),
-                                middle_name=candidate_name.get("MiddleName", None)
-                                or candidate_name.get("MiddleInitial", None),
-                                last_name=candidate_name.get("Surname", None),
-                                suffix=candidate_name.get("SuffixGenerational", None)
-                                or candidate_name.get("SuffixOther", None),
-                                full_name=full_name,
-                                slug=slugify(
-                                    " ".join(
-                                        [
-                                            candidate_name.get("GivenName", ""),
-                                            candidate_name.get("Surname", ""),
-                                        ]
-                                    )
-                                ),
-                                entity=entity,
-                            ),
-                        )
-
-                        self._next_entity_id += 1
-
-                        candidates_created += 1
+                    candidates_created += 1
 
                 election_year = re.match(r"\d{4}", record["ElectionName"]).group(0)
 
-                election_season = self.fetch_from_cache(
-                    "election_season",
-                    (election_year, False),
-                    models.ElectionSeason,
-                    {"year": election_year, "special": False, "status_id": 0},
+                election_season, _ = models.ElectionSeason.objects.get_or_create(
+                    year=election_year, special=False, status_id=0
                 )
-                office = self.fetch_from_cache(
-                    "office",
-                    record["OfficeName"],
-                    models.Office,
-                    {"description": record["OfficeName"], "status_id": 0},
+
+                office_type, _ = models.OfficeType.objects.get_or_create(
+                    description=record["JurisdictionType"],
                 )
-                office_type = self.fetch_from_cache(
-                    "office_type",
-                    record["JurisdictionType"],
-                    models.OfficeType,
-                    {"description": record["JurisdictionType"]},
+
+                office, _ = models.Office.objects.get_or_create(
+                    description=record["OfficeName"],
+                    status_id=0,
+                    office_type=office_type,
                 )
-                political_party = self.fetch_from_cache(
-                    "political_party",
-                    record["Party"],
-                    models.PoliticalParty,
-                    {"name": record["Party"]},
+
+                political_party, _ = models.PoliticalParty.objects.get_or_create(
+                    name=record["Party"]
                 )
-                district = self.fetch_from_cache(
-                    "district",
-                    (record["District"], office.description),
-                    models.District,
-                    {"name": record["District"], "office": office, "status_id": 0},
+
+                district, _ = models.District.objects.get_or_create(
+                    name=record["District"],
+                    office=office,
+                    status_id=0,
                 )
 
                 if record["Jurisdiction"]:
-                    county = self.fetch_from_cache(
-                        "county",
-                        record["Jurisdiction"],
-                        models.County,
-                        {"name": record["Jurisdiction"]},
+                    county, _ = models.County.objects.get_or_create(
+                        name=record["Jurisdiction"]
                     )
                 else:
                     county = None
@@ -245,26 +198,3 @@ class Command(BaseCommand):
         self.stderr.write(
             f"Linked {candidates_linked} candidates with a campaign, created {candidates_created} candidates, skipped {candidates_skipped} candidates"
         )
-
-    def fetch_from_cache(
-        self, cache_entity, cache_key, model, model_kwargs, create=True
-    ):
-        try:
-            return self._cache[cache_entity][cache_key]
-        except KeyError:
-            if not create:
-                raise
-
-            deidentified_model_kwargs = {
-                k: v for k, v in model_kwargs.items() if k not in ("entity", "slug")
-            }
-
-            try:
-                obj = model.objects.get(**deidentified_model_kwargs)
-            except model.DoesNotExist:
-                obj = model.objects.create(**model_kwargs)
-            except model.MultipleObjectsReturned:
-                obj = model.objects.filter(**deidentified_model_kwargs).first()
-
-            self._cache[cache_entity][cache_key] = obj
-            return obj
