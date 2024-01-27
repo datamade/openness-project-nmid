@@ -29,16 +29,6 @@ class Command(BaseCommand):
         Data will be retrieved from S3 unless a local CSV is specified as --file
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        try:
-            self._next_entity_id = (
-                models.Entity.objects.aggregate(max_id=Max("user_id"))["max_id"] + 1
-            )
-        except TypeError:
-            self._next_entity_id = 1
-
     def add_arguments(self, parser):
         parser.add_argument(
             "--transaction-type",
@@ -120,7 +110,6 @@ class Command(BaseCommand):
 
                     models.LoanTransaction.objects.filter(filing=filing).delete()
                     models.SpecialEvent.objects.filter(filing=filing).delete()
-
                     models.Transaction.objects.filter(filing=filing).exclude(
                         transaction_type__description="Monetary Expenditure"
                     ).delete()
@@ -243,7 +232,6 @@ class Command(BaseCommand):
             )
 
             entity = models.Entity.objects.create(
-                user_id=self._next_entity_id,
                 entity_type=entity_type,
             )
 
@@ -254,8 +242,6 @@ class Command(BaseCommand):
                 contact_type=contact_type,
                 entity=entity,
             )
-
-            self._next_entity_id += 1
 
         return contact
 
@@ -299,15 +285,7 @@ class Command(BaseCommand):
             # Create PAC associated with candidate
             self.make_pac(record, entity_type="Political Committee")
 
-            candidate_type, _ = models.EntityType.objects.get_or_create(
-                description="Candidate"
-            )
-
-            person, _ = models.Entity.objects.get_or_create(
-                user_id=record["OrgID"], entity_type=candidate_type
-            )
-
-            candidate = self._get_or_create_candidate(record, person)
+            candidate = self._get_or_create_candidate(record)
 
             transaction_date = (
                 record["Transaction Date"]
@@ -318,9 +296,9 @@ class Command(BaseCommand):
             transaction_year = self.parse_date(transaction_date).year
 
             try:
-                campaign = candidate.campaign_set.filter(
+                campaign = candidate.campaign_set.get(
                     election_season__year=transaction_year
-                ).first()
+                )
             except models.Campaign.DoesNotExist:
                 self.stderr.write(
                     f"Could not find campaign for {candidate} in {transaction_year}"
@@ -331,7 +309,7 @@ class Command(BaseCommand):
                 campaign.committee_name = record["Committee Name"]
                 campaign.save()
 
-            filing_kwargs = {"entity": person, "campaign": campaign}
+            filing_kwargs = {"entity": candidate.entity, "campaign": campaign}
 
         else:
             pac = self.make_pac(record)
@@ -509,7 +487,7 @@ class Command(BaseCommand):
 
             self.stdout.write(f"Totalled {filing}")
 
-    def _get_or_create_candidate(self, record, entity):
+    def _get_or_create_candidate(self, record):
 
         candidate = None
 
@@ -532,22 +510,38 @@ class Command(BaseCommand):
                 ),
             ).strip()
 
-            candidate, _ = models.Candidate.objects.get_or_create(
-                first_name=record["Candidate First Name"] or None,
-                middle_name=record["Candidate Middle Name"] or None,
-                last_name=record["Candidate Last Name"] or None,
-                suffix=record["Candidate Suffix"] or None,
-                full_name=full_name,
-                entity=entity,
-                slug=slugify(
-                    " ".join(
-                        [
-                            record["Candidate First Name"],
-                            record["Candidate Last Name"],
-                        ]
-                    )
-                ),
-            )
+            try:
+                candidate = models.Candidate.objects.get(full_name=full_name)
+            except models.Candidate.DoesNotExist:
+                candidate_type, _ = models.EntityType.objects.get_or_create(
+                    description="Candidate"
+                )
+
+                person, _ = models.Entity.objects.get_or_create(
+                    user_id=record["OrgID"], entity_type=candidate_type
+                )
+
+                candidate = models.Candidate.objects.create(
+                    first_name=record["Candidate First Name"] or None,
+                    middle_name=record["Candidate Middle Name"] or None,
+                    last_name=record["Candidate Last Name"] or None,
+                    suffix=record["Candidate Suffix"] or None,
+                    full_name=full_name,
+                    slug=slugify(
+                        " ".join(
+                            [
+                                record["Candidate First Name"],
+                                record["Candidate Last Name"],
+                            ]
+                        )
+                    ),
+                    entity=person,
+                )
+
+            else:
+                if candidate.entity.user_id != record["OrgID"]:
+                    candidate.entity.user_id = record["OrgID"]
+                    candidate.entity.save()
 
         else:
             # Sometimes, a record says it is associated with a candidate,

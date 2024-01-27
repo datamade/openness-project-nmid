@@ -27,16 +27,6 @@ class Command(BaseCommand):
         Data will be retrieved from S3 unless a local CSV is specified as --file
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        try:
-            self._next_entity_id = (
-                models.Entity.objects.aggregate(max_id=Max("user_id"))["max_id"] + 1
-            )
-        except TypeError:
-            self._next_entity_id = 1
-
     def add_arguments(self, parser):
         parser.add_argument(
             "--file",
@@ -71,6 +61,8 @@ class Command(BaseCommand):
             candidates_skipped = 0
             campaigns = []
 
+            models.Campaign.objects.filter(election_season__year__gte=2021).delete()
+
             for record in tqdm(reader):
                 name_parts = record["CandidateName"].split(",")
 
@@ -103,21 +95,18 @@ class Command(BaseCommand):
                 ).strip()
 
                 try:
-                    candidate = models.Candidate.objects.filter(
-                        full_name=full_name
-                    ).first()
+                    candidate = models.Candidate.objects.get(full_name=full_name)
                     candidates_linked += 1
 
                 except models.Candidate.DoesNotExist:
-                    candidate_type = models.EntityType.objects.get(
+                    candidate_type, _ = models.EntityType.objects.get_or_create(
                         description="Candidate"
                     )
                     person = models.Entity.objects.create(
-                        user_id=self._next_entity_id,
                         entity_type=candidate_type,
                     )
 
-                    candidate = models.Candidate(
+                    candidate = models.Candidate.objects.create(
                         first_name=candidate_name.get("GivenName"),
                         middle_name=(
                             candidate_name.get("MiddleName")
@@ -139,9 +128,6 @@ class Command(BaseCommand):
                         ),
                         entity=person,
                     )
-                    candidate.save()
-
-                    self._next_entity_id += 1
 
                     candidates_created += 1
 
@@ -178,19 +164,17 @@ class Command(BaseCommand):
                 else:
                     county = None
 
-                campaigns.append(
-                    models.Campaign(
-                        election_season=election_season,
-                        candidate=candidate,
-                        office=office,
-                        district=district,
-                        county=county,
-                        political_party=political_party,
-                    )
+                _, created = models.Campaign.objects.get_or_create(
+                    election_season=election_season,
+                    candidate=candidate,
+                    office=office,
+                    district=district,
+                    county=county,
+                    political_party=political_party,
                 )
 
-            models.Campaign.objects.filter(election_season__year__gte=2021).delete()
-            models.Campaign.objects.bulk_create(campaigns)
+                if created:
+                    candidates_created += 1
 
         finally:
             f.close()
