@@ -5,7 +5,7 @@ from django.db.models.query import QuerySet
 
 def cache_func(func):
     @functools.wraps(func)
-    @functools.lru_cache(maxsize=None)
+    @functools.lru_cache(maxsize=1024)
     def with_cache(self, *args, **kwargs):
         return func(self, *args, **kwargs)
 
