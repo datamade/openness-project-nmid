@@ -6,17 +6,10 @@ import re
 import boto3
 import probablepeople
 from django.core.management.base import BaseCommand
-from django.db.models import Max
 from django.utils.text import slugify
 from tqdm import tqdm
 
 from camp_fin import models
-
-from ._cache_get_patch import cache_patch
-
-# Monkey patch Model.objects.get with an in-memory cache to
-# speed up the script while keeping things readable.
-cache_patch()
 
 
 class Command(BaseCommand):
@@ -59,7 +52,6 @@ class Command(BaseCommand):
             candidates_created = 0
             candidates_linked = 0
             candidates_skipped = 0
-            campaigns = []
 
             models.Campaign.objects.filter(election_season__year__gte=2021).delete()
 

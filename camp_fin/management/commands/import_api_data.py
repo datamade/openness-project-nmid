@@ -8,17 +8,11 @@ import boto3
 from dateutil.parser import ParserError, parse
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
-from django.db.models import Max, Sum
+from django.db.models import Sum
 from django.utils.text import slugify
 from tqdm import tqdm
 
 from camp_fin import models
-
-from ._cache_get_patch import cache_patch
-
-# Monkey patch Model.objects.get with an in-memory cache to
-# speed up the script while keeping things readable.
-cache_patch()
 
 
 class Command(BaseCommand):
@@ -98,8 +92,6 @@ class Command(BaseCommand):
         key_func = lambda record: (record["OrgID"], record["Report Name"])
         sorted_records = sorted(reader, key=key_func)
 
-        loans, special_events, transactions = [], [], []
-
         for filing_group, records in groupby(tqdm(sorted_records), key=key_func):
             for i, record in enumerate(records):
                 if i == 0:
@@ -117,31 +109,18 @@ class Command(BaseCommand):
                 contributor = self.make_contributor(record)
 
                 if record["Contribution Type"] == "Loans Received":
-                    loans.append(self.make_contribution(record, contributor, filing))
+                    self.make_contribution(record, contributor, filing).save()
 
                 elif record["Contribution Type"] == "Special Event":
-                    special_events.append(
-                        self.make_contribution(record, contributor, filing)
-                    )
+                    self.make_contribution(record, contributor, filing).save()
 
                 elif "Contribution" in record["Contribution Type"]:
-                    transactions.append(
-                        self.make_contribution(record, contributor, filing)
-                    )
+                    self.make_contribution(record, contributor, filing).save()
 
                 else:
                     self.stderr.write(
                         f"Could not determine contribution type from record: {record['Contribution Type']}"
                     )
-
-                if len(transactions) >= 2500:
-                    models.Transaction.objects.bulk_create(transactions)
-
-                    transactions = []
-
-        models.LoanTransaction.objects.bulk_create(loans)
-        models.SpecialEvent.objects.bulk_create(special_events)
-        models.Transaction.objects.bulk_create(transactions)
 
     def import_expenditures(self, f):
         reader = csv.DictReader(f)
@@ -151,8 +130,6 @@ class Command(BaseCommand):
         sorted_records = sorted(
             (row for row in reader if None not in key_func(row)), key=key_func
         )
-
-        expenditures = []
 
         for filing_group, records in groupby(tqdm(sorted_records), key=key_func):
             for i, record in enumerate(records):
@@ -167,13 +144,7 @@ class Command(BaseCommand):
                         transaction_type__description="Monetary Expenditure",
                     ).delete()
 
-                expenditures.append(self.make_contribution(record, None, filing))
-
-            if len(expenditures) >= 2500:
-                models.Transaction.objects.bulk_create(expenditures)
-                expenditures = []
-
-        models.Transaction.objects.bulk_create(expenditures)
+                self.make_contribution(record, None, filing).save()
 
     def make_contributor(self, record):
         state, _ = models.State.objects.get_or_create(
