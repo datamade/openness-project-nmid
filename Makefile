@@ -1,25 +1,17 @@
-.PRECIOUS : _data/raw/%.csv
 
-import/% : s3/$(AWS_STORAGE_BUCKET_NAME)/%.gz
-	python manage.py import_api_data --transaction-type $(word 1, $(subst _, , $*)) \
-		--year $(word 2, $(subst _, , $*))
+.PHONY : quarterly
+quarterly: import/offices import/CON_2020 import/EXP_2020 import/CON_2021 import/EXP_2021 import/CON_2022 import/EXP_2022 import/CON_2023 import/EXP_2023 import/CON_2024 import/EXP_2024
 
-import/local/% : _data/raw/%.csv
+.PHONY : nightly
+nightly: import/offices import/CON_2023 import/EXP_2023 import/CON_2024 import/EXP_2024
+
+import/% : _data/raw/%.csv
 	python manage.py import_api_data --transaction-type $(word 1, $(subst _, , $*)) \
 		--year $(word 2, $(subst _, , $*)) \
 		--file $<
 
-import/offices :
-	python manage.py import_office_api_data
-
-import/local/offices : _data/raw/offices.csv
+import/offices : _data/raw/offices.csv
 	python manage.py import_office_api_data --file $<
-
-s3/$(AWS_STORAGE_BUCKET_NAME)/%.gz : %.gz
-	aws s3 cp $< s3://$$AWS_STORAGE_BUCKET_NAME
-
-%.gz : _data/raw/%.csv
-	gzip -c $< > $@
 
 _data/raw/%.csv : 
 	wget --no-use-server-timestamps \
