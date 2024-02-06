@@ -75,7 +75,7 @@ class Command(BaseCommand):
             f.close()
 
         self.total_filings(options["year"])
-        call_command("import_data", "--add-aggregates")
+        call_command("aggregate_data")
 
     def parse_date(self, date_str):
         try:

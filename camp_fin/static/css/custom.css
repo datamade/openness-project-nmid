@@ -1,0 +1,474 @@
+body {
+  font-size: 16px;
+  font-family: Georgia,"Times New Roman",Times,serif;
+}
+
+table {
+    font-size: 16px;
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-weight: bold;
+}
+
+h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
+    color: #333333;
+}
+
+
+a { color: #04A5AA; }
+a:hover, a:active { color: #8C0012; }
+
+
+th a { color: #333333; }
+
+/* Party affiliation colors */
+
+tr.header.democrat {
+    background-color: #99afff;
+}
+
+tr.subrow.democrat {
+    background-color: #d0ecff !important;
+}
+
+tr.subrow.democrat > td > a {
+    color: #1c657d;
+}
+
+tr.header.republican {
+    background-color: #ff9999;
+}
+
+tr.subrow.republican {
+    background-color: #ffe0e0 !important;
+}
+
+tr.subrow.republican > td > a {
+    color: #095F87;
+}
+
+tr.header.other {
+    background-color: #bababa;
+}
+
+tr.subrow.other {
+    background-color: #fafafa !important;
+}
+
+tr.subrow.other > td > a {
+    color: #095F87;
+}
+
+.party-identifier {
+    font-weight: 600;
+}
+
+.D {
+    color: #5675e9;
+}
+
+.R {
+    color: #de5050;
+}
+
+.I {
+    color: #bababa;
+}
+
+.clickable {
+    cursor: pointer;
+}
+
+.lobbyist-stats {
+    font-size: 1.2em;
+    margin-top: 10px;
+    font-family: Helvetica,Arial,sans-serif;
+}
+
+/* =======================  *
+ * show more/less logic for *
+ * long description boxes   *
+ * =======================  */
+
+a .show-more {
+    display: none;
+}
+
+a .show-less {
+    display: inline;
+}
+
+a.collapsed .show-more {
+    display: inline;
+}
+
+a.collapsed .show-less {
+    display: none;
+}
+
+.description-text:not(.in) {
+    min-height: 7em;
+    height: 7em;
+    display: block;
+    overflow: hidden;
+    visibility: visible;
+}
+
+/* ===================== */
+
+@media screen and (max-width: 767px) {
+  body, table { font-size: 14px; }
+
+  .jumbotron p {
+    font-size: 18px;
+  }
+
+  h1 { font-size: 30px; }
+  h2 { font-size: 25px; }
+  h3 { font-size: 20px; }
+  h4 { font-size: 18px; }
+  h5 { font-size: 16px; }
+}
+
+.navbar {
+  font-size: 15px;
+  text-shadow: #333 0 1px 1px;
+  margin-bottom: 0;
+}
+
+.navbar-brand a {
+  color: #ffffff;
+  text-shadow: #333 0 1px 1px;
+  font-size: 22px;
+}
+
+.navbar-default {
+  background-color: #04A5AA;
+}
+
+.navbar-default .navbar-collapse { border: none;}
+
+.nav-pills > li.active > a,
+.nav-pills > li.active > a:hover,
+.nav-pills > li.active > a:focus {
+    background-color: #8C0012;
+}
+
+.footer {
+  border-top: 1px solid #e8e8e8;
+  background-color: #fff9ee;
+  padding-top: 15px;
+  padding-bottom: 15px;
+}
+
+
+#section-photo{
+    background-image:
+        linear-gradient(
+            rgba(0, 0, 0, 0.1),
+            rgba(0, 0, 0, 0.1)
+        ),
+        url('../images/nm-state-capitol-4.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
+    height: 350px;
+}
+#section-photo h1, #section-photo h2 a, #section-photo h3 a, #section-photo h4 a, #section-photo p{
+  color: #fff;
+  text-shadow: #333 0 1px 1px;
+}
+
+#section-photo h3 {
+  margin-top: 5px;
+}
+
+#section-intro, #section-engage{
+    line-height: 1.6em;
+}
+
+.jumbotron, .well {
+  background-color: #fff9ee;
+}
+
+.jumbotron {
+  border: 1px solid #e8e8e8;
+  border-radius: 0;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,0.05);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.05);
+}
+
+.btn-danger {
+  background-color: #8E000B;
+  border: none;
+}
+
+.btn-danger:hover, .btn-danger:hover {
+  background-color: #5b0007;
+}
+
+#net-funds-chart { height: 200px; }
+
+#date-search .form-control { width: 48%; }
+
+#date-search { margin-top: 21px; }
+
+#filter-results label {
+  font-size: 1em;
+  margin-left: 10px;
+}
+
+table#donations-list thead th, table#donations-list thead td {
+  border-bottom: 1px solid #dddddd;
+}
+
+table#donations-list.no-footer { border-bottom: 0px; }
+
+table.race-detail-table {
+    margin-bottom: 50px;
+}
+
+.datatable-table > thead > tr > th {
+    vertical-align: middle;
+}
+
+/* Override DataTable style
+table.dataTable.no-footer {
+    border-bottom: none;
+}
+*/
+
+table.dataTable thead .sorting,
+table.dataTable thead .sorting_asc,
+table.dataTable thead .sorting_desc,
+table.dataTable thead .sorting_asc_disabled,
+table.dataTable thead .sorting_desc_disabled {
+  cursor: pointer;
+  *cursor: hand;
+  background-repeat: no-repeat;
+  background-position: center right;
+}
+table.dataTable thead .sorting {
+  background-image: url("../images/sort_both.png");
+}
+table.dataTable thead .sorting_asc {
+  background-image: url("../images/sort_asc.png");
+}
+table.dataTable thead .sorting_desc {
+  background-image: url("../images/sort_desc.png");
+}
+
+.no-wrap { white-space: nowrap; }
+
+/* override bootstrap default */
+.align-middle { vertical-align: middle !important; }
+
+.green { color: #008600;}
+
+.red { color: red; }
+
+.grey { color: grey; }
+
+.big.red { font-size: 20px; }
+
+.donations-color {
+    color: #007E85;
+}
+
+.expenditures-color {
+    color: #DD0000;
+}
+
+.block {
+    height: 12px;
+    width: 12px;
+    display: inline-block;
+}
+
+.block.donations-color {
+    background-color: #007E85;
+}
+
+.block.expenditures-color {
+    background-color: #DD0000;
+}
+
+/* Styles for calendar pop-up. */
+.ui-datepicker {
+  width: 216px;
+  height: auto;
+  margin: 5px auto 0;
+  -webkit-box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, .5);
+  -moz-box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, .5);
+  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, .5);
+}
+
+.ui-datepicker table {
+  width: 100%;
+  background-color: #fff;
+}
+
+.ui-datepicker-header {
+  font-weight: bold;
+  line-height: 30px;
+}
+
+.ui-datepicker-title {
+  text-align: center;
+  background-color: #DDDDDD;
+  color: #666666;
+  font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+
+.ui-datepicker th {
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 6pt;
+  padding: 4px;
+  color: #666666;
+}
+
+.ui-datepicker tbody td {
+  text-align: center;
+  padding: 4px;
+  border-bottom: 1px solid #bbb;
+}
+
+.ui-datepicker-prev {
+    float: left;
+}
+
+.ui-datepicker-next {
+    float: right;
+    margin-right: 5px;
+}
+
+.ui-datepicker-next:after {
+    content: "";
+    border-color: rgba(0,0,0,0) rgba(0, 0, 0, 0) rgba(0, 0, 0, 0) #333;
+    border-image: none;
+    border-style: solid;
+    border-width: 9px;
+    display: block;
+    height: 0;
+    margin-top: 5px;
+    width: 0;
+}
+
+.ui-datepicker-prev:before {
+    content: "";
+    border-color: rgba(0,0,0,0) #333 rgba(0, 0, 0, 0) rgba(0, 0, 0, 0);
+    border-image: none;
+    border-style: solid;
+    border-width: 9px;
+    display: block;
+    height: 0;
+    margin-top: 5px;
+    width: 0;
+}
+
+button#btn-search { border-radius: 5px; }
+
+/* Styles for the distribution charts */
+.bar-chart {
+    width: 100%;
+    position: relative;
+    display: block;
+    margin-bottom: 28.5px;
+    height: 5px;
+    margin-top: 8px;
+}
+
+.bar-chart.last {
+    margin-bottom: 0px;
+}
+
+.bar-chart.visible {
+}
+
+.bar {
+    height: 15px;
+    display: block;
+    background-color: #df766d;
+    background-color: hsla(4.9, 55.8%, 47.1%, 0.7);
+    position: absolute;
+    margin-top: -5px;
+}
+
+.tick {
+    top: 50%;
+    margin-top: -15px;
+    background-color: #ccc;
+    width: 1px;
+    height: 34px;
+    position: absolute;
+    display: block;
+}
+
+.tick.thick {
+    width: 2px;
+}
+
+.funding-label {
+    color: white;
+    margin-top: -6px;
+    position: absolute;
+}
+
+.funding-label.dark {
+    color: inherit;
+}
+
+.total-fund-count {
+    font-size: 1.3em;
+}
+
+.breadcrumbs {
+    font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif;
+    margin-top: 15px
+}
+
+/* support reverse spin for icons */
+.fa-spin-reverse {
+  -webkit-animation: fa-spin-reverse 2s infinite linear;
+  animation: fa-spin-reverse 2s infinite linear;
+}
+@-webkit-keyframes fa-spin-reverse {
+  100% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  0% {
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+@keyframes fa-spin-reverse {
+  100% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  0% {
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+
+.alert, .btn {
+    border-radius: 5px;
+}
+
+.alert p, label {
+    font-size: 14px;
+}
+
+h4 small {
+    color: #fff;
+}
+
+#redaction-form td {
+    padding: 10px;
+}
