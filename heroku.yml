@@ -9,4 +9,4 @@ release:
     - ./scripts/release.sh
   image: web
 run:
-  web: gunicorn -t 180 --log-level debug nmid.wsgi:application
+  web: gunicorn -t 180 --log-level debug camp_fin.wsgi:application

@@ -1,14 +1,14 @@
 from collections import namedtuple
 from datetime import datetime, timedelta
 
-from django.db import models, connection
-from dateutil.rrule import rrule, MONTHLY
+from dateutil.rrule import MONTHLY, rrule
 from django.conf import settings
-from django.utils.translation import ugettext as _
+from django.db import connection, models
 from django.utils import timezone
+from django.utils.translation import ugettext as _
 
-from camp_fin.templatetags.helpers import format_money
 from camp_fin.decorators import check_date_params
+from camp_fin.templatetags.helpers import format_money
 
 
 class Candidate(models.Model):

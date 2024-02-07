@@ -11,11 +11,11 @@ class Command(BaseCommand):
     https://github.com/rdegges/django-clear-cache
     """
 
-    help = 'Fully clear your site-wide cache.'
+    help = "Fully clear your site-wide cache."
 
     def handle(self, *args, **kwargs):
         try:
             assert settings.CACHES
             cache.clear()
         except AttributeError:
-            raise CommandError('You have no cache configured!\n')
+            raise CommandError("You have no cache configured!\n")

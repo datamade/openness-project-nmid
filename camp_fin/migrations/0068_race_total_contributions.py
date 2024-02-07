@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('camp_fin', '0067_auto_20180412_0922'),
+        ("camp_fin", "0067_auto_20180412_0922"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='race',
-            name='total_contributions',
+            model_name="race",
+            name="total_contributions",
             field=models.FloatField(null=True),
         ),
     ]

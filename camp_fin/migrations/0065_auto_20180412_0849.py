@@ -8,13 +8,23 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('camp_fin', '0064_auto_20180308_1154'),
+        ("camp_fin", "0064_auto_20180308_1154"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='campaign',
-            name='race_status',
-            field=models.CharField(blank=True, choices=[('active', 'Active'), ('dropout', 'Dropped out'), ('lost_primary', 'Lost primary')], default='active', max_length=25, null=True),
+            model_name="campaign",
+            name="race_status",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("active", "Active"),
+                    ("dropout", "Dropped out"),
+                    ("lost_primary", "Lost primary"),
+                ],
+                default="active",
+                max_length=25,
+                null=True,
+            ),
         ),
     ]

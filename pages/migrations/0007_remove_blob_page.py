@@ -8,12 +8,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pages', '0006_auto_20160930_0917'),
+        ("pages", "0006_auto_20160930_0917"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='blob',
-            name='page',
+            model_name="blob",
+            name="page",
         ),
     ]

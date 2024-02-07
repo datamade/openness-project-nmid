@@ -8,13 +8,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('camp_fin', '0061_remove_campaign_note'),
+        ("camp_fin", "0061_remove_campaign_note"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='race',
-            name='dropouts',
-            field=models.ManyToManyField(blank=True, null=True, related_name='dropout_race', to='camp_fin.Campaign'),
+            model_name="race",
+            name="dropouts",
+            field=models.ManyToManyField(
+                blank=True,
+                null=True,
+                related_name="dropout_race",
+                to="camp_fin.Campaign",
+            ),
         ),
     ]

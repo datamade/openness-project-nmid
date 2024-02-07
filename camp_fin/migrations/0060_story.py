@@ -8,21 +8,32 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('camp_fin', '0059_campaign_note'),
+        ("camp_fin", "0059_campaign_note"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Story',
+            name="Story",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('link', models.URLField()),
-                ('title', models.CharField(max_length=500)),
-                ('candidate', models.ManyToManyField(blank=True, to='camp_fin.Candidate')),
-                ('race', models.ManyToManyField(blank=True, to='camp_fin.Race')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("link", models.URLField()),
+                ("title", models.CharField(max_length=500)),
+                (
+                    "candidate",
+                    models.ManyToManyField(blank=True, to="camp_fin.Candidate"),
+                ),
+                ("race", models.ManyToManyField(blank=True, to="camp_fin.Race")),
             ],
             options={
-                'verbose_name_plural': 'stories',
+                "verbose_name_plural": "stories",
             },
         ),
     ]

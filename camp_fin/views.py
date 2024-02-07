@@ -1,77 +1,75 @@
-import itertools
-from collections import namedtuple, OrderedDict
-from datetime import datetime, timedelta
-import time
 import csv
+import itertools
+import time
+from collections import OrderedDict, namedtuple
+from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
+from dateutil.rrule import MONTHLY, rrule
 from django import forms
-from django.views.generic import ListView, TemplateView, DetailView, FormView
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.http import HttpResponseNotFound, HttpResponse, StreamingHttpResponse
-from django.db import transaction, connection, connections
-from django.db.models import Max, prefetch_related_objects, Q
-from django.utils import timezone
-from django.core.urlresolvers import reverse_lazy
-from django.utils.text import slugify
 from django.conf import settings
-from django.views.decorators.clickjacking import xframe_options_exempt
-from django.views.decorators.cache import never_cache
-from django.utils.decorators import method_decorator
-from django.shortcuts import render
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
-
-from dateutil.rrule import rrule, MONTHLY
-
-from rest_framework import serializers, viewsets, filters, generics, metadata, renderers
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.core.urlresolvers import reverse_lazy
+from django.db import connection, connections, transaction
+from django.db.models import Max, Q, prefetch_related_objects
+from django.http import HttpResponse, HttpResponseNotFound, StreamingHttpResponse
+from django.shortcuts import render
+from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.utils.text import slugify
+from django.views.decorators.cache import never_cache
+from django.views.decorators.clickjacking import xframe_options_exempt
+from django.views.generic import DetailView, FormView, ListView, TemplateView
+from rest_framework import filters, generics, metadata, renderers, serializers, viewsets
 from rest_framework.response import Response
 
 from pages.models import Page
 
-from .models import (
-    Candidate,
-    Office,
-    Transaction,
-    Campaign,
-    Filing,
-    PAC,
-    LoanTransaction,
-    Race,
-    RaceGroup,
-    OfficeType,
-    Entity,
-    Lobbyist,
-    LobbyistTransaction,
-    Organization,
+from .api_parts import (
+    CandidateSearchSerializer,
+    CandidateSerializer,
+    DataTablesPagination,
+    LoanTransactionSerializer,
+    LobbyistSearchSerializer,
+    LobbyistTransactionSearchSerializer,
+    OrganizationSearchSerializer,
+    PACSearchSerializer,
+    PACSerializer,
+    SearchCSVRenderer,
+    TransactionCSVRenderer,
+    TransactionSearchSerializer,
+    TransactionSerializer,
+    TreasurerSearchSerializer,
 )
 from .base_views import (
-    PaginatedList,
-    TransactionDetail,
-    TransactionBaseViewSet,
-    TopMoneyView,
-    TopEarnersBase,
-    PagesMixin,
-    TransactionDownloadViewSet,
     Echo,
-    iterate_cursor,
     LobbyistTransactionDownloadViewSet,
+    PagesMixin,
+    PaginatedList,
+    TopEarnersBase,
+    TopMoneyView,
+    TransactionBaseViewSet,
+    TransactionDetail,
+    TransactionDownloadViewSet,
+    iterate_cursor,
 )
-from .api_parts import (
-    CandidateSerializer,
-    PACSerializer,
-    TransactionSerializer,
-    TransactionSearchSerializer,
-    CandidateSearchSerializer,
-    PACSearchSerializer,
-    LoanTransactionSerializer,
-    TreasurerSearchSerializer,
-    DataTablesPagination,
-    TransactionCSVRenderer,
-    SearchCSVRenderer,
-    LobbyistSearchSerializer,
-    OrganizationSearchSerializer,
-    LobbyistTransactionSearchSerializer,
+from .models import (
+    PAC,
+    Campaign,
+    Candidate,
+    Entity,
+    Filing,
+    LoanTransaction,
+    Lobbyist,
+    LobbyistTransaction,
+    Office,
+    OfficeType,
+    Organization,
+    Race,
+    RaceGroup,
+    Transaction,
 )
 from .templatetags.helpers import format_money, get_transaction_verb
 
@@ -268,9 +266,11 @@ class IndexView(TopEarnersBase, LobbyistContextMixin, PagesMixin):
                     FROM camp_fin_pac AS pac
                     JOIN camp_fin_filing AS filing
                       USING(entity_id)
+                    JOIN camp_fin_filingperiod ON
+                       filing.filing_period_id = camp_fin_filingperiod.id 
                     WHERE filing.date_added >= '{year}-01-01'
                       AND filing.closing_balance IS NOT NULL
-                    ORDER BY pac.id, filing.date_added desc
+                    ORDER BY pac.id, camp_fin_filingperiod.due_date desc, filing.date_added desc
                   ) AS pac
                 ) AS s
                 ORDER BY closing_balance DESC
@@ -304,18 +304,22 @@ class IndexView(TopEarnersBase, LobbyistContextMixin, PagesMixin):
                     FROM camp_fin_candidate AS candidate
                     JOIN camp_fin_filing AS filing
                       USING(entity_id)
+                    JOIN camp_fin_filingperiod ON
+                       filing.filing_period_id = camp_fin_filingperiod.id 
                     JOIN camp_fin_campaign AS campaign
                       ON filing.campaign_id = campaign.id
                     JOIN camp_fin_office AS office
                       ON campaign.office_id = office.id
-                    WHERE filing.date_added >= '{year}-01-01'
+                    JOIN camp_fin_electionseason AS electionseason
+                      ON campaign.election_season_id = electionseason.id
+                    WHERE electionseason.year = '{year}'
                       AND filing.closing_balance IS NOT NULL
-                    ORDER BY candidate.id, filing.date_added DESC
+                    ORDER BY candidate.id, camp_fin_filingperiod.due_date desc
                   ) AS candidates
                 ) AS s
                 LIMIT 10
             """.format(
-                    year=last_year
+                    year=year
                 )
             )
 
@@ -1247,7 +1251,7 @@ class CommitteeDetailBaseView(DetailView):
             context["object"]
             .entity.filing_set.filter(filing_period__exclude_from_cascading=False)
             .exclude(final__isnull=True)
-            .order_by("-date_added")
+            .order_by("-filing_period__due_date", "-date_added")
             .first()
         )
 

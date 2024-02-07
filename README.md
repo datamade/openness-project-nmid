@@ -16,7 +16,7 @@ docker-compose build
 Next, load in data and build your search index:
 
 ```bash
-docker-compose run --rm app python manage.py import_data
+docker-compose run --rm app python make nightly 
 docker-compose run --rm app python manage.py make_search_index
 ```
 

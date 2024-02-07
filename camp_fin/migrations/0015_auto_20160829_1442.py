@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('camp_fin', '0014_auto_20160829_1442'),
+        ("camp_fin", "0014_auto_20160829_1442"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='transaction',
-            name='olddb_id',
+            model_name="transaction",
+            name="olddb_id",
             field=models.IntegerField(null=True),
         ),
     ]

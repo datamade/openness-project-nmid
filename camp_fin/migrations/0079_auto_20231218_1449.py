@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('camp_fin', '0078_transaction_redact'),
+        ("camp_fin", "0078_transaction_redact"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='transaction',
-            name='redact',
+            model_name="transaction",
+            name="redact",
             field=models.NullBooleanField(default=False),
         ),
     ]

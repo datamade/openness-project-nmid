@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('camp_fin', '0079_auto_20231218_1449'),
+        ("camp_fin", "0079_auto_20231218_1449"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='district',
-            name='name',
+            model_name="district",
+            name="name",
             field=models.CharField(max_length=256),
         ),
     ]

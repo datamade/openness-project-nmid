@@ -8,12 +8,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('camp_fin', '0020_auto_20160829_1519'),
+        ("camp_fin", "0020_auto_20160829_1519"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='office',
-            name='order',
+            model_name="office",
+            name="order",
         ),
     ]

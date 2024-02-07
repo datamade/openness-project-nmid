@@ -8,18 +8,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('camp_fin', '0071_auto_20180920_1244'),
+        ("camp_fin", "0071_auto_20180920_1244"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='filing',
-            name='final',
+            model_name="filing",
+            name="final",
             field=models.NullBooleanField(),
         ),
         migrations.AlterField(
-            model_name='filing',
-            name='no_activity',
+            model_name="filing",
+            name="no_activity",
             field=models.NullBooleanField(),
         ),
     ]

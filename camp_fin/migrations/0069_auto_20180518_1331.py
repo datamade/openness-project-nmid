@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('camp_fin', '0068_race_total_contributions'),
+        ("camp_fin", "0068_race_total_contributions"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='filing',
-            name='regenerate',
+            model_name="filing",
+            name="regenerate",
             field=models.CharField(max_length=3, null=True),
         ),
     ]

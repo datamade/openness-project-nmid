@@ -1,43 +1,43 @@
-from django.urls import resolve, reverse
-from django.test import TestCase
-from django.db.utils import IntegrityError
 from django.contrib.auth.models import User
 from django.core.management import call_command
+from django.db.utils import IntegrityError
 from django.http import HttpRequest, QueryDict
+from django.test import TestCase
+from django.urls import resolve, reverse
 
-from camp_fin.models import (
-    Race,
-    Campaign,
-    Filing,
-    Division,
-    District,
-    Office,
-    OfficeType,
-    Candidate,
-    ElectionSeason,
-    Status,
-    Entity,
-    PoliticalParty,
-    FilingPeriod,
-    FilingType,
-    County,
-    Transaction,
-    LoanTransaction,
-    TransactionType,
-    LoanTransactionType,
-    Loan,
-)
-from camp_fin.views import (
-    RacesView,
-    RaceDetail,
-    LobbyistList,
-    LobbyistDetail,
-    LobbyistTransactionList,
-)
 from camp_fin.base_views import TransactionDownloadViewSet
 from camp_fin.decorators import check_date_params
+from camp_fin.models import (
+    Campaign,
+    Candidate,
+    County,
+    District,
+    Division,
+    ElectionSeason,
+    Entity,
+    Filing,
+    FilingPeriod,
+    FilingType,
+    Loan,
+    LoanTransaction,
+    LoanTransactionType,
+    Office,
+    OfficeType,
+    PoliticalParty,
+    Race,
+    Status,
+    Transaction,
+    TransactionType,
+)
 from camp_fin.templatetags.helpers import format_years
-from camp_fin.tests.conftest import StatelessTestCase, DatabaseTestCase
+from camp_fin.tests.conftest import DatabaseTestCase, StatelessTestCase
+from camp_fin.views import (
+    LobbyistDetail,
+    LobbyistList,
+    LobbyistTransactionList,
+    RaceDetail,
+    RacesView,
+)
 
 
 class TestRace(StatelessTestCase):

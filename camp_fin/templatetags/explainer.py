@@ -5,13 +5,14 @@ from django.utils.translation import ugettext_lazy as _
 
 register = template.Library()
 
-@register.inclusion_tag('camp_fin/widgets/explainer.html')
-def explainer(text=''):
-    '''
+
+@register.inclusion_tag("camp_fin/widgets/explainer.html")
+def explainer(text=""):
+    """
     Create a help widget to explain a piece of text.
-    '''
+    """
     context = {}
 
-    context['explainer_text'] = text
+    context["explainer_text"] = text
 
     return context

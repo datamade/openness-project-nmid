@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('camp_fin', '0047_auto_20160915_1044'),
+        ("camp_fin", "0047_auto_20160915_1044"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='filing',
-            name='edited',
+            model_name="filing",
+            name="edited",
             field=models.CharField(max_length=3),
         ),
     ]

@@ -5,7 +5,7 @@ services:
     # Don't restart the service when the command exits
     restart: "no"
     environment:
-      DJANGO_SETTINGS_MODULE: nmid.settings
+      DJANGO_SETTINGS_MODULE: camp_fin.settings
       DJANGO_SECRET_KEY: reallysupersecret
       # Disable manifest storage for testing
       DJANGO_STATICFILES_STORAGE: django.contrib.staticfiles.storage.StaticFilesStorage
