@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('camp_fin', '0080_auto_20231221_1031'),
+        ("camp_fin", "0080_auto_20231221_1031"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='politicalparty',
-            name='name',
+            model_name="politicalparty",
+            name="name",
             field=models.CharField(max_length=256),
         ),
     ]

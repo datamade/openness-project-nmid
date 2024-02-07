@@ -8,17 +8,25 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('camp_fin', '0062_race_dropouts'),
+        ("camp_fin", "0062_race_dropouts"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='race',
-            name='dropouts',
+            model_name="race",
+            name="dropouts",
         ),
         migrations.AddField(
-            model_name='campaign',
-            name='race_status',
-            field=models.CharField(choices=[('active', 'Active'), ('dropout', 'Dropped out'), ('lost_primary', 'Lost primary')], default='active', max_length=25),
+            model_name="campaign",
+            name="race_status",
+            field=models.CharField(
+                choices=[
+                    ("active", "Active"),
+                    ("dropout", "Dropped out"),
+                    ("lost_primary", "Lost primary"),
+                ],
+                default="active",
+                max_length=25,
+            ),
         ),
     ]

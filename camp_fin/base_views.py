@@ -1,27 +1,25 @@
+import csv
 from collections import namedtuple
 from datetime import datetime
-import csv
 
-from django.views.generic import ListView, DetailView, TemplateView
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.http import JsonResponse, StreamingHttpResponse
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import connection
+from django.http import JsonResponse, StreamingHttpResponse
 from django.utils import timezone
 from django.utils.text import slugify
-from django.core.exceptions import ObjectDoesNotExist
-
-from rest_framework import viewsets, filters, renderers
+from django.views.generic import DetailView, ListView, TemplateView
+from rest_framework import filters, renderers, viewsets
 from rest_framework.response import Response
 
-from camp_fin.models import Transaction, Candidate, PAC, Entity, Lobbyist, Organization
 from camp_fin.api_parts import (
-    TransactionSerializer,
-    TopMoneySerializer,
-    SearchCSVRenderer,
     DataTablesPagination,
+    SearchCSVRenderer,
+    TopMoneySerializer,
     TransactionCSVRenderer,
+    TransactionSerializer,
 )
-
+from camp_fin.models import PAC, Candidate, Entity, Lobbyist, Organization, Transaction
 from pages.models import Page
 
 TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))

@@ -1,10 +1,9 @@
-from django.contrib import admin
+from ckeditor.widgets import CKEditorWidget
 from django import forms
+from django.contrib import admin
 from django.db import models
 
-from ckeditor.widgets import CKEditorWidget
-
-from .models import Page, Blob
+from .models import Blob, Page
 
 
 class PageAdmin(admin.ModelAdmin):

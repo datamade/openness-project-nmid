@@ -1,7 +1,6 @@
 import sqlalchemy as sa
-
-from django.core.management.base import BaseCommand
 from django.conf import settings
+from django.core.management.base import BaseCommand
 
 DB_CONN = "postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}"
 
@@ -18,7 +17,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.connection = engine.connect()
 
-        self.makeLoanBalanceView(aggregates_only=True)
+        self.makeLoanBalanceView()
         self.makeTransactionAggregates()
         self.stdout.write(self.style.SUCCESS("Aggregates complete!"))
 

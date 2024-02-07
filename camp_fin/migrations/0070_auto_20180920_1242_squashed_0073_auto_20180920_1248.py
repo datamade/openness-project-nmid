@@ -7,51 +7,56 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    replaces = [('camp_fin', '0070_auto_20180920_1242'), ('camp_fin', '0071_auto_20180920_1244'), ('camp_fin', '0072_auto_20180920_1246'), ('camp_fin', '0073_auto_20180920_1248')]
+    replaces = [
+        ("camp_fin", "0070_auto_20180920_1242"),
+        ("camp_fin", "0071_auto_20180920_1244"),
+        ("camp_fin", "0072_auto_20180920_1246"),
+        ("camp_fin", "0073_auto_20180920_1248"),
+    ]
 
     dependencies = [
-        ('camp_fin', '0069_auto_20180518_1331'),
+        ("camp_fin", "0069_auto_20180518_1331"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='filing',
-            name='closing_balance',
+            model_name="filing",
+            name="closing_balance",
             field=models.FloatField(null=True),
         ),
         migrations.AlterField(
-            model_name='filing',
-            name='opening_balance',
+            model_name="filing",
+            name="opening_balance",
             field=models.FloatField(null=True),
         ),
         migrations.AlterField(
-            model_name='filing',
-            name='total_contributions',
+            model_name="filing",
+            name="total_contributions",
             field=models.FloatField(null=True),
         ),
         migrations.AlterField(
-            model_name='filing',
-            name='total_expenditures',
+            model_name="filing",
+            name="total_expenditures",
             field=models.FloatField(null=True),
         ),
         migrations.AlterField(
-            model_name='filing',
-            name='date_closed',
+            model_name="filing",
+            name="date_closed",
             field=models.DateTimeField(null=True),
         ),
         migrations.AlterField(
-            model_name='filing',
-            name='final',
+            model_name="filing",
+            name="final",
             field=models.NullBooleanField(),
         ),
         migrations.AlterField(
-            model_name='filing',
-            name='no_activity',
+            model_name="filing",
+            name="no_activity",
             field=models.NullBooleanField(),
         ),
         migrations.AlterField(
-            model_name='filing',
-            name='edited',
+            model_name="filing",
+            name="edited",
             field=models.CharField(max_length=3, null=True),
         ),
     ]

@@ -8,26 +8,26 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pages', '0004_blob'),
+        ("pages", "0004_blob"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='blob',
-            options={'verbose_name': 'Chunk', 'verbose_name_plural': 'Content chunks'},
+            name="blob",
+            options={"verbose_name": "Chunk", "verbose_name_plural": "Content chunks"},
         ),
         migrations.AlterModelOptions(
-            name='page',
-            options={'verbose_name': 'Content', 'verbose_name_plural': 'Page content'},
+            name="page",
+            options={"verbose_name": "Content", "verbose_name_plural": "Page content"},
         ),
         migrations.AddField(
-            model_name='page',
-            name='blobs',
-            field=models.ManyToManyField(to='pages.Blob'),
+            model_name="page",
+            name="blobs",
+            field=models.ManyToManyField(to="pages.Blob"),
         ),
         migrations.AlterField(
-            model_name='blob',
-            name='context_name',
+            model_name="blob",
+            name="context_name",
             field=models.CharField(max_length=255),
         ),
     ]

@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('camp_fin', '0065_auto_20180412_0849'),
+        ("camp_fin", "0065_auto_20180412_0849"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='filingperiod',
-            name='reminder_sent_status',
+            model_name="filingperiod",
+            name="reminder_sent_status",
             field=models.IntegerField(blank=True, null=True),
         ),
     ]

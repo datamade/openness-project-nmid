@@ -8,32 +8,32 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('camp_fin', '0035_auto_20160906_1505'),
+        ("camp_fin", "0035_auto_20160906_1505"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='candidate',
-            name='full_name',
-            field=models.CharField(default='', max_length=500),
+            model_name="candidate",
+            name="full_name",
+            field=models.CharField(default="", max_length=500),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='loan',
-            name='full_name',
-            field=models.CharField(default='', max_length=500),
+            model_name="loan",
+            name="full_name",
+            field=models.CharField(default="", max_length=500),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='transaction',
-            name='full_name',
-            field=models.CharField(default='', max_length=500),
+            model_name="transaction",
+            name="full_name",
+            field=models.CharField(default="", max_length=500),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='treasurer',
-            name='full_name',
-            field=models.CharField(default='', max_length=500),
+            model_name="treasurer",
+            name="full_name",
+            field=models.CharField(default="", max_length=500),
             preserve_default=False,
         ),
     ]

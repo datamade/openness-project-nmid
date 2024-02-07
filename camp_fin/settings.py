@@ -15,7 +15,6 @@ from datetime import datetime
 
 import dj_database_url
 
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -40,6 +39,7 @@ ALLOWED_HOSTS = allowed_hosts.split(",") if allowed_hosts else []
 if os.getenv("SENTRY_DSN"):
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
+
     sentry_sdk.init(
         dsn=os.environ["SENTRY_DSN"],
         before_send=before_send,

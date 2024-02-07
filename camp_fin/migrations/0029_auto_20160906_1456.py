@@ -8,13 +8,13 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('camp_fin', '0028_auto_20160906_1230'),
+        ("camp_fin", "0028_auto_20160906_1230"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='loan',
-            old_name='oldb_id',
-            new_name='olddb_id',
+            model_name="loan",
+            old_name="oldb_id",
+            new_name="olddb_id",
         ),
     ]

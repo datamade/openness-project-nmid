@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('camp_fin', '0044_auto_20160909_1116'),
+        ("camp_fin", "0044_auto_20160909_1116"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='transaction',
-            name='amount',
+            model_name="transaction",
+            name="amount",
             field=models.FloatField(db_index=True),
         ),
     ]

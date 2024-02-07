@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('camp_fin', '0058_auto_20180108_1031'),
+        ("camp_fin", "0058_auto_20180108_1031"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='campaign',
-            name='note',
+            model_name="campaign",
+            name="note",
             field=models.TextField(blank=True, null=True),
         ),
     ]

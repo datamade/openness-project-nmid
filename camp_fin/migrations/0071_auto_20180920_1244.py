@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('camp_fin', '0070_auto_20180920_1242'),
+        ("camp_fin", "0070_auto_20180920_1242"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='filing',
-            name='date_closed',
+            model_name="filing",
+            name="date_closed",
             field=models.DateTimeField(null=True),
         ),
     ]

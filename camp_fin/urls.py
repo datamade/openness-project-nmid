@@ -13,44 +13,42 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-from django.conf.urls import url, include
+from django.conf.urls import handler404, handler500, include, url
 from django.contrib import admin
-from django.conf.urls import handler404, handler500
-
 from rest_framework import routers
 
 from camp_fin.views import (
-    IndexView,
-    CandidateList,
+    AboutView,
     CandidateDetail,
-    ContributionViewSet,
-    ExpenditureViewSet,
-    ContributionDownloadViewSet,
-    ExpenditureDownloadViewSet,
-    TransactionViewSet,
-    TopDonorsView,
-    TopExpensesView,
-    CommitteeList,
+    CandidateList,
     CommitteeDetail,
+    CommitteeList,
     ContributionDetail,
+    ContributionDownloadViewSet,
+    ContributionViewSet,
+    DonationsView,
     DownloadView,
     ExpenditureDetail,
-    SearchView,
-    SearchAPIView,
-    DonationsView,
+    ExpenditureDownloadViewSet,
+    ExpenditureViewSet,
+    FinancialDisclosuresView,
+    IndexView,
     LoanViewSet,
+    LobbyistsView,
+    OrganizationDetail,
+    OrganizationList,
+    SearchAPIView,
+    SearchView,
+    TopDonorsView,
     TopEarnersView,
     TopEarnersWidgetView,
-    AboutView,
-    FinancialDisclosuresView,
-    LobbyistsView,
-    flush_cache,
+    TopExpensesView,
+    TransactionViewSet,
     bulk_candidates,
     bulk_committees,
     bulk_employers,
     bulk_employments,
-    OrganizationList,
-    OrganizationDetail,
+    flush_cache,
 )
 
 router = routers.DefaultRouter()

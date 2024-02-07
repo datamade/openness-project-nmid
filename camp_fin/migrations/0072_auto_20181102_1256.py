@@ -8,33 +8,33 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('camp_fin', '0071_auto_20181102_1251'),
+        ("camp_fin", "0071_auto_20181102_1251"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='lobbyistreport',
-            name='entertainment_expenses',
+            model_name="lobbyistreport",
+            name="entertainment_expenses",
             field=models.FloatField(null=True),
         ),
         migrations.AlterField(
-            model_name='lobbyistreport',
-            name='gift_expenses',
+            model_name="lobbyistreport",
+            name="gift_expenses",
             field=models.FloatField(null=True),
         ),
         migrations.AlterField(
-            model_name='lobbyistreport',
-            name='meal_beverage_expenses',
+            model_name="lobbyistreport",
+            name="meal_beverage_expenses",
             field=models.FloatField(null=True),
         ),
         migrations.AlterField(
-            model_name='lobbyistreport',
-            name='other_expenses',
+            model_name="lobbyistreport",
+            name="other_expenses",
             field=models.FloatField(null=True),
         ),
         migrations.AlterField(
-            model_name='lobbyistreport',
-            name='special_event_expenses',
+            model_name="lobbyistreport",
+            name="special_event_expenses",
             field=models.FloatField(null=True),
         ),
     ]
