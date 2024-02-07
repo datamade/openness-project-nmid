@@ -37,6 +37,9 @@ The data import scripts for this app will automatically recognize if you have da
 docker-compose run --rm app python manage.py flush_camp_fin
 ```
 
+## ETL
+The nightly and quarterly ETL scripts are run in a separate repo, through github actions: https://github.com/datamade/nmid-scrapers
+
 ## Errors / Bugs
 
 If something is not behaving intuitively, it is a bug, and should be reported.
