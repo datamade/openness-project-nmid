@@ -10,8 +10,8 @@ import/% : _data/raw/%.csv
 		--year $(word 2, $(subst _, , $*)) \
 		--file $<
 
-import/offices : _data/raw/offices.csv
-	python manage.py import_office_api_data --file $<
+import/offices :
+	python manage.py import_office_api_data
 
 _data/raw/%.csv : 
 	wget --no-use-server-timestamps \
