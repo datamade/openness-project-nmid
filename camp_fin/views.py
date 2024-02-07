@@ -1,47 +1,39 @@
 import csv
-import itertools
-import time
 from collections import OrderedDict, namedtuple
 from datetime import datetime, timedelta
-from urllib.parse import urlencode
 
-from dateutil.rrule import MONTHLY, rrule
 from django import forms
 from django.conf import settings
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.core.urlresolvers import reverse_lazy
-from django.db import connection, connections, transaction
-from django.db.models import Max, Q, prefetch_related_objects
-from django.http import HttpResponse, HttpResponseNotFound, StreamingHttpResponse
+from django.db import connection
+from django.db.models import Max, Q
+from django.http import HttpResponse, StreamingHttpResponse
 from django.shortcuts import render
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.text import slugify
 from django.views.decorators.cache import never_cache
 from django.views.decorators.clickjacking import xframe_options_exempt
-from django.views.generic import DetailView, FormView, ListView, TemplateView
-from rest_framework import filters, generics, metadata, renderers, serializers, viewsets
+from django.views.generic import DetailView, FormView, TemplateView
+from rest_framework import renderers, viewsets
 from rest_framework.response import Response
 
 from pages.models import Page
 
 from .api_parts import (
     CandidateSearchSerializer,
-    CandidateSerializer,
     DataTablesPagination,
     LoanTransactionSerializer,
     LobbyistSearchSerializer,
     LobbyistTransactionSearchSerializer,
     OrganizationSearchSerializer,
     PACSearchSerializer,
-    PACSerializer,
     SearchCSVRenderer,
     TransactionCSVRenderer,
     TransactionSearchSerializer,
     TransactionSerializer,
-    TreasurerSearchSerializer,
 )
 from .base_views import (
     Echo,
@@ -60,15 +52,12 @@ from .models import (
     Campaign,
     Candidate,
     Entity,
-    Filing,
     LoanTransaction,
     Lobbyist,
     LobbyistTransaction,
-    Office,
     OfficeType,
     Organization,
     Race,
-    RaceGroup,
     Transaction,
 )
 from .templatetags.helpers import format_money, get_transaction_verb
@@ -105,9 +94,10 @@ class FinancialDisclosuresView(PagesMixin):
         seo.update(settings.SITE_META)
 
         seo["title"] = "Financial Disclosures"
-        seo[
-            "site_desc"
-        ] = "Download financial disclosure data filed by elected and appointed officials in New Mexico"
+        seo["site_desc"] = (
+            "Download financial disclosure data filed by elected and "
+            "appointed officials in New Mexico"
+        )
 
         context["seo"] = seo
 
@@ -125,9 +115,10 @@ class LobbyistsView(PagesMixin):
         seo.update(settings.SITE_META)
 
         seo["title"] = "Lobbyists"
-        seo[
-            "site_desc"
-        ] = "Download contribution and expenditure data filed by lobbyists in New Mexico"
+        seo["site_desc"] = (
+            "Download contribution and expenditure data filed by lobbyists "
+            "in New Mexico"
+        )
 
         context["seo"] = seo
 
@@ -267,7 +258,7 @@ class IndexView(TopEarnersBase, LobbyistContextMixin, PagesMixin):
                     JOIN camp_fin_filing AS filing
                       USING(entity_id)
                     JOIN camp_fin_filingperiod ON
-                       filing.filing_period_id = camp_fin_filingperiod.id 
+                       filing.filing_period_id = camp_fin_filingperiod.id
                     WHERE filing.date_added >= '{year}-01-01'
                       AND filing.closing_balance IS NOT NULL
                     ORDER BY pac.id, camp_fin_filingperiod.due_date desc, filing.date_added desc
@@ -305,7 +296,7 @@ class IndexView(TopEarnersBase, LobbyistContextMixin, PagesMixin):
                     JOIN camp_fin_filing AS filing
                       USING(entity_id)
                     JOIN camp_fin_filingperiod ON
-                       filing.filing_period_id = camp_fin_filingperiod.id 
+                       filing.filing_period_id = camp_fin_filingperiod.id
                     JOIN camp_fin_campaign AS campaign
                       ON filing.campaign_id = campaign.id
                     JOIN camp_fin_office AS office
@@ -1614,7 +1605,6 @@ class SearchAPIView(viewsets.ViewSet):
     def list(self, request):
         table_names = request.GET.getlist("table_name")
         term = request.GET.get("term")
-        datatype = request.GET.get("datatype")
 
         limit = request.GET.get("limit", 50)
         offset = request.GET.get("offset", 0)
@@ -1671,9 +1661,7 @@ class SearchAPIView(viewsets.ViewSet):
                         AND filing.date_added >= '2010-01-01'
                      ORDER BY pac.id
                     ) AS s
-                """.format(
-                    table
-                )
+                """
 
             if table == "candidate":
                 query = """
@@ -1709,9 +1697,7 @@ class SearchAPIView(viewsets.ViewSet):
                         AND campaign.date_added >= '2010-01-01'
                       ORDER BY candidate.id, election.year DESC
                     ) AS s
-                """.format(
-                    table
-                )
+                """
 
             if table == "contribution":
                 query = """
