@@ -24,7 +24,6 @@ class Command(BaseCommand):
 
     def makeTransactionAggregates(self):
         for interval in ["day", "week", "month"]:
-            with connection
             try:
                 self.executeTransaction(
                     """

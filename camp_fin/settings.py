@@ -38,6 +38,8 @@ ALLOWED_HOSTS = allowed_hosts.split(",") if allowed_hosts else []
 
 # Configure Sentry for error logging
 if os.getenv("SENTRY_DSN"):
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
     sentry_sdk.init(
         dsn=os.environ["SENTRY_DSN"],
         before_send=before_send,
@@ -48,7 +50,6 @@ if os.getenv("SENTRY_DSN"):
 # Application definition
 
 INSTALLED_APPS = [
-    "django_pdb",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -61,7 +62,6 @@ INSTALLED_APPS = [
     "camp_fin.apps.CampFinConfig",
     "pages.apps.PagesConfig",
     "ckeditor",
-    "raven.contrib.django.raven_compat",
 ]
 
 MIDDLEWARE = [
