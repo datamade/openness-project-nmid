@@ -37,7 +37,7 @@ class Command(BaseCommand):
             "--file",
             dest="file",
             help="Absolute path of CSV file to import",
-            required=False,
+            required=True,
         )
 
     def handle(self, *args, **options):
