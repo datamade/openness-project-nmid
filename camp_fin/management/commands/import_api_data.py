@@ -89,7 +89,9 @@ class Command(BaseCommand):
     def import_contributions(self, f):
         reader = csv.DictReader(f)
 
-        key_func = lambda record: (record["OrgID"], record["Report Name"])
+        def key_func(record):
+            return (record["OrgID"], record["Report Name"])
+
         sorted_records = sorted(reader, key=key_func)
 
         for filing_group, records in groupby(tqdm(sorted_records), key=key_func):
@@ -125,7 +127,8 @@ class Command(BaseCommand):
     def import_expenditures(self, f):
         reader = csv.DictReader(f)
 
-        key_func = lambda record: (record["OrgID"], record["Report Name"])
+        def key_func(record):
+            return (record["OrgID"], record["Report Name"])
 
         sorted_records = sorted(
             (row for row in reader if None not in key_func(row)), key=key_func
@@ -152,7 +155,10 @@ class Command(BaseCommand):
         )
 
         address, _ = models.Address.objects.get_or_create(
-            street=f"{record['Contributor Address Line 1']}{' ' + record['Contributor Address Line 2'] if record['Contributor Address Line 2'] else ''}",
+            street=(
+                f"{record['Contributor Address Line 1']}"
+                f"{' ' + record['Contributor Address Line 2'] if record['Contributor Address Line 2'] else ''}"
+            ),
             city=record["Contributor City"],
             state=state,
             zipcode=record["Contributor Zip Code"],
@@ -259,7 +265,7 @@ class Command(BaseCommand):
             # Create PAC associated with candidate
             self.make_pac(record, entity_type="Political Committee")
 
-            candidate = self._get_or_create_candidate(record)
+            candidate = self._get_candidate(record)
 
             transaction_date = (
                 record["Transaction Date"]
@@ -324,7 +330,10 @@ class Command(BaseCommand):
     def make_contribution(self, record, contributor, filing):
         if contributor:
             address_kwargs = dict(
-                address=f"{record['Contributor Address Line 1']}{' ' + record['Contributor Address Line 2'] if record['Contributor Address Line 2'] else ''}",
+                address=(
+                    f"{record['Contributor Address Line 1']}"
+                    f"{' ' + record['Contributor Address Line 2'] if record['Contributor Address Line 2'] else ''}"
+                ),
                 city=record["Contributor City"],
                 state=record["Contributor State"],
                 zipcode=record["Contributor Zip Code"],
@@ -399,7 +408,10 @@ class Command(BaseCommand):
 
         else:
             address_kwargs = dict(
-                address=f"{record['Payee Address 1']}{' ' + record['Payee Address 2'] if record['Payee Address 2'] else ''}",
+                address=(
+                    f"{record['Payee Address 1']}"
+                    f"{' ' + record['Payee Address 2'] if record['Payee Address 2'] else ''}"
+                ),
                 city=record["Payee City"],
                 state=record["Payee State"],
                 zipcode=record["Payee Zip Code"],
@@ -465,81 +477,51 @@ class Command(BaseCommand):
 
             self.stdout.write(f"Totalled {filing}")
 
-    def _get_or_create_candidate(self, record):
+    def _get_candidate(self, record):
 
-        candidate = None
+        try:
+            candidate = models.Candidate.objects.get(entity__user_id=record["OrgID"])
 
-        if any(
-            [
-                record["Candidate First Name"],
-                record["Candidate Last Name"],
-            ]
-        ):
-            full_name = re.sub(
-                r"\s{2,}",
-                " ",
-                " ".join(
-                    [
-                        record["Candidate First Name"],
-                        record["Candidate Middle Name"],
-                        record["Candidate Last Name"],
-                        record["Candidate Suffix"],
-                    ]
-                ),
-            ).strip()
+            if any(
+                [
+                    record["Candidate First Name"],
+                    record["Candidate Last Name"],
+                ]
+            ):
+                full_name = re.sub(
+                    r"\s{2,}",
+                    " ",
+                    " ".join(
+                        [
+                            record["Candidate First Name"],
+                            record["Candidate Middle Name"],
+                            record["Candidate Last Name"],
+                            record["Candidate Suffix"],
+                        ]
+                    ),
+                ).strip()
 
-            try:
-                candidate = models.Candidate.objects.get(full_name=full_name)
-            except models.Candidate.DoesNotExist:
-                candidate_type, _ = models.EntityType.objects.get_or_create(
-                    description="Candidate"
+                candidate.full_name = full_name
+                candidate.slug = slugify(full_name)
+                candidate.first_name = record["Candidate First Name"]
+                candidate.middle_name = record["Candidate Middle Name"]
+                candidate.last_name = record["Candidate Last Name"]
+                candidate.suffix = record["Candidate Suffix"]
+                candidate.save()
+
+        except models.Candidate.DoesNotExist:
+            self.stdout.write(
+                self.style.ERROR(
+                    f"Could not find candidate associated with committee {record['Committee Name']}. Skipping..."
                 )
-
-                person, _ = models.Entity.objects.get_or_create(
-                    user_id=record["OrgID"], entity_type=candidate_type
+            )
+            raise ValueError
+        except models.Candidate.MultipleObjectsReturned:
+            self.stdout.write(
+                self.style.ERROR(
+                    f"Found more than one candidate associated with committee {record['Committee Name']}. Skipping..."
                 )
-
-                candidate = models.Candidate.objects.create(
-                    first_name=record["Candidate First Name"] or None,
-                    middle_name=record["Candidate Middle Name"] or None,
-                    last_name=record["Candidate Last Name"] or None,
-                    suffix=record["Candidate Suffix"] or None,
-                    full_name=full_name,
-                    slug=slugify(full_name),
-                    entity=person,
-                )
-
-            else:
-                if candidate.entity.user_id != record["OrgID"]:
-                    candidate.entity.user_id = record["OrgID"]
-                    candidate.entity.save()
-
-        else:
-            # Sometimes, a record says it is associated with a candidate,
-            # but a candidate name is not provided. This block attempts to
-            # look up the candidate based on committee name. If we cannot
-            # identify one candidate, we skip the record.
-            try:
-                candidate = (
-                    models.Candidate.objects.filter(
-                        campaign__committee_name=record["Committee Name"]
-                    )
-                    .distinct()
-                    .get()
-                )
-            except models.Candidate.DoesNotExist:
-                self.stdout.write(
-                    self.style.ERROR(
-                        f"Could not find candidate associated with committee {record['Committee Name']}. Skipping..."
-                    )
-                )
-                raise ValueError
-            except models.Candidate.MultipleObjectsReturned:
-                self.stdout.write(
-                    self.style.ERROR(
-                        f"Found more than one candidate associated with committee {record['Committee Name']}. Skipping..."
-                    )
-                )
-                raise ValueError
+            )
+            raise ValueError
 
         return candidate

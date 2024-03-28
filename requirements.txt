@@ -15,4 +15,3 @@ dj-database-url
 whitenoise
 tqdm
 boto3
-probablepeople
