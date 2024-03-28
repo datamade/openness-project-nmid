@@ -1,6 +1,6 @@
 import csv
+import datetime
 from collections import OrderedDict, namedtuple
-from datetime import datetime, timedelta
 
 from django import forms
 from django.conf import settings
@@ -52,6 +52,7 @@ from .models import (
     Campaign,
     Candidate,
     Entity,
+    Filing,
     LoanTransaction,
     Lobbyist,
     LobbyistTransaction,
@@ -62,7 +63,7 @@ from .models import (
 )
 from .templatetags.helpers import format_money, get_transaction_verb
 
-TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
+TWENTY_TEN = timezone.make_aware(datetime.datetime(2010, 1, 1))
 
 
 class AboutView(PagesMixin):
@@ -133,8 +134,10 @@ class DownloadView(PagesMixin):
         context = super().get_context_data(**kwargs)
 
         # Download defaults
-        context["start_date"] = datetime.strptime("2010-01-01", "%Y-%m-%d").date()
-        context["end_date"] = datetime.today().date()
+        context["start_date"] = datetime.datetime.strptime(
+            "2010-01-01", "%Y-%m-%d"
+        ).date()
+        context["end_date"] = datetime.datetime.today().date()
 
         seo = {}
         seo.update(settings.SITE_META)
@@ -196,131 +199,41 @@ class IndexView(TopEarnersBase, LobbyistContextMixin, PagesMixin):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        year = settings.ELECTION_YEAR
-        last_year = str(int(settings.ELECTION_YEAR) - 1)
+        year = int(settings.ELECTION_YEAR)
 
-        context["year"], context["last_year"] = year, last_year
+        most_recent_filings = (
+            Filing.objects.filter(
+                closing_balance__isnull=False,
+                filing_period__due_date__gte=datetime.date(year, 1, 1),
+            )
+            .order_by("entity_id", "-filing_period__due_date", "-date_added")
+            .distinct("entity_id")
+        )
 
-        with connection.cursor() as cursor:
-            # Largest donations
-            cursor.execute(
-                """
-                SELECT
-                  o.*,
-                  tt.description AS transaction_type,
-                  CASE WHEN
-                    pac.name IS NULL OR TRIM(pac.name) = ''
-                  THEN
-                    candidate.full_name
-                  ELSE pac.name
-                  END AS transaction_subject,
-                  pac.slug AS pac_slug,
-                  candidate.slug AS candidate_slug
-                FROM camp_fin_transaction AS o
-                JOIN camp_fin_transactiontype AS tt
-                  ON o.transaction_type_id = tt.id
-                JOIN camp_fin_filing AS filing
-                  ON o.filing_id = filing.id
-                JOIN camp_fin_entity AS entity
-                  ON filing.entity_id = entity.id
-                LEFT JOIN camp_fin_pac AS pac
-                  ON entity.id = pac.entity_id
-                LEFT JOIN camp_fin_candidate AS candidate
-                  ON entity.id = candidate.entity_id
-                WHERE tt.contribution = TRUE
-                  AND o.received_date >= '{year}-01-01'
-                  AND company_name NOT ILIKE '%public election fund%'
-                  AND company_name NOT ILIKE '%department of finance%'
-                ORDER BY o.amount DESC
-                LIMIT 10
-            """.format(
-                    year=last_year
+        # filter top filings to PACs
+        context["top_pac_filings"] = (
+            Filing.objects.filter(
+                id__in=most_recent_filings.filter(entity__pac__isnull=False)
+            )
+            .prefetch_related("filing_period")
+            .prefetch_related("entity__pac_set")
+            .order_by("-closing_balance")[:10]
+        )
+
+        # filter top filings to candidates who had a campaign in the right
+        # election year
+        context["top_candidate_filings"] = (
+            Filing.objects.filter(
+                id__in=most_recent_filings.filter(
+                    entity__candidate__isnull=False,
+                    campaign__election_season__year=year,
                 )
             )
-
-            columns = [c[0] for c in cursor.description]
-            transaction_tuple = namedtuple("Transaction", columns)
-            transaction_objects = [transaction_tuple(*r) for r in cursor]
-
-            # Committees
-            cursor.execute(
-                """
-                SELECT * FROM (
-                  SELECT
-                    DENSE_RANK() OVER (ORDER BY closing_balance DESC) AS rank,
-                    pac.*
-                  FROM (
-                    SELECT DISTINCT ON (pac.id)
-                      pac.*,
-                      filing.closing_balance,
-                      filing.date_added AS filing_date
-                    FROM camp_fin_pac AS pac
-                    JOIN camp_fin_filing AS filing
-                      USING(entity_id)
-                    JOIN camp_fin_filingperiod ON
-                       filing.filing_period_id = camp_fin_filingperiod.id
-                    WHERE filing.date_added >= '{year}-01-01'
-                      AND filing.closing_balance IS NOT NULL
-                    ORDER BY pac.id, camp_fin_filingperiod.due_date desc, filing.date_added desc
-                  ) AS pac
-                ) AS s
-                ORDER BY closing_balance DESC
-                LIMIT 10
-            """.format(
-                    year=last_year
-                )
-            )
-
-            columns = [c[0] for c in cursor.description]
-            pac_tuple = namedtuple("PAC", columns)
-            pac_objects = [pac_tuple(*r) for r in cursor]
-
-            # Top candidates
-            cursor.execute(
-                """
-                SELECT * FROM (
-                  SELECT
-                    DENSE_RANK() OVER (ORDER BY closing_balance DESC) AS rank,
-                    candidates.*
-                  FROM (
-                    SELECT DISTINCT ON (candidate.id)
-                      candidate.*,
-                      campaign.committee_name,
-                      campaign.county_id,
-                      campaign.district_id,
-                      campaign.division_id,
-                      office.description AS office_name,
-                      filing.closing_balance,
-                      filing.date_last_amended
-                    FROM camp_fin_candidate AS candidate
-                    JOIN camp_fin_filing AS filing
-                      USING(entity_id)
-                    JOIN camp_fin_filingperiod ON
-                       filing.filing_period_id = camp_fin_filingperiod.id
-                    JOIN camp_fin_campaign AS campaign
-                      ON filing.campaign_id = campaign.id
-                    JOIN camp_fin_office AS office
-                      ON campaign.office_id = office.id
-                    JOIN camp_fin_electionseason AS electionseason
-                      ON campaign.election_season_id = electionseason.id
-                    WHERE electionseason.year = '{year}'
-                      AND filing.closing_balance IS NOT NULL
-                    ORDER BY candidate.id, camp_fin_filingperiod.due_date desc
-                  ) AS candidates
-                ) AS s
-                LIMIT 10
-            """.format(
-                    year=year
-                )
-            )
-
-            columns = [c[0] for c in cursor.description]
-            candidate_tuple = namedtuple("Candidate", columns)
-            candidate_objects = [candidate_tuple(*r) for r in cursor]
-
-        context["transaction_objects"] = transaction_objects
-        context["pac_objects"] = pac_objects
-        context["candidate_objects"] = candidate_objects
+            .prefetch_related("filing_period")
+            .prefetch_related("entity__candidate_set")
+            .prefetch_related("campaign__office")
+            .order_by("-closing_balance")[:10]
+        )
 
         return context
 
@@ -578,17 +491,23 @@ class DonationsView(PaginatedList):
             end_date_str = self.request.GET.get("to")
 
             if start_date_str and end_date_str:
-                self.start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-                self.end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+                self.start_date = datetime.datetime.strptime(
+                    start_date_str, "%Y-%m-%d"
+                ).date()
+                self.end_date = datetime.datetime.strptime(
+                    end_date_str, "%Y-%m-%d"
+                ).date()
 
             elif start_date_str and not end_date_str:
-                start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+                start_date = datetime.datetime.strptime(
+                    start_date_str, "%Y-%m-%d"
+                ).date()
                 self.start_date = start_date
-                self.end_date = start_date + timedelta(days=1)
+                self.end_date = start_date + datetime.timedelta(days=1)
 
             elif not start_date_str and end_date_str:
-                end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-                self.start_date = end_date - timedelta(days=1)
+                end_date = datetime.datetime.strptime(end_date_str, "%Y-%m-%d").date()
+                self.start_date = end_date - datetime.timedelta(days=1)
                 self.end_date = end_date
 
             else:

@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 """
 
 import os
-from datetime import datetime
 
 import dj_database_url
 
@@ -42,7 +41,6 @@ if os.getenv("SENTRY_DSN"):
 
     sentry_sdk.init(
         dsn=os.environ["SENTRY_DSN"],
-        before_send=before_send,
         integrations=[DjangoIntegration()],
     )
 

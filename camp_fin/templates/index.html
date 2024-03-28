@@ -5,125 +5,129 @@
 {% load humanize %}
 
 {% block title %}
-Keep an eye on money in New Mexico politics
+  Keep an eye on money in New Mexico politics
 {% endblock %}
 
 {% block home_page_splash %}
- <div class="container-fluid" id="section-photo">
+  <div class="container-fluid" id="section-photo">
     <br /><br /><br /><br />
     <div class="row">
-        <div class='col-sm-9 col-sm-offset-1'>
+      <div class='col-sm-9 col-sm-offset-1'>
 
-            <h1>Keep an eye on money in New Mexico politics</h1>
+        <h1>Keep an eye on money in New Mexico politics</h1>
 
-            <form action='/search' method='GET'>
-                <div class="input-group input-group-lg">
-                    <input type="text" class="form-control" placeholder="Search for names of candidates, committees and donors in New Mexico" name="term">
-                    <input type='hidden' name='table_name' value='candidate' />
-                    <input type='hidden' name='table_name' value='pac' />
-                    <input type='hidden' name='table_name' value='treasurer' />
-                    <input type='hidden' name='table_name' value='contribution' />
-                    <input type='hidden' name='table_name' value='expenditure' />
-                    <input type='hidden' name='table_name' value='organization' />
-                    <span class="input-group-btn">
-                        <button class="btn btn-default" type="submit"><i class='fa fa-search'></i> <span class='hidden-sm hidden-xs'>Search</span></button>
-                    </span>
-                </div>
-            </form>
+        <form action='/search' method='GET'>
+          <div class="input-group input-group-lg">
+            <input type="text" class="form-control" placeholder="Search for names of candidates, committees and donors in New Mexico" name="term">
+            <input type='hidden' name='table_name' value='candidate' />
+            <input type='hidden' name='table_name' value='pac' />
+            <input type='hidden' name='table_name' value='treasurer' />
+            <input type='hidden' name='table_name' value='contribution' />
+            <input type='hidden' name='table_name' value='expenditure' />
+            <input type='hidden' name='table_name' value='organization' />
+            <span class="input-group-btn">
+              <button class="btn btn-default" type="submit"><i class='fa fa-search'></i> <span class='hidden-sm hidden-xs'>Search</span></button>
+            </span>
+          </div>
+        </form>
 
+      </div>
+
+      <div class='col-sm-2 visible-lg-inline visible-md-inline'>
+        <p class='text-center'>Brought to you by</p>
+        <a href='http://nmindepth.com' target='_blank'><img src="{% static 'images/nmid-logo-square.png' %}" style='height:115px; padding-bottom: 5px;' class='img-responsive center-block' /></a>
+
+        <div class='text-center'>
+          <a href='http://nmindepth.us6.list-manage2.com/subscribe?u=1d2ab093d81b992e50978b363&id=9294743d38' target='_blank' class='btn btn-sm btn-default'><i class='fa fa-envelope'></i> Get updates</a>
         </div>
-
-        <div class='col-sm-2 visible-lg-inline visible-md-inline'>
-            <p class='text-center'>Brought to you by</p>
-            <a href='http://nmindepth.com' target='_blank'><img src="{% static 'images/nmid-logo-square.png' %}" style='height:115px; padding-bottom: 5px;' class='img-responsive center-block' /></a>
-
-            <div class='text-center'>
-                <a href='http://nmindepth.us6.list-manage2.com/subscribe?u=1d2ab093d81b992e50978b363&id=9294743d38' target='_blank' class='btn btn-sm btn-default'><i class='fa fa-envelope'></i> Get updates</a>
-            </div>
-        </div>
+      </div>
     </div>
 
 
-</div>
+  </div>
 
 {% endblock %}
 
 
 {% block full_content %}
 
-<div class="row">
+  <div class="row">
     <div class="col-sm-12">
-        <br />
-        {{ page.text|safe }}
+      <br />
+      {{ page.text|safe }}
     </div>
-</div>
-<div class='row'>
+  </div>
+  <div class='row'>
     <div class='col-sm-12'>
 
-        <h2><a href='/candidates/'><i class='fa fa-user'></i> Top candidates</a></h2>
-        {{ home_page_top_candidates|safe }}
-        <table class='table table-striped'>
-            <thead>
-                <tr>
-                    <th>Rank</th>
-                    <th>Candidate</th>
-                    <th class='hidden-sm hidden-xs'>Office</th>
-                    <th class='hidden-sm hidden-xs'>Committee</th>
-                    <th class='text-right no-wrap'>Cash on hand {{ sort_order|get_sort_icon|safe }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for candidate in candidate_objects %}
-                <tr>
-                    <td>{{ candidate.rank }}</td>
-                    <td><a href="{% url 'candidate-detail' candidate.slug %}">{{ candidate.full_name }}</a></td>
-                    <td class='hidden-sm hidden-xs'>{{ candidate.office_name }} {{ candidate.office_type }}</td>
-                    <td class='hidden-sm hidden-xs'>{{ candidate.committee_name|default_if_none:"" }}</td>
-                    <td class='text-right'>
-                        <span class='hidden-sm hidden-xs'>{{ candidate.closing_balance|format_money }}</span>
-                        <span class='visible-sm-block visible-xs-block'>{{ candidate.closing_balance|format_money_short }}</span>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
+      <h2><a href='/candidates/'><i class='fa fa-user'></i> Top candidates</a></h2>
+      {{ home_page_top_candidates|safe }}
+      <table class='table table-striped'>
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Candidate</th>
+            <th class='hidden-sm hidden-xs'>Office</th>
+            <th class='hidden-sm hidden-xs'>Committee</th>
+            <th class='text-right no-wrap'>Cash on hand {{ sort_order|get_sort_icon|safe }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for filing in top_candidate_filings %}
+            {% with candidate=filing.entity.candidate_set.get %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td><a href="{% url 'candidate-detail' candidate.slug %}">{{ candidate.full_name }}</a></td>
+                <td class='hidden-sm  hidden-xs'>{{ filing.campaign.office.description }} </td>
+                <td class='hidden-sm hidden-xs'>{{ filing.campaign.committee_name|default_if_none:"" }}</td>
+                <td class='text-right'>
+                  <span class='hidden-sm hidden-xs'>{{ filing.closing_balance|format_money }}</span>
+                  <span class='visible-sm-block visible-xs-block'>{{ filing.closing_balance|format_money_short }}</span>
+                </td>
+              </tr>
+            {% endwith %}
+          {% endfor %}
+        </tbody>
 
-        </table>
+      </table>
 
-        <p><a href='/candidates/' class='btn btn-danger'><i class='fa fa-user'></i> Browse candidates ></a></p><br /><br />
+      <p><a href='/candidates/' class='btn btn-danger'><i class='fa fa-user'></i> Browse candidates ></a></p><br /><br />
 
-        <h2><a href='/committees/'><i class='fa fa-group'></i> Top Committees</a></h2>
-        {{ home_page_committees|safe }}
-        <table class='table table-striped'>
-            <thead>
-                <tr>
-                    <th>Rank</th>
-                    <th>PAC</th>
-                    <th class='hidden-sm hidden-xs'>Latest report</th>
-                    <th class='text-right no-wrap'>Cash on hand {{ sort_order|get_sort_icon|safe }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for pac in pac_objects %}
-                <tr>
-                    <td>{{ pac.rank }}</td>
-                    <td><a href="{% url 'committee-detail' pac.slug %}">{{ pac.name }}</a></td>
-                    <td class='hidden-sm hidden-xs'>{{ pac.filing_date | date:'M j, Y'}}</td>
-                    <td class='text-right'>
-                        <span class='hidden-sm hidden-xs'>{{ pac.closing_balance|format_money }}</span>
-                        <span class='visible-sm-block visible-xs-block'>{{ pac.closing_balance|format_money_short }}</span>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
+      <h2><a href='/committees/'><i class='fa fa-group'></i> Top Committees</a></h2>
+      {{ home_page_committees|safe }}
+      <table class='table table-striped'>
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>PAC</th>
+            <th class='hidden-sm hidden-xs'>Latest report</th>
+            <th class='text-right no-wrap'>Cash on hand {{ sort_order|get_sort_icon|safe }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for filing in top_pac_filings %}
+            {% with pac=filing.entity.pac_set.first %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td><a href="{% url 'committee-detail' pac.slug %}">{{ pac.name }}</a></td>
+                <td class='hidden-sm hidden-xs'>{{ filing.filing_period.filing_date | date:'M j, Y'}}</td>
+                <td class='text-right'>
+                  <span class='hidden-sm hidden-xs'>{{ filing.closing_balance|format_money }}</span>
+                  <span class='visible-sm-block visible-xs-block'>{{ filing.closing_balance|format_money_short }}</span>
+                </td>
+              </tr>
+            {% endwith %}
+          {% endfor %}
+        </tbody>
 
-        </table>
+      </table>
 
-        <p><a href='/committees/' class='btn btn-danger'><i class='fa fa-group'></i> Browse committees ></a></p><br /><br />
+      <p><a href='/committees/' class='btn btn-danger'><i class='fa fa-group'></i> Browse committees ></a></p><br /><br />
 
-        {% if home_page_about %}
-            <h2><a href='/about/'><i class='fa fa-fw fa-info-circle'></i> About</a></h2>
-            {{ home_page_about|safe }}
-        {% endif %}
+      {% if home_page_about %}
+        <h2><a href='/about/'><i class='fa fa-fw fa-info-circle'></i> About</a></h2>
+        {{ home_page_about|safe }}
+      {% endif %}
     </div>
-</div>
+  </div>
 {% endblock %}
