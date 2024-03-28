@@ -1,10 +1,7 @@
 import csv
-import gzip
-import os
 import re
 from itertools import groupby
 
-import boto3
 from dateutil.parser import ParserError, parse
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
@@ -47,32 +44,13 @@ class Command(BaseCommand):
         if options["transaction_type"] not in ("EXP", "CON"):
             raise ValueError("Transaction type must be one of: EXP, CON")
 
-        if options["file"]:
-            f = open(options["file"], "r")
+        with open(options["file"]) as f:
 
-        else:
-            s3 = boto3.client("s3")
-
-            resource_name = f"{options['transaction_type']}_{options['year']}.gz"
-
-            with open(resource_name, "wb") as download_location:
-                s3.download_fileobj(
-                    os.getenv("AWS_STORAGE_BUCKET_NAME", "openness-project-nmid"),
-                    resource_name,
-                    download_location,
-                )
-
-            f = gzip.open(resource_name, "rt")
-
-        try:
             if options["transaction_type"] == "CON":
                 self.import_contributions(f)
 
             elif options["transaction_type"] == "EXP":
                 self.import_expenditures(f)
-
-        finally:
-            f.close()
 
         self.total_filings(options["year"])
         call_command("aggregate_data")
