@@ -1,5 +1,4 @@
 FROM python:3.6
-
 LABEL maintainer "DataMade <info@datamade.us>"
 
 RUN apt-get update && \
@@ -16,6 +15,12 @@ WORKDIR /app
 
 COPY ./requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
+
+RUN wget https://github.com/BurntSushi/xsv/releases/download/0.13.0/xsv-0.13.0-x86_64-unknown-linux-musl.tar.gz && \
+    tar xvfz xsv-0.13.0-x86_64-unknown-linux-musl.tar.gz && \
+    rm xsv-0.13.0-x86_64-unknown-linux-musl.tar.gz && \
+    mv xsv /usr/local/bin
+
 
 COPY . /app
 

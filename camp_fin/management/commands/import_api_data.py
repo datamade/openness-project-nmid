@@ -70,9 +70,7 @@ class Command(BaseCommand):
         def key_func(record):
             return (record["OrgID"], record["Report Name"])
 
-        sorted_records = sorted(reader, key=key_func)
-
-        for filing_group, records in groupby(tqdm(sorted_records), key=key_func):
+        for filing_group, records in groupby(tqdm(reader), key=key_func):
             for i, record in enumerate(records):
                 if i == 0:
                     try:
@@ -108,11 +106,7 @@ class Command(BaseCommand):
         def key_func(record):
             return (record["OrgID"], record["Report Name"])
 
-        sorted_records = sorted(
-            (row for row in reader if None not in key_func(row)), key=key_func
-        )
-
-        for filing_group, records in groupby(tqdm(sorted_records), key=key_func):
+        for filing_group, records in groupby(tqdm(reader), key=key_func):
             for i, record in enumerate(records):
                 if i == 0:
                     try:

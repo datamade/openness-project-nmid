@@ -5,7 +5,8 @@ quarterly: import/candidates import/CON_2020 import/EXP_2020 import/CON_2021 imp
 .PHONY : nightly
 nightly: import/candidates import/CON_2023 import/EXP_2023 import/CON_2024 import/EXP_2024
 
-import/% : _data/raw/%.csv
+
+import/% : _data/sorted/%.csv
 	python manage.py import_api_data --transaction-type $(word 1, $(subst _, , $*)) \
 		--year $(word 2, $(subst _, , $*)) \
 		--file $<
@@ -15,6 +16,9 @@ import/candidates : _data/raw/candidate_committees.csv
 
 _data/raw/candidate_committees.csv :
 	wget --no-use-server-timestamps -O $@ "https://openness-project-nmid.s3.amazonaws.com/candidate_committees.csv"
+
+_data/sorted/%.csv : _data/raw/%.csv
+	xsv fixlengths $< | xsv sort -s OrgID,"Report Name" > $@
 
 _data/raw/CON_%.csv :
 	wget --no-use-server-timestamps \
