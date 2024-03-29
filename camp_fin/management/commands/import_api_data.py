@@ -58,7 +58,7 @@ class Command(BaseCommand):
     def parse_date(self, date_str):
         try:
             return parse(date_str).date()
-        except ParserError:
+        except (ParserError, TypeError):
             self.stderr.write(
                 self.style.ERROR(f"Could not parse date from string '{date_str}'")
             )
