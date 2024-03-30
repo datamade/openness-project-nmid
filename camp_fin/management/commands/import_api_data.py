@@ -6,6 +6,7 @@ from dateutil.parser import ParserError, parse
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db.models import Sum
+from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 from tqdm import tqdm
 
@@ -210,7 +211,7 @@ class Command(BaseCommand):
         pac, _ = models.PAC.objects.get_or_create(
             name=record["Committee Name"],
             entity=entity,
-            slug=slugify(record["Committee Name"]),
+            slug=f'{slugify(record["Committee Name"])}-{get_random_string(5)}',
         )
 
         return pac
@@ -474,7 +475,7 @@ class Command(BaseCommand):
                 ).strip()
 
                 candidate.full_name = full_name
-                candidate.slug = slugify(full_name)
+                candidate.slug = f"{slugify(full_name)}-{get_random_string(5)}"
                 candidate.first_name = record["Candidate First Name"]
                 candidate.middle_name = record["Candidate Middle Name"]
                 candidate.last_name = record["Candidate Last Name"]

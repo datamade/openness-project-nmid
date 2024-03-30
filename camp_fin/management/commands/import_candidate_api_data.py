@@ -2,6 +2,7 @@ import csv
 import re
 
 from django.core.management.base import BaseCommand
+from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 from tqdm import tqdm
 
@@ -53,7 +54,7 @@ class Command(BaseCommand):
 
                     candidate = models.Candidate.objects.create(
                         full_name=record["CandidateName"],
-                        slug=slugify(record["CandidateName"]),
+                        slug=f'{slugify(record["CandidateName"])}-{get_random_string(5)}',
                         entity=person,
                     )
 
