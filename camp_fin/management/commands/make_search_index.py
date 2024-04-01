@@ -1,4 +1,6 @@
-from django.core.management.base import BaseCommand, CommandError
+import os
+
+from django.core.management.base import BaseCommand
 from django.db import connection, transaction
 
 
@@ -126,18 +128,6 @@ class Command(BaseCommand):
 
         vector = "concat_ws(' ', {})".format(", ".join(index_fields))
 
-        populate_anonymous = """
-            UPDATE camp_fin_transactions SET
-              search_name = to_tsvector('english', 'Anonymous')
-            WHERE COALESCE(TRIM(concat_ws(' ',
-                                          company_name,
-                                          name_prefix,
-                                          first_name,
-                                          middle_name,
-                                          last_name,
-                                          suffix)), '') = ''
-        """
-
         with transaction.atomic():
             cursor = connection.cursor()
             cursor.execute(self.drop_vector.format("transaction"))
@@ -156,7 +146,10 @@ class Command(BaseCommand):
                 self.create_trigger.format("transaction", ",".join(index_fields))
             )
 
-            with open("data/anonymous_trigger.sql") as f:
+            this_dir = os.path.abspath(os.path.dirname(__file__))
+            file_path = os.path.join(this_dir, "sql", "anonymous_trigger.sql")
+
+            with open(file_path) as f:
                 anonymous_trigger = f.read()
 
             cursor.execute(anonymous_trigger)
