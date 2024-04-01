@@ -39,7 +39,7 @@
       "text": "Here is the Support Page! You can add text, <strong>bold text</strong>, <a href=\"#\">links</a>, and all kinds of other content here using HTML markup. Need help? Contact DataMade for assistance.,",
       "title": "Support",
       "path": "/support/",
-      "template": "generic.html",
+      "template": "support.html",
       "blobs": []
     }
   }
