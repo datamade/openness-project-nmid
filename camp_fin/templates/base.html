@@ -2,7 +2,7 @@
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
 
     {% include 'partials/seo.html' %}
 
@@ -34,133 +34,135 @@
     <meta name="msapplication-wide310x150logo" content="{% static 'images/favicon/mstile-310x150.png' %}" />
     <meta name="msapplication-square310x310logo" content="{% static 'images/favicon/mstile-310x310.png' %}" />
 
-</head>
-<body>
+  </head>
+  <body>
 
     <nav class="navbar navbar-default" role="navigation">
-        <div class="container-fluid">
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-                  <span class="sr-only">Toggle navigation</span>
-                  <span class="icon-bar"></span>
-                  <span class="icon-bar"></span>
-                  <span class="icon-bar"></span>
-                </button>
-                <span class="navbar-brand">
-                  <a href="/">
-                    <i class='fa fa-circle-o-notch'></i>
-                    The Openness Project
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <span class="navbar-brand">
+            <a href="/">
+              <i class='fa fa-circle-o-notch'></i>
+              The Openness Project
+            </a>
+          </span>
+        </div>
+        <div class="collapse navbar-collapse pull-right">
+          <ul class="nav navbar-nav">
+            <li>
+              <a href="{% url 'index' %}"><i class='fa fa-home'></i> Home</a>
+            </li>
+            <li>
+              <a href="{% url 'search' %}"><i class='fa fa-search'></i> Search</a>
+            </li>
+            <li>
+              <a href="{% url 'donations' %}"><i class='fa fa-dollar'></i> Contributions</a>
+            </li>
+            <li>
+              <li class="dropdown">
+                <a href="#" class="dropdown-toggle"
+                  data-toggle="dropdown"
+                  role="button"
+                  aria-haspopup="true"
+                  aria-expanded="false">
+                  <i class='fa fa-users'></i>
+                  Campaigns
+                  <span class="caret">
                   </a>
-                </span>
-              </div>
-            <div class="collapse navbar-collapse pull-right">
-                <ul class="nav navbar-nav">
+                  <ul class="dropdown-menu">
                     <li>
-                        <a href="{% url 'index' %}"><i class='fa fa-home'></i> Home</a>
-                    </li>
-                    <li>
-                        <a href="{% url 'search' %}"><i class='fa fa-search'></i> Search</a>
+                      <a href="{% url 'candidate-list' %}">
+                        <i class='fa fa-user'></i>
+                        People
+                      </a>
                     </li>
                     <li>
-                        <a href="{% url 'donations' %}"><i class='fa fa-dollar'></i> Donations</a>
+                      <a href="{% url 'committee-list' %}">
+                        <i class='fa fa-group'></i>
+                        Committees
+                      </a>
                     </li>
-                    <li class="dropdown">
-                        <a href="#" class="dropdown-toggle"
-                                    data-toggle="dropdown"
-                                    role="button"
-                                    aria-haspopup="true"
-                                    aria-expanded="false">
-                            <i class='fa fa-users'></i>
-                            People
-                            <span class="caret">
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li>
-                                <a href="{% url 'candidate-list' %}">
-                                    <i class='fa fa-user'></i>
-                                    Candidates
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{% url 'committee-list' %}">
-                                    <i class='fa fa-group'></i>
-                                    Committees
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    <li class="dropdown">
-                        <a href="#" class="dropdown-toggle"
-                                    data-toggle="dropdown"
-                                    role="button"
-                                    aria-haspopup="true"
-                                    aria-expanded="false">
-                            <i class='fa fa-download'></i>
-                            Data downloads
-                            <span class="caret">
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li>
-                                <a href="{% url 'downloads' %}"></i> Campaign finance</a>
-                            </li>
-                            <li>
-                                <a href="{% url 'financial-disclosures' %}"></i> Financial disclosures</a>
-                            </li>
-                            <li>
-                                <a href="{% url 'lobbyists' %}"></i> Lobbyists</a>
-                            </li>
-                        </ul>
+                  </ul>
+                </li>
+                <li class="dropdown">
+                  <a href="#" class="dropdown-toggle"
+                    data-toggle="dropdown"
+                    role="button"
+                    aria-haspopup="true"
+                    aria-expanded="false">
+                    <i class='fa fa-download'></i>
+                    Data downloads
+                    <span class="caret">
+                    </a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a href="{% url 'downloads' %}"></i> Campaign finance</a>
                     </li>
                     <li>
-                        <a href="{% url 'about' %}"><i class='fa fa-info-circle'></i> About</a>
-                    </li>
+                      -                                <a href="{% url 'financial-disclosures' %}"></i> Financial disclosures</a>
+                    -                            </li>
                 </ul>
-            </div>
+              </li>
+              <li>
+                <a href="{% url 'about' %}"><i class='fa fa-info-circle'></i> About</a>
+              </li>
+              <li>
+                <a href="{% url 'support' %}"><i class='fa fa-gift'></i> Support</a>
+              </li>
+
+            </ul>
+          </div>
         </div>
-    </nav>
+      </nav>
 
-    {% block home_page_splash %}
-    {% endblock %}
+      {% block home_page_splash %}
+      {% endblock %}
 
-    <div class="container">
-    {% block full_content %}
-    {% endblock %}
-    </div>
+      <div class="container">
+        {% block full_content %}
+        {% endblock %}
+      </div>
 
-    <div class='footer'>
+      <div class='footer'>
         <div class="container">
-            <div class='row'>
-                <div class='col-sm-4'>
-                    <p>
-                        Brought to you by<br />
-                        <a href='http://nmindepth.com/' target='_blank'><img src="{% static 'images/nmid-logo.png' %}" alt='New Mexico In Depth' style='height: 40px;' title='New Mexico In Depth' class='img-responsive'/></a>
-                    </p>
-                    <p>Website built by <a href='https://datamade.us'>DataMade</a></p>
-                </div>
-                <div class='col-sm-8'>
-                    <p>Stay up to date on all of New Mexico In Depth's Openness Project reporting and updates to this site.</p>
-
-                    <p>
-                        <a href='http://nmindepth.us6.list-manage2.com/subscribe?u=1d2ab093d81b992e50978b363&id=9294743d38' class='btn btn-danger' target='_blank'><i class='fa fa-envelope'></i> Get our news in your email box</a>
-                        <a href='https://www.facebook.com/NMInDepth' class='btn btn-danger' target='_blank'><i class='fa fa-facebook-official'></i> Follow us on Facebook</a>
-                    </p>
-
-                    <p>Data last updated from the <a href='https://www.cfis.state.nm.us/' target='_blank'>New Mexico Secretary of State</a> on {{ LAST_UPDATED }}</p>
-                </div>
+          <div class='row'>
+            <div class='col-sm-4'>
+              <p>
+                Brought to you by<br />
+                <a href='http://nmindepth.com/' target='_blank'><img src="{% static 'images/nmid-logo.png' %}" alt='New Mexico In Depth' style='height: 40px;' title='New Mexico In Depth' class='img-responsive'/></a>
+              </p>
+              <p>Website built by <a href='https://datamade.us'>DataMade</a></p>
             </div>
+            <div class='col-sm-8'>
+              <p>Stay up to date on all of New Mexico In Depth's Openness Project reporting and updates to this site.</p>
+
+              <p>
+                <a href='http://nmindepth.us6.list-manage2.com/subscribe?u=1d2ab093d81b992e50978b363&id=9294743d38' class='btn btn-danger' target='_blank'><i class='fa fa-envelope'></i> Get our news in your email box</a>
+                <a href='https://www.facebook.com/NMInDepth' class='btn btn-danger' target='_blank'><i class='fa fa-facebook-official'></i> Follow us on Facebook</a>
+              </p>
+
+              <p>Data last updated from the <a href='https://www.cfis.state.nm.us/' target='_blank'>New Mexico Secretary of State</a> on {{ LAST_UPDATED }}</p>
+            </div>
+          </div>
         </div>
-    </div>
+      </div>
 
-    <script src="{% static 'js/jquery-1.10.1.min.js' %}"></script>
-    <script src="{% static 'js/bootstrap.min.js' %}"></script>
-    <script src="{% static 'js/initpopovers.js' %}"></script>
-    {% block js_templates %}{% endblock %}
-    {% block extra_js %}{% endblock %}
+      <script src="{% static 'js/jquery-1.10.1.min.js' %}"></script>
+      <script src="{% static 'js/bootstrap.min.js' %}"></script>
+      <script src="{% static 'js/initpopovers.js' %}"></script>
+      {% block js_templates %}{% endblock %}
+      {% block extra_js %}{% endblock %}
 
-    <script>
+      <script>
         var analyticsTrackingCode = 'UA-85036377-1';
-    </script>
-    <script src="{% static 'js/analytics_lib.js' %}"></script>
+      </script>
+      <script src="{% static 'js/analytics_lib.js' %}"></script>
 
-</body>
-</html>
+    </body>
+  </html>
