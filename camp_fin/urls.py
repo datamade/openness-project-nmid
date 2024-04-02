@@ -39,7 +39,6 @@ from camp_fin.views import (
     OrganizationList,
     SearchAPIView,
     SearchView,
-    SupportView,
     TopDonorsView,
     TopEarnersView,
     TopEarnersWidgetView,
@@ -74,7 +73,6 @@ urlpatterns = [
     url(r"^admin/", admin.site.urls),
     url(r"^$", IndexView.as_view(), name="index"),
     url(r"^about/$", AboutView.as_view(), name="about"),
-    url(r"^support/$", SupportView.as_view(), name="support"),
     url(
         r"^financial-disclosures/$",
         FinancialDisclosuresView.as_view(),

@@ -84,24 +84,6 @@ class AboutView(PagesMixin):
         return context
 
 
-class SupportView(PagesMixin):
-    template_name = "support.html"
-    page_path = "/support/"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        seo = {}
-        seo.update(settings.SITE_META)
-
-        seo["title"] = "Support"
-        seo["site_desc"] = "How to Support New Mexico In Depth's Openness Project"
-
-        context["seo"] = seo
-
-        return context
-
-
 class FinancialDisclosuresView(PagesMixin):
     template_name = "generic.html"
     page_path = "/financial-disclosures/"
