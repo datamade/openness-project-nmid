@@ -31,7 +31,6 @@ class Command(BaseCommand):
 
             candidates_created = 0
             candidates_linked = 0
-            candidates_skipped = 0
 
             models.Campaign.objects.filter(election_season__year__gte=2021).delete()
 
@@ -105,5 +104,4 @@ class Command(BaseCommand):
         self.stderr.write(
             f"Linked {candidates_linked} candidates with a campaign, "
             f"created {candidates_created} candidates"
-            f"skipped {candidates_skipped} candidates"
         )

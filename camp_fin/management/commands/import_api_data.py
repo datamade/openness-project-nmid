@@ -198,24 +198,6 @@ class Command(BaseCommand):
 
         return contact
 
-    def make_pac(self, record, entity_type=None):
-
-        entity_type, _ = models.EntityType.objects.get_or_create(
-            description=entity_type or record["Report Entity Type"]
-        )
-
-        entity, _ = models.Entity.objects.get_or_create(
-            user_id=record["OrgID"], entity_type=entity_type
-        )
-
-        pac, _ = models.PAC.objects.get_or_create(
-            name=record["Committee Name"],
-            entity=entity,
-            slug=f'{slugify(record["Committee Name"])}-{get_random_string(5)}',
-        )
-
-        return pac
-
     def make_filing(self, record):
 
         if not any(
@@ -235,8 +217,6 @@ class Command(BaseCommand):
             raise ValueError
 
         if record["Report Entity Type"] == "Candidate":
-            # Create PAC associated with candidate
-            self.make_pac(record, entity_type="Political Committee")
 
             candidate = self._get_candidate(record)
 
@@ -269,7 +249,7 @@ class Command(BaseCommand):
                 filing_kwargs = {"entity": candidate.entity}
 
         else:
-            pac = self.make_pac(record)
+            pac = models.PAC.get(entity__user_id=record["OrgID"])
 
             filing_kwargs = {"entity": pac.entity}
 
