@@ -358,9 +358,9 @@ class FakeTestData(object):
 
 class StatelessTestCase(TestCase, FakeTestData):
     """
-        Test class that does not commit changes to the database. Inherits from TestCase so that
-        every test runs in a rolled-back transaction.
-    g"""
+    Test class that does not commit changes to the database. Inherits from TestCase so that
+    every test runs in a rolled-back transaction.
+    """
 
     @classmethod
     def setUpTestData(cls):
