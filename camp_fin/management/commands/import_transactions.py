@@ -349,9 +349,7 @@ class Command(BaseCommand):
         return contribution
 
     def total_filings(self, year):
-        for filing in models.Filing.objects.filter(
-            filing_period__end_date__year=year
-        ).iterator():
+        for filing in models.Filing.objects.filter(filed_date__year=year).iterator():
             contributions = filing.contributions().aggregate(total=Sum("amount"))
             expenditures = filing.expenditures().aggregate(total=Sum("amount"))
             loans = filing.loans().aggregate(total=Sum("amount"))
