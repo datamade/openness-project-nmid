@@ -215,14 +215,7 @@ class Command(BaseCommand):
 
         try:
             filing = filings.get()
-        except models.Filing.MultipleObjectsReturned:
-            import pdb
-
-            pdb.set_trace()
         except models.Filing.DoesNotExist:
-            import pdb
-
-            pdb.set_trace()
             raise ValueError
 
         return filing
