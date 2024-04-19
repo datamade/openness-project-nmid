@@ -49,7 +49,7 @@ class TestCampaign(DatabaseTestCase):
             )
 
     def test_campaign_funds_raised_since_date(self):
-        year = str(self.filed_date.year)
+        year = str(self.filing_period.end_date.year)
         total_funds = self.second_contribution.amount
         self.assertEqual(self.second_campaign.funds_raised(since=year), total_funds)
 
@@ -60,7 +60,7 @@ class TestCampaign(DatabaseTestCase):
             )
 
     def test_campaign_expenditures_since_date(self):
-        year = str(self.filed_date.year)
+        year = str(self.filing_period.end_date.year)
         total_expenditures = self.second_expenditure.amount
         self.assertEqual(
             self.second_campaign.expenditures(since=year), total_expenditures

@@ -200,6 +200,7 @@ class FakeTestData(object):
         )
 
         cls.second_filing = Filing.objects.create(
+            filed_date=datetime.datetime.now(pytz.utc),
             entity=cls.second_entity,
             campaign=cls.second_campaign,
             filing_period=cls.filing_period,
@@ -231,6 +232,7 @@ class FakeTestData(object):
         )
 
         cls.third_filing = Filing.objects.create(
+            filed_date=datetime.datetime.now(pytz.utc),
             entity=cls.third_entity,
             campaign=cls.third_campaign,
             filing_period=cls.filing_period,
@@ -356,9 +358,9 @@ class FakeTestData(object):
 
 class StatelessTestCase(TestCase, FakeTestData):
     """
-    Test class that does not commit changes to the database. Inherits from TestCase so that
-    every test runs in a rolled-back transaction.
-    """
+        Test class that does not commit changes to the database. Inherits from TestCase so that
+        every test runs in a rolled-back transaction.
+    g"""
 
     @classmethod
     def setUpTestData(cls):

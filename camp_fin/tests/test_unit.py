@@ -96,7 +96,7 @@ class TestCampaign(StatelessTestCase):
             self.assertEqual(set(campaign.filings()), set(filing))
 
     def test_campaign_filings_since_date(self):
-        year = str(self.filed_date.year)
+        year = str(self.filing_period.end_date.year)
         self.assertNotIn(self.filtered_filing, self.second_campaign.filings(since=year))
 
     def test_campaign_is_winner(self):
