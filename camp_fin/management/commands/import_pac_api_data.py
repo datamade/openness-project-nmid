@@ -34,30 +34,51 @@ class Command(BaseCommand):
 
             for record in tqdm(reader):
 
-                if not record["StateID"]:
-                    pacs_skipped += 1
-                    continue
+                state_id = record["StateID"]
 
-                try:
-                    models.PAC.objects.get(entity__user_id=record["StateID"])
-                    pacs_linked += 1
+                if state_id:
 
-                except models.PAC.DoesNotExist:
-                    entity_type, _ = models.EntityType.objects.get_or_create(
-                        description=record["CommitteeType"]
-                    )
-                    entity = models.Entity.objects.create(
-                        entity_type=entity_type,
-                        user_id=record["StateID"],
-                    )
+                    try:
+                        models.PAC.objects.get(entity__user_id=record["StateID"])
+                        pacs_linked += 1
 
-                    models.PAC.objects.create(
-                        name=record["CommitteeName"],
-                        slug=f'{slugify(record["CommitteeName"])}-{get_random_string(5)}',
-                        entity=entity,
-                    )
+                    except models.PAC.DoesNotExist:
+                        entity_type, _ = models.EntityType.objects.get_or_create(
+                            description=record["CommitteeType"]
+                        )
+                        entity = models.Entity.objects.create(
+                            entity_type=entity_type,
+                            user_id=record["StateID"],
+                        )
 
-                    pacs_created += 1
+                        models.PAC.objects.create(
+                            name=record["CommitteeName"],
+                            slug=f'{slugify(record["CommitteeName"])}-{get_random_string(5)}',
+                            entity=entity,
+                        )
+
+                        pacs_created += 1
+
+                else:
+                    try:
+                        models.PAC.objects.get(name=record["CommitteeName"])
+                        pacs_linked += 1
+
+                    except models.PAC.DoesNotExist:
+                        entity_type, _ = models.EntityType.objects.get_or_create(
+                            description=record["CommitteeType"]
+                        )
+                        entity = models.Entity.objects.create(
+                            entity_type=entity_type,
+                        )
+
+                        models.PAC.objects.create(
+                            name=record["CommitteeName"],
+                            slug=f'{slugify(record["CommitteeName"])}-{get_random_string(5)}',
+                            entity=entity,
+                        )
+
+                        pacs_created += 1
 
         self.stderr.write(
             f"found {pacs_linked} pacs, "

@@ -2,7 +2,6 @@ import csv
 import re
 from itertools import groupby
 
-from dateutil.parser import ParserError, parse
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db.models import Sum
@@ -11,6 +10,8 @@ from django.utils.text import slugify
 from tqdm import tqdm
 
 from camp_fin import models
+
+from .utils import parse_date
 
 
 class Command(BaseCommand):
@@ -56,15 +57,6 @@ class Command(BaseCommand):
         self.total_filings(options["year"])
         call_command("aggregate_data")
 
-    def parse_date(self, date_str):
-        try:
-            return parse(date_str).date()
-        except (ParserError, TypeError):
-            self.stderr.write(
-                self.style.ERROR(f"Could not parse date from string '{date_str}'")
-            )
-            return None
-
     def import_contributions(self, f):
         reader = csv.DictReader(f)
 
@@ -75,7 +67,7 @@ class Command(BaseCommand):
             for i, record in enumerate(records):
                 if i == 0:
                     try:
-                        filing = self.make_filing(record)
+                        filing = self._get_filing(record)
                     except ValueError:
                         continue
 
@@ -87,13 +79,10 @@ class Command(BaseCommand):
 
                 contributor = self.make_contributor(record)
 
-                if record["Contribution Type"] == "Loans Received":
-                    self.make_contribution(record, contributor, filing).save()
-
-                elif record["Contribution Type"] == "Special Event":
-                    self.make_contribution(record, contributor, filing).save()
-
-                elif "Contribution" in record["Contribution Type"]:
+                if (
+                    record["Contribution Type"] in {"Loans Received", "Special Event"}
+                    or "Contribution" in record["Contribution Type"]
+                ):
                     self.make_contribution(record, contributor, filing).save()
 
                 else:
@@ -111,7 +100,7 @@ class Command(BaseCommand):
             for i, record in enumerate(records):
                 if i == 0:
                     try:
-                        filing = self.make_filing(record)
+                        filing = self._get_filing(record)
                     except ValueError:
                         continue
 
@@ -198,85 +187,43 @@ class Command(BaseCommand):
 
         return contact
 
-    def make_filing(self, record):
+    def _get_filing(self, record):
 
-        if not any(
-            (
-                self.parse_date(record["Filed Date"]),
-                self.parse_date(record["End of Period"]),
-            )
-        ):
-            raise ValueError
+        start_date = parse_date(record["Start of Period"])
+        end_date = parse_date(record["End of Period"])
+        if start_date is None or end_date is None:
+            raise ValueError("Record is missing 'Start of Period' or 'End of Period'")
 
-        if not record["Report Entity Type"]:
-            self.stderr.write(
-                self.style.ERROR(
-                    f"Report entity type not provided. Skipping record {record}..."
-                )
-            )
-            raise ValueError
+        state_id = record["OrgID"]
 
-        if record["Report Entity Type"] == "Candidate":
+        try:
+            entity = models.Entity.objects.get(user_id=state_id)
+        except models.Entity.DoesNotExist:
+            entity = models.PAC.objects.get(name=record["Committee Name"]).entity
+            entity.user_id = state_id
+            entity.save()
 
-            candidate = self._get_candidate(record)
-
-            transaction_date = (
-                record["Transaction Date"]
-                if "Transaction Date" in record
-                else record["Expenditure Date"]
-            )
-
-            transaction_year = self.parse_date(transaction_date).year
-
-            try:
-                campaign = models.Campaign.objects.get(
-                    candidate=candidate, election_season__year=transaction_year
-                )
-            except models.Campaign.DoesNotExist:
-                self.stderr.write(
-                    f"Could not find campaign for {candidate} in {transaction_year}"
-                )
-
-                campaign = None
-
-            if campaign and campaign.committee_name != record["Committee Name"]:
-                campaign.committee_name = record["Committee Name"]
-                campaign.save()
-
-            if campaign:
-                filing_kwargs = {"entity": candidate.entity, "campaign": campaign}
-            else:
-                filing_kwargs = {"entity": candidate.entity}
-
-        else:
-            pac = models.PAC.get(entity__user_id=record["OrgID"])
-
-            filing_kwargs = {"entity": pac.entity}
-
-        filing_type, _ = models.FilingType.objects.get_or_create(
-            description=record["Report Name"][:24]
-        )
-
-        filing_period, _ = models.FilingPeriod.objects.get_or_create(
-            description=record["Report Name"],
-            filing_date=(
-                self.parse_date(record["Filed Date"])
-                or self.parse_date(record["End of Period"])
-            ),
-            initial_date=self.parse_date(record["Start of Period"]),
-            due_date=self.parse_date(record["End of Period"]),
-            allow_no_activity=False,
-            exclude_from_cascading=False,
-            email_sent_status=0,
-            filing_period_type=filing_type,
-        )
-
-        filing, _ = models.Filing.objects.get_or_create(
-            filing_period=filing_period,
-            date_closed=self.parse_date(record["End of Period"]),
+        # We want to associate the tranasctions with the final filing
+        # for a reporting period
+        filings = models.Filing.objects.filter(
+            filing_period__description=record["Report Name"],
+            filing_period__initial_date__year=start_date.year,
+            filing_period__end_date__year=end_date.year,
             final=True,
-            **filing_kwargs,
+            entity=entity,
         )
+
+        try:
+            filing = filings.get()
+        except models.Filing.MultipleObjectsReturned:
+            import pdb
+
+            pdb.set_trace()
+        except models.Filing.DoesNotExist:
+            import pdb
+
+            pdb.set_trace()
+            raise ValueError
 
         return filing
 
@@ -299,7 +246,7 @@ class Command(BaseCommand):
 
                 loan, _ = models.Loan.objects.get_or_create(
                     amount=record["Transaction Amount"],
-                    received_date=self.parse_date(record["Transaction Date"]),
+                    received_date=parse_date(record["Transaction Date"]),
                     check_number=record["Check Number"],
                     status_id=0,
                     contact=contributor,
@@ -310,7 +257,7 @@ class Command(BaseCommand):
 
                 contribution = models.LoanTransaction(
                     amount=record["Transaction Amount"],
-                    transaction_date=self.parse_date(record["Transaction Date"]),
+                    transaction_date=parse_date(record["Transaction Date"]),
                     transaction_status_id=0,
                     loan=loan,
                     filing=filing,
@@ -322,7 +269,7 @@ class Command(BaseCommand):
 
                 contribution = models.SpecialEvent(
                     anonymous_contributions=record["Transaction Amount"],
-                    event_date=self.parse_date(record["Transaction Date"]),
+                    event_date=parse_date(record["Transaction Date"]),
                     admission_price=0,
                     attendance=0,
                     total_admissions=0,
@@ -342,7 +289,7 @@ class Command(BaseCommand):
 
                 contribution = models.Transaction(
                     amount=record["Transaction Amount"],
-                    received_date=self.parse_date(record["Transaction Date"]),
+                    received_date=parse_date(record["Transaction Date"]),
                     check_number=record["Check Number"],
                     description=record["Description"][:74],
                     contact=contributor,
@@ -392,7 +339,7 @@ class Command(BaseCommand):
 
             contribution = models.Transaction(
                 amount=record["Expenditure Amount"],
-                received_date=self.parse_date(record["Expenditure Date"]),
+                received_date=parse_date(record["Expenditure Date"]),
                 description=(record["Description"] or record["Expenditure Type"])[:74],
                 full_name=payee_full_name,
                 name_prefix=record["Payee Prefix"],
@@ -410,7 +357,7 @@ class Command(BaseCommand):
 
     def total_filings(self, year):
         for filing in models.Filing.objects.filter(
-            filing_period__filing_date__year=year
+            filing_period__end_date__year=year
         ).iterator():
             contributions = filing.contributions().aggregate(total=Sum("amount"))
             expenditures = filing.expenditures().aggregate(total=Sum("amount"))
@@ -419,12 +366,6 @@ class Command(BaseCommand):
             filing.total_contributions = contributions["total"] or 0
             filing.total_expenditures = expenditures["total"] or 0
             filing.total_loans = loans["total"] or 0
-
-            filing.closing_balance = filing.opening_balance or 0 + (
-                filing.total_contributions
-                + filing.total_loans
-                - filing.total_expenditures
-            )
 
             filing.save()
 
