@@ -148,7 +148,7 @@ class Campaign(models.Model):
 
         if since:
             date = "{year}-01-01".format(year=since)
-            filings = filings.filter(filing_period__filing_date__gte=date)
+            filings = filings.filter(filed_date__gte=date)
 
         return filings
 
@@ -971,7 +971,7 @@ class Entity(models.Model):
               SUM(f.closing_balance) AS closing_balance,
               SUM(f.opening_balance) AS opening_balance,
               SUM(f.total_debt_carried_forward) AS debt_carried_forward,
-              fp.filing_date,
+              f.filed_date,
               MIN(fp.initial_date) AS initial_date
             FROM camp_fin_filing AS f
             JOIN camp_fin_filingperiod AS fp
@@ -979,9 +979,9 @@ class Entity(models.Model):
             WHERE f.entity_id = %s
               AND fp.exclude_from_cascading = FALSE
               AND fp.regular_filing_period_id IS NULL
-              AND fp.filing_date >= '{year}-01-01'
-            GROUP BY fp.filing_date
-            ORDER BY fp.filing_date
+              AND f.filed_date >= '{year}-01-01'
+            GROUP BY f.filed_date
+            ORDER BY f.filed_date
         """.format(
             year=since
         )
@@ -999,7 +999,7 @@ class Entity(models.Model):
 
         if summed_filings:
             for filing in summed_filings:
-                filing_date = filing.filing_date
+                filing_date = filing.filed_date
                 date_array = [filing_date.year, filing_date.month, filing_date.day]
                 debts = -1 * filing.total_unpaid_debts
                 if filing.closing_balance:
@@ -1068,18 +1068,9 @@ class Entity(models.Model):
 
             start_month = datetime(int(since), 1, 1)
 
-            try:
-                end_month = (
-                    self.filing_set.order_by("-filing_period__filing_date")
-                    .first()
-                    .filing_period.filing_date.date()
-                )
-            except AttributeError:
-                end_month = (
-                    FilingPeriod.objects.order_by("-filing_date")
-                    .first()
-                    .filing_date.date()
-                )
+            end_month = (
+                self.filing_set.order_by("-filed_date").first().filed_date.date()
+            )
 
             for month in rrule(freq=MONTHLY, dtstart=start_month, until=end_month):
                 replacements = {"month": month.month - 1}

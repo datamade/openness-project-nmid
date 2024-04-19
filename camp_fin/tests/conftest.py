@@ -16,7 +16,6 @@ from camp_fin.models import (
     FilingPeriod,
     FilingType,
     Loan,
-    LoanTransactionType,
     Lobbyist,
     Office,
     OfficeType,
@@ -142,7 +141,6 @@ class FakeTestData(object):
         filing_type = FilingType.objects.create(description="type")
 
         cls.filing_period = FilingPeriod.objects.create(
-            filing_date=datetime.datetime.now(pytz.utc),
             due_date=datetime.datetime.now(pytz.utc),
             allow_no_activity=True,
             filing_period_type=filing_type,
@@ -153,6 +151,7 @@ class FakeTestData(object):
         )
 
         cls.first_filing = Filing.objects.create(
+            filed_date=datetime.datetime.now(pytz.utc),
             entity=cls.first_entity,
             campaign=cls.first_campaign,
             filing_period=cls.filing_period,
@@ -182,8 +181,6 @@ class FakeTestData(object):
             transaction_type=contribution,
             filing=cls.first_filing,
         )
-
-        loan_type = LoanTransactionType.objects.create(description="Payment")
 
         cls.loan = Loan.objects.create(
             status=status,
@@ -264,7 +261,6 @@ class FakeTestData(object):
         )
 
         cls.filtered_filing_period = FilingPeriod.objects.create(
-            filing_date=two_years_ago,
             due_date=two_years_ago,
             allow_no_activity=True,
             filing_period_type=filing_type,
@@ -275,6 +271,7 @@ class FakeTestData(object):
         )
 
         cls.filtered_filing = Filing.objects.create(
+            filed_date=two_years_ago,
             entity=cls.second_entity,
             campaign=cls.second_campaign,
             filing_period=cls.filtered_filing_period,

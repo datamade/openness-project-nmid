@@ -5,21 +5,19 @@ from datetime import datetime
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import connection
-from django.http import JsonResponse, StreamingHttpResponse
+from django.http import StreamingHttpResponse
 from django.utils import timezone
 from django.utils.text import slugify
 from django.views.generic import DetailView, ListView, TemplateView
-from rest_framework import filters, renderers, viewsets
+from rest_framework import filters, viewsets
 from rest_framework.response import Response
 
 from camp_fin.api_parts import (
-    DataTablesPagination,
-    SearchCSVRenderer,
     TopMoneySerializer,
     TransactionCSVRenderer,
     TransactionSerializer,
 )
-from camp_fin.models import PAC, Candidate, Entity, Lobbyist, Organization, Transaction
+from camp_fin.models import PAC, Candidate, Lobbyist, Organization, Transaction
 from pages.models import Page
 
 TWENTY_TEN = timezone.make_aware(datetime(2010, 1, 1))
@@ -331,7 +329,7 @@ class TransactionDownloadViewSet(TransactionDownload):
               transaction.description,
               tt.description AS transaction_type,
               entity.*,
-              fp.filing_date,
+              f.filed_date,
               fp.description AS filing_name
             FROM camp_fin_transaction AS transaction
             JOIN camp_fin_transactiontype AS tt
@@ -361,7 +359,7 @@ class TransactionDownloadViewSet(TransactionDownload):
             ) AS entity
               ON f.entity_id = entity.{subj_type}_entity_id
             WHERE tt.contribution = {contribution_bool}
-        """.format(
+        """.format(  # noqa
             contribution_bool=contribution_bool, subj_type=subj_type
         )
 
@@ -373,12 +371,12 @@ class TransactionDownloadViewSet(TransactionDownload):
 
         if start_date:
             base_query += """
-                AND fp.filing_date >= %s
+                AND f.filed_date >= %s
             """
 
         if end_date:
             base_query += """
-                AND fp.filing_date <= %s
+                AND f.filed_date <= %s
             """
 
         base_query += """ORDER BY transaction.received_date"""
@@ -430,46 +428,46 @@ class TopMoneyView(viewsets.ViewSet):
     def list(self, request):
         cursor = connection.cursor()
 
-        query = """ 
+        query = """
             SELECT * FROM (
-              SELECT 
-                DENSE_RANK() 
+              SELECT
+                DENSE_RANK()
                   OVER (
-                    PARTITION BY year 
+                    PARTITION BY year
                     ORDER BY amount DESC
                   ) AS rank, *
               FROM (
-                SELECT 
+                SELECT
                   SUM(transaction.amount) AS amount,
                   NULL AS latest_date,
-                  transaction.name_prefix, 
-                  transaction.first_name, 
-                  transaction.middle_name, 
+                  transaction.name_prefix,
+                  transaction.first_name,
+                  transaction.middle_name,
                   transaction.last_name,
                   transaction.suffix,
                   transaction.company_name,
                   election_season.year,
                   redact,
                   ct.description
-                FROM camp_fin_transaction AS transaction 
-                JOIN camp_fin_transactiontype AS tt 
-                  ON transaction.transaction_type_id = tt.id 
-                JOIN camp_fin_filing AS f 
-                  ON transaction.filing_id = f.id 
-                JOIN camp_fin_campaign AS c 
-                  ON f.campaign_id = c.id 
+                FROM camp_fin_transaction AS transaction
+                JOIN camp_fin_transactiontype AS tt
+                  ON transaction.transaction_type_id = tt.id
+                JOIN camp_fin_filing AS f
+                  ON transaction.filing_id = f.id
+                JOIN camp_fin_campaign AS c
+                  ON f.campaign_id = c.id
                 JOIN camp_fin_electionseason AS election_season
                   ON c.election_season_id = election_season.id
                 LEFT JOIN camp_fin_contact AS contact
                   ON transaction.contact_id = contact.id
                 LEFT JOIN camp_fin_contacttype AS ct
                   ON contact.contact_type_id = ct.id
-                WHERE tt.contribution = %s 
-                  AND year >= '2010' 
-                GROUP BY 
-                  transaction.name_prefix, 
-                  transaction.first_name, 
-                  transaction.middle_name, 
+                WHERE tt.contribution = %s
+                  AND year >= '2010'
+                GROUP BY
+                  transaction.name_prefix,
+                  transaction.first_name,
+                  transaction.middle_name,
                   transaction.last_name,
                   transaction.suffix,
                   transaction.company_name,
@@ -477,56 +475,56 @@ class TopMoneyView(viewsets.ViewSet):
                   redact,
                   ct.description
                 ORDER BY SUM(amount) DESC
-              ) AS ranked_list 
+              ) AS ranked_list
               ORDER BY year DESC, amount DESC
-            ) AS election_groups 
+            ) AS election_groups
             WHERE rank < 11
         """
 
         if self.request.GET.get("entity_type") == "pac":
-            query = """ 
+            query = """
                 SELECT *, NULL AS year FROM (
-                  SELECT 
-                    DENSE_RANK() 
+                  SELECT
+                    DENSE_RANK()
                       OVER (
                         ORDER BY amount DESC
                       ) AS rank, *
                   FROM (
-                    SELECT 
-                      SUM(transaction.amount) AS amount, 
+                    SELECT
+                      SUM(transaction.amount) AS amount,
                       MAX(transaction.received_date) AS latest_date,
-                      transaction.name_prefix, 
-                      transaction.first_name, 
-                      transaction.middle_name, 
+                      transaction.name_prefix,
+                      transaction.first_name,
+                      transaction.middle_name,
                       transaction.last_name,
                       transaction.suffix,
                       transaction.company_name,
                       transaction.redact,
                       ct.description
-                    FROM camp_fin_transaction AS transaction 
-                    JOIN camp_fin_transactiontype AS tt 
-                      ON transaction.transaction_type_id = tt.id 
-                    JOIN camp_fin_filing AS f 
-                      ON transaction.filing_id = f.id 
+                    FROM camp_fin_transaction AS transaction
+                    JOIN camp_fin_transactiontype AS tt
+                      ON transaction.transaction_type_id = tt.id
+                    JOIN camp_fin_filing AS f
+                      ON transaction.filing_id = f.id
                     LEFT JOIN camp_fin_contact AS contact
                       ON transaction.contact_id = contact.id
                     LEFT JOIN camp_fin_contacttype AS ct
                       ON contact.contact_type_id = ct.id
-                    WHERE tt.contribution = %s 
+                    WHERE tt.contribution = %s
                       AND transaction.received_date >= '2010-01-01'
-                    GROUP BY 
-                      transaction.name_prefix, 
-                      transaction.first_name, 
-                      transaction.middle_name, 
+                    GROUP BY
+                      transaction.name_prefix,
+                      transaction.first_name,
+                      transaction.middle_name,
                       transaction.last_name,
                       transaction.suffix,
                       transaction.company_name,
                       transaction.redact,
                       ct.description
                     ORDER BY SUM(amount) DESC
-                  ) AS ranked_list 
+                  ) AS ranked_list
                   ORDER BY amount DESC
-                ) AS election_groups 
+                ) AS election_groups
                 WHERE rank < 11
             """
 
@@ -544,34 +542,34 @@ class TopMoneyView(viewsets.ViewSet):
     def retrieve(self, request, pk=None):
         cursor = connection.cursor()
 
-        query = """ 
+        query = """
             SELECT * FROM (
-              SELECT 
-                DENSE_RANK() 
+              SELECT
+                DENSE_RANK()
                   OVER (
-                    PARTITION BY year 
+                    PARTITION BY year
                     ORDER BY amount DESC
                   ) AS rank, *
               FROM (
-                SELECT 
-                  SUM(transaction.amount) AS amount, 
+                SELECT
+                  SUM(transaction.amount) AS amount,
                   MAX(transaction.received_date) AS latest_date,
-                  transaction.name_prefix, 
-                  transaction.first_name, 
-                  transaction.middle_name, 
+                  transaction.name_prefix,
+                  transaction.first_name,
+                  transaction.middle_name,
                   transaction.last_name,
                   transaction.suffix,
                   transaction.company_name,
                   election_season.year,
                   transaction.redact,
                   ct.description
-                FROM camp_fin_transaction AS transaction 
-                JOIN camp_fin_transactiontype AS tt 
-                  ON transaction.transaction_type_id = tt.id 
-                JOIN camp_fin_filing AS f 
-                  ON transaction.filing_id = f.id 
-                JOIN camp_fin_campaign AS c 
-                  ON f.campaign_id = c.id 
+                FROM camp_fin_transaction AS transaction
+                JOIN camp_fin_transactiontype AS tt
+                  ON transaction.transaction_type_id = tt.id
+                JOIN camp_fin_filing AS f
+                  ON transaction.filing_id = f.id
+                JOIN camp_fin_campaign AS c
+                  ON f.campaign_id = c.id
                 JOIN camp_fin_candidate as candidate
                   ON c.candidate_id = candidate.id
                 JOIN camp_fin_electionseason AS election_season
@@ -580,13 +578,13 @@ class TopMoneyView(viewsets.ViewSet):
                   ON transaction.contact_id = contact.id
                 LEFT JOIN camp_fin_contacttype AS ct
                   ON contact.contact_type_id = ct.id
-                WHERE tt.contribution = %s 
+                WHERE tt.contribution = %s
                   AND candidate.id = %s
-                  AND transaction.received_date >= '2010-01-01' 
-                GROUP BY 
-                  transaction.name_prefix, 
-                  transaction.first_name, 
-                  transaction.middle_name, 
+                  AND transaction.received_date >= '2010-01-01'
+                GROUP BY
+                  transaction.name_prefix,
+                  transaction.first_name,
+                  transaction.middle_name,
                   transaction.last_name,
                   transaction.suffix,
                   transaction.company_name,
@@ -594,58 +592,58 @@ class TopMoneyView(viewsets.ViewSet):
                   transaction.redact,
                   ct.description
                 ORDER BY SUM(amount) DESC
-              ) AS ranked_list 
+              ) AS ranked_list
               ORDER BY year DESC, amount DESC
-            ) AS election_groups 
+            ) AS election_groups
             WHERE rank < 11
         """
         if self.request.GET.get("entity_type") == "pac":
-            query = """ 
+            query = """
                 SELECT *, NULL AS year FROM (
-                  SELECT 
-                    DENSE_RANK() 
+                  SELECT
+                    DENSE_RANK()
                       OVER (
                         ORDER BY amount DESC
                       ) AS rank, *
                   FROM (
-                    SELECT 
-                      SUM(transaction.amount) AS amount, 
+                    SELECT
+                      SUM(transaction.amount) AS amount,
                       MAX(transaction.received_date) AS latest_date,
-                      transaction.name_prefix, 
-                      transaction.first_name, 
-                      transaction.middle_name, 
+                      transaction.name_prefix,
+                      transaction.first_name,
+                      transaction.middle_name,
                       transaction.last_name,
                       transaction.suffix,
                       transaction.company_name,
                       transaction.redact,
                       ct.description
-                    FROM camp_fin_transaction AS transaction 
-                    JOIN camp_fin_transactiontype AS tt 
-                      ON transaction.transaction_type_id = tt.id 
-                    JOIN camp_fin_filing AS f 
-                      ON transaction.filing_id = f.id 
+                    FROM camp_fin_transaction AS transaction
+                    JOIN camp_fin_transactiontype AS tt
+                      ON transaction.transaction_type_id = tt.id
+                    JOIN camp_fin_filing AS f
+                      ON transaction.filing_id = f.id
                     JOIN camp_fin_pac AS pac
                       ON f.entity_id = pac.entity_id
                     LEFT JOIN camp_fin_contact AS contact
                       ON transaction.contact_id = contact.id
                     LEFT JOIN camp_fin_contacttype AS ct
                       ON contact.contact_type_id = ct.id
-                    WHERE tt.contribution = %s 
+                    WHERE tt.contribution = %s
                       AND pac.id = %s
-                      AND transaction.received_date >= '2010-01-01' 
-                    GROUP BY 
-                      transaction.name_prefix, 
-                      transaction.first_name, 
-                      transaction.middle_name, 
+                      AND transaction.received_date >= '2010-01-01'
+                    GROUP BY
+                      transaction.name_prefix,
+                      transaction.first_name,
+                      transaction.middle_name,
                       transaction.last_name,
                       transaction.suffix,
                       transaction.company_name,
                       transaction.redact,
                       ct.description
                     ORDER BY SUM(amount) DESC
-                  ) AS ranked_list 
+                  ) AS ranked_list
                   ORDER BY amount DESC
-                ) AS election_groups 
+                ) AS election_groups
                 WHERE rank < 11
             """
 
@@ -668,33 +666,33 @@ class TopEarnersBase(TemplateView):
         with connection.cursor() as cursor:
             # Top earners
             cursor.execute(
-                """ 
+                """
               SELECT * FROM (
-                SELECT 
-                  dense_rank() OVER (ORDER BY new_funds DESC) AS rank, * 
+                SELECT
+                  dense_rank() OVER (ORDER BY new_funds DESC) AS rank, *
                 FROM (
-                  SELECT 
-                    MAX(COALESCE(c.slug, p.slug)) AS slug, 
-                    MAX(COALESCE(c.full_name, p.name)) AS name, 
-                    SUM(t.amount) AS new_funds, 
-                    (array_agg(f.closing_balance ORDER BY f.id DESC))[1] AS current_funds, 
-                    CASE WHEN p.id IS NULL 
-                      THEN 'Candidate' 
-                      ELSE 'PAC' 
-                    END AS committee_type 
-                    FROM camp_fin_transaction AS t 
-                    JOIN camp_fin_transactiontype AS tt 
-                      ON t.transaction_type_id = tt.id 
-                    JOIN camp_fin_filing AS f 
-                      ON t.filing_id = f.id 
-                    LEFT JOIN camp_fin_pac AS p 
-                      ON f.entity_id = p.entity_id 
-                    LEFT JOIN camp_fin_candidate AS c 
-                      ON f.entity_id = c.entity_id 
-                    WHERE tt.contribution = TRUE 
+                  SELECT
+                    MAX(COALESCE(c.slug, p.slug)) AS slug,
+                    MAX(COALESCE(c.full_name, p.name)) AS name,
+                    SUM(t.amount) AS new_funds,
+                    (array_agg(f.closing_balance ORDER BY f.id DESC))[1] AS current_funds,
+                    CASE WHEN p.id IS NULL
+                      THEN 'Candidate'
+                      ELSE 'PAC'
+                    END AS committee_type
+                    FROM camp_fin_transaction AS t
+                    JOIN camp_fin_transactiontype AS tt
+                      ON t.transaction_type_id = tt.id
+                    JOIN camp_fin_filing AS f
+                      ON t.filing_id = f.id
+                    LEFT JOIN camp_fin_pac AS p
+                      ON f.entity_id = p.entity_id
+                    LEFT JOIN camp_fin_candidate AS c
+                      ON f.entity_id = c.entity_id
+                    WHERE tt.contribution = TRUE
                       AND t.received_date >= (NOW() - INTERVAL '90 days')
                     GROUP BY c.id, p.id
-                  ) AS s 
+                  ) AS s
                 WHERE name NOT ILIKE '%public election fund%'
                   OR name NOT ILIKE '%department of finance%'
                 ORDER BY new_funds DESC

@@ -1,43 +1,14 @@
 from django.contrib.auth.models import User
-from django.core.management import call_command
 from django.db.utils import IntegrityError
 from django.http import HttpRequest, QueryDict
 from django.test import TestCase
-from django.urls import resolve, reverse
+from django.urls import reverse
 
 from camp_fin.base_views import TransactionDownloadViewSet
 from camp_fin.decorators import check_date_params
-from camp_fin.models import (
-    Campaign,
-    Candidate,
-    County,
-    District,
-    Division,
-    ElectionSeason,
-    Entity,
-    Filing,
-    FilingPeriod,
-    FilingType,
-    Loan,
-    LoanTransaction,
-    LoanTransactionType,
-    Office,
-    OfficeType,
-    PoliticalParty,
-    Race,
-    Status,
-    Transaction,
-    TransactionType,
-)
+from camp_fin.models import OfficeType, Race
 from camp_fin.templatetags.helpers import format_years
-from camp_fin.tests.conftest import DatabaseTestCase, StatelessTestCase
-from camp_fin.views import (
-    LobbyistDetail,
-    LobbyistList,
-    LobbyistTransactionList,
-    RaceDetail,
-    RacesView,
-)
+from camp_fin.tests.conftest import StatelessTestCase
 
 
 class TestRace(StatelessTestCase):
@@ -47,7 +18,7 @@ class TestRace(StatelessTestCase):
 
     def test_race_unique_constraint(self):
         with self.assertRaises(IntegrityError):
-            race = Race.objects.create(
+            Race.objects.create(
                 division=self.division,
                 district=self.district,
                 office=self.office,
@@ -125,7 +96,7 @@ class TestCampaign(StatelessTestCase):
             self.assertEqual(set(campaign.filings()), set(filing))
 
     def test_campaign_filings_since_date(self):
-        year = str(self.filing_period.filing_date.year)
+        year = str(self.filed_date.year)
         self.assertNotIn(self.filtered_filing, self.second_campaign.filings(since=year))
 
     def test_campaign_is_winner(self):
@@ -214,7 +185,7 @@ class TestAdmin(StatelessTestCase):
     def test_race_edit_loads(self):
         url = reverse("admin:camp_fin_race_change", args=(self.race.id,))
         edit_page = self.client.get(url, follow=True)
-        html = edit_page.content.decode("utf-8")
+        edit_page.content.decode("utf-8")
 
         self.assertEqual(edit_page.status_code, 200)
 
