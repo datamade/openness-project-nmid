@@ -622,7 +622,7 @@ class CandidateList(PaginatedList):
                   campaign.division_id,
                   office.description AS office_name,
                   filing.closing_balance,
-                  COALESCE(period.filing_date, filing.date_added) AS filing_date
+                  COALESCE(filing.filed_date, filing.date_added) AS filing_date
                 FROM camp_fin_candidate AS candidate
                 JOIN camp_fin_filing AS filing
                   USING(entity_id)
@@ -698,7 +698,7 @@ class CommitteeList(PaginatedList):
                 SELECT DISTINCT ON (pac.id)
                   pac.*,
                   filing.closing_balance,
-                  COALESCE(period.filing_date, filing.date_added) AS filing_date
+                  COALESCE(filing.filed_date, filing.date_added) AS filing_date
                 FROM camp_fin_pac AS pac
                 JOIN camp_fin_filing AS filing
                   USING(entity_id)

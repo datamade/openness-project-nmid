@@ -1,8 +1,7 @@
 from collections import namedtuple
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from dateutil.rrule import MONTHLY, rrule
-from django.conf import settings
 from django.db import connection, models
 from django.utils import timezone
 from django.utils.translation import ugettext as _
@@ -149,7 +148,7 @@ class Campaign(models.Model):
 
         if since:
             date = "{year}-01-01".format(year=since)
-            filings = filings.filter(filing_period__filing_date__gte=date)
+            filings = filings.filter(filed_date__gte=date)
 
         return filings
 
@@ -733,14 +732,18 @@ class SpecialEvent(models.Model):
 
 
 class Filing(models.Model):
+
     entity = models.ForeignKey("Entity", db_constraint=False)
     olddb_campaign_id = models.IntegerField(null=True)
     olddb_profile_id = models.IntegerField(null=True)
+    report_id = models.IntegerField(null=True)
+    report_version_id = models.IntegerField(null=True)
     filing_period = models.ForeignKey("FilingPeriod", db_constraint=False)
     status = models.ForeignKey("Status", db_constraint=False, null=True)
     date_added = models.DateTimeField(default=timezone.now)
     olddb_ethics_report_id = models.IntegerField(null=True)
     campaign = models.ForeignKey("Campaign", db_constraint=False, null=True)
+    filed_date = models.DateTimeField()
     date_closed = models.DateTimeField(null=True)
     date_last_amended = models.DateTimeField(null=True)
     opening_balance = models.FloatField(null=True)
@@ -823,7 +826,6 @@ class Filing(models.Model):
 
 
 class FilingPeriod(models.Model):
-    filing_date = models.DateTimeField()
     due_date = models.DateTimeField()
     olddb_id = models.IntegerField(null=True)
     description = models.CharField(max_length=255, null=True)
@@ -835,13 +837,14 @@ class FilingPeriod(models.Model):
         "RegularFilingPeriod", db_constraint=False, null=True
     )
     initial_date = models.DateField()
+    end_date = models.DateField()
     email_sent_status = models.IntegerField()
     reminder_sent_status = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
         return "{0}/{1} ({2})".format(
-            self.filing_date.month,
-            self.filing_date.year,
+            self.initial_date.month,
+            self.initial_date.year,
             self.filing_period_type.description,
         )
 
@@ -968,7 +971,7 @@ class Entity(models.Model):
               SUM(f.closing_balance) AS closing_balance,
               SUM(f.opening_balance) AS opening_balance,
               SUM(f.total_debt_carried_forward) AS debt_carried_forward,
-              fp.filing_date,
+              f.filed_date,
               MIN(fp.initial_date) AS initial_date
             FROM camp_fin_filing AS f
             JOIN camp_fin_filingperiod AS fp
@@ -976,9 +979,9 @@ class Entity(models.Model):
             WHERE f.entity_id = %s
               AND fp.exclude_from_cascading = FALSE
               AND fp.regular_filing_period_id IS NULL
-              AND fp.filing_date >= '{year}-01-01'
-            GROUP BY fp.filing_date
-            ORDER BY fp.filing_date
+              AND f.filed_date >= '{year}-01-01'
+            GROUP BY f.filed_date
+            ORDER BY f.filed_date
         """.format(
             year=since
         )
@@ -996,7 +999,7 @@ class Entity(models.Model):
 
         if summed_filings:
             for filing in summed_filings:
-                filing_date = filing.filing_date
+                filing_date = filing.filed_date
                 date_array = [filing_date.year, filing_date.month, filing_date.day]
                 debts = -1 * filing.total_unpaid_debts
                 if filing.closing_balance:
@@ -1063,24 +1066,11 @@ class Entity(models.Model):
             contributions_lookup = {r.month.date(): r.amount for r in contributions}
             expenditures_lookup = {r.month.date(): r.amount for r in expenditures}
 
-            all_months = list(contributions_lookup.keys()) + list(
-                expenditures_lookup.keys()
-            )
-
             start_month = datetime(int(since), 1, 1)
 
-            try:
-                end_month = (
-                    self.filing_set.order_by("-filing_period__filing_date")
-                    .first()
-                    .filing_period.filing_date.date()
-                )
-            except:
-                end_month = (
-                    FilingPeriod.objects.order_by("-filing_date")
-                    .first()
-                    .filing_date.date()
-                )
+            end_month = (
+                self.filing_set.order_by("-filed_date").first().filed_date.date()
+            )
 
             for month in rrule(freq=MONTHLY, dtstart=start_month, until=end_month):
                 replacements = {"month": month.month - 1}
@@ -1720,10 +1710,10 @@ class LobbyistBundlingDisclosureContributor(models.Model):
     )
 
 
-######################################################################
-### Below here are normalized tables that we may or may not end up ###
-### getting. Just stubbing them out in case we do                  ###
-######################################################################
+##################################################################
+# Below here are normalized tables that we may or may not end up #
+# getting. Just stubbing them out in case we do                  #
+##################################################################
 
 
 class RegularFilingPeriod(models.Model):

@@ -98,7 +98,7 @@ class Command(BaseCommand):
                         JOIN camp_fin_filingperiod AS fp
                           ON filing.filing_period_id = fp.id
                         WHERE tt.contribution = FALSE
-                          AND fp.filing_date >= '2010-01-01'
+                          AND filing.filed_date >= '2010-01-01'
                         GROUP BY filing.entity_id, date_trunc('{0}', e.received_date)
 
                         UNION
@@ -115,7 +115,7 @@ class Command(BaseCommand):
                         JOIN camp_fin_filingperiod AS fp
                           ON filing.filing_period_id = fp.id
                         WHERE ltt.description = 'Payment'
-                          AND fp.filing_date >= '2010-01-01'
+                          AND filing.filed_date >= '2010-01-01'
                         GROUP BY filing.entity_id, date_trunc('{0}', lt.transaction_date)
                       ) AS s
                       GROUP BY entity_id, {0}

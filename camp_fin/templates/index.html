@@ -110,7 +110,7 @@
               <tr>
                 <td>{{ forloop.counter }}</td>
                 <td><a href="{% url 'committee-detail' pac.slug %}">{{ pac.name }}</a></td>
-                <td class='hidden-sm hidden-xs'>{{ filing.filing_period.filing_date | date:'M j, Y'}}</td>
+                <td class='hidden-sm hidden-xs'>{{ filing.filed_date | date:'M j, Y'}}</td>
                 <td class='text-right'>
                   <span class='hidden-sm hidden-xs'>{{ filing.closing_balance|format_money }}</span>
                   <span class='visible-sm-block visible-xs-block'>{{ filing.closing_balance|format_money_short }}</span>
