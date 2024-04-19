@@ -203,7 +203,7 @@ class Command(BaseCommand):
             entity.user_id = state_id
             entity.save()
 
-        # We want to associate the tranasctions with the final filing
+        # We want to associate the transactions with the final filing
         # for a reporting period
         filings = models.Filing.objects.filter(
             filing_period__description=record["Report Name"],
