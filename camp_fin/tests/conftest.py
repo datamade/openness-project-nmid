@@ -146,6 +146,7 @@ class FakeTestData(object):
             filing_period_type=filing_type,
             exclude_from_cascading=True,
             initial_date=datetime.datetime.now(pytz.utc),
+            end_date=datetime.datetime.now(pytz.utc),
             email_sent_status=0,
             reminder_sent_status=0,
         )
@@ -266,6 +267,7 @@ class FakeTestData(object):
             filing_period_type=filing_type,
             exclude_from_cascading=True,
             initial_date=two_years_ago,
+            end_date=two_years_ago,
             email_sent_status=0,
             reminder_sent_status=0,
         )
