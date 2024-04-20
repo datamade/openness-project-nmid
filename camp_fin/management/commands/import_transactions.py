@@ -61,7 +61,12 @@ class Command(BaseCommand):
         reader = csv.DictReader(f)
 
         def key_func(record):
-            return (record["OrgID"], record["Report Name"])
+            return (
+                record["OrgID"],
+                record["Report Name"],
+                record["Start of Period"],
+                record["End of Period"],
+            )
 
         for filing_group, records in groupby(tqdm(reader), key=key_func):
             for i, record in enumerate(records):
@@ -69,7 +74,7 @@ class Command(BaseCommand):
                     try:
                         filing = self._get_filing(record)
                     except ValueError:
-                        continue
+                        break
 
                     models.LoanTransaction.objects.filter(filing=filing).delete()
                     models.SpecialEvent.objects.filter(filing=filing).delete()
@@ -94,7 +99,12 @@ class Command(BaseCommand):
         reader = csv.DictReader(f)
 
         def key_func(record):
-            return (record["OrgID"], record["Report Name"])
+            return (
+                record["OrgID"],
+                record["Report Name"],
+                record["Start of Period"],
+                record["End of Period"],
+            )
 
         for filing_group, records in groupby(tqdm(reader), key=key_func):
             for i, record in enumerate(records):
@@ -102,7 +112,7 @@ class Command(BaseCommand):
                     try:
                         filing = self._get_filing(record)
                     except ValueError:
-                        continue
+                        break
 
                     models.Transaction.objects.filter(
                         filing=filing,
