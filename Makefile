@@ -28,7 +28,7 @@ _data/raw/%_committees.csv :
 	wget --no-use-server-timestamps -O $@ "https://openness-project-nmid.s3.amazonaws.com/$*_committees.csv"
 
 _data/raw/%_committee_filings.csv :
-	wget --no-use-server-timestamps -O $@ "https://openness-project-nmid.s3.amazonaws.com/$*_committees.csv"
+	wget --no-use-server-timestamps -O $@ "https://openness-project-nmid.s3.amazonaws.com/$*_committee_filings.csv"
 
 
 _data/sorted/%.csv : _data/raw/%.csv
