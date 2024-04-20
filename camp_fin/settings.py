@@ -171,7 +171,7 @@ SITE_META = {
 }
 
 # Year to pull races from
-ELECTION_YEAR = "2023"
+ELECTION_YEAR = "2024"
 
 # This is an optional directory where the import data process will check for
 # files before looking in the "data" directory within the project.
