@@ -14,6 +14,18 @@ from camp_fin import models
 from .utils import parse_date
 
 
+def filing_key(record):
+    start_date = parse_date(record["Start of Period"])
+    end_date = parse_date(record["End of Period"])
+
+    return (
+        record["OrgID"],
+        record["Report Name"],
+        start_date.year if start_date else None,
+        end_date.year if end_date else None,
+    )
+
+
 class Command(BaseCommand):
     help = """
         Import data from the New Mexico Campaign Finance System:
@@ -60,15 +72,7 @@ class Command(BaseCommand):
     def import_contributions(self, f):
         reader = csv.DictReader(f)
 
-        def key_func(record):
-            return (
-                record["OrgID"],
-                record["Report Name"],
-                record["Start of Period"],
-                record["End of Period"],
-            )
-
-        for filing_group, records in groupby(tqdm(reader), key=key_func):
+        for filing_group, records in groupby(tqdm(reader), key=filing_key):
             for i, record in enumerate(records):
                 if i == 0:
                     try:
@@ -98,15 +102,7 @@ class Command(BaseCommand):
     def import_expenditures(self, f):
         reader = csv.DictReader(f)
 
-        def key_func(record):
-            return (
-                record["OrgID"],
-                record["Report Name"],
-                record["Start of Period"],
-                record["End of Period"],
-            )
-
-        for filing_group, records in groupby(tqdm(reader), key=key_func):
+        for filing_group, records in groupby(tqdm(reader), key=filing_key):
             for i, record in enumerate(records):
                 if i == 0:
                     try:
