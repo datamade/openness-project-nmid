@@ -78,9 +78,9 @@ class PAC(models.Model):
         on_delete=models.CASCADE,
     )
     initial_balance = models.FloatField(null=True)
-    initial_balance_from_self = models.NullBooleanField(null=True)
+    initial_balance_from_self = models.BooleanField(null=True)
     initial_debt = models.FloatField(null=True)
-    initial_debt_from_self = models.NullBooleanField(null=True)
+    initial_debt_from_self = models.BooleanField(null=True)
 
     slug = models.CharField(max_length=500, null=True)
 
@@ -153,11 +153,11 @@ class Campaign(models.Model):
         on_delete=models.CASCADE,
     )
     initial_balance = models.FloatField(null=True)
-    initial_balance_from_self = models.NullBooleanField()
+    initial_balance_from_self = models.BooleanField(null=True)
     initial_debt = models.FloatField(null=True)
-    initial_debt_from_self = models.NullBooleanField()
+    initial_debt_from_self = models.BooleanField(null=True)
     qual_campaign_id = models.IntegerField(null=True)
-    biannual = models.NullBooleanField()
+    biannual = models.BooleanField(null=True)
     from_campaign = models.ForeignKey(
         "Campaign", db_constraint=False, null=True, on_delete=models.CASCADE
     )
@@ -649,11 +649,11 @@ class Transaction(models.Model):
     from_file_id = models.IntegerField(null=True)
     contact_type_other = models.CharField(max_length=25, null=True)
     occupation = models.CharField(max_length=255, null=True)
-    expenditure_for_certified_candidate = models.NullBooleanField()
+    expenditure_for_certified_candidate = models.BooleanField(null=True)
 
     full_name = models.CharField(max_length=500, null=True)
 
-    redact = models.NullBooleanField(default=False)
+    redact = models.BooleanField(default=False, null=True)
 
     def __str__(self):
         if self.redact:
@@ -859,8 +859,8 @@ class Filing(models.Model):
     total_debt_paid = models.FloatField(null=True)
     total_loans_forgiven = models.FloatField(null=True)
     pdf_report = models.CharField(max_length=1000, null=True)
-    final = models.NullBooleanField()
-    no_activity = models.NullBooleanField()
+    final = models.BooleanField(null=True)
+    no_activity = models.BooleanField(null=True)
     supplement_count = models.IntegerField(null=True)
     total_supplemental_contributions = models.FloatField(null=True)
     edited = models.CharField(max_length=3, null=True)
@@ -1735,7 +1735,7 @@ class LobbyistRegistration(models.Model):
     )
     date_added = models.DateTimeField(null=True, default=timezone.now)
     year = models.CharField(max_length=5)
-    is_registered = models.NullBooleanField(null=True)
+    is_registered = models.BooleanField(null=True)
 
 
 class LobbyistEmployer(models.Model):
@@ -1753,7 +1753,7 @@ class LobbyistFilingPeriod(models.Model):
     filing_date = models.DateTimeField(null=True)
     due_date = models.DateTimeField(null=True)
     description = models.CharField(max_length=100)
-    allow_statement_of_no_activity = models.NullBooleanField(null=True)
+    allow_statement_of_no_activity = models.BooleanField(null=True)
     initial_date = models.DateTimeField(null=True)
     lobbyist_filing_period_type = models.ForeignKey(
         "LobbyistFilingPeriodType",
