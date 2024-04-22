@@ -1,26 +1,26 @@
-{% load staticfiles %}
+{% load static %}
 {% load bootstrap_pagination %}
 {% load humanize %}
 {% load helpers %}
 
 {% with funds_share=campaign|percentage:total %}
-    <p>
+  <p>
     <span class="bar-chart {% if forloop.first %}visible{% endif %} {% if forloop.last %}last{% endif %}">
-            <span class="tick thick"></span>
-            <span class="tick" style="left:25%"></span>
-            <span class="tick" style="left:50%"></span>
-            <span class="tick" style="left:75%"></span>
-            <span class="tick thick" style="left:100%"></span>
-            <span class="bar" style="width:{{ funds_share }}%"></span>
-            {% if funds_share > 20 %}
-                <span class="small funding-label" style="left:{{ funds_share|add:"-21" }}%">
-                    {% funds_raised campaign last_year short=True %}
-                </span>
-            {% else %}
-                <span class="small funding-label dark" style="left:{{ funds_share|add:"2" }}%">
-                    {% funds_raised campaign last_year short=True %}
-                </span>
-            {% endif %}
+      <span class="tick thick"></span>
+      <span class="tick" style="left:25%"></span>
+      <span class="tick" style="left:50%"></span>
+      <span class="tick" style="left:75%"></span>
+      <span class="tick thick" style="left:100%"></span>
+      <span class="bar" style="width:{{ funds_share }}%"></span>
+      {% if funds_share > 20 %}
+        <span class="small funding-label" style="left:{{ funds_share|add:"-21" }}%">
+          {% funds_raised campaign last_year short=True %}
         </span>
-    </p>
+      {% else %}
+        <span class="small funding-label dark" style="left:{{ funds_share|add:"2" }}%">
+          {% funds_raised campaign last_year short=True %}
+        </span>
+      {% endif %}
+    </span>
+  </p>
 {% endwith %}

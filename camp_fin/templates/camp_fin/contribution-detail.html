@@ -1,124 +1,123 @@
 {% extends 'base.html' %}
 {% load helpers %}
-{% load staticfiles %}
+{% load static %}
 {% load explainer %}
 
 {% block full_content %}
 
-<div class="container">
+  <div class="container">
     <div class="row">
-        <div class="col-md-12">
-            <h3>
-                <strong>{{ transaction }}</strong>
-                {{ transaction.transaction_type.description|get_transaction_verb }}
-                <strong>{{ transaction.amount|format_money }}</strong>
-                to <strong>{{ entity.full_name }}</strong>
-                on {{ transaction.received_date|date:"F j, o" }}
-            </h3>
-        </div>
+      <div class="col-md-12">
+        <h3>
+          <strong>{{ transaction }}</strong>
+          {{ transaction.transaction_type.description|get_transaction_verb }}
+          <strong>{{ transaction.amount|format_money }}</strong>
+          to <strong>{{ entity.full_name }}</strong>
+          on {{ transaction.received_date|date:"F j, o" }}
+        </h3>
+      </div>
     </div>
     {% if user.is_authenticated %}
-    <div class="row">
+      <div class="row">
         <div class="col-md-8">
-            <div class="alert alert-info" role="alert"> 
-                <h4>
-                    {{ transaction.full_name }} <small>{{ transaction.address }}, {{ transaction.city }}, {{ transaction.state }}</small>
-                </h4>
+          <div class="alert alert-info" role="alert">
+            <h4>
+              {{ transaction.full_name }} <small>{{ transaction.address }}, {{ transaction.city }}, {{ transaction.state }}</small>
+            </h4>
 
-                <form action="{{ request.path }}" method="post">
-                    {{ form.redact.as_hidden }}
-                    <p>{% if transaction.redact %}Click the button below to include the donor's name and address with contributions displayed across the site.{% else %}Click the button below to redact the donor's name and address from contributions displayed across the site. This will also prevent their contributions from appearing in site search results.{% endif %}</p>
-                    {% csrf_token %}
-                    <div align="center">
-                        <input type="submit" value="{% if transaction.redact %}Unredact{% else %}Redact{% endif %}" class="btn btn-primary" />
-                    </div>
-                </form>
-            </div>
+            <form action="{{ request.path }}" method="post">
+              {{ form.redact.as_hidden }}
+              <p>{% if transaction.redact %}Click the button below to include the donor's name and address with contributions displayed across the site.{% else %}Click the button below to redact the donor's name and address from contributions displayed across the site. This will also prevent their contributions from appearing in site search results.{% endif %}</p>
+              {% csrf_token %}
+              <div align="center">
+                <input type="submit" value="{% if transaction.redact %}Unredact{% else %}Redact{% endif %}" class="btn btn-primary" />
+              </div>
+            </form>
+          </div>
         </div>
-    </div>
+      </div>
     {% endif %}
     <div class="row">
-        <div class="col-md-8">
-            <table class="table table-hover">
-                <tbody>
-                    <tr>
-                        <td>Donor</td>
-                        <td>
-                            {% if not transaction.redact %}<a href="/search/?term={{ transaction }}">{{ transaction }}</a>{% else %}{{ transaction }}{% endif %}</td>
-                    </tr>
-                    <tr>
-                        <td>Address</td>
-                        <td>{{ transaction.full_address }}</td>
-                    </tr>
-                    {% if transaction.occupation %}
-                    <tr>
-                        <td>
-                            Occupation
-                            {% explainer "Individuals and organizations donating more than $250 must disclose their occupation." %}
-                        </td>
-                        <td>{{ transaction.occupation|title }}</td>
-                    </tr>
-                    {% endif %}
-                    {% if transaction.contact.contact_type %}
-                        <tr>
-                            <td>Donor type</td>
-                            <td>{{ transaction.contact.contact_type }}</td>
-                        </tr>
-                    {% endif %}
-                    {% if transaction.memo %}
-                    <tr>
-                        <td>Memo</td>
-                        <td>{{ transaction.memo }}</td>
-                    </tr>
-                    {% endif %}
-                </tbody>
-            </table>
-            <div class="row">
-                <div class="col-md-6 col-md-offset-3">
-                    <div class="text-center well">
-                        <p>{{ transaction.transaction_type.description|get_transaction_verb }}</p>
-                        <h1>
-                            <label class="label label-success">{{ transaction.amount|format_money }}</label>
-                        </h1>
-                        <br>
-                        {% if transaction.description %}
-                            <p>
-                            {{transaction.description}}
-                            </p>
-                        {% endif %}
-                    </div>
-                    <div class="text-center">
-                        <h1><i class="fa fa-fw fa-chevron-down"></i></h1>
-                    </div>
-                </div>
+      <div class="col-md-8">
+        <table class="table table-hover">
+          <tbody>
+            <tr>
+              <td>Donor</td>
+              <td>
+                {% if not transaction.redact %}<a href="/search/?term={{ transaction }}">{{ transaction }}</a>{% else %}{{ transaction }}{% endif %}</td>
+            </tr>
+            <tr>
+              <td>Address</td>
+              <td>{{ transaction.full_address }}</td>
+            </tr>
+            {% if transaction.occupation %}
+              <tr>
+                <td>
+                  Occupation
+                  {% explainer "Individuals and organizations donating more than $250 must disclose their occupation." %}
+                </td>
+                <td>{{ transaction.occupation|title }}</td>
+              </tr>
+            {% endif %}
+            {% if transaction.contact.contact_type %}
+              <tr>
+                <td>Donor type</td>
+                <td>{{ transaction.contact.contact_type }}</td>
+              </tr>
+            {% endif %}
+            {% if transaction.memo %}
+              <tr>
+                <td>Memo</td>
+                <td>{{ transaction.memo }}</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+        <div class="row">
+          <div class="col-md-6 col-md-offset-3">
+            <div class="text-center well">
+              <p>{{ transaction.transaction_type.description|get_transaction_verb }}</p>
+              <h1>
+                <label class="label label-success">{{ transaction.amount|format_money }}</label>
+              </h1>
+              <br>
+              {% if transaction.description %}
+                <p>
+                  {{transaction.description}}
+                </p>
+              {% endif %}
             </div>
-            <table class="table table-hover">
-                <tbody>
-                    <tr>
-                        <td>Recipient</td>
-                        {% if entity_type == 'candidate' %}
-                            <td><a href="{% url 'candidate-detail' entity.slug %}">{{ entity.full_name }}</a></td>
-                        {% else %}
-                            <td><a href="{% url 'committee-detail' entity.slug %}">{{ entity.full_name }}</a></td>
-                        {% endif %}
-                    </tr>
-                    {% if office %}
-                    <tr>
-                        <td>Office sought</td>
-                        <td>{{ office.description }}</td>
-                    </tr>
-                    {% endif %}
-                    <tr>
-                        <td>Address</td>
-                        <td>{{ entity.address }}</td>
-                    </tr>
-                </tbody>
-            </table>
-            <p><a href="{{ sos_link }}" target="_blank">View on Secretary of State's website</a></p>
+            <div class="text-center">
+              <h1><i class="fa fa-fw fa-chevron-down"></i></h1>
+            </div>
+          </div>
         </div>
-        <div class="col-md-4"></div>
+        <table class="table table-hover">
+          <tbody>
+            <tr>
+              <td>Recipient</td>
+              {% if entity_type == 'candidate' %}
+                <td><a href="{% url 'candidate-detail' entity.slug %}">{{ entity.full_name }}</a></td>
+              {% else %}
+                <td><a href="{% url 'committee-detail' entity.slug %}">{{ entity.full_name }}</a></td>
+              {% endif %}
+            </tr>
+            {% if office %}
+              <tr>
+                <td>Office sought</td>
+                <td>{{ office.description }}</td>
+              </tr>
+            {% endif %}
+            <tr>
+              <td>Address</td>
+              <td>{{ entity.address }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p><a href="{{ sos_link }}" target="_blank">View on Secretary of State's website</a></p>
+      </div>
+      <div class="col-md-4"></div>
     </div>
-</div>
+  </div>
 
 {% endblock %}
-

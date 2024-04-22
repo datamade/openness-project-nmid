@@ -1,30 +1,30 @@
 {% extends 'base.html' %}
-{% load staticfiles %}
+{% load static %}
 {% load bootstrap_pagination %}
 {% load humanize %}
 {% load helpers %}
 
 {% block full_content %}
-<div class="container">
+  <div class="container">
     <div class="row">
-        <div class="col-md-12">
-            <h1><i class='fa fa-fw fa-users'></i>Lobbyist Employers</h1>
-            {% if page.text %}
-                <div class="row">
-                    <div class="col-xs-12 col-md-10">
-                        {{ page.text|safe }}
-                    </div>
-                </div>
-            {% else %}
-                <br/>
-            {% endif %}
-            {% with organizations=object_list %}
-                {% include 'camp_fin/widgets/organization-list.html' %}
-            {% endwith %}
-        </div>
+      <div class="col-md-12">
+        <h1><i class='fa fa-fw fa-users'></i>Lobbyist Employers</h1>
+        {% if page.text %}
+          <div class="row">
+            <div class="col-xs-12 col-md-10">
+              {{ page.text|safe }}
+            </div>
+          </div>
+        {% else %}
+          <br/>
+        {% endif %}
+        {% with organizations=object_list %}
+          {% include 'camp_fin/widgets/organization-list.html' %}
+        {% endwith %}
+      </div>
     </div>
     {% bootstrap_paginate object_list range=10 %}
-</div>
+  </div>
 {% endblock %}
 
 {% block extra_js %}
