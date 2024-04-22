@@ -1,21 +1,12 @@
-import sqlalchemy as sa
-from django.conf import settings
 from django.core.management.base import BaseCommand
-
-DB_CONN = "postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}"
-
-engine = sa.create_engine(
-    DB_CONN.format(**settings.DATABASES["default"]),
-    convert_unicode=True,
-    server_side_cursors=True,
-)
+from django.db import connections, transaction
+from django.db.utils import ProgrammingError
 
 
 class Command(BaseCommand):
     help = "Import New Mexico Campaign Finance data"
 
     def handle(self, *args, **options):
-        self.connection = engine.connect()
 
         self.makeLoanBalanceView()
         self.makeTransactionAggregates()
@@ -31,7 +22,7 @@ class Command(BaseCommand):
                         interval
                     )
                 )
-            except sa.exc.ProgrammingError:
+            except ProgrammingError:
                 view = """
                     CREATE MATERIALIZED VIEW contributions_by_{0} AS (
                       SELECT
@@ -78,7 +69,7 @@ class Command(BaseCommand):
                         interval
                     )
                 )
-            except sa.exc.ProgrammingError:
+            except ProgrammingError:
                 view = """
                     CREATE MATERIALIZED VIEW expenditures_by_{0} AS (
                       SELECT
@@ -135,7 +126,7 @@ class Command(BaseCommand):
             """,
                 raise_exc=True,
             )
-        except sa.exc.ProgrammingError:
+        except ProgrammingError:
             self.executeTransaction(
                 """
                 CREATE MATERIALIZED VIEW current_loan_status AS (
@@ -154,20 +145,10 @@ class Command(BaseCommand):
             )
 
     def executeTransaction(self, query, *args, **kwargs):
-        trans = self.connection.begin()
-
-        raise_exc = kwargs.get("raise_exc", True)
-
-        try:
-            self.connection.execute("SET local timezone to 'America/Denver'")
-            if kwargs:
-                self.connection.execute(query, **kwargs)
-            else:
-                self.connection.execute(query, *args)
-            trans.commit()
-        except sa.exc.ProgrammingError as e:
-            # TODO: Make some kind of logger
-            # logger.error(e, exc_info=True)
-            trans.rollback()
-            if raise_exc:
-                raise e
+        with connections["default"].cursor() as cursor:
+            with transaction.atomic():
+                cursor.execute("SET local timezone to 'America/Denver'")
+                if kwargs:
+                    cursor.execute(query, kwargs)
+                else:
+                    cursor.execute(query, args)

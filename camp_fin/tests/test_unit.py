@@ -176,11 +176,9 @@ class TestAdmin(StatelessTestCase):
             colname = 'class="column-{field}"'.format(field=field)
             self.assertIn(colname, html)
 
-        table_list = html.split("<tr")
-
         # We created one race. With the header row, that should make for a list
         # length of 3
-        self.assertEqual(len(table_list), 3)
+        self.assertIn("1 race", html)
 
     def test_race_edit_loads(self):
         url = reverse("admin:camp_fin_race_change", args=(self.race.id,))
@@ -202,15 +200,20 @@ class TestAdmin(StatelessTestCase):
         self.assertNotIn(str(self.non_race_campaign), html)
 
     def test_admin_search(self):
+
+        base_url = reverse("admin:camp_fin_race_changelist")
+
         # We can search offices
         query = "?q=office"
-        base_url = reverse("admin:camp_fin_race_changelist")
         url = base_url + query
         changelist = self.client.get(url, follow=True)
         html = changelist.content.decode("utf-8")
 
-        table_list = html.split("<tr")
-        self.assertEqual(len(table_list), 3)
+        self.assertIn("1 race", html)
+
+    def test_admin_search_fail(self):
+
+        base_url = reverse("admin:camp_fin_race_changelist")
 
         # We can't search candidates (change this if we decide we can!)
         bad_query = "?q=candidate"
@@ -218,8 +221,7 @@ class TestAdmin(StatelessTestCase):
         empty_changes = self.client.get(bad_url, follow=True)
         empty_html = empty_changes.content.decode("utf-8")
 
-        empty_table = empty_html.split("<tr")
-        self.assertEqual(len(empty_table), 1)
+        self.assertIn("0 results", empty_html)
 
 
 class TestUtils(TestCase):
