@@ -1,4 +1,4 @@
-version: '2.4'
+version: "2.4"
 
 services:
   app:
@@ -9,4 +9,4 @@ services:
       DJANGO_SECRET_KEY: reallysupersecret
       # Disable manifest storage for testing
       DJANGO_STATICFILES_STORAGE: django.contrib.staticfiles.storage.StaticFilesStorage
-    command: python manage.py test -k -v 2
+    command: python manage.py test -v 2
