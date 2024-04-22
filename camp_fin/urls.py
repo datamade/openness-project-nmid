@@ -14,7 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import include, re_path
+from django.urls import include, path
 from rest_framework import routers
 
 from camp_fin.views import (
@@ -70,62 +70,62 @@ handler404 = "camp_fin.views.four_oh_four"
 handler500 = "camp_fin.views.five_hundred"
 
 urlpatterns = [
-    re_path(r"^admin/", admin.site.urls),
-    re_path(r"^$", IndexView.as_view(), name="index"),
-    re_path(r"^about/$", AboutView.as_view(), name="about"),
-    re_path(
-        r"^financial-disclosures/$",
+    path(r"admin/", admin.site.urls),
+    path("", IndexView.as_view(), name="index"),
+    path("about/", AboutView.as_view(), name="about"),
+    path(
+        "financial-disclosures/",
         FinancialDisclosuresView.as_view(),
         name="financial-disclosures",
     ),
-    re_path(
-        r"^lobbyists/$",
+    path(
+        "lobbyists/",
         LobbyistsView.as_view(),
         name="lobbyists",
     ),
-    re_path(r"^donations/$", DonationsView.as_view(), name="donations"),
-    re_path(r"^search/$", SearchView.as_view(), name="search"),
-    re_path(r"^candidates/$", CandidateList.as_view(), name="candidate-list"),
-    re_path(
-        r"^candidates/(?P<slug>[\w-]+)/$",
+    path("donations/", DonationsView.as_view(), name="donations"),
+    path("search/", SearchView.as_view(), name="search"),
+    path("candidates/", CandidateList.as_view(), name="candidate-list"),
+    path(
+        r"candidates/<slug:slug>/",
         CandidateDetail.as_view(),
         name="candidate-detail",
     ),
-    re_path(
-        r"^contributions/(?P<pk>[0-9]+)/$",
+    path(
+        "contributions/<int:pk>/",
         ContributionDetail.as_view(),
         name="contribution-detail",
     ),
-    re_path(
-        r"^expenditures/(?P<pk>[0-9]+)/$",
+    path(
+        "expenditures/<int:pk>/",
         ExpenditureDetail.as_view(),
         name="expenditure-detail",
     ),
-    re_path(r"^committees/$", CommitteeList.as_view(), name="committee-list"),
-    re_path(
-        r"^committees/(?P<slug>[\w-]+)/$",
+    path("committees/", CommitteeList.as_view(), name="committee-list"),
+    path(
+        r"committees/<slug:slug>/",
         CommitteeDetail.as_view(),
         name="committee-detail",
     ),
-    re_path(r"^downloads/$", DownloadView.as_view(), name="downloads"),
-    re_path(r"^organizations/$", OrganizationList.as_view(), name="organization-list"),
-    re_path(
-        r"^organizations/(?P<slug>[\w-]+)/$",
+    path("downloads/", DownloadView.as_view(), name="downloads"),
+    path("organizations/", OrganizationList.as_view(), name="organization-list"),
+    path(
+        r"organizations/<slug:slug>/",
         OrganizationDetail.as_view(),
         name="organization-detail",
     ),
-    re_path(r"^api/bulk/candidates/$", bulk_candidates, name="bulk-candidates"),
-    re_path(r"^api/bulk/committees/$", bulk_committees, name="bulk-committees"),
-    re_path(r"^api/bulk/employers/$", bulk_employers, name="bulk-employers"),
-    re_path(r"^api/bulk/employments/$", bulk_employments, name="bulk-employments"),
-    re_path(r"^api/", include(router.urls)),
-    re_path(r"^api-auth/", include("rest_framework.urls", namespace="rest_framework")),
-    re_path(r"^ckeditor/", include("ckeditor_uploader.urls")),
-    re_path(r"^top-earners/$", TopEarnersView.as_view(), name="top-earners"),
-    re_path(
-        r"^widgets/top-earners/$",
+    path("api/bulk/candidates/", bulk_candidates, name="bulk-candidates"),
+    path("api/bulk/committees/", bulk_committees, name="bulk-committees"),
+    path("api/bulk/employers/", bulk_employers, name="bulk-employers"),
+    path("api/bulk/employments/", bulk_employments, name="bulk-employments"),
+    path("api/", include(router.urls)),
+    path("api-auth/", include("rest_framework.urls", namespace="rest_framework")),
+    path("ckeditor/", include("ckeditor_uploader.urls")),
+    path("top-earners/", TopEarnersView.as_view(), name="top-earners"),
+    path(
+        "widgets/top-earners/",
         TopEarnersWidgetView.as_view(),
         name="widget-top-earners",
     ),
-    re_path(r"^flush-cache/$", flush_cache, name="flush-cache"),
+    path("flush-cache/", flush_cache, name="flush-cache"),
 ]
