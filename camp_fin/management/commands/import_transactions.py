@@ -5,8 +5,6 @@ from itertools import groupby
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db.models import Sum
-from django.utils.crypto import get_random_string
-from django.utils.text import slugify
 from tqdm import tqdm
 
 from camp_fin import models
@@ -367,52 +365,3 @@ class Command(BaseCommand):
             filing.save()
 
             self.stdout.write(f"Totalled {filing}")
-
-    def _get_candidate(self, record):
-
-        try:
-            candidate = models.Candidate.objects.get(entity__user_id=record["OrgID"])
-
-            if any(
-                [
-                    record["Candidate First Name"],
-                    record["Candidate Last Name"],
-                ]
-            ):
-                full_name = re.sub(
-                    r"\s{2,}",
-                    " ",
-                    " ".join(
-                        [
-                            record["Candidate First Name"],
-                            record["Candidate Middle Name"],
-                            record["Candidate Last Name"],
-                            record["Candidate Suffix"],
-                        ]
-                    ),
-                ).strip()
-
-                candidate.full_name = full_name
-                candidate.slug = f"{slugify(full_name)}-{get_random_string(5)}"
-                candidate.first_name = record["Candidate First Name"]
-                candidate.middle_name = record["Candidate Middle Name"]
-                candidate.last_name = record["Candidate Last Name"]
-                candidate.suffix = record["Candidate Suffix"]
-                candidate.save()
-
-        except models.Candidate.DoesNotExist:
-            self.stdout.write(
-                self.style.ERROR(
-                    f"Could not find candidate associated with committee {record['Committee Name']}. Skipping..."
-                )
-            )
-            raise ValueError
-        except models.Candidate.MultipleObjectsReturned:
-            self.stdout.write(
-                self.style.ERROR(
-                    f"Found more than one candidate associated with committee {record['Committee Name']}. Skipping..."
-                )
-            )
-            raise ValueError
-
-        return candidate
