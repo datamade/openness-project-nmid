@@ -698,7 +698,7 @@ class CommitteeList(PaginatedList):
                 SELECT DISTINCT ON (pac.id)
                   pac.*,
                   filing.closing_balance,
-                  COALESCE(filing.filed_date, filing.date_added) AS filing_date
+                  filing.filed_date AS filing_date
                 FROM camp_fin_pac AS pac
                 JOIN camp_fin_filing AS filing
                   USING(entity_id)
@@ -706,7 +706,7 @@ class CommitteeList(PaginatedList):
                   ON filing.filing_period_id = period.id
                 WHERE filing.date_added >= '2010-01-01'
                   AND filing.closing_balance IS NOT NULL
-                ORDER BY pac.id, filing.date_added DESC
+                ORDER BY pac.id, filing.filed_date DESC
               ) AS pac
             ) AS s
             ORDER BY {0} {1}
