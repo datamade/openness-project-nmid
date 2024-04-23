@@ -1622,6 +1622,7 @@ class SearchAPIView(viewsets.ViewSet):
                 query = """
                     SELECT
                       o.*,
+                      coalesce(o.full_name, o.company_name) as donor_name,
                       CASE WHEN o.occupation = 'None' THEN ''
                            ELSE initcap(o.occupation)
                       END AS donor_occupation,
@@ -1672,6 +1673,7 @@ class SearchAPIView(viewsets.ViewSet):
                         candidate.full_name
                       ELSE pac.name
                       END AS transaction_subject,
+                      coalesce(o.full_name, o.company_name) as donor_name,
                       pac.slug AS pac_slug,
                       candidate.slug AS candidate_slug
                     FROM camp_fin_transaction AS o
