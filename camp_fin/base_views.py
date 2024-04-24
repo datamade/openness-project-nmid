@@ -250,7 +250,7 @@ class LobbyistTransactionDownloadViewSet(TransactionDownload):
                     trans.id AS transaction_id,
                     report.entity_id AS entity_id,
                     entity.type AS entity_type,
-                    entity.name AS name,
+                    COALESCE(trans.full_name, trans.company_name) AS name,
                     COALESCE(trans.name, '') AS recipient,
                     trans.amount,
                     COALESCE(trans.beneficiary, '') AS beneficiary,
