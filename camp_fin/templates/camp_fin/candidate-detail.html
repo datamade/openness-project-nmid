@@ -4,127 +4,127 @@
 {% block title %}{{ candidate.full_name }}{% endblock %}
 
 {% block header %}
-    <div class="row">
-        <div class="col-xs-12">
-            <p class="breadcrumbs"><a href='/candidates'>&laquo; Candidates</a></p>
-        </div>
+  <div class="row">
+    <div class="col-xs-12">
+      <p class="breadcrumbs"><a href='/candidates'>&laquo; Candidates</a></p>
     </div>
-    <div class="row">
-        <div class="col-xs-12">
-            <h1>
-                <i class="fa fa-fw fa-user"></i>
-                {{ candidate }}
-                <small>Candidate</small>
-            </h1>
-            {% if sos_link %}
-                <p><a href="{{sos_link}}" target="_blank">View on the New Mexico Secretary of State's website &raquo;</a></p>
-            {% endif %}
-            {% if stories %}
-                <h3>Related stories</h3>
-                    <ul>
-                    {% for story in stories %}
-                        <li><a href="{{ story.link }}">{{ story.title }}</a></li>
-                    {% endfor %}
-                    </ul>
-            {% endif %}
-        </div>
+  </div>
+  <div class="row">
+    <div class="col-xs-12">
+      <h1>
+        <i class="fa fa-fw fa-user"></i>
+        {{ candidate }}
+        <small>Candidate</small>
+      </h1>
+      {% if latest_campaign.sos_link %}
+        <p><a href="{{latest_campaign.sos_link}}" target="_blank">View on the New Mexico Secretary of State's website &raquo;</a></p>
+      {% endif %}
+      {% if stories %}
+        <h3>Related stories</h3>
+        <ul>
+          {% for story in stories %}
+            <li><a href="{{ story.link }}">{{ story.title }}</a></li>
+          {% endfor %}
+        </ul>
+      {% endif %}
     </div>
-    <div class="row">
-        <div class="col-xs-12">
-            <a href="{% url 'bulk-contributions-list' %}?candidate_id={{ candidate.id }}" class="btn btn-default"
-               id="contributions-download">
-                <i class="fa fa-fw fa-download"></i>
-                Download contributions
-            </a>
-            <a href="{% url 'bulk-expenditures-list' %}?candidate_id={{ candidate.id }}" class="btn btn-default"
-               id="expenditures-download">
-                <i class="fa fa-fw fa-download"></i>
-                Download expenditures
-            </a>
-        </div>
+  </div>
+  <div class="row">
+    <div class="col-xs-12">
+      <a href="{% url 'bulk-contributions-list' %}?candidate_id={{ candidate.id }}" class="btn btn-default"
+        id="contributions-download">
+        <i class="fa fa-fw fa-download"></i>
+        Download contributions
+      </a>
+      <a href="{% url 'bulk-expenditures-list' %}?candidate_id={{ candidate.id }}" class="btn btn-default"
+        id="expenditures-download">
+        <i class="fa fa-fw fa-download"></i>
+        Download expenditures
+      </a>
     </div>
+  </div>
 {% endblock %}
 
 {% block charts %}
-    <h3><i class="fa fa-fw fa-area-chart"></i> Net funds over time</h3>
-    <div id='net-funds-chart'></div>
+  <h3><i class="fa fa-fw fa-area-chart"></i> Net funds over time</h3>
+  <div id='net-funds-chart'></div>
 
-    <h3><i class="fa fa-fw fa-bar-chart"></i> Donations and expenditures over time</h3>
-    <div id='expend-chart'></div>
+  <h3><i class="fa fa-fw fa-bar-chart"></i> Donations and expenditures over time</h3>
+  <div id='expend-chart'></div>
 
 {% endblock %}
 
 {% block campaigns %}
-    {% if campaigns %}
-        <h3><i class="fa fa-fw fa-history"></i> Past campaigns</h3>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Office (Party)</th>
-                    <th>Committee</th>
-                    <th>Election year</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for campaign in campaigns %}
-                    <tr>
-                        <td>
-                            {{ campaign.office.description }}
-                            {% if campaign.party_identifier %}
-                                <span class="party-identifier {{ campaign.party_identifier }}">
-                                    ({{ campaign.party_identifier }})
-                                </span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if campaign.committee_name %}
-                                <a href="{% url 'search' %}?term={{ campaign.committee_name|urlencode }}">
-                                    {{ campaign.committee_name }}
-                                </a>
-                            {% endif %}
-                        </td>
-                        <td>{{ campaign.election_season.year }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
+  {% if campaigns %}
+    <h3><i class="fa fa-fw fa-history"></i> Past campaigns</h3>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Office (Party)</th>
+          <th>Committee</th>
+          <th>Election year</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for campaign in campaigns %}
+          <tr>
+            <td>
+              {{ campaign.office.description }}
+              {% if campaign.party_identifier %}
+                <span class="party-identifier {{ campaign.party_identifier }}">
+                  ({{ campaign.party_identifier }})
+                </span>
+              {% endif %}
+            </td>
+            <td>
+              {% if campaign.committee_name %}
+                <a href="{% url 'search' %}?term={{ campaign.committee_name|urlencode }}">
+                  {{ campaign.committee_name }}
+                </a>
+              {% endif %}
+            </td>
+            <td>{{ campaign.election_season.year }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
 {% endblock %}
 
 {% block js_templates %}
-    <script type="text/EJS" id="top-money-table-guts">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <% if(transaction_type == 'top-donors'){ %>
-                        <th>Donor</th>
-                        <th>Total donated</th>
-                    <% } else { %>
-                        <th>Recipient</th>
-                        <th>Total received</th>
-                    <% } %>
-                    <th>Election year</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% $.each(transactions, function(i, transaction){ %>
-                    <tr>
-                        <td>
-                            <% if (transaction.redact) { %>
-                                <%= transaction.display_name %>
-                            <% } else { %>
-                                <a href='/search/?term=<%= encodeURIComponent(transaction.display_name.replace("\'", "")) %>'>
-                                    <%= transaction.display_name %>
-                                </a>
-                            <% } %>
-                        </td>
-                        <td class='nowrap'>
-                            <%= accounting.formatMoney(transaction.amount) %>
-                        </td>
-                        <td><%= transaction.year %></td>
-                    </tr>
-                <% }) %>
-            </tbody>
-        </table>
-    </script>
+  <script type="text/EJS" id="top-money-table-guts">
+    <table class="table table-striped">
+    <thead>
+    <tr>
+    <% if(transaction_type == 'top-donors'){ %>
+      <th>Donor</th>
+      <th>Total donated</th>
+      <% } else { %>
+        <th>Recipient</th>
+        <th>Total received</th>
+        <% } %>
+    <th>Election year</th>
+    </tr>
+    </thead>
+    <tbody>
+    <% $.each(transactions, function(i, transaction){ %>
+      <tr>
+      <td>
+      <% if (transaction.redact) { %>
+        <%= transaction.display_name %>
+        <% } else { %>
+          <a href='/search/?term=<%= encodeURIComponent(transaction.display_name.replace("\'", "")) %>'>
+      <%= transaction.display_name %>
+      </a>
+      <% } %>
+    </td>
+    <td class='nowrap'>
+    <%= accounting.formatMoney(transaction.amount) %>
+    </td>
+    <td><%= transaction.year %></td>
+    </tr>
+    <% }) %>
+    </tbody>
+    </table>
+  </script>
 {% endblock %}

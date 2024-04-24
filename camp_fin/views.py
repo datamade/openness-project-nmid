@@ -49,7 +49,6 @@ from .base_views import (
 )
 from .models import (
     PAC,
-    Campaign,
     Candidate,
     Entity,
     Filing,
@@ -903,8 +902,7 @@ class LobbyistDetail(DetailView):
         except EmptyPage:
             context["expenditures"] = expend_paginator.page(expend_paginator.num_pages)
 
-        sos_link = "https://www.cfis.state.nm.us/media/ReportLobbyist.aspx?id={id}&el=0"
-        context["sos_link"] = sos_link.format(id=context["object"].id)
+        context["sos_link"] = None
 
         seo = {}
         seo.update(settings.SITE_META)
@@ -1063,8 +1061,7 @@ class OrganizationDetail(DetailView):
         except EmptyPage:
             context["expenditures"] = expend_paginator.page(expend_paginator.num_pages)
 
-        sos_link = "https://www.cfis.state.nm.us/media/ReportEmployer.aspx?id={id}&el=0"
-        context["sos_link"] = sos_link.format(id=context["object"].id)
+        context["sos_link"] = None
 
         seo = {}
         seo.update(settings.SITE_META)
@@ -1224,12 +1221,9 @@ class CandidateDetail(CommitteeDetailBaseView):
         seo = {}
         seo.update(settings.SITE_META)
 
-        first_name = context["object"].first_name
-        last_name = context["object"].last_name
-
-        seo["title"] = "{0} {1}".format(first_name, last_name)
-        seo["site_desc"] = "Candidate information for {0} {1}".format(
-            first_name, last_name
+        seo["title"] = "{0}".format(context["object"].full_name)
+        seo["site_desc"] = "Candidate information for {0}".format(
+            context["object"].full_name
         )
 
         context["seo"] = seo
@@ -1239,23 +1233,6 @@ class CandidateDetail(CommitteeDetailBaseView):
         except (AttributeError, ObjectDoesNotExist):
             latest_campaign = None
 
-        sos_link = None
-
-        if latest_campaign and latest_campaign in Campaign.objects.exclude(
-            office__id=0
-        ):
-            try:
-                sos_link = "https://www.cfis.state.nm.us/media/CandidateReportH.aspx?es={es}&ot={ot}&o={o}&c={c}"
-                sos_link = sos_link.format(
-                    es=latest_campaign.election_season.id,
-                    ot=latest_campaign.office.office_type.id,
-                    o=latest_campaign.office.id,
-                    c=latest_campaign.candidate_id,
-                )
-            except AttributeError:
-                sos_link = None
-
-        context["sos_link"] = sos_link
         context["entity_type"] = "candidate"
 
         return context
@@ -1277,12 +1254,6 @@ class CommitteeDetail(CommitteeDetailBaseView):
         )
 
         context["seo"] = seo
-
-        context[
-            "sos_link"
-        ] = "https://www.cfis.state.nm.us/media/PACReport.aspx?p={}".format(
-            context["object"].entity_id
-        )
 
         context["entity_type"] = "pac"
 

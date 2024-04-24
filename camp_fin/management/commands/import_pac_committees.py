@@ -39,7 +39,7 @@ class Command(BaseCommand):
                 if state_id:
 
                     try:
-                        models.PAC.objects.get(entity__user_id=record["StateID"])
+                        pac = models.PAC.objects.get(entity__user_id=record["StateID"])
                         pacs_linked += 1
 
                     except models.PAC.DoesNotExist:
@@ -51,7 +51,7 @@ class Command(BaseCommand):
                             user_id=record["StateID"],
                         )
 
-                        models.PAC.objects.create(
+                        pac = models.PAC.objects.create(
                             name=record["CommitteeName"],
                             slug=f'{slugify(record["CommitteeName"])}-{get_random_string(5)}',
                             entity=entity,
@@ -72,13 +72,18 @@ class Command(BaseCommand):
                             entity_type=entity_type,
                         )
 
-                        models.PAC.objects.create(
+                        pac = models.PAC.objects.create(
                             name=record["CommitteeName"],
                             slug=f'{slugify(record["CommitteeName"])}-{get_random_string(5)}',
                             entity=entity,
                         )
 
                         pacs_created += 1
+
+                pac.sos_link = "https://login.cfis.sos.state.nm.us/#/exploreCommitteeDetail/{id}".format(
+                    id=record["IdNumber"]
+                )
+                pac.save()
 
         self.stderr.write(
             f"found {pacs_linked} pacs, "
