@@ -57,6 +57,7 @@ class Command(BaseCommand):
                             pass
                         else:
                             previous_final.final = None
+                            previous_final.save()
 
                     filing = self._create_filing(record)
                     filings_created += 1
