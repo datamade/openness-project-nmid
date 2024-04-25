@@ -5,8 +5,6 @@ from itertools import groupby
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db.models import Sum
-from django.utils.crypto import get_random_string
-from django.utils.text import slugify
 from tqdm import tqdm
 
 from camp_fin import models
@@ -58,18 +56,20 @@ class Command(BaseCommand):
         if options["transaction_type"] not in ("EXP", "CON"):
             raise ValueError("Transaction type must be one of: EXP, CON")
 
+        year = options["year"]
+
         with open(options["file"]) as f:
 
             if options["transaction_type"] == "CON":
-                self.import_contributions(f)
+                self.import_contributions(f, year)
 
             elif options["transaction_type"] == "EXP":
-                self.import_expenditures(f)
+                self.import_expenditures(f, year)
 
-        self.total_filings(options["year"])
+        self.total_filings(year)
         call_command("aggregate_data")
 
-    def import_contributions(self, f):
+    def import_contributions(self, f, year):
         reader = csv.DictReader(f)
 
         for filing_group, records in groupby(tqdm(reader), key=filing_key):
@@ -80,9 +80,23 @@ class Command(BaseCommand):
                     except ValueError:
                         break
 
-                    models.LoanTransaction.objects.filter(filing=filing).delete()
-                    models.SpecialEvent.objects.filter(filing=filing).delete()
-                    models.Transaction.objects.filter(filing=filing).exclude(
+                    # the contributions file are organized by the year
+                    # of a transaction date not the date of the
+                    # filing, so transactions from the same filing can
+                    # appear in multiple contribution files.
+                    #
+                    # we need to make sure we just clear out the
+                    # contributions in a file that were purportedly made
+                    # in a given year.
+                    models.Loan.objects.filter(
+                        filing=filing, received_date__year=year
+                    ).delete()
+                    models.SpecialEvent.objects.filter(
+                        filing=filing, event_date__year=year
+                    ).delete()
+                    models.Transaction.objects.filter(
+                        filing=filing, received_date__year=year
+                    ).exclude(
                         transaction_type__description="Monetary Expenditure"
                     ).delete()
 
@@ -99,7 +113,7 @@ class Command(BaseCommand):
                         f"Could not determine contribution type from record: {record['Contribution Type']}"
                     )
 
-    def import_expenditures(self, f):
+    def import_expenditures(self, f, year):
         reader = csv.DictReader(f)
 
         for filing_group, records in groupby(tqdm(reader), key=filing_key):
@@ -113,6 +127,7 @@ class Command(BaseCommand):
                     models.Transaction.objects.filter(
                         filing=filing,
                         transaction_type__description="Monetary Expenditure",
+                        received_date__year=year,
                     ).delete()
 
                 self.make_contribution(record, None, filing).save()
@@ -355,7 +370,11 @@ class Command(BaseCommand):
         return contribution
 
     def total_filings(self, year):
-        for filing in models.Filing.objects.filter(filed_date__year=year).iterator():
+        for filing in models.Filing.objects.filter(
+            final=True,
+            filing_period__initial_date__year__lte=year,
+            filing_period__end_date__year__gte=year,
+        ).iterator():
             contributions = filing.contributions().aggregate(total=Sum("amount"))
             expenditures = filing.expenditures().aggregate(total=Sum("amount"))
             loans = filing.loans().aggregate(total=Sum("amount"))
@@ -367,52 +386,3 @@ class Command(BaseCommand):
             filing.save()
 
             self.stdout.write(f"Totalled {filing}")
-
-    def _get_candidate(self, record):
-
-        try:
-            candidate = models.Candidate.objects.get(entity__user_id=record["OrgID"])
-
-            if any(
-                [
-                    record["Candidate First Name"],
-                    record["Candidate Last Name"],
-                ]
-            ):
-                full_name = re.sub(
-                    r"\s{2,}",
-                    " ",
-                    " ".join(
-                        [
-                            record["Candidate First Name"],
-                            record["Candidate Middle Name"],
-                            record["Candidate Last Name"],
-                            record["Candidate Suffix"],
-                        ]
-                    ),
-                ).strip()
-
-                candidate.full_name = full_name
-                candidate.slug = f"{slugify(full_name)}-{get_random_string(5)}"
-                candidate.first_name = record["Candidate First Name"]
-                candidate.middle_name = record["Candidate Middle Name"]
-                candidate.last_name = record["Candidate Last Name"]
-                candidate.suffix = record["Candidate Suffix"]
-                candidate.save()
-
-        except models.Candidate.DoesNotExist:
-            self.stdout.write(
-                self.style.ERROR(
-                    f"Could not find candidate associated with committee {record['Committee Name']}. Skipping..."
-                )
-            )
-            raise ValueError
-        except models.Candidate.MultipleObjectsReturned:
-            self.stdout.write(
-                self.style.ERROR(
-                    f"Found more than one candidate associated with committee {record['Committee Name']}. Skipping..."
-                )
-            )
-            raise ValueError
-
-        return candidate

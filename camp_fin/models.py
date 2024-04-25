@@ -44,6 +44,7 @@ class Candidate(models.Model):
 
 class PAC(models.Model):
     entity = models.ForeignKey("Entity", db_constraint=False, on_delete=models.CASCADE)
+    sos_link = models.URLField()
     name = models.CharField(max_length=100)
     acronym = models.CharField(max_length=15, null=True)
     business_phone = models.CharField(max_length=20, null=True)
@@ -167,6 +168,7 @@ class Campaign(models.Model):
     race_status = models.CharField(
         max_length=25, default="active", choices=status_choices, blank=True, null=True
     )
+    sos_link = models.URLField()
 
     def __str__(self):
         office = self.office.description

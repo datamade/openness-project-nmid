@@ -49,7 +49,6 @@ from .base_views import (
 )
 from .models import (
     PAC,
-    Campaign,
     Candidate,
     Entity,
     Filing,
@@ -203,10 +202,14 @@ class IndexView(TopEarnersBase, LobbyistContextMixin, PagesMixin):
 
         most_recent_filings = (
             Filing.objects.filter(
+                final=True,
                 closing_balance__isnull=False,
                 filing_period__due_date__gte=datetime.date(year, 1, 1),
             )
-            .order_by("entity_id", "-filing_period__due_date", "-date_added")
+            .order_by(
+                "entity_id",
+                "-filing_period__end_date",
+            )
             .distinct("entity_id")
         )
 
@@ -622,7 +625,7 @@ class CandidateList(PaginatedList):
                   campaign.division_id,
                   office.description AS office_name,
                   filing.closing_balance,
-                  COALESCE(filing.filed_date, filing.date_added) AS filing_date
+                  filing.filed_date AS filing_date
                 FROM camp_fin_candidate AS candidate
                 JOIN camp_fin_filing AS filing
                   USING(entity_id)
@@ -634,7 +637,7 @@ class CandidateList(PaginatedList):
                   ON campaign.office_id = office.id
                 WHERE filing.date_added >= '2010-01-01'
                   AND filing.closing_balance IS NOT NULL
-                ORDER BY candidate.id, filing.date_added DESC
+                ORDER BY candidate.id, filing.filed_date DESC
               ) AS candidates
             ) AS s
             ORDER BY {0} {1}
@@ -698,7 +701,7 @@ class CommitteeList(PaginatedList):
                 SELECT DISTINCT ON (pac.id)
                   pac.*,
                   filing.closing_balance,
-                  COALESCE(filing.filed_date, filing.date_added) AS filing_date
+                  filing.filed_date AS filing_date
                 FROM camp_fin_pac AS pac
                 JOIN camp_fin_filing AS filing
                   USING(entity_id)
@@ -706,7 +709,7 @@ class CommitteeList(PaginatedList):
                   ON filing.filing_period_id = period.id
                 WHERE filing.date_added >= '2010-01-01'
                   AND filing.closing_balance IS NOT NULL
-                ORDER BY pac.id, filing.date_added DESC
+                ORDER BY pac.id, filing.filed_date DESC
               ) AS pac
             ) AS s
             ORDER BY {0} {1}
@@ -903,8 +906,7 @@ class LobbyistDetail(DetailView):
         except EmptyPage:
             context["expenditures"] = expend_paginator.page(expend_paginator.num_pages)
 
-        sos_link = "https://www.cfis.state.nm.us/media/ReportLobbyist.aspx?id={id}&el=0"
-        context["sos_link"] = sos_link.format(id=context["object"].id)
+        context["sos_link"] = None
 
         seo = {}
         seo.update(settings.SITE_META)
@@ -1063,8 +1065,7 @@ class OrganizationDetail(DetailView):
         except EmptyPage:
             context["expenditures"] = expend_paginator.page(expend_paginator.num_pages)
 
-        sos_link = "https://www.cfis.state.nm.us/media/ReportEmployer.aspx?id={id}&el=0"
-        context["sos_link"] = sos_link.format(id=context["object"].id)
+        context["sos_link"] = None
 
         seo = {}
         seo.update(settings.SITE_META)
@@ -1173,8 +1174,8 @@ class CommitteeDetailBaseView(DetailView):
 
             # Count pure donations, if applicable
             if total_loans > 0 or total_inkind > 0:
-                donations = latest_filing.total_contributions - (
-                    (latest_filing.total_loans or 0) + (latest_filing.total_inkind or 0)
+                donations = (latest_filing.total_contributions or 0) - (
+                    total_loans + total_inkind
                 )
                 context["donations"] = donations
 
@@ -1224,12 +1225,9 @@ class CandidateDetail(CommitteeDetailBaseView):
         seo = {}
         seo.update(settings.SITE_META)
 
-        first_name = context["object"].first_name
-        last_name = context["object"].last_name
-
-        seo["title"] = "{0} {1}".format(first_name, last_name)
-        seo["site_desc"] = "Candidate information for {0} {1}".format(
-            first_name, last_name
+        seo["title"] = "{0}".format(context["object"].full_name)
+        seo["site_desc"] = "Candidate information for {0}".format(
+            context["object"].full_name
         )
 
         context["seo"] = seo
@@ -1239,23 +1237,6 @@ class CandidateDetail(CommitteeDetailBaseView):
         except (AttributeError, ObjectDoesNotExist):
             latest_campaign = None
 
-        sos_link = None
-
-        if latest_campaign and latest_campaign in Campaign.objects.exclude(
-            office__id=0
-        ):
-            try:
-                sos_link = "https://www.cfis.state.nm.us/media/CandidateReportH.aspx?es={es}&ot={ot}&o={o}&c={c}"
-                sos_link = sos_link.format(
-                    es=latest_campaign.election_season.id,
-                    ot=latest_campaign.office.office_type.id,
-                    o=latest_campaign.office.id,
-                    c=latest_campaign.candidate_id,
-                )
-            except AttributeError:
-                sos_link = None
-
-        context["sos_link"] = sos_link
         context["entity_type"] = "candidate"
 
         return context
@@ -1277,12 +1258,6 @@ class CommitteeDetail(CommitteeDetailBaseView):
         )
 
         context["seo"] = seo
-
-        context[
-            "sos_link"
-        ] = "https://www.cfis.state.nm.us/media/PACReport.aspx?p={}".format(
-            context["object"].entity_id
-        )
 
         context["entity_type"] = "pac"
 
@@ -1622,6 +1597,7 @@ class SearchAPIView(viewsets.ViewSet):
                 query = """
                     SELECT
                       o.*,
+                      coalesce(o.full_name, o.company_name) as donor_name,
                       CASE WHEN o.occupation = 'None' THEN ''
                            ELSE initcap(o.occupation)
                       END AS donor_occupation,
@@ -1672,6 +1648,7 @@ class SearchAPIView(viewsets.ViewSet):
                         candidate.full_name
                       ELSE pac.name
                       END AS transaction_subject,
+                      coalesce(o.full_name, o.company_name) as donor_name,
                       pac.slug AS pac_slug,
                       candidate.slug AS candidate_slug
                     FROM camp_fin_transaction AS o

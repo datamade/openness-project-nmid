@@ -16,8 +16,8 @@
         {{ candidate }}
         <small>Candidate</small>
       </h1>
-      {% if sos_link %}
-        <p><a href="{{sos_link}}" target="_blank">View on the New Mexico Secretary of State's website &raquo;</a></p>
+      {% if latest_campaign.sos_link %}
+        <p><a href="{{latest_campaign.sos_link}}" target="_blank">View on the New Mexico Secretary of State's website &raquo;</a></p>
       {% endif %}
       {% if stories %}
         <h3>Related stories</h3>

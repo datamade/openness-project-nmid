@@ -68,7 +68,6 @@
             <th>Rank</th>
             <th>Candidate</th>
             <th class='hidden-sm hidden-xs'>Office</th>
-            <th class='hidden-sm hidden-xs'>Committee</th>
             <th class='text-right no-wrap'>Cash on hand {{ sort_order|get_sort_icon|safe }}</th>
           </tr>
         </thead>
@@ -79,7 +78,6 @@
                 <td>{{ forloop.counter }}</td>
                 <td><a href="{% url 'candidate-detail' candidate.slug %}">{{ candidate.full_name }}</a></td>
                 <td class='hidden-sm  hidden-xs'>{{ filing.campaign.office.description }} </td>
-                <td class='hidden-sm hidden-xs'>{{ filing.campaign.committee_name|default_if_none:"" }}</td>
                 <td class='text-right'>
                   <span class='hidden-sm hidden-xs'>{{ filing.closing_balance|format_money }}</span>
                   <span class='visible-sm-block visible-xs-block'>{{ filing.closing_balance|format_money_short }}</span>

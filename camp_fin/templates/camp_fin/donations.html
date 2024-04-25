@@ -59,8 +59,8 @@
                 {% for transaction in object_list %}
                   <tr>
                     <td>
-                      <a href="{% url 'search' %}?term={{ transaction.full_name }}">
-                        {{ transaction.full_name }}
+                      <a href="{% url 'search' %}?term={% firstof transaction.full_name transaction.company_name %}">
+                        {% firstof transaction.full_name transaction.company_name %}
                       </a>
                     </td>
                     <td class="no-wrap">

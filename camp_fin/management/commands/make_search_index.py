@@ -48,7 +48,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("Worked"))
 
     def makeCandidateIndex(self):
-        index_fields = ["prefix", "first_name", "middle_name", "last_name", "suffix"]
+        index_fields = ["full_name"]
 
         vector = "concat_ws(' ', {})".format(", ".join(index_fields))
 

@@ -92,7 +92,7 @@ class Command(BaseCommand):
                 else:
                     county = None
 
-                _, created = models.Campaign.objects.get_or_create(
+                campaign, created = models.Campaign.objects.get_or_create(
                     election_season=election_season,
                     candidate=candidate,
                     office=office,
@@ -100,6 +100,16 @@ class Command(BaseCommand):
                     county=county,
                     political_party=political_party,
                 )
+
+                campaign.sos_link = "https://login.cfis.sos.state.nm.us/#/exploreDetails/{id}/{office_id}/{district_id}/{election_id}/{election_year}".format(  # noqa
+                    id=record["IDNumber"],
+                    office_id=record["OfficeId"] or "null",
+                    district_id=record["DistrictId"] or "null",
+                    election_id=int(float(record["ElectionId"])) or "null",
+                    election_year=record["ElectionYear"] or "null",
+                )
+
+                campaign.save()
 
         self.stderr.write(
             f"Linked {candidates_linked} candidates with a campaign, "

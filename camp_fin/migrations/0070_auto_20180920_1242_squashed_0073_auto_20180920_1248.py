@@ -7,13 +7,6 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    replaces = [
-        ("camp_fin", "0070_auto_20180920_1242"),
-        ("camp_fin", "0071_auto_20180920_1244"),
-        ("camp_fin", "0072_auto_20180920_1246"),
-        ("camp_fin", "0073_auto_20180920_1248"),
-    ]
-
     dependencies = [
         ("camp_fin", "0069_auto_20180518_1331"),
     ]

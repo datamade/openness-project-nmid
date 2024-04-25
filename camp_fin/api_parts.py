@@ -8,7 +8,6 @@ from rest_framework_csv.renderers import CSVStreamingRenderer
 
 from camp_fin.models import (
     PAC,
-    Address,
     Candidate,
     Loan,
     LoanTransaction,
@@ -16,7 +15,6 @@ from camp_fin.models import (
     LobbyistTransaction,
     Organization,
     Transaction,
-    Treasurer,
 )
 
 
@@ -121,6 +119,7 @@ class TransactionSerializer(serializers.ModelSerializer):
 
 
 class TransactionSearchSerializer(TransactionSerializer):
+    donor_name = serializers.StringRelatedField(read_only=True)
     pac_slug = serializers.StringRelatedField(read_only=True)
     candidate_slug = serializers.StringRelatedField(read_only=True)
     donor_occupation = serializers.CharField(read_only=True)
@@ -143,6 +142,7 @@ class TransactionSearchSerializer(TransactionSerializer):
             "middle_name",
             "last_name",
             "suffix",
+            "donor_name",
             "company_name",
             "full_name",
             "full_address",

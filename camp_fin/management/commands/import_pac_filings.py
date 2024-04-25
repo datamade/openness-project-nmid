@@ -1,67 +1,12 @@
-import csv
-
 from django.core.management.base import BaseCommand
-from tqdm import tqdm
 
 from camp_fin import models
 
-from .utils import convert_to_float, parse_date
+from .import_filing import Command as FilingCommand
+from .utils import parse_date
 
 
-class Command(BaseCommand):
-    help = """
-        Import data from the New Mexico Campaign Finance System:
-        https://github.com/datamade/nmid-scrapers/pull/2
-
-    """
-
-    def add_arguments(self, parser):
-        parser.add_argument(
-            "--file",
-            dest="file",
-            help="Absolute path of CSV file to import",
-            required=True,
-        )
-
-    def handle(self, *args, **options):
-        with open(options["file"]) as f:
-
-            reader = csv.DictReader(f)
-
-            filings_created = 0
-            filings_linked = 0
-
-            for record in tqdm(reader):
-
-                amended = record["Amended"] != "0"
-
-                try:
-                    filing = models.Filing.objects.get(
-                        report_id=record["ReportID"],
-                        report_version_id=record["ReportVersionID"],
-                    )
-                    filings_linked += 1
-                except models.Filing.DoesNotExist:
-                    filing = self._create_filing(record)
-                    filings_created += 1
-                else:
-                    if filing.final and amended:
-                        # if we need to change the status of a filing from
-                        # final to amended, we will delete the entire filing
-                        # so as to delete any associated transactions
-                        filing.delete()
-                        filing = self._create_filing(record)
-
-                if record["opening_balance"]:
-                    filing.opening_balance = convert_to_float(record["opening_balance"])
-                    filing.closing_balance = convert_to_float(record["closing_balance"])
-
-                    filing.save()
-
-        self.stderr.write(
-            f"found {filings_linked} filings, " f"created {filings_created} filings, "
-        )
-
+class Command(FilingCommand, BaseCommand):
     def _create_filing(self, record):
 
         filing_type, _ = models.FilingType.objects.get_or_create(
