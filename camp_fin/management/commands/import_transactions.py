@@ -56,15 +56,17 @@ class Command(BaseCommand):
         if options["transaction_type"] not in ("EXP", "CON"):
             raise ValueError("Transaction type must be one of: EXP, CON")
 
+        year = options["year"]
+
         with open(options["file"]) as f:
 
             if options["transaction_type"] == "CON":
-                self.import_contributions(f, options["year"])
+                self.import_contributions(f, year)
 
             elif options["transaction_type"] == "EXP":
-                self.import_expenditures(f, options["year"])
+                self.import_expenditures(f, year)
 
-        self.total_filings()
+        self.total_filings(year)
         call_command("aggregate_data")
 
     def import_contributions(self, f, year):
@@ -367,11 +369,12 @@ class Command(BaseCommand):
 
         return contribution
 
-    def total_filings(self):
-        # it might be tempting to only operate over filings made within
-        # a given year, but a data file can include transactions associated
-        # with a filing from a future year
-        for filing in models.Filing.objects.filter(final=True).iterator():
+    def total_filings(self, year):
+        for filing in models.Filing.objects.filter(
+            final=True,
+            filing_period__initial_date__year__lte=year,
+            filing_period__end_date__year__gte=year,
+        ).iterator():
             contributions = filing.contributions().aggregate(total=Sum("amount"))
             expenditures = filing.expenditures().aggregate(total=Sum("amount"))
             loans = filing.loans().aggregate(total=Sum("amount"))
