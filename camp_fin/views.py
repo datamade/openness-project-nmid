@@ -202,10 +202,14 @@ class IndexView(TopEarnersBase, LobbyistContextMixin, PagesMixin):
 
         most_recent_filings = (
             Filing.objects.filter(
+                final=True,
                 closing_balance__isnull=False,
                 filing_period__due_date__gte=datetime.date(year, 1, 1),
             )
-            .order_by("entity_id", "-filing_period__due_date", "-filed_date")
+            .order_by(
+                "entity_id",
+                "-filing_period__end_date",
+            )
             .distinct("entity_id")
         )
 
