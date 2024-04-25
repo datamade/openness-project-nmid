@@ -374,11 +374,9 @@ class Command(BaseCommand):
         for filing in models.Filing.objects.filter(final=True).iterator():
             contributions = filing.contributions().aggregate(total=Sum("amount"))
             expenditures = filing.expenditures().aggregate(total=Sum("amount"))
-            loans = filing.loans().aggregate(total=Sum("amount"))
 
             filing.total_contributions = contributions["total"] or 0
             filing.total_expenditures = expenditures["total"] or 0
-            filing.total_loans = loans["total"] or 0
 
             filing.save()
 
