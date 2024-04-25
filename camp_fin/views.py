@@ -205,7 +205,7 @@ class IndexView(TopEarnersBase, LobbyistContextMixin, PagesMixin):
                 closing_balance__isnull=False,
                 filing_period__due_date__gte=datetime.date(year, 1, 1),
             )
-            .order_by("entity_id", "-filing_period__due_date", "-date_added")
+            .order_by("entity_id", "-filing_period__due_date", "-filed_date")
             .distinct("entity_id")
         )
 
@@ -1170,8 +1170,8 @@ class CommitteeDetailBaseView(DetailView):
 
             # Count pure donations, if applicable
             if total_loans > 0 or total_inkind > 0:
-                donations = latest_filing.total_contributions - (
-                    (latest_filing.total_loans or 0) + (latest_filing.total_inkind or 0)
+                donations = (latest_filing.total_contributions or 0) - (
+                    total_loans + total_inkind
                 )
                 context["donations"] = donations
 

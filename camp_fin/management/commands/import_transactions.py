@@ -59,15 +59,15 @@ class Command(BaseCommand):
         with open(options["file"]) as f:
 
             if options["transaction_type"] == "CON":
-                self.import_contributions(f)
+                self.import_contributions(f, options["year"])
 
             elif options["transaction_type"] == "EXP":
-                self.import_expenditures(f)
+                self.import_expenditures(f, options["year"])
 
-        self.total_filings(options["year"])
+        self.total_filings()
         call_command("aggregate_data")
 
-    def import_contributions(self, f):
+    def import_contributions(self, f, year):
         reader = csv.DictReader(f)
 
         for filing_group, records in groupby(tqdm(reader), key=filing_key):
@@ -78,9 +78,23 @@ class Command(BaseCommand):
                     except ValueError:
                         break
 
-                    models.LoanTransaction.objects.filter(filing=filing).delete()
-                    models.SpecialEvent.objects.filter(filing=filing).delete()
-                    models.Transaction.objects.filter(filing=filing).exclude(
+                    # the contributions file are organized by the year
+                    # of a transaction date not the date of the
+                    # filing, so transactions from the same filing can
+                    # appear in multiple contribution files.
+                    #
+                    # we need to make sure we just clear out the
+                    # contributions in a file that were purportedly made
+                    # in a given year.
+                    models.Loan.objects.filter(
+                        filing=filing, received_date__year=year
+                    ).delete()
+                    models.SpecialEvent.objects.filter(
+                        filing=filing, event_date__year=year
+                    ).delete()
+                    models.Transaction.objects.filter(
+                        filing=filing, received_date__year=year
+                    ).exclude(
                         transaction_type__description="Monetary Expenditure"
                     ).delete()
 
@@ -97,7 +111,7 @@ class Command(BaseCommand):
                         f"Could not determine contribution type from record: {record['Contribution Type']}"
                     )
 
-    def import_expenditures(self, f):
+    def import_expenditures(self, f, year):
         reader = csv.DictReader(f)
 
         for filing_group, records in groupby(tqdm(reader), key=filing_key):
@@ -111,6 +125,7 @@ class Command(BaseCommand):
                     models.Transaction.objects.filter(
                         filing=filing,
                         transaction_type__description="Monetary Expenditure",
+                        received_date__year=year,
                     ).delete()
 
                 self.make_contribution(record, None, filing).save()
@@ -352,8 +367,11 @@ class Command(BaseCommand):
 
         return contribution
 
-    def total_filings(self, year):
-        for filing in models.Filing.objects.filter(filed_date__year=year).iterator():
+    def total_filings(self):
+        # it might be tempting to only operate over filings made within
+        # a given year, but a data file can include transactions associated
+        # with a filing from a future year
+        for filing in models.Filing.objects.filter(final=True).iterator():
             contributions = filing.contributions().aggregate(total=Sum("amount"))
             expenditures = filing.expenditures().aggregate(total=Sum("amount"))
             loans = filing.loans().aggregate(total=Sum("amount"))

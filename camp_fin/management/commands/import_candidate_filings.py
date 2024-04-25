@@ -61,6 +61,9 @@ class Command(BaseCommand):
                 if record["opening_balance"]:
                     filing.opening_balance = convert_to_float(record["opening_balance"])
                     filing.closing_balance = convert_to_float(record["closing_balance"])
+                    filing.total_loans = convert_to_float(record["total_loans"])
+                    filing.total_unpaid_debts = convert_to_float(record["unpaid_debt"])
+                    filing.total_inkind = convert_to_float(record["total_inkind"])
 
                     filing.save()
 
