@@ -42,13 +42,24 @@ class Command(BaseCommand):
                     )
                     filings_linked += 1
                 except models.Filing.DoesNotExist:
+                    if not amended:
+                        try:
+                            previous_final = models.Filing.objects.get(
+                                report_id=record["ReportID"], final=True
+                            )
+                        except models.Filing.DoesNotExist:
+                            pass
+                        else:
+                            previous_final.final = None
+
                     filing = self._create_filing(record)
                     filings_created += 1
                 else:
                     if filing.final and amended:
                         # if we need to change the status of a filing from
                         # final to amended, we will delete the entire filing
-                        # so as to delete any associated transactions
+                        # so as to delete any associated transactions, as we
+                        # only want to associate transactions with final filings
                         filing.delete()
                         filing = self._create_filing(record)
 
