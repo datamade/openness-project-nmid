@@ -11,7 +11,7 @@ from camp_fin.templatetags.helpers import format_money
 
 
 class Candidate(models.Model):
-    entity = models.ForeignKey("Entity", db_constraint=False, on_delete=models.CASCADE)
+    entity = models.ForeignKey("Entity", on_delete=models.CASCADE)
     prefix = models.CharField(max_length=10, null=True)
     first_name = models.CharField(max_length=255, null=True)
     middle_name = models.CharField(max_length=255, null=True)
@@ -19,16 +19,10 @@ class Candidate(models.Model):
     suffix = models.CharField(max_length=10, null=True)
     business_phone = models.CharField(max_length=255, null=True)
     home_phone = models.CharField(max_length=255, null=True)
-    address = models.ForeignKey(
-        "Address", null=True, db_constraint=False, on_delete=models.CASCADE
-    )
-    status = models.ForeignKey(
-        "Status", null=True, db_constraint=False, on_delete=models.CASCADE
-    )
+    address = models.ForeignKey("Address", null=True, on_delete=models.CASCADE)
+    status = models.ForeignKey("Status", null=True, on_delete=models.CASCADE)
     date_added = models.DateTimeField(null=True, default=timezone.now)
-    contact = models.ForeignKey(
-        "Contact", null=True, db_constraint=False, on_delete=models.CASCADE
-    )
+    contact = models.ForeignKey("Contact", null=True, on_delete=models.CASCADE)
     email = models.CharField(max_length=255, null=True)
     date_updated = models.DateTimeField(null=True)
     qual_candidate_id = models.IntegerField(null=True)
@@ -43,7 +37,7 @@ class Candidate(models.Model):
 
 
 class PAC(models.Model):
-    entity = models.ForeignKey("Entity", db_constraint=False, on_delete=models.CASCADE)
+    entity = models.ForeignKey("Entity", on_delete=models.CASCADE)
     sos_link = models.URLField()
     name = models.CharField(max_length=100)
     acronym = models.CharField(max_length=15, null=True)
@@ -53,20 +47,13 @@ class PAC(models.Model):
     address = models.ForeignKey(
         "Address",
         related_name="address",
-        db_constraint=False,
         null=True,
         on_delete=models.CASCADE,
     )
-    treasurer = models.ForeignKey(
-        "Treasurer", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
+    treasurer = models.ForeignKey("Treasurer", null=True, on_delete=models.CASCADE)
     date_added = models.DateTimeField(default=timezone.now)
-    status = models.ForeignKey(
-        "Status", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
-    contact = models.ForeignKey(
-        "Contact", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
+    status = models.ForeignKey("Status", null=True, on_delete=models.CASCADE)
+    contact = models.ForeignKey("Contact", null=True, on_delete=models.CASCADE)
     date_updated = models.DateTimeField(null=True)
     bank_name = models.CharField(max_length=100, null=True)
     bank_phone = models.CharField(max_length=255, null=True)
@@ -75,7 +62,6 @@ class PAC(models.Model):
         "Address",
         related_name="pac_bank_address",
         null=True,
-        db_constraint=False,
         on_delete=models.CASCADE,
     )
     initial_balance = models.FloatField(null=True)
@@ -103,32 +89,16 @@ class Campaign(models.Model):
     )
 
     olddb_id = models.IntegerField(null=True)
-    candidate = models.ForeignKey(
-        "Candidate", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
-    election_season = models.ForeignKey(
-        "ElectionSeason", db_constraint=False, on_delete=models.CASCADE
-    )
-    office = models.ForeignKey("Office", db_constraint=False, on_delete=models.CASCADE)
-    division = models.ForeignKey(
-        "Division", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
-    district = models.ForeignKey(
-        "District", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
-    treasurer = models.ForeignKey(
-        "Treasurer", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
-    status = models.ForeignKey(
-        "CampaignStatus", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
+    candidate = models.ForeignKey("Candidate", null=True, on_delete=models.CASCADE)
+    election_season = models.ForeignKey("ElectionSeason", on_delete=models.CASCADE)
+    office = models.ForeignKey("Office", on_delete=models.CASCADE)
+    division = models.ForeignKey("Division", null=True, on_delete=models.CASCADE)
+    district = models.ForeignKey("District", null=True, on_delete=models.CASCADE)
+    treasurer = models.ForeignKey("Treasurer", null=True, on_delete=models.CASCADE)
+    status = models.ForeignKey("CampaignStatus", null=True, on_delete=models.CASCADE)
     date_added = models.DateTimeField(default=timezone.now)
-    county = models.ForeignKey(
-        "County", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
-    political_party = models.ForeignKey(
-        "PoliticalParty", db_constraint=False, on_delete=models.CASCADE
-    )
+    county = models.ForeignKey("County", null=True, on_delete=models.CASCADE)
+    political_party = models.ForeignKey("PoliticalParty", on_delete=models.CASCADE)
     last_updated = models.DateTimeField(null=True)
     primary_election_winner_status = models.IntegerField(null=True)
     general_election_winner_status = models.IntegerField(null=True)
@@ -138,7 +108,6 @@ class Campaign(models.Model):
         "Address",
         related_name="campaign_bank_address",
         null=True,
-        db_constraint=False,
         on_delete=models.CASCADE,
     )
     committee_name = models.CharField(max_length=100, null=True)
@@ -149,7 +118,6 @@ class Campaign(models.Model):
     committee_address = models.ForeignKey(
         "Address",
         related_name="committee_address",
-        db_constraint=False,
         null=True,
         on_delete=models.CASCADE,
     )
@@ -159,12 +127,8 @@ class Campaign(models.Model):
     initial_debt_from_self = models.BooleanField(null=True)
     qual_campaign_id = models.IntegerField(null=True)
     biannual = models.BooleanField(null=True)
-    from_campaign = models.ForeignKey(
-        "Campaign", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
-    active_race = models.ForeignKey(
-        "Race", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
+    from_campaign = models.ForeignKey("Campaign", null=True, on_delete=models.CASCADE)
+    active_race = models.ForeignKey("Race", null=True, on_delete=models.CASCADE)
     race_status = models.CharField(
         max_length=25, default="active", choices=status_choices, blank=True, null=True
     )
@@ -350,31 +314,27 @@ class Campaign(models.Model):
 class Race(models.Model):
     group = models.ForeignKey(
         "RaceGroup",
-        db_constraint=False,
         blank=True,
         null=True,
         on_delete=models.CASCADE,
     )
-    office = models.ForeignKey("Office", db_constraint=False, on_delete=models.CASCADE)
+    office = models.ForeignKey("Office", on_delete=models.CASCADE)
     division = models.ForeignKey(
-        "Division", db_constraint=False, blank=True, null=True, on_delete=models.CASCADE
+        "Division", blank=True, null=True, on_delete=models.CASCADE
     )
     district = models.ForeignKey(
-        "District", db_constraint=False, blank=True, null=True, on_delete=models.CASCADE
+        "District", blank=True, null=True, on_delete=models.CASCADE
     )
     office_type = models.ForeignKey(
         "OfficeType",
-        db_constraint=False,
         blank=True,
         null=True,
         on_delete=models.CASCADE,
     )
     county = models.ForeignKey(
-        "County", db_constraint=False, blank=True, null=True, on_delete=models.CASCADE
+        "County", blank=True, null=True, on_delete=models.CASCADE
     )
-    election_season = models.ForeignKey(
-        "ElectionSeason", db_constraint=False, on_delete=models.CASCADE
-    )
+    election_season = models.ForeignKey("ElectionSeason", on_delete=models.CASCADE)
     winner = models.OneToOneField(
         "Campaign", blank=True, null=True, on_delete=models.CASCADE
     )
@@ -582,16 +542,14 @@ class OfficeType(models.Model):
 class Office(models.Model):
     description = models.CharField(max_length=100)
     status = models.ForeignKey("Status", db_constraint=False, on_delete=models.CASCADE)
-    office_type = models.ForeignKey(
-        "OfficeType", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
+    office_type = models.ForeignKey("OfficeType", null=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.description
 
 
 class District(models.Model):
-    office = models.ForeignKey("Office", db_constraint=False, on_delete=models.CASCADE)
+    office = models.ForeignKey("Office", on_delete=models.CASCADE)
     name = models.CharField(max_length=256)
     status = models.ForeignKey("Status", db_constraint=False, on_delete=models.CASCADE)
 
@@ -614,19 +572,15 @@ class PoliticalParty(models.Model):
 
 
 class Transaction(models.Model):
-    contact = models.ForeignKey(
-        "Contact", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
+    contact = models.ForeignKey("Contact", null=True, on_delete=models.CASCADE)
     amount = models.FloatField(db_index=True)
     received_date = models.DateTimeField(db_index=True)
     date_added = models.DateTimeField(default=timezone.now)
     check_number = models.CharField(max_length=100, null=True)
     memo = models.TextField(null=True)
     description = models.CharField(max_length=75, null=True)
-    transaction_type = models.ForeignKey(
-        "TransactionType", db_constraint=False, on_delete=models.CASCADE
-    )
-    filing = models.ForeignKey("Filing", db_constraint=False, on_delete=models.CASCADE)
+    transaction_type = models.ForeignKey("TransactionType", on_delete=models.CASCADE)
+    filing = models.ForeignKey("Filing", on_delete=models.CASCADE)
     olddb_id = models.IntegerField(null=True)
     name_prefix = models.CharField(max_length=25, null=True)
     first_name = models.CharField(max_length=255, null=True)
@@ -638,13 +592,9 @@ class Transaction(models.Model):
     city = models.CharField(max_length=100, null=True)
     state = models.CharField(max_length=25, null=True)
     zipcode = models.CharField(max_length=10, null=True)
-    county = models.ForeignKey(
-        "County", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
+    county = models.ForeignKey("County", null=True, on_delete=models.CASCADE)
     country = models.CharField(max_length=100, null=True)
-    contact_type = models.ForeignKey(
-        "ContactType", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
+    contact_type = models.ForeignKey("ContactType", null=True, on_delete=models.CASCADE)
     transaction_status = models.ForeignKey(
         "Status", db_constraint=False, null=True, on_delete=models.CASCADE
     )
@@ -700,9 +650,7 @@ class TransactionType(models.Model):
 
 
 class Loan(models.Model):
-    contact = models.ForeignKey(
-        "Contact", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
+    contact = models.ForeignKey("Contact", null=True, on_delete=models.CASCADE)
     status = models.ForeignKey("Status", db_constraint=False, on_delete=models.CASCADE)
     date_added = models.DateTimeField(default=timezone.now)
     amount = models.FloatField()
@@ -712,9 +660,7 @@ class Loan(models.Model):
     interest_rate = models.FloatField(null=True)
     due_date = models.DateTimeField(null=True)
     payment_schedule_id = models.IntegerField(null=True)
-    filing = models.ForeignKey(
-        "Filing", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
+    filing = models.ForeignKey("Filing", null=True, on_delete=models.CASCADE)
     olddb_id = models.IntegerField(null=True)
     name_prefix = models.CharField(max_length=25, null=True)
     first_name = models.CharField(max_length=255, null=True)
@@ -726,13 +672,9 @@ class Loan(models.Model):
     city = models.CharField(max_length=255, null=True)
     state = models.CharField(max_length=25, null=True)
     zipcode = models.CharField(max_length=10, null=True)
-    county = models.ForeignKey(
-        "County", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
+    county = models.ForeignKey("County", null=True, on_delete=models.CASCADE)
     country = models.CharField(max_length=255, null=True)
-    contact_type = models.ForeignKey(
-        "ContactType", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
+    contact_type = models.ForeignKey("ContactType", null=True, on_delete=models.CASCADE)
     from_file_id = models.IntegerField(null=True)
     contact_type_other = models.CharField(max_length=25, null=True)
     occupation = models.CharField(max_length=255, null=True)
@@ -767,7 +709,7 @@ class Loan(models.Model):
 
 
 class LoanTransaction(models.Model):
-    loan = models.ForeignKey("Loan", db_constraint=False, on_delete=models.CASCADE)
+    loan = models.ForeignKey("Loan", on_delete=models.CASCADE)
     amount = models.FloatField()
     interest_paid = models.FloatField(null=True)
     transaction_date = models.DateTimeField()
@@ -775,12 +717,12 @@ class LoanTransaction(models.Model):
     check_number = models.CharField(max_length=255, null=True)
     memo = models.TextField(null=True)
     transaction_type = models.ForeignKey(
-        "LoanTransactionType", db_constraint=False, on_delete=models.CASCADE
+        "LoanTransactionType", on_delete=models.CASCADE
     )
     transaction_status = models.ForeignKey(
         "Status", db_constraint=False, on_delete=models.CASCADE
     )
-    filing = models.ForeignKey("Filing", db_constraint=False, on_delete=models.CASCADE)
+    filing = models.ForeignKey("Filing", on_delete=models.CASCADE)
     from_file_id = models.IntegerField(null=True)
 
     def __str__(self):
@@ -809,14 +751,12 @@ class SpecialEvent(models.Model):
     total_admissions = models.FloatField()
     anonymous_contributions = models.FloatField()
     total_expenditures = models.FloatField()
-    filing = models.ForeignKey("Filing", db_constraint=False, on_delete=models.CASCADE)
+    filing = models.ForeignKey("Filing", on_delete=models.CASCADE)
     olddb_id = models.IntegerField(null=True)
     address = models.CharField(max_length=255, null=True)
     city = models.CharField(max_length=100, null=True)
     zipcode = models.CharField(max_length=10, null=True)
-    county = models.ForeignKey(
-        "County", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
+    county = models.ForeignKey("County", null=True, on_delete=models.CASCADE)
     country = models.CharField(max_length=255, null=True)
     from_file_id = models.IntegerField(null=True)
 
@@ -831,22 +771,16 @@ class SpecialEvent(models.Model):
 
 class Filing(models.Model):
 
-    entity = models.ForeignKey("Entity", db_constraint=False, on_delete=models.CASCADE)
+    entity = models.ForeignKey("Entity", on_delete=models.CASCADE)
     olddb_campaign_id = models.IntegerField(null=True)
     olddb_profile_id = models.IntegerField(null=True)
     report_id = models.IntegerField(null=True)
     report_version_id = models.IntegerField(null=True)
-    filing_period = models.ForeignKey(
-        "FilingPeriod", db_constraint=False, on_delete=models.CASCADE
-    )
-    status = models.ForeignKey(
-        "Status", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
+    filing_period = models.ForeignKey("FilingPeriod", on_delete=models.CASCADE)
+    status = models.ForeignKey("Status", null=True, on_delete=models.CASCADE)
     date_added = models.DateTimeField(default=timezone.now)
     olddb_ethics_report_id = models.IntegerField(null=True)
-    campaign = models.ForeignKey(
-        "Campaign", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
+    campaign = models.ForeignKey("Campaign", null=True, on_delete=models.CASCADE)
     filed_date = models.DateTimeField()
     date_closed = models.DateTimeField(null=True)
     date_last_amended = models.DateTimeField(null=True)
@@ -934,13 +868,11 @@ class FilingPeriod(models.Model):
     olddb_id = models.IntegerField(null=True)
     description = models.CharField(max_length=255, null=True)
     allow_no_activity = models.BooleanField()
-    filing_period_type = models.ForeignKey(
-        "FilingType", db_constraint=False, on_delete=models.CASCADE
-    )
+    filing_period_type = models.ForeignKey("FilingType", on_delete=models.CASCADE)
     exclude_from_cascading = models.BooleanField()
     supplemental_init_date = models.DateTimeField(null=True)
     regular_filing_period = models.ForeignKey(
-        "RegularFilingPeriod", db_constraint=False, null=True, on_delete=models.CASCADE
+        "RegularFilingPeriod", null=True, on_delete=models.CASCADE
     )
     initial_date = models.DateField()
     end_date = models.DateField()
@@ -958,17 +890,11 @@ class FilingPeriod(models.Model):
 class Address(models.Model):
     street = models.CharField(null=True, max_length=255)
     city = models.CharField(null=True, max_length=255)
-    state = models.ForeignKey(
-        "State", null=True, db_constraint=False, on_delete=models.CASCADE
-    )
+    state = models.ForeignKey("State", null=True, on_delete=models.CASCADE)
     zipcode = models.CharField(null=True, max_length=10)
-    county = models.ForeignKey(
-        "County", null=True, db_constraint=False, on_delete=models.CASCADE
-    )
+    county = models.ForeignKey("County", null=True, on_delete=models.CASCADE)
     country = models.CharField(max_length=255, null=True)
-    address_type = models.ForeignKey(
-        "AddressType", null=True, db_constraint=False, on_delete=models.CASCADE
-    )
+    address_type = models.ForeignKey("AddressType", null=True, on_delete=models.CASCADE)
     olddb_id = models.IntegerField(null=True)
     date_added = models.DateTimeField(null=True, default=timezone.now)
     from_file_id = models.IntegerField(null=True)
@@ -996,10 +922,8 @@ class CampaignStatus(models.Model):
 
 class Division(models.Model):
     name = models.CharField(max_length=25)
-    district = models.ForeignKey(
-        "District", db_constraint=False, on_delete=models.CASCADE
-    )
-    status = models.ForeignKey("Status", db_constraint=False, on_delete=models.CASCADE)
+    district = models.ForeignKey("District", on_delete=models.CASCADE)
+    status = models.ForeignKey("Status", on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
@@ -1016,9 +940,7 @@ class ElectionSeason(models.Model):
 
 class Entity(models.Model):
     user_id = models.IntegerField(null=True)
-    entity_type = models.ForeignKey(
-        "EntityType", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
+    entity_type = models.ForeignKey("EntityType", null=True, on_delete=models.CASCADE)
     olddb_id = models.IntegerField(null=True)
 
     def __str__(self):
@@ -1243,11 +1165,9 @@ class Treasurer(models.Model):
     business_phone = models.CharField(max_length=255, null=True)
     alt_phone = models.CharField(max_length=255, null=True)
     email = models.CharField(max_length=255, null=True)
-    address = models.ForeignKey(
-        "Address", db_constraint=False, on_delete=models.CASCADE
-    )
+    address = models.ForeignKey("Address", on_delete=models.CASCADE)
     date_added = models.DateTimeField(default=timezone.now)
-    status = models.ForeignKey("Status", db_constraint=False, on_delete=models.CASCADE)
+    status = models.ForeignKey("Status", on_delete=models.CASCADE)
     olddb_entity_id = models.IntegerField(null=True)
 
     full_name = models.CharField(max_length=500, null=True)
@@ -1263,20 +1183,16 @@ class Contact(models.Model):
     last_name = models.CharField(max_length=255, null=True)
     suffix = models.CharField(max_length=10, null=True)
     occupation = models.CharField(max_length=100, null=True)
-    address = models.ForeignKey(
-        "Address", db_constraint=False, on_delete=models.CASCADE
-    )
+    address = models.ForeignKey("Address", on_delete=models.CASCADE)
     phone = models.CharField(max_length=30, null=True)
     email = models.CharField(max_length=100, null=True)
     memo = models.TextField(null=True)
     company_name = models.CharField(max_length=255, null=True)
-    contact_type = models.ForeignKey(
-        "ContactType", db_constraint=False, on_delete=models.CASCADE
-    )
+    contact_type = models.ForeignKey("ContactType", on_delete=models.CASCADE)
     status = models.ForeignKey("Status", db_constraint=False, on_delete=models.CASCADE)
     olddb_id = models.IntegerField(null=True)
     date_added = models.DateTimeField(null=True, default=timezone.now)
-    entity = models.ForeignKey("Entity", db_constraint=False, on_delete=models.CASCADE)
+    entity = models.ForeignKey("Entity", on_delete=models.CASCADE)
     from_file_id = models.IntegerField(null=True)
 
     full_name = models.CharField(max_length=500, null=True)
@@ -1585,10 +1501,8 @@ class LobbyistMethodMixin(object):
 
 
 class Lobbyist(models.Model, LobbyistMethodMixin):
-    entity = models.ForeignKey("Entity", db_constraint=False, on_delete=models.CASCADE)
-    status = models.ForeignKey(
-        "Status", null=True, db_constraint=False, on_delete=models.CASCADE
-    )
+    entity = models.ForeignKey("Entity", on_delete=models.CASCADE)
+    status = models.ForeignKey("Status", null=True, on_delete=models.CASCADE)
     date_added = models.DateTimeField(null=True, default=timezone.now)
     prefix = models.CharField(max_length=10, null=True)
     first_name = models.CharField(max_length=255, null=True)
@@ -1599,25 +1513,21 @@ class Lobbyist(models.Model, LobbyistMethodMixin):
     registration_date = models.DateTimeField(null=True)
     termination_date = models.DateTimeField(null=True)
     filing_period = models.ForeignKey(
-        "LobbyistFilingPeriod", db_constraint=False, null=True, on_delete=models.CASCADE
+        "LobbyistFilingPeriod", null=True, on_delete=models.CASCADE
     )
     permanent_address = models.ForeignKey(
         "Address",
         related_name="lobbyist_permanent_address",
         null=True,
-        db_constraint=False,
         on_delete=models.CASCADE,
     )
     lobbying_address = models.ForeignKey(
         "Address",
         related_name="lobbyist_lobbying_address",
         null=True,
-        db_constraint=False,
         on_delete=models.CASCADE,
     )
-    contact = models.ForeignKey(
-        "Contact", db_constraint=False, null=True, on_delete=models.CASCADE
-    )
+    contact = models.ForeignKey("Contact", null=True, on_delete=models.CASCADE)
     phone = models.CharField(max_length=30, null=True)
     date_updated = models.DateTimeField(null=True)
     slug = models.CharField(max_length=500, null=True)
@@ -1676,23 +1586,18 @@ class Lobbyist(models.Model, LobbyistMethodMixin):
 
 
 class Organization(models.Model, LobbyistMethodMixin):
-    entity = models.ForeignKey("Entity", db_constraint=False, on_delete=models.CASCADE)
+    entity = models.ForeignKey("Entity", on_delete=models.CASCADE)
     date_added = models.DateTimeField(null=True, default=timezone.now)
-    status = models.ForeignKey(
-        "Status", null=True, db_constraint=False, on_delete=models.CASCADE
-    )
+    status = models.ForeignKey("Status", null=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     email = models.CharField(max_length=100, null=True)
     permanent_address = models.ForeignKey(
         "Address",
         related_name="organization_permanent_address",
         null=True,
-        db_constraint=False,
         on_delete=models.CASCADE,
     )
-    contact = models.ForeignKey(
-        "Contact", db_constraint=False, on_delete=models.CASCADE
-    )
+    contact = models.ForeignKey("Contact", on_delete=models.CASCADE)
     date_updated = models.DateTimeField(null=True)
     phone = models.CharField(max_length=30, null=True)
     slug = models.CharField(max_length=500, null=True)
@@ -1732,21 +1637,15 @@ class Organization(models.Model, LobbyistMethodMixin):
 
 
 class LobbyistRegistration(models.Model):
-    lobbyist = models.ForeignKey(
-        "Lobbyist", db_constraint=False, on_delete=models.CASCADE
-    )
+    lobbyist = models.ForeignKey("Lobbyist", on_delete=models.CASCADE)
     date_added = models.DateTimeField(null=True, default=timezone.now)
     year = models.CharField(max_length=5)
     is_registered = models.BooleanField(null=True)
 
 
 class LobbyistEmployer(models.Model):
-    lobbyist = models.ForeignKey(
-        "Lobbyist", db_constraint=False, on_delete=models.CASCADE
-    )
-    organization = models.ForeignKey(
-        "Organization", db_constraint=False, on_delete=models.CASCADE
-    )
+    lobbyist = models.ForeignKey("Lobbyist", on_delete=models.CASCADE)
+    organization = models.ForeignKey("Organization", on_delete=models.CASCADE)
     date_added = models.DateTimeField(null=True, default=timezone.now)
     year = models.CharField(max_length=5)
 
@@ -1760,17 +1659,16 @@ class LobbyistFilingPeriod(models.Model):
     lobbyist_filing_period_type = models.ForeignKey(
         "LobbyistFilingPeriodType",
         null=True,
-        db_constraint=False,
         on_delete=models.CASCADE,
     )
     regular_filing_period = models.ForeignKey(
-        "FilingPeriod", null=True, db_constraint=False, on_delete=models.CASCADE
+        "FilingPeriod", null=True, on_delete=models.CASCADE
     )
 
 
 class LobbyistTransaction(models.Model):
     lobbyist_report = models.ForeignKey(
-        "LobbyistReport", null=True, db_constraint=False, on_delete=models.CASCADE
+        "LobbyistReport", null=True, on_delete=models.CASCADE
     )
     name = models.CharField(max_length=250, null=True)
     beneficiary = models.CharField(max_length=250, null=True)
@@ -1778,7 +1676,6 @@ class LobbyistTransaction(models.Model):
     lobbyist_transaction_type = models.ForeignKey(
         "LobbyistTransactionType",
         null=True,
-        db_constraint=False,
         on_delete=models.CASCADE,
     )
     received_date = models.DateTimeField(null=True)
@@ -1787,7 +1684,6 @@ class LobbyistTransaction(models.Model):
     transaction_status = models.ForeignKey(
         "LobbyistTransactionStatus",
         null=True,
-        db_constraint=False,
         on_delete=models.CASCADE,
     )
 
@@ -1797,19 +1693,16 @@ class LobbyistTransactionType(models.Model):
     group = models.ForeignKey(
         "LobbyistTransactionGroup",
         null=True,
-        db_constraint=False,
         on_delete=models.CASCADE,
     )
 
 
 class LobbyistReport(models.Model):
-    entity = models.ForeignKey("Entity", db_constraint=False, on_delete=models.CASCADE)
+    entity = models.ForeignKey("Entity", on_delete=models.CASCADE)
     lobbyist_filing_period = models.ForeignKey(
-        "LobbyistFilingPeriod", null=True, db_constraint=False, on_delete=models.CASCADE
+        "LobbyistFilingPeriod", null=True, on_delete=models.CASCADE
     )
-    status = models.ForeignKey(
-        "Status", null=True, db_constraint=False, on_delete=models.CASCADE
-    )
+    status = models.ForeignKey("Status", null=True, on_delete=models.CASCADE)
     date_added = models.DateTimeField(null=True, default=timezone.now)
     date_closed = models.DateTimeField(null=True)
     date_updated = models.DateTimeField(null=True)
@@ -1824,9 +1717,7 @@ class LobbyistReport(models.Model):
 
 
 class LobbyistSpecialEvent(models.Model):
-    lobbyist_report = models.ForeignKey(
-        "LobbyistReport", db_constraint=False, on_delete=models.CASCADE
-    )
+    lobbyist_report = models.ForeignKey("LobbyistReport", on_delete=models.CASCADE)
     event_type = models.CharField(max_length=100)
     location = models.CharField(max_length=100)
     received_date = models.DateTimeField(null=True)
@@ -1836,21 +1727,17 @@ class LobbyistSpecialEvent(models.Model):
     transaction_status = models.ForeignKey(
         "LobbyistTransactionStatus",
         null=True,
-        db_constraint=False,
         on_delete=models.CASCADE,
     )
 
 
 class LobbyistBundlingDisclosure(models.Model):
     destinatary_name = models.CharField(max_length=100)
-    lobbyist_report = models.ForeignKey(
-        "LobbyistReport", db_constraint=False, on_delete=models.CASCADE
-    )
+    lobbyist_report = models.ForeignKey("LobbyistReport", on_delete=models.CASCADE)
     date_added = models.DateTimeField(null=True, default=timezone.now)
     transaction_status = models.ForeignKey(
         "LobbyistTransactionStatus",
         null=True,
-        db_constraint=False,
         on_delete=models.CASCADE,
     )
 
@@ -1858,7 +1745,6 @@ class LobbyistBundlingDisclosure(models.Model):
 class LobbyistBundlingDisclosureContributor(models.Model):
     bundling_disclosure = models.ForeignKey(
         "LobbyistBundlingDisclosure",
-        db_constraint=False,
         on_delete=models.CASCADE,
     )
     name = models.CharField(max_length=100)
@@ -1866,13 +1752,12 @@ class LobbyistBundlingDisclosureContributor(models.Model):
         "Address",
         related_name="lobbyist_bundling_disclosure_contributor_address",
         null=True,
-        db_constraint=False,
         on_delete=models.CASCADE,
     )
     amount = models.FloatField()
     occupation = models.CharField(max_length=250, null=True)
     lobbyist_report = models.ForeignKey(
-        "LobbyistReport", null=True, db_constraint=False, on_delete=models.CASCADE
+        "LobbyistReport", null=True, on_delete=models.CASCADE
     )
 
 
