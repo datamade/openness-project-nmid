@@ -56,8 +56,10 @@ class Command(BaseCommand):
                         except models.Filing.DoesNotExist:
                             pass
                         else:
-                            previous_final.final = None
-                            previous_final.save()
+                            # we will delete this to clear out associated
+                            # transactions, and the expectation it will be
+                            # recreated shortly
+                            previous_final.delete()
 
                     filing = self._create_filing(record)
                     filings_created += 1
