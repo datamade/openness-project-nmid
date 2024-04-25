@@ -1,163 +1,163 @@
-{% load staticfiles %}
+{% load static %}
 {% load bootstrap_pagination %}
 {% load humanize %}
 {% load helpers %}
 {% load explainer %}
 
 <table class="table table-striped table-hover table-responsive" id="candidate-list">
-        <thead>
-            <tr>
-                {% if verbose_type == 'all' %}
-                    <th>Race</th>
-                    <th>Candidates</th>
-                    <th class="no-wrap">
-                        Funds raised since {{ last_year }}
-                        {% explainer "'Funds raised' includes both contributions and loans to the campaign. Bars are scaled to show how big each amount is compared to the largest campaign in this set of races." %}
-                    </th>
-                    <th class="no-wrap text-center">Total funds in race</th>
-                {% else %}
-                    {% if verbose_type != 'Statewide' %}
-                        {% if verbose_type == 'Legislative' or verbose_type == 'Public Regulation Commission' %}
-                            <th>
-                                <a href="{% url 'races' %}?{% query_transform request order_by='district__name' sort_order=toggle_order %}">
-                                    District
-                                </a>
-                                {% if order_by == 'district__name' %}
-                                    {{ sort_order|get_sort_icon|safe }}
-                                {% endif %}
-                            </th>
-                        {% elif verbose_type == 'County Offices' %}
-                            <th>
-                                <a href="{% url 'races' %}?{% query_transform request order_by='county__name' sort_order=toggle_order %}">
-                                    County
-                                </a>
-                                {% if order_by == 'county__name' %}
-                                    {{ sort_order|get_sort_icon|safe }}
-                                {% endif %}
-                            </th>
-                            <th>
-                                <a href="{% url 'races' %}?{% query_transform request order_by='district__name' sort_order=toggle_order %}">
-                                    District
-                                </a>
-                                {% if order_by == 'district__name' %}
-                                    {{ sort_order|get_sort_icon|safe }}
-                                {% endif %}
-                            </th>
-                        {% elif verbose_type == 'Judicial' %}
-                            <th>
-                                <a href="{% url 'races' %}?{% query_transform request order_by='county__name' sort_order=toggle_order %}">
-                                    County
-                                </a>
-                                {% if order_by == 'county__name' %}
-                                    {{ sort_order|get_sort_icon|safe }}
-                                {% endif %}
-                            </th>
-                            <th>
-                                <a href="{% url 'races' %}?{% query_transform request order_by='division__name' sort_order=toggle_order %}">
-                                    Division
-                                </a>
-                                {% if order_by == 'division__name' %}
-                                    {{ sort_order|get_sort_icon|safe }}
-                                {% endif %}
-                            </th>
-                        {% endif %}
-                    {% endif %}
-                    <th>
-                        <a href="{% url 'races' %}?{% query_transform request order_by='office' sort_order=toggle_order %}">
-                            Office
-                        </a>
-                        {% if order_by == 'office' %}
-                            {{ sort_order|get_sort_icon|safe }}
-                        {% endif %}
-                    </th>
-                <th>Candidates</th>
-                <th class="no-wrap">
-                    Funds raised since {{ last_year }}
-                    {% explainer "'Funds raised' includes both contributions and loans to the campaign. Bars are scaled to show how big each amount is compared to the largest campaign in this set of races." %}
-                </th>
-                <th class="no-wrap text-right">
-                    <a href="{% url 'races' %}?{% query_transform request order_by='total_funds' sort_order=toggle_order %}">
-                        Total funds in race
-                    </a>
-                    {% if order_by == 'total_funds' %}
-                        {{ sort_order|get_sort_icon|safe }}
-                    {% endif %}
-                </th>
+  <thead>
+    <tr>
+      {% if verbose_type == 'all' %}
+        <th>Race</th>
+        <th>Candidates</th>
+        <th class="no-wrap">
+          Funds raised since {{ last_year }}
+          {% explainer "'Funds raised' includes both contributions and loans to the campaign. Bars are scaled to show how big each amount is compared to the largest campaign in this set of races." %}
+        </th>
+        <th class="no-wrap text-center">Total funds in race</th>
+      {% else %}
+        {% if verbose_type != 'Statewide' %}
+          {% if verbose_type == 'Legislative' or verbose_type == 'Public Regulation Commission' %}
+            <th>
+              <a href="{% url 'races' %}?{% query_transform request order_by='district__name' sort_order=toggle_order %}">
+                District
+              </a>
+              {% if order_by == 'district__name' %}
+                {{ sort_order|get_sort_icon|safe }}
+              {% endif %}
+            </th>
+          {% elif verbose_type == 'County Offices' %}
+            <th>
+              <a href="{% url 'races' %}?{% query_transform request order_by='county__name' sort_order=toggle_order %}">
+                County
+              </a>
+              {% if order_by == 'county__name' %}
+                {{ sort_order|get_sort_icon|safe }}
+              {% endif %}
+            </th>
+            <th>
+              <a href="{% url 'races' %}?{% query_transform request order_by='district__name' sort_order=toggle_order %}">
+                District
+              </a>
+              {% if order_by == 'district__name' %}
+                {{ sort_order|get_sort_icon|safe }}
+              {% endif %}
+            </th>
+          {% elif verbose_type == 'Judicial' %}
+            <th>
+              <a href="{% url 'races' %}?{% query_transform request order_by='county__name' sort_order=toggle_order %}">
+                County
+              </a>
+              {% if order_by == 'county__name' %}
+                {{ sort_order|get_sort_icon|safe }}
+              {% endif %}
+            </th>
+            <th>
+              <a href="{% url 'races' %}?{% query_transform request order_by='division__name' sort_order=toggle_order %}">
+                Division
+              </a>
+              {% if order_by == 'division__name' %}
+                {{ sort_order|get_sort_icon|safe }}
+              {% endif %}
+            </th>
+          {% endif %}
+        {% endif %}
+        <th>
+          <a href="{% url 'races' %}?{% query_transform request order_by='office' sort_order=toggle_order %}">
+            Office
+          </a>
+          {% if order_by == 'office' %}
+            {{ sort_order|get_sort_icon|safe }}
+          {% endif %}
+        </th>
+        <th>Candidates</th>
+        <th class="no-wrap">
+          Funds raised since {{ last_year }}
+          {% explainer "'Funds raised' includes both contributions and loans to the campaign. Bars are scaled to show how big each amount is compared to the largest campaign in this set of races." %}
+        </th>
+        <th class="no-wrap text-right">
+          <a href="{% url 'races' %}?{% query_transform request order_by='total_funds' sort_order=toggle_order %}">
+            Total funds in race
+          </a>
+          {% if order_by == 'total_funds' %}
+            {{ sort_order|get_sort_icon|safe }}
+          {% endif %}
+        </th>
+      {% endif %}
+    </tr>
+  </thead>
+  <tbody>
+    {% with total=races|largest_contribution %}
+      {% for race in races %}
+        {% with campaign_count=race.campaigns.count %}
+          <tr>
+            {% if verbose_type != 'all' and verbose_type != 'Statewide' %}
+              {% if verbose_type == 'Legislative' or verbose_type == 'Public Regulation Commission' %}
+                <td class="no-wrap {% if campaign_count > 1 %}align-middle{% endif %}">{{ race.district }}</td>
+              {% elif verbose_type == 'County Offices' %}
+                <td class="no-wrap {% if campaign_count > 1 %}align-middle{% endif %}">{{ race.county|clean_county }}</td>
+                <td class="no-wrap {% if campaign_count > 1 %}align-middle{% endif %}">{{ race.district|default:"" }}</td>
+              {% elif verbose_type == 'Judicial' %}
+                <td {% if campaign_count > 1 %}class="align-middle"{% endif %}>{{ race.county|clean_county }}</td>
+                <td {% if campaign_count > 1 %}class="align-middle"{% endif %}">
+                  {% if race.district and race.district.name != 'No District' %}
+                    {{ race.district }},
+                  {% endif %}
+                  {{ race.division|default:"" }}
+                    </td>
+              {% endif %}
             {% endif %}
-        </tr>
-    </thead>
-    <tbody>
-        {% with total=races|largest_contribution %}
-            {% for race in races %}
-                {% with campaign_count=race.campaigns.count %}
-                    <tr>
-                        {% if verbose_type != 'all' and verbose_type != 'Statewide' %}
-                            {% if verbose_type == 'Legislative' or verbose_type == 'Public Regulation Commission' %}
-                                <td class="no-wrap {% if campaign_count > 1 %}align-middle{% endif %}">{{ race.district }}</td>
-                            {% elif verbose_type == 'County Offices' %}
-                                <td class="no-wrap {% if campaign_count > 1 %}align-middle{% endif %}">{{ race.county|clean_county }}</td>
-                                <td class="no-wrap {% if campaign_count > 1 %}align-middle{% endif %}">{{ race.district|default:"" }}</td>
-                            {% elif verbose_type == 'Judicial' %}
-                                <td {% if campaign_count > 1 %}class="align-middle"{% endif %}>{{ race.county|clean_county }}</td>
-                                <td {% if campaign_count > 1 %}class="align-middle"{% endif %}">
-                                    {% if race.district and race.district.name != 'No District' %}
-                                        {{ race.district }},
-                                    {% endif %}
-                                    {{ race.division|default:"" }}
-                                </td>
-                            {% endif %}
-                        {% endif %}
-                        <td class="{% if campaign_count > 1 %}align-middle{% endif %}">
-                            <a href="{% url 'race-detail' race.id %}">
-                                {{ race.office }}
-                                {% if verbose_type == 'all' %}
-                                    {% with office_type=race.office_type.description %}
-                                        {% if office_type == 'Legislative' or office_type == 'Public Regulation Commission' %}
-                                            ({{ race.district }})
-                                        {% elif office_type == 'County Offices' %}
-                                            ({{ race.county }})
-                                        {% endif %}
-                                    {% endwith %}
-                                {% endif %}
-                            </a>
-                        </td>
-                        {% with active_campaigns=race.active_campaigns %}
-                            <td class="no-wrap">
-                                {% for campaign in active_campaigns %}
-                                    <p>
-                                        {{ campaign.candidate.full_name }}
-                                        {% if campaign.party_identifier %}
-                                            <small>
-                                                <span class="party-identifier {{ campaign.party_identifier }}">
-                                                    ({{ campaign.party_identifier }})
-                                                </span>
-                                            </small>
-                                        {% endif %}
-                                        {% if campaign.is_winner %}
-                                            <i class="fa fa-fw fa-check-circle green"></i>
-                                        {% endif %}
-                                    </p>
-                                {% endfor %}
-                            </td>
-                            <td>
-                                {% for campaign in active_campaigns %}
-                                    {% include 'camp_fin/widgets/funding-distribution.html' %}
-                                {% endfor %}
-                            </td>
-                        {% endwith %}
-                        {% with total_funds=race.total_funds %}
-                            <td class="text-right">
-                                <span class='hidden-sm hidden-xs'>
-                                    {{ total_funds|format_money }}
-                                </span>
-                                <span class='visible-sm-block visible-xs-block'>
-                                    {{ total_funds|format_money_short }}
-                                </span>
-                            </td>
-                        {% endwith %}
-                    </tr>
+            <td class="{% if campaign_count > 1 %}align-middle{% endif %}">
+              <a href="{% url 'race-detail' race.id %}">
+                {{ race.office }}
+                {% if verbose_type == 'all' %}
+                  {% with office_type=race.office_type.description %}
+                    {% if office_type == 'Legislative' or office_type == 'Public Regulation Commission' %}
+                      ({{ race.district }})
+                    {% elif office_type == 'County Offices' %}
+                      ({{ race.county }})
+                    {% endif %}
+                  {% endwith %}
+                {% endif %}
+                </a>
+                </td>
+                {% with active_campaigns=race.active_campaigns %}
+                  <td class="no-wrap">
+                    {% for campaign in active_campaigns %}
+                      <p>
+                      {{ campaign.candidate.full_name }}
+                      {% if campaign.party_identifier %}
+                        <small>
+                        <span class="party-identifier {{ campaign.party_identifier }}">
+                          ({{ campaign.party_identifier }})
+                          </span>
+                          </small>
+                      {% endif %}
+                      {% if campaign.is_winner %}
+                        <i class="fa fa-fw fa-check-circle green"></i>
+                      {% endif %}
+                      </p>
+                    {% endfor %}
+                    </td>
+                    <td>
+                    {% for campaign in active_campaigns %}
+                      {% include 'camp_fin/widgets/funding-distribution.html' %}
+                    {% endfor %}
+                    </td>
                 {% endwith %}
-            {% endfor %}
+                {% with total_funds=race.total_funds %}
+                  <td class="text-right">
+                    <span class='hidden-sm hidden-xs'>
+                    {{ total_funds|format_money }}
+                    </span>
+                    <span class='visible-sm-block visible-xs-block'>
+                    {{ total_funds|format_money_short }}
+                    </span>
+                    </td>
+                {% endwith %}
+                </tr>
         {% endwith %}
+      {% endfor %}
+    {% endwith %}
     </tbody>
-</table>
+    </table>

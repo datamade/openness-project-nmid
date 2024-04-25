@@ -1,317 +1,317 @@
 {% extends 'base.html' %}
-{% load staticfiles %}
+{% load static %}
 {% load bootstrap_pagination %}
 {% load humanize %}
 {% load helpers %}
 {% load explainer %}
 
 {% block title %}
-    {{ race }}
+  {{ race }}
 {% endblock %}
 
 {% block full_content %}
-<div class="container">
+  <div class="container">
     <div class="row">
-        <div class="col-xs-12">
-            <h1><i class='fa fa-fw fa-check-square-o'></i>
-                {{ race }}
-            </h1>
-            <div class="row">
-                <div class="col-xs-12 col-md-6">
-                    <h3>
-                        <i class="fa fa-fw fa-info-circle"></i>
-                        Details
-                    </h3>
-                    <table class="table table-striped">
-                        <tbody>
-                            {% if race.funding_period == '2017' %}
-                                <tr>
-                                    <td>Primary election date</td>
-                                    <td>June 5th, 2018</td>
-                                </tr>
-                                <tr>
-                                    <td>General election date</td>
-                                    <td>November 6th, 2018</td>
-                                </tr>
-                            {% endif %}
-                            <tr>
-                                <td>
-                                    Total funds raised in this race
-                                    {% explainer "The sum of all donations and loans recorded for all candidates in this race, starting January 1st of the year before election year." %}
-                                </td>
-                                <td class="hidden-xs">
-                                    <strong>{{ race.total_funds | format_money }}</strong>
-                                </td>
-                                <td class="visible-xs">
-                                    <strong>{{ race.total_funds | format_money_short }}</strong>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                {% if stories %}
-                    <div class="col-xs-12 col-md-6">
-                        <h3>Related stories</h3>
-                        <ul>
-                            {% for story in stories %}
-                                <li><a href="{{ story.link }}">{{ story.title }}</a></li>
-                            {% endfor %}
-                        </ul>
-                    </div>
+      <div class="col-xs-12">
+        <h1><i class='fa fa-fw fa-check-square-o'></i>
+          {{ race }}
+        </h1>
+        <div class="row">
+          <div class="col-xs-12 col-md-6">
+            <h3>
+              <i class="fa fa-fw fa-info-circle"></i>
+              Details
+            </h3>
+            <table class="table table-striped">
+              <tbody>
+                {% if race.funding_period == '2017' %}
+                  <tr>
+                    <td>Primary election date</td>
+                    <td>June 5th, 2018</td>
+                  </tr>
+                  <tr>
+                    <td>General election date</td>
+                    <td>November 6th, 2018</td>
+                  </tr>
                 {% endif %}
+                <tr>
+                  <td>
+                    Total funds raised in this race
+                    {% explainer "The sum of all donations and loans recorded for all candidates in this race, starting January 1st of the year before election year." %}
+                  </td>
+                  <td class="hidden-xs">
+                    <strong>{{ race.total_funds | format_money }}</strong>
+                  </td>
+                  <td class="visible-xs">
+                    <strong>{{ race.total_funds | format_money_short }}</strong>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          {% if stories %}
+            <div class="col-xs-12 col-md-6">
+              <h3>Related stories</h3>
+              <ul>
+                {% for story in stories %}
+                  <li><a href="{{ story.link }}">{{ story.title }}</a></li>
+                {% endfor %}
+              </ul>
             </div>
-            {% if page.text %}
-                {{ page.text|safe }}
-            {% endif %}
+          {% endif %}
         </div>
+        {% if page.text %}
+          {{ page.text|safe }}
+        {% endif %}
+      </div>
     </div>
     <div class="row">
-        <div class="col-xs-12">
-            <br/>
-            <table class="table table-striped table-responsive race-detail-table">
-                <thead>
-                    <tr>
-                        <th>Candidate</th>
-                        <th class="hidden-xs hidden-sm col-md-4">
-                            <span class="block donations-color"></span>
-                            <span class="donations-color">
-                                Donations
-                            </span>
-                            and
-                            <span class="block expenditures-color"></span>
-                            <span class="expenditures-color">
-                                Expenditures
-                            </span>
-                            {% explainer "'Donations' include both contributions and loans. We group donations and expenditures by month for this chart, so the dates are approximate." %}
-                        </th>
-                        <th class="text-right">
-                        {% if race.funding_period %}
-                            Funds raised since {{ race.funding_period }}
-                        {% else %}
-                            Funds raised
-                        {% endif %}
-                            {% explainer "'Funds raised' includes both contributions and loans to the campaign." %}
-                        </th>
-                        <th class="text-right">
-                            Money spent
-                        </th>
-                        <th class="text-right">
-                            Cash on hand
-                            {% explainer "The amount of available funds that the campaign reported at the time of the last filing date. This number does not include outstanding debts." %}
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for campaign in race.active_campaigns %}
-                    <tr>
-                        <td class="align-middle">
-                            <a href="{% url 'candidate-detail' slug=campaign.candidate.slug %}">
-                                {{ campaign.candidate.full_name }}
-                            </a>
-                            {% if campaign.party_identifier %}
-                                <small>
-                                    <span class="party-identifier {{ campaign.party_identifier }}">
-                                        ({{ campaign.party_identifier }})
-                                    </span>
-                                </small>
-                            {% endif %}
-                            {% if campaign.is_winner %}
-                                <i class="fa fa-fw fa-check-circle green"></i>
-                            {% endif %}
-                        </td>
-                        <td class="hidden-xs">
-                            <div id="active-expend-chart-{{ forloop.counter0 }}"></div>
-                        </td>
-                        <td class="align-middle text-right">
-                            <span class='hidden-xs'>
-                                {% with last_year=race.funding_period total=race.largest_contribution %}
-                                    {% include 'camp_fin/widgets/funding-distribution.html' %}
-                                {% endwith %}
-                            </span>
-                            <span class="visible-xs-block">
-                                {% funds_raised campaign race.funding_period short=True %}
-                        </td>
-                        <td class="align-middle text-right">
-                            <span class='hidden-xs'>
-                                {% expenditures campaign race.funding_period %}
-                            </span>
-                            <span class="visible-xs-block">
-                                {% expenditures campaign race.funding_period short=True %}
-                            </span>
-                        </td>
-                        <td class="align-middle text-right">
-                            <span class='hidden-xs'>
-                                {{ campaign.cash_on_hand | format_money }}
-                            </span>
-                            <span class="visible-xs-block">
-                                {{ campaign.cash_on_hand | format_money_short }}
-                            </span>
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
+      <div class="col-xs-12">
+        <br/>
+        <table class="table table-striped table-responsive race-detail-table">
+          <thead>
+            <tr>
+              <th>Candidate</th>
+              <th class="hidden-xs hidden-sm col-md-4">
+                <span class="block donations-color"></span>
+                <span class="donations-color">
+                  Donations
+                </span>
+                and
+                <span class="block expenditures-color"></span>
+                <span class="expenditures-color">
+                  Expenditures
+                </span>
+                {% explainer "'Donations' include both contributions and loans. We group donations and expenditures by month for this chart, so the dates are approximate." %}
+              </th>
+              <th class="text-right">
+                {% if race.funding_period %}
+                  Funds raised since {{ race.funding_period }}
+                {% else %}
+                  Funds raised
+                {% endif %}
+                {% explainer "'Funds raised' includes both contributions and loans to the campaign." %}
+              </th>
+              <th class="text-right">
+                Money spent
+              </th>
+              <th class="text-right">
+                Cash on hand
+                {% explainer "The amount of available funds that the campaign reported at the time of the last filing date. This number does not include outstanding debts." %}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for campaign in race.active_campaigns %}
+              <tr>
+                <td class="align-middle">
+                  <a href="{% url 'candidate-detail' slug=campaign.candidate.slug %}">
+                    {{ campaign.candidate.full_name }}
+                  </a>
+                  {% if campaign.party_identifier %}
+                    <small>
+                      <span class="party-identifier {{ campaign.party_identifier }}">
+                        ({{ campaign.party_identifier }})
+                      </span>
+                    </small>
+                  {% endif %}
+                  {% if campaign.is_winner %}
+                    <i class="fa fa-fw fa-check-circle green"></i>
+                  {% endif %}
+                </td>
+                <td class="hidden-xs">
+                  <div id="active-expend-chart-{{ forloop.counter0 }}"></div>
+                </td>
+                <td class="align-middle text-right">
+                  <span class='hidden-xs'>
+                    {% with last_year=race.funding_period total=race.largest_contribution %}
+                      {% include 'camp_fin/widgets/funding-distribution.html' %}
+                    {% endwith %}
+                  </span>
+                  <span class="visible-xs-block">
+                    {% funds_raised campaign race.funding_period short=True %}
+                  </td>
+                  <td class="align-middle text-right">
+                    <span class='hidden-xs'>
+                      {% expenditures campaign race.funding_period %}
+                    </span>
+                    <span class="visible-xs-block">
+                      {% expenditures campaign race.funding_period short=True %}
+                    </span>
+                  </td>
+                  <td class="align-middle text-right">
+                    <span class='hidden-xs'>
+                      {{ campaign.cash_on_hand | format_money }}
+                    </span>
+                    <span class="visible-xs-block">
+                      {{ campaign.cash_on_hand | format_money_short }}
+                    </span>
+                  </td>
+                </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
     {% if race.sorted_dropouts %}
-        <div class="row">
-            <div class="col-xs-12">
-                <h2>
-                    <span class="fa-stack">
-                        <i class="fa fa-fw fa-times fa-stack-2x red"></i>
-                        <i class="fa fa-fw fa-users fa-stack-1x"></i>
+      <div class="row">
+        <div class="col-xs-12">
+          <h2>
+            <span class="fa-stack">
+              <i class="fa fa-fw fa-times fa-stack-2x red"></i>
+              <i class="fa fa-fw fa-users fa-stack-1x"></i>
+            </span>
+            Defeated candidates
+          </h2>
+          <h2>
+            <small>
+              These candidates lost a primary, or dropped out of the race.
+            </small>
+          </h2>
+          <hr />
+          <table class="table table-striped table-responsive race-detail-table">
+            <thead>
+              <tr>
+                <th>Candidate</th>
+                <th>Status</th>
+                <th class="hidden-xs hidden-sm col-md-4">
+                  <span class="block donations-color"></span>
+                  <span class="donations-color">
+                    Donations
+                  </span>
+                  and
+                  <span class="block expenditures-color"></span>
+                  <span class="expenditures-color">
+                    Expenditures
+                  </span>
+                  {% explainer "'Donations' include both contributions and loans. We group donations and expenditures by month for this chart, so the dates are approximate." %}
+                </th>
+                <th class="text-right">
+                  {% if race.funding_period %}
+                    Funds raised since {{ race.funding_period }}
+                  {% else %}
+                    Funds raised
+                  {% endif %}
+                  {% explainer "'Funds raised' includes both contributions and loans to the campaign." %}
+                </th>
+                <th class="text-right">
+                  Money spent
+                </th>
+                <th class="text-right">
+                  Cash on hand
+                  {% explainer "The amount of available funds that the campaign reported at the time of the last filing date. This number does not include outstanding debts." %}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for campaign in race.sorted_dropouts %}
+                <tr>
+                  <td class="align-middle">
+                    <a href="{% url 'candidate-detail' slug=campaign.candidate.slug %}">
+                      {{ campaign.candidate.full_name }}
+                    </a>
+                    {% if campaign.party_identifier %}
+                      <small>
+                        <span class="party-identifier {{ campaign.party_identifier }}">
+                          ({{ campaign.party_identifier }})
+                        </span>
+                      </small>
+                    {% endif %}
+                    {% if campaign.is_winner %}
+                      <i class="fa fa-fw fa-check-circle green"></i>
+                    {% endif %}
+                  </td>
+                  <td class="align-middle">
+                    {{ campaign.display_status }}
+                  </td>
+                  <td class="hidden-xs">
+                    <div id="dropout-expend-chart-{{ forloop.counter0 }}"></div>
+                  </td>
+                  <td class="align-middle text-right">
+                    <span class='hidden-xs'>
+                      {% with last_year=race.funding_period total=race.largest_contribution %}
+                        {% include 'camp_fin/widgets/funding-distribution.html' %}
+                      {% endwith %}
                     </span>
-                    Defeated candidates
-                </h2>
-                <h2>
-                    <small>
-                        These candidates lost a primary, or dropped out of the race.
-                    </small>
-                </h2>
-                <hr />
-                <table class="table table-striped table-responsive race-detail-table">
-                    <thead>
-                        <tr>
-                            <th>Candidate</th>
-                            <th>Status</th>
-                            <th class="hidden-xs hidden-sm col-md-4">
-                                <span class="block donations-color"></span>
-                                <span class="donations-color">
-                                    Donations
-                                </span>
-                                and
-                                <span class="block expenditures-color"></span>
-                                <span class="expenditures-color">
-                                    Expenditures
-                                </span>
-                                {% explainer "'Donations' include both contributions and loans. We group donations and expenditures by month for this chart, so the dates are approximate." %}
-                            </th>
-                            <th class="text-right">
-                            {% if race.funding_period %}
-                                Funds raised since {{ race.funding_period }}
-                            {% else %}
-                                Funds raised
-                            {% endif %}
-                                {% explainer "'Funds raised' includes both contributions and loans to the campaign." %}
-                            </th>
-                            <th class="text-right">
-                                Money spent
-                            </th>
-                            <th class="text-right">
-                                Cash on hand
-                                {% explainer "The amount of available funds that the campaign reported at the time of the last filing date. This number does not include outstanding debts." %}
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for campaign in race.sorted_dropouts %}
-                        <tr>
-                            <td class="align-middle">
-                                <a href="{% url 'candidate-detail' slug=campaign.candidate.slug %}">
-                                    {{ campaign.candidate.full_name }}
-                                </a>
-                                {% if campaign.party_identifier %}
-                                    <small>
-                                        <span class="party-identifier {{ campaign.party_identifier }}">
-                                            ({{ campaign.party_identifier }})
-                                        </span>
-                                    </small>
-                                {% endif %}
-                                {% if campaign.is_winner %}
-                                    <i class="fa fa-fw fa-check-circle green"></i>
-                                {% endif %}
-                            </td>
-                            <td class="align-middle">
-                                {{ campaign.display_status }}
-                            </td>
-                            <td class="hidden-xs">
-                                <div id="dropout-expend-chart-{{ forloop.counter0 }}"></div>
-                            </td>
-                            <td class="align-middle text-right">
-                                <span class='hidden-xs'>
-                                    {% with last_year=race.funding_period total=race.largest_contribution %}
-                                        {% include 'camp_fin/widgets/funding-distribution.html' %}
-                                    {% endwith %}
-                                </span>
-                                <span class="visible-xs-block">
-                                    {% funds_raised campaign race.funding_period short=True %}
-                            </td>
-                            <td class="align-middle text-right">
-                                <span class='hidden-xs'>
-                                    {% expenditures campaign race.funding_period %}
-                                </span>
-                                <span class="visible-xs-block">
-                                    {% expenditures campaign race.funding_period short=True %}
-                                </span>
-                            </td>
-                            <td class="align-middle text-right">
-                                <span class='hidden-xs'>
-                                    {{ campaign.cash_on_hand | format_money }}
-                                </span>
-                                <span class="visible-xs-block">
-                                    {{ campaign.cash_on_hand | format_money_short }}
-                                </span>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                    <span class="visible-xs-block">
+                      {% funds_raised campaign race.funding_period short=True %}
+                    </td>
+                    <td class="align-middle text-right">
+                      <span class='hidden-xs'>
+                        {% expenditures campaign race.funding_period %}
+                      </span>
+                      <span class="visible-xs-block">
+                        {% expenditures campaign race.funding_period short=True %}
+                      </span>
+                    </td>
+                    <td class="align-middle text-right">
+                      <span class='hidden-xs'>
+                        {{ campaign.cash_on_hand | format_money }}
+                      </span>
+                      <span class="visible-xs-block">
+                        {{ campaign.cash_on_hand | format_money_short }}
+                      </span>
+                    </td>
+                  </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
+      </div>
     {% endif %}
-</div>
+  </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/highcharts.js' %}"></script>
-<script src="{% static 'js/accounting.min.js' %}"></script>
-<script src="{% static 'js/moment.min.js' %}"></script>
-<script src="{% static 'js/chart_helper.js' %}"></script>
-<script type="text/javascript">
+  <script src="{% static 'js/highcharts.js' %}"></script>
+  <script src="{% static 'js/accounting.min.js' %}"></script>
+  <script src="{% static 'js/moment.min.js' %}"></script>
+  <script src="{% static 'js/chart_helper.js' %}"></script>
+  <script type="text/javascript">
     function makeTrends(trends, prefix, max, min) {
-        // Make small trendline charts
-        // Args:
-        //      - trends (dict) -> trendline objects from the `Entity.trends` method
-        //      - prefix (str)  -> string prefix that identify chart divs
-        //      - max (int)     -> the largest y-value among the trends, for scaling
-        //      - min (int)     -> the smallest y-value among the trends, for scaling
-        for (j = 0; j < trends.length; j++) {
+      // Make small trendline charts
+      // Args:
+      //      - trends (dict) -> trendline objects from the `Entity.trends` method
+      //      - prefix (str)  -> string prefix that identify chart divs
+      //      - max (int)     -> the largest y-value among the trends, for scaling
+      //      - min (int)     -> the smallest y-value among the trends, for scaling
+      for (j = 0; j < trends.length; j++) {
 
-            var expend_trend = trends[j].expend_trend;
-            var expend_trend_f = [];
+        var expend_trend = trends[j].expend_trend;
+        var expend_trend_f = [];
 
-            var donation_trend = trends[j].donation_trend;
-            var donation_trend_f = [];
+        var donation_trend = trends[j].donation_trend;
+        var donation_trend_f = [];
 
-            // format donations
-            for (i = 0; i < donation_trend.length; i++) {
-                donation_trend_f.push([Date.UTC(donation_trend[i][1],
-                                                donation_trend[i][2] - 1,
-                                                donation_trend[i][3]),
-                                       donation_trend[i][0]]);
-            }
-
-            // format expenditures
-            for (i = 0; i < expend_trend.length; i++) {
-                expend_trend_f.push([Date.UTC(expend_trend[i][1],
-                                              expend_trend[i][2] - 1,
-                                              expend_trend[i][3]),
-                                     expend_trend[i][0]]);
-            }
-
-            ChartHelper.smallDonationExpend(prefix + String(j),
-                                            [min, max],
-                                            [donation_trend_f, expend_trend_f]);
+        // format donations
+        for (i = 0; i < donation_trend.length; i++) {
+          donation_trend_f.push([Date.UTC(donation_trend[i][1],
+            donation_trend[i][2] - 1,
+            donation_trend[i][3]),
+            donation_trend[i][0]]);
         }
+
+        // format expenditures
+        for (i = 0; i < expend_trend.length; i++) {
+          expend_trend_f.push([Date.UTC(expend_trend[i][1],
+            expend_trend[i][2] - 1,
+            expend_trend[i][3]),
+            expend_trend[i][0]]);
+        }
+
+        ChartHelper.smallDonationExpend(prefix + String(j),
+          [min, max],
+          [donation_trend_f, expend_trend_f]);
+      }
     }
     $(document).ready(function() {
-        var active_trends = {{ active_trends|safe }};
-        var dropout_trends = {{ dropout_trends|safe }};
-        var max = {{ max }};
-        var min = {{ min }};
+      var active_trends = {{ active_trends|safe }};
+      var dropout_trends = {{ dropout_trends|safe }};
+      var max = {{ max }};
+      var min = {{ min }};
 
-        makeTrends(active_trends, 'active-expend-chart-', max, min);
-        makeTrends(dropout_trends, 'dropout-expend-chart-', max, min)
+      makeTrends(active_trends, 'active-expend-chart-', max, min);
+      makeTrends(dropout_trends, 'dropout-expend-chart-', max, min)
     });
-</script>
+  </script>
 {% endblock %}

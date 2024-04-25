@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load staticfiles %}
+{% load static %}
 {% load bootstrap_pagination %}
 {% load humanize %}
 {% load helpers %}
@@ -7,69 +7,69 @@
 {% block title %}{{ year }} Races{% endblock %}
 
 {% block full_content %}
-<div class="container">
+  <div class="container">
     <div class="row">
-        <div class="col-md-12">
-            <h1><i class='fa fa-fw fa-check-square-o'></i>{{ year }} Races</h1>
-            {% if page.text %}
-                <div class="row">
-                    <div class="col-xs-12 col-md-10">
-                        {{ page.text|safe }}
-                    </div>
-                </div>
-            {% endif %}
-            <h3>Select a category:</h3>
-            <ul class="nav nav-tabs" role="group" aria-label="Race types">
-                {% for race_type in race_types %}
-                <li {% if type == race_type.id %}class="active"{% endif %}>
-                    <a href="{% url 'races' %}?type={{ race_type.id }}"
-                       role="button">
-                            {{ race_type.description }}
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
-            <br/>
-            {% with races=object_list %}
-                {% include 'camp_fin/widgets/races_list.html' %}
-            {% endwith %}
-        </div>
+      <div class="col-md-12">
+        <h1><i class='fa fa-fw fa-check-square-o'></i>{{ year }} Races</h1>
+        {% if page.text %}
+          <div class="row">
+            <div class="col-xs-12 col-md-10">
+              {{ page.text|safe }}
+            </div>
+          </div>
+        {% endif %}
+        <h3>Select a category:</h3>
+        <ul class="nav nav-tabs" role="group" aria-label="Race types">
+          {% for race_type in race_types %}
+            <li {% if type == race_type.id %}class="active"{% endif %}>
+              <a href="{% url 'races' %}?type={{ race_type.id }}"
+                role="button">
+                {{ race_type.description }}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+        <br/>
+        {% with races=object_list %}
+          {% include 'camp_fin/widgets/races_list.html' %}
+        {% endwith %}
+      </div>
     </div>
     {% if object_list.paginator.num_pages > 1 %}
-    <div class="row">
+      <div class="row">
         <div class="col-xs-12 text-center">
-            <nav aria-label="pagination">
-                <ul class="pagination">
-                {% if object_list.has_previous %}
-                    <li>
-                        <a href="{% url 'races' %}?{% query_transform request page=object_list.previous_page_number %}"
-                           aria-label="Previous">
-                            <span aria-hidden="true">&laquo;</span>
-                        </a>
-                    </li>
-                {% endif %}
-                {% for page in object_list.paginator.page_range %}
-                    <li {% if object_list.number == page %}class="active"{% endif %}>
-                        <a href="{% url 'races' %}?{% query_transform request page=page %}">
-                            {{ page }}
-                        </a>
-                    </li>
-                {% endfor %}
-                {% if object_list.has_next %}
-                    <li>
-                        <a href="{% url 'races' %}?{% query_transform request page=object_list.next_page_number %}"
-                           aria-label="Next">
-                            <span aria-hidden="true">&raquo;</span>
-                        </a>
-                    </li>
-                {% endif %}
-                </ul>
-            </nav>
+          <nav aria-label="pagination">
+            <ul class="pagination">
+              {% if object_list.has_previous %}
+                <li>
+                  <a href="{% url 'races' %}?{% query_transform request page=object_list.previous_page_number %}"
+                    aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                  </a>
+                </li>
+              {% endif %}
+              {% for page in object_list.paginator.page_range %}
+                <li {% if object_list.number == page %}class="active"{% endif %}>
+                  <a href="{% url 'races' %}?{% query_transform request page=page %}">
+                    {{ page }}
+                  </a>
+                </li>
+              {% endfor %}
+              {% if object_list.has_next %}
+                <li>
+                  <a href="{% url 'races' %}?{% query_transform request page=object_list.next_page_number %}"
+                    aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                  </a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
         </div>
-    </div>
+      </div>
     {% endif %}
     <div id="race-chart"></div>
-</div>
+  </div>
 
 {% endblock %}
 

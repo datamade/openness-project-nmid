@@ -1,80 +1,80 @@
-{% load staticfiles %}
+{% load static %}
 {% load bootstrap_pagination %}
 {% load humanize %}
 {% load helpers %}
 
 <table class="table table-striped table-hover table-responsive" id="candidate-list">
-    <thead>
-        <tr>
-            <th class="no-wrap">
-                <a href="{% url 'organization-list' %}?{% query_transform request order_by='rank' sort_order=toggle_order %}">
-                    Rank
-                    {% if order_by == 'rank' %}
-                        {{ sort_order|get_sort_icon|safe }}
-                    {% endif %}
-                </a>
-            </th>
-            <th>Name</th>
-            <th>Employed lobbyists</th>
-            <th class="text-right no-wrap">
-                <a href="{% url 'organization-list' %}?{% query_transform request order_by='contributions' sort_order=toggle_order %}">
-                    Total contributions
-                    {% if order_by == 'contributions' %}
-                        {{ sort_order|get_sort_icon|safe }}
-                    {% endif %}
-                </a>
-            </th>
-            <th class="text-right no-wrap">
-                <a href="{% url 'organization-list' %}?{% query_transform request order_by='expenditures' sort_order=toggle_order %}">
-                    Total expenditures
-                    {% if order_by == 'expenditures' %}
-                        {{ sort_order|get_sort_icon|safe }}
-                    {% endif %}
-                </a>
-            </th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for rank, organization in organizations %}
-            <tr>
-                <td>{{ rank }}</td>
-                <td>
-                    <a href="{% url 'organization-detail' organization.slug %}">
-                        {{ organization.name }}
-                    </a>
-                </td>
-                <td>
-                    {% with lobbyists=organization.lobbyists %}
-                        {% if lobbyists|length > 5 %}
-                            <div id="description-content-{{ organization.id }}" class="collapse description-text">
-                        {% endif %}
-                        {% for employment in lobbyists %}
-                            <a href="{% url 'lobbyist-detail' employment.lobbyist.slug %}">
-                                {{ employment.lobbyist }}
-                            </a>
-                            <small>{{ employment.years|format_years }}</small>
-                                {% if not forloop.last %}
-                                    <br/>
-                                {% endif %}
-                        {% endfor %}
-                        {% if lobbyists|length > 5 %}
-                            </div>
-                            <a href="#description-content-{{ organization.id }}" data-toggle="collapse" class="collapsed">
-                                <span class="show-more">Show more<i class="fa fa-fw fa-arrow-down"></i></span>
-                                <span class="show-less">Show less<i class="fa fa-fw fa-arrow-up"></i></span>
-                            </a>
-                        {% endif %}
-                    {% endwith %}
-                </td>
-                <td class="text-right">
-                    <span class="hidden-sm hidden-xs">{{ organization.total_contributions|format_money }}</span>
-                    <span class="visible-sm-block visible-xs-block">{{ organization.total_contributions|format_money_short }}</span>
-                </td>
-                <td class="text-right">
-                    <span class="hidden-sm hidden-xs">{{ organization.total_expenditures|format_money }}</span>
-                    <span class="visible-sm-block visible-xs-block">{{ organization.total_expenditures|format_money_short }}</span>
-                </td>
-            </tr>
-        {% endfor %}
-    </tbody>
+  <thead>
+    <tr>
+      <th class="no-wrap">
+        <a href="{% url 'organization-list' %}?{% query_transform request order_by='rank' sort_order=toggle_order %}">
+          Rank
+          {% if order_by == 'rank' %}
+            {{ sort_order|get_sort_icon|safe }}
+          {% endif %}
+        </a>
+      </th>
+      <th>Name</th>
+      <th>Employed lobbyists</th>
+      <th class="text-right no-wrap">
+        <a href="{% url 'organization-list' %}?{% query_transform request order_by='contributions' sort_order=toggle_order %}">
+          Total contributions
+          {% if order_by == 'contributions' %}
+            {{ sort_order|get_sort_icon|safe }}
+          {% endif %}
+        </a>
+      </th>
+      <th class="text-right no-wrap">
+        <a href="{% url 'organization-list' %}?{% query_transform request order_by='expenditures' sort_order=toggle_order %}">
+          Total expenditures
+          {% if order_by == 'expenditures' %}
+            {{ sort_order|get_sort_icon|safe }}
+          {% endif %}
+        </a>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for rank, organization in organizations %}
+      <tr>
+        <td>{{ rank }}</td>
+        <td>
+          <a href="{% url 'organization-detail' organization.slug %}">
+            {{ organization.name }}
+          </a>
+        </td>
+        <td>
+          {% with lobbyists=organization.lobbyists %}
+            {% if lobbyists|length > 5 %}
+              <div id="description-content-{{ organization.id }}" class="collapse description-text">
+            {% endif %}
+            {% for employment in lobbyists %}
+              <a href="{% url 'lobbyist-detail' employment.lobbyist.slug %}">
+                {{ employment.lobbyist }}
+              </a>
+              <small>{{ employment.years|format_years }}</small>
+              {% if not forloop.last %}
+                <br/>
+              {% endif %}
+            {% endfor %}
+            {% if lobbyists|length > 5 %}
+              </div>
+              <a href="#description-content-{{ organization.id }}" data-toggle="collapse" class="collapsed">
+                <span class="show-more">Show more<i class="fa fa-fw fa-arrow-down"></i></span>
+                <span class="show-less">Show less<i class="fa fa-fw fa-arrow-up"></i></span>
+              </a>
+            {% endif %}
+          {% endwith %}
+        </td>
+        <td class="text-right">
+          <span class="hidden-sm hidden-xs">{{ organization.total_contributions|format_money }}</span>
+          <span class="visible-sm-block visible-xs-block">{{ organization.total_contributions|format_money_short }}</span>
+        </td>
+        <td class="text-right">
+          <span class="hidden-sm hidden-xs">{{ organization.total_expenditures|format_money }}</span>
+          <span class="visible-sm-block visible-xs-block">{{ organization.total_expenditures|format_money_short }}</span>
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
 </table>

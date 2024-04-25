@@ -1,462 +1,461 @@
 {% extends 'base.html' %}
 {% load helpers %}
-{% load staticfiles %}
+{% load static %}
 {% load explainer %}
 
 {% block title %}{% endblock %}
 {% block full_content %}
-{% block header %}{% endblock %}
+  {% block header %}{% endblock %}
 
-<div class='row'>
+  <div class='row'>
     <div class="col-sm-6">
-        <h3><i class="fa fa-fw fa-usd"></i>Cash and spending
-            <small>from {{ latest_filing.filing_period.initial_date | date:"M j, Y" }} to {{ latest_filing.date_closed | date:"M j, Y" }}</small>
+      <h3><i class="fa fa-fw fa-usd"></i>Cash and spending
+        <small>from {{ latest_filing.filing_period.initial_date | date:"M j, Y" }} to {{ latest_filing.date_closed | date:"M j, Y" }}</small>
+      </h3>
+      <table class="table table-striped">
+        <tbody>
+          <tr>
+            <td>
+              Opening balance
+              {% if pac %}
+                {% explainer "'Opening balance' refers to the amount of money this committee had at the start of the filing period." %}
+              {% elif candidate %}
+                {% explainer "'Opening balance' refers to the amount of money this candidate had at the start of the filing period." %}
+              {% endif %}
+            </td>
+            <td class='text-right'>{{ latest_filing.opening_balance|format_money }}</td>
+          </tr>
+          <tr>
+            <td class="no-wrap green">
+              + Total contributions
+              {% if pac %}
+                {% explainer "This number represents the donations that this commitee received during the last reporting period. Committees often contribute this money directly to candidates, or spend it on lobbying." %}
+              {% endif %}
+            </td>
+            <td class='text-right no-wrap'>
+              <span class="green">
+                {{ latest_filing.total_contributions|format_money }}
+              </span>
+            </td>
+          </tr>
+          {% if latest_filing.total_loans > 0 %}
+            <tr>
+              <td style="padding-left:30px">
+                Loans
+                {% explainer "Loans to campaigns are different from typical loans, like mortgages and credit cards. When a campaign gets a loan, it doesn't include collateral, and the lender doesn't expect to get paid back at any particular time, if ever. Because of this, we include loans as a kind of contribution: candidates sometimes pay them back if they want to, usually if they win the race, but they often don't." %}
+              </td>
+              <td class='text-right'>
+                {{ latest_filing.total_loans|format_money }}
+              </td>
+            </tr>
+          {% endif %}
+          {% if latest_filing.total_inkind > 0 %}
+            <tr>
+              <td style="padding-left:30px">
+                In-kind
+              </td>
+              <td class='text-right'>
+                {{ latest_filing.total_inkind|format_money }}
+              </td>
+            </tr>
+          {% endif %}
+          {% if donations %}
+            <tr>
+              <td style="padding-left:30px">
+                Donations
+              </td>
+              <td class='text-right'>
+                {{ donations|format_money }}
+              </td>
+            </tr>
+          {% endif %}
+          <tr>
+            <td class="no-wrap red">
+              &ndash; Total expenditures
+              {% if pac %}
+                {% explainer "This number represents the amount of money this committee spent during the last reporting period. Often, committees will donate this money directly to candidates." %}
+              {% endif %}
+            </td>
+            <td class='text-right red'>
+              {{ latest_filing.total_expenditures|format_money }}
+            </td>
+          </tr>
+          <tr>
+            <td class="no-wrap">
+              <strong>= Closing balance</strong>
+              {% if pac %}
+                {% explainer "'Closing balance' refers to the amount of money this committee had on the reporting date." %}
+              {% elif candidate %}
+                {% explainer "'Closing balance' refers to the amount of money this candidate had on the reporting date." %}
+              {% endif %}
+            </td>
+            <td class='text-right'><strong>{{ latest_filing.closing_balance|format_money }}</strong></td>
+          </tr>
+        </tbody>
+      </table>
+      {% if latest_filing.total_unpaid_debts > 0 or latest_filing.total_debt_paid > 0 or latest_filing.total_loans_forgiven > 0 %}
+        <br/>
+        <h3><i class="fa fa-fw fa-credit-card"></i> Debts
+          <small>for the period ending {{ latest_filing.date_closed | date:"M j, Y"}}</small>
         </h3>
-            <table class="table table-striped">
-                <tbody>
-                    <tr>
-                        <td>
-                            Opening balance
-                            {% if pac %}
-                                {% explainer "'Opening balance' refers to the amount of money this committee had at the start of the filing period." %}
-                            {% elif candidate %}
-                                {% explainer "'Opening balance' refers to the amount of money this candidate had at the start of the filing period." %}
-                            {% endif %}
-                        </td>
-                        <td class='text-right'>{{ latest_filing.opening_balance|format_money }}</td>
-                    </tr>
-                    <tr>
-                        <td class="no-wrap green">
-                            + Total contributions
-                            {% if pac %}
-                                {% explainer "This number represents the donations that this commitee received during the last reporting period. Committees often contribute this money directly to candidates, or spend it on lobbying." %}
-                            {% endif %}
-                        </td>
-                        <td class='text-right no-wrap'>
-                            <span class="green">
-                                {{ latest_filing.total_contributions|format_money }}
-                            </span>
-                        </td>
-                    </tr>
-                    {% if latest_filing.total_loans > 0 %}
-                        <tr>
-                            <td style="padding-left:30px">
-                                Loans
-                                {% explainer "Loans to campaigns are different from typical loans, like mortgages and credit cards. When a campaign gets a loan, it doesn't include collateral, and the lender doesn't expect to get paid back at any particular time, if ever. Because of this, we include loans as a kind of contribution: candidates sometimes pay them back if they want to, usually if they win the race, but they often don't." %}
-                            </td>
-                            <td class='text-right'>
-                                {{ latest_filing.total_loans|format_money }}
-                            </td>
-                        </tr>
-                    {% endif %}
-                    {% if latest_filing.total_inkind > 0 %}
-                        <tr>
-                            <td style="padding-left:30px">
-                                In-kind
-                            </td>
-                            <td class='text-right'>
-                                {{ latest_filing.total_inkind|format_money }}
-                            </td>
-                        </tr>
-                    {% endif %}
-                    {% if donations %}
-                        <tr>
-                            <td style="padding-left:30px">
-                                Donations
-                            </td>
-                            <td class='text-right'>
-                                {{ donations|format_money }}
-                            </td>
-                        </tr>
-                    {% endif %}
-                    <tr>
-                        <td class="no-wrap red">
-                            &ndash; Total expenditures
-                            {% if pac %}
-                                {% explainer "This number represents the amount of money this committee spent during the last reporting period. Often, committees will donate this money directly to candidates." %}
-                            {% endif %}
-                        </td>
-                        <td class='text-right red'>
-                            {{ latest_filing.total_expenditures|format_money }}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="no-wrap">
-                            <strong>= Closing balance</strong>
-                            {% if pac %}
-                                {% explainer "'Closing balance' refers to the amount of money this committee had on the reporting date." %}
-                            {% elif candidate %}
-                                {% explainer "'Closing balance' refers to the amount of money this candidate had on the reporting date." %}
-                            {% endif %}
-                        </td>
-                        <td class='text-right'><strong>{{ latest_filing.closing_balance|format_money }}</strong></td>
-                    </tr>
-                </tbody>
-            </table>
-            {% if latest_filing.total_unpaid_debts > 0 or latest_filing.total_debt_paid > 0 or latest_filing.total_loans_forgiven > 0 %}
-                <br/>
-                <h3><i class="fa fa-fw fa-credit-card"></i> Debts
-                    <small>for the period ending {{ latest_filing.date_closed | date:"M j, Y"}}</small>
-                </h3>
-                <table class="table table-striped">
-                    {% if latest_filing.total_debts_paid > 0 %}
-                        <tr>
-                            <td>Debts paid</td>
-                            <td class='text-right'>{{ latest_filing.total_debts_paid|format_money }}</td>
-                        </tr>
-                    {% endif %}
-                    {% if latest_filing.total_loans_forgiven > 0 %}
-                        <tr>
-                            <td>Loans forgiven</td>
-                            <td class='text-right'>{{ latest_filing.total_loans_forgiven|format_money }}</td>
-                        </tr>
-                        {% endif %}
-                    {% if latest_filing.total_unpaid_debts > 0 %}
-                        <tr>
-                            <td>Outstanding debt</td>
-                            <td class='text-right'>{{ latest_filing.total_unpaid_debts|format_money }}</td>
-                        </tr>
-                    {% endif %}
-                </table>
-                <br/>
-            {% endif %}
-        {% block charts %}{% endblock %}
+        <table class="table table-striped">
+          {% if latest_filing.total_debts_paid > 0 %}
+            <tr>
+              <td>Debts paid</td>
+              <td class='text-right'>{{ latest_filing.total_debts_paid|format_money }}</td>
+            </tr>
+          {% endif %}
+          {% if latest_filing.total_loans_forgiven > 0 %}
+            <tr>
+              <td>Loans forgiven</td>
+              <td class='text-right'>{{ latest_filing.total_loans_forgiven|format_money }}</td>
+            </tr>
+          {% endif %}
+          {% if latest_filing.total_unpaid_debts > 0 %}
+            <tr>
+              <td>Outstanding debt</td>
+              <td class='text-right'>{{ latest_filing.total_unpaid_debts|format_money }}</td>
+            </tr>
+          {% endif %}
+        </table>
+        <br/>
+      {% endif %}
+      {% block charts %}{% endblock %}
     </div>
     <div class="col-sm-5 col-sm-offset-1">
-        {% block campaigns %}{% endblock %}
+      {% block campaigns %}{% endblock %}
     </div>
-</div>
-<hr />
-<div class="row">
+  </div>
+  <hr />
+  <div class="row">
     <div class="col-md-12">
-        <ul class="nav nav-pills">
-            <li role="presentation" class="active"><a class="transactions" href="javascript://" data-table_type="top-donors">Top 25 donors</a></li>
-            <li role="presentation"><a class="transactions" href="javascript://" data-table_type="top-expenses">Top 25 expenses</a></li>
-            <li role="presentation"><a class="transactions" href="javascript://" data-table_type="contributions">All donations</a></li>
-            <li role="presentation"><a class="transactions" href="javascript://" data-table_type="expenditures">All expenditures</a></li>
-        </ul>
-        <br />
-        <a href="#" class="btn btn-default" id="csv-download" style="display: none;">Download as CSV</a>
-        <div id='money-table-guts'>
-            <h1><i class='fa fa-spin fa-circle-o-notch'></i></h1>
-        </div>
+      <ul class="nav nav-pills">
+        <li role="presentation" class="active"><a class="transactions" href="javascript://" data-table_type="top-donors">Top 25 donors</a></li>
+        <li role="presentation"><a class="transactions" href="javascript://" data-table_type="top-expenses">Top 25 expenses</a></li>
+        <li role="presentation"><a class="transactions" href="javascript://" data-table_type="contributions">All donations</a></li>
+        <li role="presentation"><a class="transactions" href="javascript://" data-table_type="expenditures">All expenditures</a></li>
+      </ul>
+      <br />
+      <a href="#" class="btn btn-default" id="csv-download" style="display: none;">Download as CSV</a>
+      <div id='money-table-guts'>
+        <h1><i class='fa fa-spin fa-circle-o-notch'></i></h1>
+      </div>
     </div>
-</div>
+  </div>
 
 {% endblock %}
 
 {% block extra_js %}
-    <script src="{% static 'js/highcharts.js' %}"></script>
-    <script src="{% static 'js/ejs_production.js' %}"></script>
-    <script src="{% static 'js/accounting.min.js' %}"></script>
-    <script src="{% static 'js/moment.min.js' %}"></script>
-    <script src="{% static 'js/chart_helper.js' %}"></script>
-    <script type="text/EJS" id="transaction-table-guts">
+  <script src="{% static 'js/highcharts.js' %}"></script>
+  <script src="{% static 'js/ejs_production.js' %}"></script>
+  <script src="{% static 'js/accounting.min.js' %}"></script>
+  <script src="{% static 'js/moment.min.js' %}"></script>
+  <script src="{% static 'js/chart_helper.js' %}"></script>
+  <script type="text/EJS" id="transaction-table-guts">
 
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>
-                        <a id="transaction-donor" href="javascript://" data-ordering="last_name" data-transaction_type="<%= type %>" class="transaction-sort">
-                            <% if (type.toLowerCase().endsWith('contributions')) { %>
-                                Donor
-                            <% } else { %>
-                                Recipient
-                            <% } %>
-                        </a>
-                    </th>
-                    <th class="text-right nowrap">
-                        <a id="transaction-amount" href="javascript://" data-ordering="amount" data-transaction_type="<%= type %>" class="transaction-sort">
-                            Amount
-                        </a>
-                    </th>
-                    <th>
-                        <a id="transaction-date" href="javascript://" data-ordering="received_date" data-transaction_type="<%= type %>" class="transaction-sort">
-                            Date <i class="fa fa-sort-amount-desc"> </i>
-                        </a>
-                    </th>
-                </tr>
-            </thead>
-            <tbody>
-                <% $.each(results, function(i, transaction){ %>
-                    <tr>
-                        <td>
-                            <% if (transaction.full_name){ %>
-                                <% if (transaction.redact) { %>
-                                    Redacted by donor request
-                                <% } else { %>
-                                    <a href='/search/?term=<%= encodeURIComponent(transaction.full_name.replace("\'", "")) %>'>
-                                        <%= transaction.full_name %>
-                                    </a>
-                                <% } %>
-                            <% } else { %>
-                                <a href='/search/?term=<%= encodeURIComponent(transaction.company_name.replace("\'", "")) %>'>
-                                    <%= transaction.company_name %>
-                                </a>
-                            <% } %>
-                        </td>
-                        <td class="text-right nowrap">
-                            <% if (transaction.transaction_type.toLowerCase().endsWith('contribution')){ %>
-                                <a href="/contributions/<%= transaction.id %>/">
-                                    <%= transaction_verb(transaction.transaction_type) %>
-                                    <strong>
-                                        <%= accounting.formatMoney(transaction.amount) %>
-                                    </strong>
-                                </a>
-                            <% } else { %>
-                                <a href="/expenditures/<%= transaction.id %>/">
-                                    <%= transaction_verb(transaction.transaction_type) %>
-                                    <strong>
-                                        <%= accounting.formatMoney(transaction.amount) %>
-                                    </strong>
-                                </a>
-                            <% } %>
-                        </td>
-                        <td class='nowrap'>
-                            on <%= moment(transaction.received_date).format('MMMM DD, YYYY') %>
-                        </td>
-                    </tr>
-                <% }) %>
-            </tbody>
-        </table>
-        <p>
-            <% if ( previous ){ %>
-                <a href='javascript://' class='btn btn-sm btn-primary page-link' data-page_link="<%= previous %>" data-type="<%= type %>">
-                    &laquo; Previous page
-                </a>
-            <% } %>
-            <% if ( next ){ %>
-                <a href='javascript://' class='btn btn-sm btn-primary page-link' data-page_link="<%= next %>" data-type="<%= type %>">
-                    Next page &raquo;
-                </a>
-            <% } %>
-        </p>
-    </script>
-    <script>
-        function transaction_verb(transaction_type){
-            var verbs = {
-                'Monetary contribution': 'donated',
-                'In Kind contribution': 'donated in-kind',
-                'Anonymous Contribution': 'anonymously donated',
-                'Refund monetary  (NOT BEING USED)': 'was refunded',
-                'Monetary Expenditure': 'received'
-            }
-            return verbs[transaction_type];
+    <table class="table table-striped">
+    <thead>
+    <tr>
+    <th>
+    <a id="transaction-donor" href="javascript://" data-ordering="last_name" data-transaction_type="<%= type %>" class="transaction-sort">
+    <% if (type.toLowerCase().endsWith('contributions')) { %>
+      Donor
+      <% } else { %>
+        Recipient
+        <% } %>
+    </a>
+    </th>
+    <th class="text-right nowrap">
+    <a id="transaction-amount" href="javascript://" data-ordering="amount" data-transaction_type="<%= type %>" class="transaction-sort">
+    Amount
+    </a>
+    </th>
+    <th>
+    <a id="transaction-date" href="javascript://" data-ordering="received_date" data-transaction_type="<%= type %>" class="transaction-sort">
+    Date <i class="fa fa-sort-amount-desc"> </i>
+    </a>
+    </th>
+    </tr>
+    </thead>
+    <tbody>
+    <% $.each(results, function(i, transaction){ %>
+      <tr>
+      <td>
+      <% if (transaction.full_name){ %>
+        <% if (transaction.redact) { %>
+          Redacted by donor request
+          <% } else { %>
+            <a href='/search/?term=<%= encodeURIComponent(transaction.full_name.replace("\'", "")) %>'>
+      <%= transaction.full_name %>
+      </a>
+      <% } %>
+      <% } else { %>
+        <a href='/search/?term=<%= encodeURIComponent(transaction.company_name.replace("\'", "")) %>'>
+    <%= transaction.company_name %>
+    </a>
+    <% } %>
+    </td>
+    <td class="text-right nowrap">
+    <% if (transaction.transaction_type.toLowerCase().endsWith('contribution')){ %>
+      <a href="/contributions/<%= transaction.id %>/">
+      <%= transaction_verb(transaction.transaction_type) %>
+      <strong>
+      <%= accounting.formatMoney(transaction.amount) %>
+      </strong>
+      </a>
+      <% } else { %>
+        <a href="/expenditures/<%= transaction.id %>/">
+        <%= transaction_verb(transaction.transaction_type) %>
+        <strong>
+        <%= accounting.formatMoney(transaction.amount) %>
+        </strong>
+        </a>
+        <% } %>
+    </td>
+    <td class='nowrap'>
+    on <%= moment(transaction.received_date).format('MMMM DD, YYYY') %>
+    </td>
+    </tr>
+    <% }) %>
+    </tbody>
+    </table>
+    <p>
+    <% if ( previous ){ %>
+      <a href='javascript://' class='btn btn-sm btn-primary page-link' data-page_link="<%= previous %>" data-type="<%= type %>">
+      &laquo; Previous page
+      </a>
+      <% } %>
+    <% if ( next ){ %>
+      <a href='javascript://' class='btn btn-sm btn-primary page-link' data-page_link="<%= next %>" data-type="<%= type %>">
+      Next page &raquo;
+      </a>
+      <% } %>
+    </p>
+  </script>
+  <script>
+    function transaction_verb(transaction_type){
+      var verbs = {
+        'Monetary contribution': 'donated',
+        'In Kind contribution': 'donated in-kind',
+        'Anonymous Contribution': 'anonymously donated',
+        'Refund monetary  (NOT BEING USED)': 'was refunded',
+        'Monetary Expenditure': 'received'
+      }
+      return verbs[transaction_type];
+    }
+
+    //render net balance chart
+    var balance_trend = {{balance_trend}};
+    var balance_trend_f = [];
+    var debt_trend = {{debt_trend}};
+    var debt_trend_f = [];
+
+    // format balances
+    for (i = 0; i < balance_trend.length; i++) {
+      balance_trend_f.push([Date.UTC(balance_trend[i][1],balance_trend[i][2]-1,balance_trend[i][3]), balance_trend[i][0]]);
+    }
+
+    // format debt
+    for (i = 0; i < debt_trend.length; i++) {
+      debt_trend_f.push([Date.UTC(debt_trend[i][1],debt_trend[i][2]-1,debt_trend[i][3]), debt_trend[i][0]]);
+    }
+
+    ChartHelper.netfunds('net-funds-chart', 'Net funds over time', '', 'Funds', [balance_trend_f, debt_trend_f]);
+
+
+    //render donation/expenditure chart
+    var expend_trend = {{expend_trend}};
+    var expend_trend_f = [];
+
+    var donation_trend = {{donation_trend}};
+    var donation_trend_f = [];
+
+    // format donations
+    for (i = 0; i < donation_trend.length; i++) {
+      donation_trend_f.push([Date.UTC(donation_trend[i][1],donation_trend[i][2]-1,donation_trend[i][3]), donation_trend[i][0]]);
+    }
+
+    // format expenditures
+    for (i = 0; i < expend_trend.length; i++) {
+      expend_trend_f.push([Date.UTC(expend_trend[i][1],expend_trend[i][2]-1,expend_trend[i][3]), expend_trend[i][0]]);
+    }
+
+    ChartHelper.donation_expenditure('expend-chart', 'Donations and expenditures over time', '', 'Money', [donation_trend_f, expend_trend_f]);
+  </script>
+  <script type="text/javascript">
+    function getPersonName(object){
+      if (object.redact) {
+        return "Redacted by donor request"
+      }
+      var person_name = '';
+      if (object.name_prefix){
+        person_name += object.name_prefix + ' ';
+      }
+      if (object.prefix){
+        person_name += object.prefix + ' ';
+      }
+      if (object.first_name){
+        person_name += object.first_name + ' ';
+      }
+      if (object.middle_name){
+        person_name += object.middle_name + ' ';
+      }
+      if (object.last_name){
+        person_name += object.last_name + ' ';
+      }
+      if (object.suffix){
+        person_name += object.suffix + ' ';
+      }
+      return person_name
+    }
+  </script>
+
+
+  <script type="text/javascript">
+
+    function getPage(e){
+      var page_link = $(e.target).data('page_link');
+      var transaction_type = $(e.target).data('type');
+      $.when($.getJSON(page_link)).then(
+        function(data){
+          var template = new EJS({'text': $('#transaction-table-guts').html()});
+          data['type'] = transaction_type;
+          $('#money-table-guts').html(template.render(data));
+          $('.page-link').off('click');
+          $('.page-link').on('click', getPage);
+          $('.transaction-sort').off('click');
+          $('.transaction-sort').on('click', sortTransactions);
         }
+      )
+    }
 
-        //render net balance chart
-        var balance_trend = {{balance_trend}};
-        var balance_trend_f = [];
-        var debt_trend = {{debt_trend}};
-        var debt_trend_f = [];
-
-        // format balances
-        for (i = 0; i < balance_trend.length; i++) {
-            balance_trend_f.push([Date.UTC(balance_trend[i][1],balance_trend[i][2]-1,balance_trend[i][3]), balance_trend[i][0]]);
-        }
-
-        // format debt
-        for (i = 0; i < debt_trend.length; i++) {
-            debt_trend_f.push([Date.UTC(debt_trend[i][1],debt_trend[i][2]-1,debt_trend[i][3]), debt_trend[i][0]]);
-        }
-
-        ChartHelper.netfunds('net-funds-chart', 'Net funds over time', '', 'Funds', [balance_trend_f, debt_trend_f]);
-
-
-        //render donation/expenditure chart
-        var expend_trend = {{expend_trend}};
-        var expend_trend_f = [];
-
-        var donation_trend = {{donation_trend}};
-        var donation_trend_f = [];
-
-        // format donations
-        for (i = 0; i < donation_trend.length; i++) {
-            donation_trend_f.push([Date.UTC(donation_trend[i][1],donation_trend[i][2]-1,donation_trend[i][3]), donation_trend[i][0]]);
-        }
-
-        // format expenditures
-        for (i = 0; i < expend_trend.length; i++) {
-            expend_trend_f.push([Date.UTC(expend_trend[i][1],expend_trend[i][2]-1,expend_trend[i][3]), expend_trend[i][0]]);
-        }
-
-        ChartHelper.donation_expenditure('expend-chart', 'Donations and expenditures over time', '', 'Money', [donation_trend_f, expend_trend_f]);
-    </script>
-    <script type="text/javascript">
-        function getPersonName(object){
-            if (object.redact) {
-                return "Redacted by donor request"
-            }
-            var person_name = '';
-            if (object.name_prefix){
-                person_name += object.name_prefix + ' ';
-            }
-            if (object.prefix){
-                person_name += object.prefix + ' ';
-            }
-            if (object.first_name){
-                person_name += object.first_name + ' ';
-            }
-            if (object.middle_name){
-                person_name += object.middle_name + ' ';
-            }
-            if (object.last_name){
-                person_name += object.last_name + ' ';
-            }
-            if (object.suffix){
-                person_name += object.suffix + ' ';
-            }
-            return person_name
-        }
-    </script>
-
-
-    <script type="text/javascript">
-
-        function getPage(e){
-            var page_link = $(e.target).data('page_link');
-            var transaction_type = $(e.target).data('type');
-            $.when($.getJSON(page_link)).then(
-                function(data){
-                    var template = new EJS({'text': $('#transaction-table-guts').html()});
-                    data['type'] = transaction_type;
-                    $('#money-table-guts').html(template.render(data));
-                    $('.page-link').off('click');
-                    $('.page-link').on('click', getPage);
-                    $('.transaction-sort').off('click');
-                    $('.transaction-sort').on('click', sortTransactions);
-                }
-            )
-        }
-
-        function displayTopMoneyTable(transaction_type){
-            {% if pac %}
-                var url = '/api/' + transaction_type + '/' + '{{ pac.id }}' + '/';
-                url += '?entity_type=pac';
-            {% elif candidate %}
-                var url = '/api/' + transaction_type + '/' + '{{ candidate.id }}' + '/';
-            {% endif %}
-            $.when($.getJSON(url)).then(function(data){
-                if (data.length > 0){
-                    var template = new EJS({'text': $('#top-money-table-guts').html()});
-                    var context = {
-                        'transactions': data,
-                        'transaction_type': transaction_type
-                    };
-                    $('#money-table-guts').html(template.render(context));
-                } else {
-                    $('#money-table-guts').html('<h4>No results</h4>')
-
-                }
-            })
-        }
-
-        function sortTransactions(e){
-            var element = $(e.target);
-            var transaction_type = element.data().transaction_type;
-            var ordering = element.data().ordering;
-
-            if (!transaction_type && !ordering){
-                element = $(e.target).parent();
-                transaction_type = element.data().transaction_type;
-                ordering = element.data().ordering;
-            }
-
-            var selector = element.prop('id');
-
-            displayTransactionTable(transaction_type, ordering, selector);
+    function displayTopMoneyTable(transaction_type){
+      {% if pac %}
+        var url = '/api/' + transaction_type + '/' + '{{ pac.id }}' + '/';
+        url += '?entity_type=pac';
+      {% elif candidate %}
+        var url = '/api/' + transaction_type + '/' + '{{ candidate.id }}' + '/';
+      {% endif %}
+      $.when($.getJSON(url)).then(function(data){
+        if (data.length > 0){
+          var template = new EJS({'text': $('#top-money-table-guts').html()});
+          var context = {
+            'transactions': data,
+            'transaction_type': transaction_type
+          };
+          $('#money-table-guts').html(template.render(context));
+        } else {
+          $('#money-table-guts').html('<h4>No results</h4>')
 
         }
+      })
+    }
 
-        function displayTransactionTable(transaction_type, ordering, selector){
-            if(transaction_type.endsWith('contributions')){
-                var url = '/api/contributions/';
-                var bulk_url = '/api/bulk/contributions/';
-            } else if (transaction_type.endsWith('expenditures')){
-                var url = '/api/expenditures/';
-                var bulk_url = '/api/bulk/expenditures/';
+    function sortTransactions(e){
+      var element = $(e.target);
+      var transaction_type = element.data().transaction_type;
+      var ordering = element.data().ordering;
+
+      if (!transaction_type && !ordering){
+        element = $(e.target).parent();
+        transaction_type = element.data().transaction_type;
+        ordering = element.data().ordering;
+      }
+
+      var selector = element.prop('id');
+
+      displayTransactionTable(transaction_type, ordering, selector);
+
+    }
+
+    function displayTransactionTable(transaction_type, ordering, selector){
+      if(transaction_type.endsWith('contributions')){
+        var url = '/api/contributions/';
+        var bulk_url = '/api/bulk/contributions/';
+      } else if (transaction_type.endsWith('expenditures')){
+        var url = '/api/expenditures/';
+        var bulk_url = '/api/bulk/expenditures/';
+      }
+      var bulk_params = {
+        {% if pac %}
+          'pac_id': '{{ pac.id }}',
+        {% elif candidate %}
+          'candidate_id': '{{ candidate.id }}',
+        {% endif %}
+      }
+
+      var params = $.extend({}, bulk_params);
+      params['limit'] = 25;
+
+      if (ordering){
+        params['ordering'] = ordering;
+      }
+
+      $.when($.getJSON(url, params)).then(
+        function(data){
+          if (data.results.length > 0){
+            var template = new EJS({'text': $('#transaction-table-guts').html()});
+            data['type'] = transaction_type;
+            $('#money-table-guts').html(template.render(data));
+            $('.page-link').off('click');
+            $('.page-link').on('click', getPage);
+
+            $('#csv-download').prop('href', bulk_url + '?' + $.param(bulk_params));
+            $('#csv-download').show();
+
+            var sorter = ''
+
+            if (selector){
+              if(ordering.startsWith('-')){
+                sorter = ordering.replace('-', '');
+                $('#' + selector).data('ordering', sorter);
+              } else {
+                sorter = '-' + ordering;
+                $('#' + selector).data('ordering', sorter);
+              }
             }
-            var bulk_params = {
-                {% if pac %}
-                    'pac_id': '{{ pac.id }}',
-                {% elif candidate %}
-                    'candidate_id': '{{ candidate.id }}',
-                {% endif %}
+
+            var icon = ''
+            if (sorter.startsWith('-')){
+              icon = ' <i class="fa fa-sort-amount-asc"> </i>'
+            } else {
+              icon = ' <i class="fa fa-sort-amount-desc"> </i>'
             }
+            var text = $('#' + selector).text().trim();
+            $('#' + selector).html(text + icon);
 
-            var params = $.extend({}, bulk_params);
-            params['limit'] = 25;
+            $('.transaction-sort').off('click');
+            $('.transaction-sort').on('click', sortTransactions);
 
-            if (ordering){
-                params['ordering'] = ordering;
-            }
-
-            $.when($.getJSON(url, params)).then(
-                function(data){
-                    if (data.results.length > 0){
-                        var template = new EJS({'text': $('#transaction-table-guts').html()});
-                        data['type'] = transaction_type;
-                        $('#money-table-guts').html(template.render(data));
-                        $('.page-link').off('click');
-                        $('.page-link').on('click', getPage);
-
-                        $('#csv-download').prop('href', bulk_url + '?' + $.param(bulk_params));
-                        $('#csv-download').show();
-
-                        var sorter = ''
-
-                        if (selector){
-                            if(ordering.startsWith('-')){
-                                sorter = ordering.replace('-', '');
-                                $('#' + selector).data('ordering', sorter);
-                            } else {
-                                sorter = '-' + ordering;
-                                $('#' + selector).data('ordering', sorter);
-                            }
-                        }
-
-                        var icon = ''
-                        if (sorter.startsWith('-')){
-                            icon = ' <i class="fa fa-sort-amount-asc"> </i>'
-                        } else {
-                            icon = ' <i class="fa fa-sort-amount-desc"> </i>'
-                        }
-                        var text = $('#' + selector).text().trim();
-                        $('#' + selector).html(text + icon);
-
-                        $('.transaction-sort').off('click');
-                        $('.transaction-sort').on('click', sortTransactions);
-
-                    } else {
-                        $('#money-table-guts').html('<h4>No results</h4>')
-                    }
-                }
-            )
+          } else {
+            $('#money-table-guts').html('<h4>No results</h4>')
+          }
         }
+      )
+    }
 
-        $(document).ready(function(){
+    $(document).ready(function(){
 
-            displayTopMoneyTable('top-donors');
+      displayTopMoneyTable('top-donors');
 
-            $('.transactions').on('click', function(e){
-                $('#money-table-guts').html("<h1><i class='fa fa-spin fa-circle-o-notch'></i></h1>");
-                $('#csv-download').hide();
-                if(!$(this).parent().hasClass('active')){
-                    $('li[role="presentation"]').removeClass('active');
-                    $(this).parent().addClass('active');
-                }
-                var transaction_type = $(this).data('table_type');
-                if (transaction_type.startsWith('top')){
-                    displayTopMoneyTable(transaction_type);
-                } else {
-                    var sort_order = null;
-                    if (transaction_type.startsWith('largest')){
-                        sort_order = '-amount';
-                    }
-                    displayTransactionTable(transaction_type, sort_order, null);
-                }
-            })
-        })
-    </script>
+      $('.transactions').on('click', function(e){
+        $('#money-table-guts').html("<h1><i class='fa fa-spin fa-circle-o-notch'></i></h1>");
+        $('#csv-download').hide();
+        if(!$(this).parent().hasClass('active')){
+          $('li[role="presentation"]').removeClass('active');
+          $(this).parent().addClass('active');
+        }
+        var transaction_type = $(this).data('table_type');
+        if (transaction_type.startsWith('top')){
+          displayTopMoneyTable(transaction_type);
+        } else {
+          var sort_order = null;
+          if (transaction_type.startsWith('largest')){
+            sort_order = '-amount';
+          }
+          displayTransactionTable(transaction_type, sort_order, null);
+        }
+      })
+    })
+  </script>
 {% endblock %}
-

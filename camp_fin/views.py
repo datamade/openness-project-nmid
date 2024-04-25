@@ -2127,7 +2127,7 @@ def bulk_employments(request):
     return make_response(copy, filename, args)
 
 
-def four_oh_four(request):
+def four_oh_four(request, exception):
     return render(request, "404.html", {}, status=404)
 
 

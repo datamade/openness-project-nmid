@@ -1,8 +1,8 @@
-{% load staticfiles %}
+{% load static %}
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <title>{% block title %}{% endblock %} - The Openness Project</title>
 
     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
@@ -12,34 +12,34 @@
 
     {% block extra_css %}{% endblock %}
 
-</head>
-<body>
+  </head>
+  <body>
 
     <nav class="navbar navbar-default" role="navigation">
-        <div class="container-fluid">
-            <div class="navbar-header">
-                <span class="navbar-brand">
-                  <a href="/" target='_blank'>
-                    The Openness Project
-                  </a>
-                </span>
-              </div>
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <span class="navbar-brand">
+            <a href="/" target='_blank'>
+              The Openness Project
+            </a>
+          </span>
         </div>
+      </div>
     </nav>
 
     <div class="container-fluid">
-    {% block full_content %}
-    {% endblock %}
+      {% block full_content %}
+      {% endblock %}
     </div>
 
     <div class="container-fluid footer">
-        <div class='col-sm-12 text-center'>
-            <p>
-                <a href='https://opennessproject.com/' target='_blank'>OpennessProject.com</a><br />
-                Brought to you by<br />
-                <a href='http://nmindepth.com/' target='_blank'><img src="{% static 'images/nmid-logo.png' %}" alt='New Mexico In Depth' style='height: 26px;' title='New Mexico In Depth' class='img-responsive center-block'/></a>
-            </p>
-        </div>
+      <div class='col-sm-12 text-center'>
+        <p>
+          <a href='https://opennessproject.com/' target='_blank'>OpennessProject.com</a><br />
+          Brought to you by<br />
+          <a href='http://nmindepth.com/' target='_blank'><img src="{% static 'images/nmid-logo.png' %}" alt='New Mexico In Depth' style='height: 26px;' title='New Mexico In Depth' class='img-responsive center-block'/></a>
+        </p>
+      </div>
     </div>
 
     <script src="{% static 'js/jquery-1.10.1.min.js' %}"></script>
@@ -48,9 +48,9 @@
     {% block extra_js %}{% endblock %}
 
     <script>
-        var analyticsTrackingCode = 'UA-85036377-1';
+      var analyticsTrackingCode = 'UA-85036377-1';
     </script>
     <script src="{% static 'js/analytics_lib.js' %}"></script>
 
-</body>
+  </body>
 </html>
