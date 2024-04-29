@@ -317,7 +317,7 @@ class TransactionDownloadViewSet(TransactionDownload):
         base_query = """
             SELECT
               CASE WHEN transaction.redact THEN 'Redacted by donor request'
-                ELSE transaction.full_name
+                ELSE coalesce(transaction.full_name, transaction.company_name)
               END as name,
               CASE WHEN transaction.redact THEN 'Redacted by donor request' ELSE (
                 transaction.address || ' ' || transaction.city || ', ' || transaction.state || ' ' || transaction.zipcode
