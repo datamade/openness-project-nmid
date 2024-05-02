@@ -110,17 +110,10 @@ class Campaign(models.Model):
         null=True,
         on_delete=models.CASCADE,
     )
-    committee_name = models.CharField(max_length=100, null=True)
-    committee_phone_1 = models.CharField(max_length=25, null=True)
-    committee_phone_2 = models.CharField(max_length=25, null=True)
-    committee_fax_number = models.CharField(max_length=25, null=True)
-    committee_email = models.CharField(max_length=255, null=True)
-    committee_address = models.ForeignKey(
-        "Address",
-        related_name="committee_address",
-        null=True,
-        on_delete=models.CASCADE,
+    committee = models.ForeignKey(
+        "PAC", related_name="campaigns", on_delete=models.CASCADE
     )
+
     initial_balance = models.FloatField(null=True)
     initial_balance_from_self = models.BooleanField(null=True)
     initial_debt = models.FloatField(null=True)

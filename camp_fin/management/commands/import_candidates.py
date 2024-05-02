@@ -2,6 +2,7 @@ import csv
 import re
 
 from django.core.management.base import BaseCommand
+from django.db.models import Q
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 from tqdm import tqdm
@@ -37,27 +38,24 @@ class Command(BaseCommand):
             for record in tqdm(reader):
 
                 try:
-                    candidate = models.Candidate.objects.get(
-                        entity__user_id=record["StateID"]
+                    pac = models.PAC.objects.get(entity__user_id=record["StateID"])
+                except models.PAC.DoesNotExist:
+                    entity_type, _ = models.EntityType.objects.get_or_create(
+                        description="Candidate Committee",
                     )
-                    candidates_linked += 1
-
-                except models.Candidate.DoesNotExist:
-                    candidate_type, _ = models.EntityType.objects.get_or_create(
-                        description="Candidate"
-                    )
-                    person = models.Entity.objects.create(
-                        entity_type=candidate_type,
-                        user_id=record["StateID"],
+                    entity = models.Entity.objects.create(
+                        entity_type=entity_type, user_id=record["StateID"]
                     )
 
-                    candidate = models.Candidate.objects.create(
-                        full_name=record["CandidateName"],
-                        slug=f'{slugify(record["CandidateName"])}-{get_random_string(5)}',
-                        entity=person,
-                    )
+                    committee_name = re.split(
+                        "<br>", record["PoliticalPartyCommitteeName"]
+                    )[0].strip(", ")
 
-                    candidates_created += 1
+                    pac = models.PAC.objects.create(
+                        name=committee_name,
+                        slug=f"{slugify(committee_name)}-{get_random_string(5)}",
+                        entity=entity,
+                    )
 
                 election_year = re.match(r"\d{4}", record["ElectionName"]).group(0)
 
@@ -92,14 +90,57 @@ class Command(BaseCommand):
                 else:
                     county = None
 
-                campaign, created = models.Campaign.objects.get_or_create(
-                    election_season=election_season,
-                    candidate=candidate,
-                    office=office,
-                    district=district,
-                    county=county,
-                    political_party=political_party,
-                )
+                try:
+                    campaign = models.Campaign.objects.get(
+                        election_season=election_season,
+                        committee=pac,
+                        office=office,
+                        district=district,
+                        county=county,
+                        political_party=political_party,
+                    )
+                except models.Campaign.DoesNotExist:
+                    try:
+                        candidate = (
+                            models.Candidate.objects.filter(
+                                Q(campaign__in=pac.campaigns.all())
+                                | Q(
+                                    email=record["CandidateEmail"],
+                                    business_phone=record["PublicPhoneNumber"],
+                                )
+                            )
+                            .distinct()
+                            .get()
+                        )
+                        candidates_linked += 1
+                    except models.Candidate.DoesNotExist:
+
+                        candidate_type, _ = models.EntityType.objects.get_or_create(
+                            description="Candidate"
+                        )
+                        person = models.Entity.objects.create(
+                            entity_type=candidate_type,
+                        )
+
+                        candidate = models.Candidate.objects.create(
+                            full_name=record["CandidateName"],
+                            slug=f'{slugify(record["CandidateName"])}-{get_random_string(5)}',
+                            entity=person,
+                            email=record["CandidateEmail"],
+                            business_phone=record["PublicPhoneNumber"],
+                        )
+
+                        candidates_created += 1
+
+                    campaign = models.Campaign.objects.create(
+                        election_season=election_season,
+                        candidate=candidate,
+                        committee=pac,
+                        office=office,
+                        district=district,
+                        county=county,
+                        political_party=political_party,
+                    )
 
                 campaign.sos_link = "https://login.cfis.sos.state.nm.us/#/exploreDetails/{id}/{office_id}/{district_id}/{election_id}/{election_year}".format(  # noqa
                     id=record["IDNumber"],

@@ -26,7 +26,13 @@ class Command(FilingCommand, BaseCommand):
             filing_period_type=filing_type,
         )
 
-        entity = models.Entity.objects.get(user_id=record["StateID"])
+        entity = (
+            models.Entity.objects.filter(
+                candidate__campaign__committee__entity__user_id=record["StateID"]
+            )
+            .distinct()
+            .get()
+        )
 
         url = f"https://login.cfis.sos.state.nm.us//ReportsOutput//{record['ReportFileName']}"
         final = record["Amended"] == "0" or None
