@@ -1919,7 +1919,7 @@ def bulk_candidates(request):
         JOIN camp_fin_campaign AS campaign
           ON candidate.id = campaign.candidate_id
         JOIN camp_fin_pac AS committee
-          ON camp_fin.committee_id = committee.id
+          ON campaign.committee_id = committee.id
         JOIN camp_fin_electionseason AS election
           ON campaign.election_season_id = election.id
         JOIN camp_fin_politicalparty AS party
