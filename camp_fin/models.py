@@ -135,8 +135,8 @@ class Campaign(models.Model):
                 self.candidate.first_name, self.candidate.last_name
             )
             return "{0} ({1})".format(candidate_name, office)
-        elif self.committee_name:
-            return "{0} ({1})".format(self.committee_name, office)
+        elif self.committee.name:
+            return "{0} ({1})".format(self.committee.name, office)
         else:
             party = self.political_party.name
             return "{0} ({1})".format(party, office)

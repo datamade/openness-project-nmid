@@ -80,6 +80,7 @@ class TransactionSerializer(serializers.ModelSerializer):
             "description",
             "transaction_type",
             "name_prefix",
+            "donor_name",
             "first_name",
             "middle_name",
             "last_name",

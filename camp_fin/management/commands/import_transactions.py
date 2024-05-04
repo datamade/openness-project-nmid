@@ -218,11 +218,22 @@ class Command(BaseCommand):
         state_id = record["OrgID"]
 
         try:
-            entity = models.Entity.objects.get(user_id=state_id)
+            pac = models.PAC.objects.get(entity__user_id=state_id)
+        except models.PAC.DoesNotExist:
+            pac = models.PAC.objects.get(name=record["Committee Name"])
+            pac.entity.user_id = state_id
+            pac.entity.save()
+
+        try:
+            # candidate entity
+            entity = (
+                models.Entity.objects.filter(candidate__campaign__committee=pac)
+                .distinct()
+                .get()
+            )
         except models.Entity.DoesNotExist:
-            entity = models.PAC.objects.get(name=record["Committee Name"]).entity
-            entity.user_id = state_id
-            entity.save()
+            # committee entity
+            entity = pac.entity
 
         # We want to associate the transactions with the final filing
         # for a reporting period
@@ -233,6 +244,11 @@ class Command(BaseCommand):
             final=True,
             entity=entity,
         )
+
+        # the same person can have multiple canidate committees, so we
+        # need to disambiguate which one this filing is for
+        if entity.entity_type.description == "Candidate":
+            filings = filings.filter(campaign__committee=pac)
 
         try:
             filing = filings.get()

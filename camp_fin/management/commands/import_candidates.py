@@ -105,7 +105,7 @@ class Command(BaseCommand):
                             models.Candidate.objects.filter(
                                 Q(campaign__in=pac.campaigns.all())
                                 | Q(
-                                    email=record["CandidateEmail"],
+                                    email__iexact=record["CandidateEmail"],
                                     business_phone=record["PublicPhoneNumber"],
                                 )
                             )
