@@ -26,7 +26,20 @@ class Command(FilingCommand, BaseCommand):
             filing_period_type=filing_type,
         )
 
-        entity = models.Entity.objects.get(user_id=record["StateID"])
+        # Lots of view code depends on filings being attached to the
+        # candidate, while it would be more logical to have the filings be
+        # attached to the candidate's *committee*.
+        #
+        # But, we bend our head to practicality and associate the
+        # filing with the entity representing the candidate.
+
+        entity = (
+            models.Entity.objects.filter(
+                candidate__campaign__committee__entity__user_id=record["StateID"]
+            )
+            .distinct()
+            .get()
+        )
 
         url = f"https://login.cfis.sos.state.nm.us//ReportsOutput//{record['ReportFileName']}"
         final = record["Amended"] == "0" or None

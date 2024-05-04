@@ -66,6 +66,7 @@ class TransactionSerializer(serializers.ModelSerializer):
     transaction_type = serializers.StringRelatedField(read_only=True)
     full_name = serializers.StringRelatedField(read_only=True)
     transaction_subject = EntityField(read_only=True)
+    donor_name = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = Transaction
@@ -80,6 +81,7 @@ class TransactionSerializer(serializers.ModelSerializer):
             "description",
             "transaction_type",
             "name_prefix",
+            "donor_name",
             "first_name",
             "middle_name",
             "last_name",

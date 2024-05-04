@@ -612,34 +612,43 @@ class CandidateList(PaginatedList):
 
         cursor.execute(
             """
-            SELECT * FROM (
-              SELECT
-                DENSE_RANK() OVER (ORDER BY closing_balance DESC) AS rank,
-                candidates.*
-              FROM (
+            WITH most_recent_filing AS (
                 SELECT DISTINCT ON (candidate.id)
-                  candidate.*,
-                  campaign.committee_name,
-                  campaign.county_id,
-                  campaign.district_id,
-                  campaign.division_id,
-                  office.description AS office_name,
-                  filing.closing_balance,
-                  filing.filed_date AS filing_date
-                FROM camp_fin_candidate AS candidate
-                JOIN camp_fin_filing AS filing
-                  USING(entity_id)
-                LEFT JOIN camp_fin_filingperiod AS period
-                  ON filing.filing_period_id = period.id
-                JOIN camp_fin_campaign AS campaign
-                  ON filing.campaign_id = campaign.id
-                LEFT JOIN camp_fin_office AS office
-                  ON campaign.office_id = office.id
-                WHERE filing.date_added >= '2010-01-01'
-                  AND filing.closing_balance IS NOT NULL
-                ORDER BY candidate.id, filing.filed_date DESC
-              ) AS candidates
-            ) AS s
+                    candidate.*,
+                    campaign.county_id,
+                    campaign.district_id,
+                    campaign.division_id,
+                    filing.closing_balance,
+                    filing.filed_date AS filing_date,
+                    campaign.office_id,
+                    campaign.committee_id
+                FROM
+                    camp_fin_candidate AS candidate
+                    INNER JOIN camp_fin_filing AS filing USING (entity_id)
+                    INNER JOIN camp_fin_campaign AS campaign ON filing.campaign_id = campaign.id
+                    INNER JOIN camp_fin_electionseason AS season ON campaign.election_season_id = season.id
+                WHERE
+                    filing.closing_balance IS NOT NULL
+                ORDER BY
+                    candidate.id,
+                    season.year DESC,
+                    filing.filed_date DESC
+            ),
+            ranked AS (
+                SELECT
+                    DENSE_RANK() OVER (ORDER BY closing_balance DESC) AS rank,
+                *
+            FROM
+                most_recent_filing
+            )
+            SELECT
+                ranked.*,
+                office.description as office_name,
+                committee.name AS committee_name
+            FROM
+                ranked
+                INNER JOIN camp_fin_office AS office ON office_id = office.id
+                INNER JOIN camp_fin_pac AS committee ON committee_id = committee.id
             ORDER BY {0} {1}
         """.format(
                 self.order_by, self.sort_order
@@ -1562,7 +1571,7 @@ class SearchAPIView(viewsets.ViewSet):
                     SELECT * FROM (
                       SELECT DISTINCT ON (candidate.id)
                         candidate.*,
-                        campaign.committee_name,
+                        committee.name as committee_name,
                         county.name AS county_name,
                         election.year AS election_year,
                         party.name AS party_name,
@@ -1573,6 +1582,8 @@ class SearchAPIView(viewsets.ViewSet):
                       FROM camp_fin_candidate AS candidate
                       JOIN camp_fin_campaign AS campaign
                         ON candidate.id = campaign.candidate_id
+                      JOIN camp_fin_pac as committee
+                        ON campaign.committee_id = committee.id
                       JOIN camp_fin_electionseason AS election
                         ON campaign.election_season_id = election.id
                       LEFT JOIN camp_fin_politicalparty AS party
@@ -1896,7 +1907,7 @@ def bulk_candidates(request):
     copy = """
         SELECT DISTINCT ON (candidate.id)
           candidate.*,
-          campaign.committee_name,
+          committee.name as committee_name,
           county.name AS county_name,
           election.year AS election_year,
           party.name AS party_name,
@@ -1907,6 +1918,8 @@ def bulk_candidates(request):
         FROM camp_fin_candidate AS candidate
         JOIN camp_fin_campaign AS campaign
           ON candidate.id = campaign.candidate_id
+        JOIN camp_fin_pac AS committee
+          ON campaign.committee_id = committee.id
         JOIN camp_fin_electionseason AS election
           ON campaign.election_season_id = election.id
         JOIN camp_fin_politicalparty AS party

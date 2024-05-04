@@ -5,6 +5,7 @@ from django.core.management import call_command
 from django.test import TestCase, TransactionTestCase
 
 from camp_fin.models import (
+    PAC,
     Campaign,
     Candidate,
     County,
@@ -39,6 +40,9 @@ class FakeTestData(object):
         cls.second_entity = Entity.objects.create(user_id=2)
         cls.third_entity = Entity.objects.create(user_id=3)
         cls.fourth_entity = Entity.objects.create(user_id=4)
+        cls.fifth_entity = Entity.objects.create(user_id=4)
+
+        cls.some_pac = PAC.objects.create(entity=cls.fifth_entity)
 
         first_party = PoliticalParty.objects.create(name="Democrat")
         second_party = PoliticalParty.objects.create(name="Republican")
@@ -108,6 +112,7 @@ class FakeTestData(object):
             office=cls.office,
             date_added=datetime.datetime.now(pytz.utc),
             political_party=first_party,
+            committee=cls.some_pac,
         )
 
         cls.second_campaign = Campaign.objects.create(
@@ -117,6 +122,7 @@ class FakeTestData(object):
             office=cls.office,
             date_added=datetime.datetime.now(pytz.utc),
             political_party=second_party,
+            committee=cls.some_pac,
         )
 
         cls.third_campaign = Campaign.objects.create(
@@ -126,6 +132,7 @@ class FakeTestData(object):
             office=cls.office,
             date_added=datetime.datetime.now(pytz.utc),
             political_party=second_party,
+            committee=cls.some_pac,
         )
 
         cls.non_race_campaign = Campaign.objects.create(
@@ -134,6 +141,7 @@ class FakeTestData(object):
             office=cls.office,
             date_added=datetime.datetime.now(pytz.utc),
             political_party=third_party,
+            committee=cls.some_pac,
         )
 
         cls.campaigns = [cls.first_campaign, cls.second_campaign, cls.third_campaign]

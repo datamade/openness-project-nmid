@@ -77,9 +77,9 @@
               {% endif %}
             </td>
             <td>
-              {% if campaign.committee_name %}
-                <a href="{% url 'search' %}?term={{ campaign.committee_name|urlencode }}">
-                  {{ campaign.committee_name }}
+              {% if campaign.committee.name %}
+                <a href="{% url 'search' %}?term={{ campaign.committee.name|urlencode }}">
+                  {{ campaign.committee.name }}
                 </a>
               {% endif %}
             </td>
