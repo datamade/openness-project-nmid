@@ -1390,7 +1390,7 @@ class CandidateDetail(FormView, CommitteeDetailBaseView):
 
     def form_valid(self, form):
         primary_object = self.get_object()
-        alias_objects = form.data["alias_objects"]
+        alias_objects = form.data.getlist("alias_objects")
 
         obj, aliases, n_merged = merge_candidates(
             primary_object, Candidate.objects.filter(id__in=alias_objects)
