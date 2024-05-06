@@ -3,6 +3,13 @@
 {% load static %}
 {% block title %}{{ candidate.full_name }}{% endblock %}
 
+{% block extra_css %}
+{{ form.media.css }}
+<style>
+  input, select {width: 100%}
+</style>
+{% endblock %}
+
 {% block header %}
   <div class="row">
     <div class="col-xs-12">
@@ -29,6 +36,23 @@
       {% endif %}
     </div>
   </div>
+  <div class="row">
+    <div class="col-md-12">
+      {% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+      <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit">
+    </form>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    {{ form.media.js }}
+  </div></div>
   <div class="row">
     <div class="col-xs-12">
       <a href="{% url 'bulk-contributions-list' %}?candidate_id={{ candidate.id }}" class="btn btn-default"

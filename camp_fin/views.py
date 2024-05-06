@@ -1191,9 +1191,140 @@ class CommitteeDetailBaseView(DetailView):
         return context
 
 
-class CandidateDetail(CommitteeDetailBaseView):
+import sys
+
+from django.apps import apps
+from django.http import HttpResponse
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib import messages
+from django.core import serializers
+
+from django_select2 import forms as s2forms
+
+
+def get_generic_fields():
+    """Return a list of all GenericForeignKeys in all models."""
+    generic_fields = []
+    for model in apps.get_models():
+        for field_name, field in model.__dict__.items():
+            if isinstance(field, GenericForeignKey):
+                generic_fields.append(field)
+    return generic_fields
+
+
+def merge_candidates(primary_object, alias_objects):
+    """
+    Merge several model instances into one, the `primary_object`.
+    Use this function to merge model objects and migrate all of the related
+    fields from the alias objects the primary object.
+    """
+    generic_fields = get_generic_fields()
+
+    # get related fields
+    related_fields = list(
+        filter(lambda x: x.is_relation is True, primary_object._meta.get_fields())
+    )
+
+    many_to_many_fields = list(filter(lambda x: x.many_to_many is True, related_fields))
+
+    related_fields = list(filter(lambda x: x.many_to_many is False, related_fields))
+
+    # Loop through all alias objects and migrate their references to the
+    # primary object
+    deleted_objects = []
+    deleted_objects_count = 0
+    for alias_object in alias_objects:
+        # Migrate all foreign key references from alias object to primary
+        # object.
+        for many_to_many_field in many_to_many_fields:
+            alias_varname = many_to_many_field.name
+            related_objects = getattr(alias_object, f"{alias_varname}_set")
+            for obj in related_objects.all():
+                try:
+                    # Handle regular M2M relationships.
+                    getattr(alias_object, alias_varname).remove(obj)
+                    getattr(primary_object, alias_varname).add(obj)
+                except AttributeError:
+                    # Handle M2M relationships with a 'through' model.
+                    # This does not delete the 'through model.
+                    # TODO: Allow the user to delete a duplicate 'through' model.
+                    through_model = getattr(alias_object, alias_varname).through
+                    kwargs = {
+                        many_to_many_field.m2m_reverse_field_name(): obj,
+                        many_to_many_field.m2m_field_name(): alias_object,
+                    }
+                    through_model_instances = through_model.objects.filter(**kwargs)
+                    for instance in through_model_instances:
+                        # Re-attach the through model to the primary_object
+                        setattr(
+                            instance,
+                            many_to_many_field.m2m_field_name(),
+                            primary_object,
+                        )
+                        instance.save()
+                        # TODO: Here, try to delete duplicate instances that are
+                        # disallowed by a unique_together constraint
+
+        for related_field in related_fields:
+            if related_field.one_to_many:
+                alias_varname = related_field.get_accessor_name()
+                related_objects = getattr(alias_object, alias_varname)
+                for obj in related_objects.all():
+                    field_name = related_field.field.name
+                    setattr(obj, field_name, primary_object)
+                    obj.save()
+            elif related_field.one_to_one or related_field.many_to_one:
+                alias_varname = related_field.name
+                related_object = getattr(alias_object, alias_varname)
+                primary_related_object = getattr(primary_object, alias_varname)
+                if primary_related_object is None:
+                    setattr(primary_object, alias_varname, related_object)
+                    primary_object.save()
+                elif related_field.one_to_one:
+                    sys.stdout.write(
+                        "Deleted {} with id {}\n".format(
+                            related_object, related_object.id
+                        )
+                    )
+                    related_object.delete()
+
+        for field in generic_fields:
+            filter_kwargs = {}
+            filter_kwargs[field.fk_field] = alias_object._get_pk_val()
+            filter_kwargs[field.ct_field] = field.get_content_type(alias_object)
+            related_objects = field.model.objects.filter(**filter_kwargs)
+            for generic_related_object in related_objects:
+                setattr(generic_related_object, field.name, primary_object)
+                generic_related_object.save()
+
+        if alias_object.id:
+            deleted_objects += [alias_object]
+            sys.stdout.write(
+                "Deleted {} with id {}\n".format(alias_object, alias_object.id)
+            )
+            alias_object.delete()
+            deleted_objects_count += 1
+
+    return primary_object, deleted_objects, deleted_objects_count
+
+
+class CandidateMergeForm(forms.Form):
+    alias_objects = forms.MultipleChoiceField(
+        widget=s2forms.ModelSelect2MultipleWidget(
+            model=Candidate,
+            search_fields=["full_name__icontains", "slug__iexact"],
+        ),
+        choices=[
+            (choice, name)
+            for choice, name in Candidate.objects.values_list("id", "full_name")
+        ],
+    )
+
+
+class CandidateDetail(FormView, CommitteeDetailBaseView):
     template_name = "camp_fin/candidate-detail.html"
     model = Candidate
+    form_class = CandidateMergeForm
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1224,7 +1355,6 @@ class CandidateDetail(CommitteeDetailBaseView):
         latest_campaign = (
             context["object"].campaign_set.order_by("-election_season__year").first()
         )
-        print(latest_campaign.election_season.year)
 
         context["latest_campaign"] = latest_campaign
 
@@ -1251,6 +1381,31 @@ class CandidateDetail(CommitteeDetailBaseView):
         context["entity_type"] = "candidate"
 
         return context
+
+    def post(self, *args, **kwargs):
+        if not self.request.user.is_authenticated:
+            raise PermissionDenied
+
+        return super().post(*args, **kwargs)
+
+    def form_valid(self, form):
+        primary_object = self.get_object()
+        alias_objects = form.data["alias_objects"]
+
+        obj, aliases, n_merged = merge_candidates(
+            primary_object, Candidate.objects.filter(id__in=alias_objects)
+        )
+
+        messages.add_message(
+            self.request,
+            messages.SUCCESS,
+            f"Merged {n_merged} candidates {obj}, {', '.join(a.full_name for a in aliases)} into single candidate {obj}",
+        )
+
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return self.request.path
 
 
 class CommitteeDetail(CommitteeDetailBaseView):
