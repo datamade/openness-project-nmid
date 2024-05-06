@@ -1224,6 +1224,7 @@ class CandidateDetail(CommitteeDetailBaseView):
         latest_campaign = (
             context["object"].campaign_set.order_by("-election_season__year").first()
         )
+        print(latest_campaign.election_season.year)
 
         context["latest_campaign"] = latest_campaign
 
@@ -1241,10 +1242,11 @@ class CandidateDetail(CommitteeDetailBaseView):
 
         context["seo"] = seo
 
-        try:
-            latest_campaign = context["latest_filing"].campaign
-        except (AttributeError, ObjectDoesNotExist):
-            latest_campaign = None
+        latest_filing = latest_campaign.filing_set.order_by(
+            "-filing_period__due_date", "-date_added"
+        ).first()
+
+        context["latest_filing"] = latest_filing
 
         context["entity_type"] = "candidate"
 
