@@ -2040,7 +2040,7 @@ def bulk_committees(request):
         end_date = request.GET.get("to")
         args.append(end_date)
         copy += """
-            AND filing.date_added <= %s
+            AND filing.date_added::date <= %s
         """
 
     copy += """
@@ -2127,7 +2127,7 @@ def bulk_employers(request):
         end_date = request.GET.get("to")
         args.append(end_date)
         copy += """
-            AND org.date_added <= %s
+            AND org.date_added::date <= %s
         """
 
     copy += """
