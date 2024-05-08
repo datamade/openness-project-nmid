@@ -185,7 +185,7 @@ class LobbyistContextMixin(object):
         seo = {}
         seo.update(settings.SITE_META)
 
-        seo["title"] = "Lobbyist portal - The Openness Project"
+        seo["title"] = "Lobbyist portal - Money Trail NM"
         seo[
             "site_desc"
         ] = "Browse lobbyists and their employers in New Mexico politics."

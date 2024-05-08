@@ -163,10 +163,10 @@ CKEDITOR_UPLOAD_PATH = "uploads/"
 CKEDITOR_IMAGE_BACKEND = "pillow"
 
 SITE_META = {
-    "site_name": "The Openness Project",
+    "site_name": "Money Trail NM",
     "site_desc": "Keep an eye on money in New Mexico politics",
     "site_author": "New Mexico In Depth",
-    "site_url": "https://opennessproject.com",
+    "site_url": "https://moneytrailnm.com",
     "twitter_site": "@NMInDepth",
     "twitter_creator": "@NMInDepth",
 }

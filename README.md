@@ -1,4 +1,4 @@
-# The Openness Project - New Mexico Campaign Finance Site
+# Money Trail NM - New Mexico Campaign Finance Site
 
 This site brings greater transparency to New Mexico politics by providing an overview of campaign contributions, expenditures, and the people, businesses, and organizations involved.
 
