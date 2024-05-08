@@ -14,3 +14,4 @@ dj-database-url
 whitenoise
 tqdm
 django-filter==23.5
+django-select2

@@ -4,8 +4,10 @@ from collections import OrderedDict, namedtuple
 
 from django import forms
 from django.conf import settings
+from django.contrib import messages
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from django.core.management import call_command
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import connection
 from django.db.models import Max, Q
@@ -17,6 +19,7 @@ from django.utils.text import slugify
 from django.views.decorators.cache import never_cache
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.generic import DetailView, FormView, TemplateView
+from django_select2 import forms as s2forms
 from rest_framework import renderers, viewsets
 from rest_framework.response import Response
 
@@ -61,6 +64,7 @@ from .models import (
     Transaction,
 )
 from .templatetags.helpers import format_money, get_transaction_verb
+from .merge_candidates import merge_candidates
 
 TWENTY_TEN = timezone.make_aware(datetime.datetime(2010, 1, 1))
 
@@ -1191,9 +1195,28 @@ class CommitteeDetailBaseView(DetailView):
         return context
 
 
-class CandidateDetail(CommitteeDetailBaseView):
+class CandidateMergeForm(forms.Form):
+    alias_objects = forms.MultipleChoiceField(
+        widget=s2forms.ModelSelect2MultipleWidget(
+            model=Candidate,
+            search_fields=["full_name__icontains", "slug__iexact"],
+        ),
+    )
+
+
+class CandidateDetail(FormView, CommitteeDetailBaseView):
     template_name = "camp_fin/candidate-detail.html"
     model = Candidate
+    form_class = CandidateMergeForm
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class=form_class)
+
+        form.fields["alias_objects"].choices = [
+            (choice, name)
+            for choice, name in Candidate.objects.values_list("id", "full_name")
+        ]
+        return form
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1224,7 +1247,6 @@ class CandidateDetail(CommitteeDetailBaseView):
         latest_campaign = (
             context["object"].campaign_set.order_by("-election_season__year").first()
         )
-        print(latest_campaign.election_season.year)
 
         context["latest_campaign"] = latest_campaign
 
@@ -1251,6 +1273,34 @@ class CandidateDetail(CommitteeDetailBaseView):
         context["entity_type"] = "candidate"
 
         return context
+
+    def post(self, *args, **kwargs):
+        if not self.request.user.is_authenticated:
+            raise PermissionDenied
+
+        return super().post(*args, **kwargs)
+
+    def form_valid(self, form):
+        primary_object = self.get_object()
+        alias_objects = form.data.getlist("alias_objects")
+
+        obj, aliases, n_merged = merge_candidates(
+            primary_object, Candidate.objects.filter(id__in=alias_objects)
+        )
+
+        call_command("aggregate_data")
+        call_command("clear_cache")
+
+        messages.add_message(
+            self.request,
+            messages.SUCCESS,
+            f"Merged candidates {obj}, {', '.join(a.full_name for a in aliases)} into single candidate {obj}",
+        )
+
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return self.request.path
 
 
 class CommitteeDetail(CommitteeDetailBaseView):
@@ -1952,7 +2002,7 @@ def bulk_candidates(request):
         end_date = request.GET.get("to")
         args.append(end_date)
         copy += """
-            AND campaign.date_added <= %s
+            AND campaign.date_added::date <= %s
         """
 
     copy += """
@@ -1990,7 +2040,7 @@ def bulk_committees(request):
         end_date = request.GET.get("to")
         args.append(end_date)
         copy += """
-            AND filing.date_added <= %s
+            AND filing.date_added::date <= %s
         """
 
     copy += """
@@ -2077,7 +2127,7 @@ def bulk_employers(request):
         end_date = request.GET.get("to")
         args.append(end_date)
         copy += """
-            AND org.date_added <= %s
+            AND org.date_added::date <= %s
         """
 
     copy += """

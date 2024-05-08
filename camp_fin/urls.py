@@ -127,5 +127,6 @@ urlpatterns = [
         TopEarnersWidgetView.as_view(),
         name="widget-top-earners",
     ),
+    path("select2/", include("django_select2.urls")),
     path("flush-cache/", flush_cache, name="flush-cache"),
 ]
