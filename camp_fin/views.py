@@ -80,7 +80,7 @@ class AboutView(PagesMixin):
         seo.update(settings.SITE_META)
 
         seo["title"] = "About"
-        seo["site_desc"] = "Welcome to New Mexico In Depth’s Openness Project"
+        seo["site_desc"] = "Welcome to New Mexico In Depth’s Money Trail NM"
 
         context["seo"] = seo
 
@@ -148,7 +148,7 @@ class DownloadView(PagesMixin):
         seo["title"] = "Data downloads"
         seo[
             "site_desc"
-        ] = "Download campaign finance data from New Mexico In Depth’s Openness Project"
+        ] = "Download campaign finance data from New Mexico In Depth’s Money Trail NM"
 
         context["seo"] = seo
 
