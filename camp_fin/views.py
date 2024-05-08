@@ -1,9 +1,13 @@
 import csv
 import datetime
 from collections import OrderedDict, namedtuple
+import sys
 
 from django import forms
+from django.apps import apps
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib import messages
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
@@ -17,6 +21,7 @@ from django.utils.text import slugify
 from django.views.decorators.cache import never_cache
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.generic import DetailView, FormView, TemplateView
+from django_select2 import forms as s2forms
 from rest_framework import renderers, viewsets
 from rest_framework.response import Response
 
@@ -1191,15 +1196,13 @@ class CommitteeDetailBaseView(DetailView):
         return context
 
 
-import sys
-
-from django.apps import apps
-from django.http import HttpResponse
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib import messages
-from django.core import serializers
-
-from django_select2 import forms as s2forms
+"""
+The get_generic_fields and merge_candidates functions were copied from the
+merge_model_instances management command from django-extensions. The code
+required a small change to work for us, and I didn't want to introduce a large
+dependency for two functions. Permalink to source:
+https://github.com/django-extensions/django-extensions/blob/b7dfee0be0c16ba7fca107380f81fc86b6aaaaa8/django_extensions/management/commands/merge_model_instances.py
+"""
 
 
 def get_generic_fields():
