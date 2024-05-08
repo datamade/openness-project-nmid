@@ -22,7 +22,7 @@
         <div class="col-md-8">
           <div class="alert alert-info" role="alert">
             <h4>
-              {{ transaction.full_name }} <small>{{ transaction.address }}, {{ transaction.city }}, {{ transaction.state }}</small>
+              {{ transaction }} <small>{{ transaction.address }}, {{ transaction.city }}, {{ transaction.state }}</small>
             </h4>
 
             <form action="{{ request.path }}" method="post">
