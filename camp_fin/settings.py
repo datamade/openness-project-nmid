@@ -190,8 +190,9 @@ DATABASES["default"] = dj_database_url.parse(
 
 # Caching
 
-cache_backend = "dummy.DummyCache" if DEBUG is True else "db.DatabaseCache"
-cache_backend = "db.DatabaseCache"
+cache_backend = os.getenv(
+    "DJANGO_CACHE_BACKEND", "dummy.DummyCache" if DEBUG else "db.DatabaseCache"
+)
 CACHES = {
     "default": {
         "BACKEND": f"django.core.cache.backends.{cache_backend}",

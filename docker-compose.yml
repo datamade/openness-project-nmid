@@ -18,6 +18,7 @@ services:
       DJANGO_SECRET_KEY: "local secret key"
       DJANGO_MANAGEPY_MIGRATE: "on"
       DJANGO_DEBUG: "True"
+      DJANGO_CACHE_BACKEND: "db.DatabaseCache"
     env_file:
       - .env
     entrypoint: /app/docker-entrypoint.sh

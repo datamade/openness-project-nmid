@@ -472,3 +472,7 @@ h4 small {
 #redaction-form td {
     padding: 10px;
 }
+
+.alert-info .select2-selection__choice {
+    color: #000;
+}

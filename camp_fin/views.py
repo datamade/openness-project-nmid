@@ -1314,10 +1314,6 @@ class CandidateMergeForm(forms.Form):
             model=Candidate,
             search_fields=["full_name__icontains", "slug__iexact"],
         ),
-        choices=[
-            (choice, name)
-            for choice, name in Candidate.objects.values_list("id", "full_name")
-        ],
     )
 
 
@@ -1325,6 +1321,16 @@ class CandidateDetail(FormView, CommitteeDetailBaseView):
     template_name = "camp_fin/candidate-detail.html"
     model = Candidate
     form_class = CandidateMergeForm
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class=form_class)
+        form.fields["alias_objects"].choices = [
+            (choice, name)
+            for choice, name in Candidate.objects.exclude(
+                slug=self.object.slug
+            ).values_list("id", "full_name")
+        ]
+        return form
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

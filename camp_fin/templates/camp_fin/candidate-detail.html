@@ -36,23 +36,36 @@
       {% endif %}
     </div>
   </div>
-  <div class="row">
-    <div class="col-md-12">
-      {% if messages %}
-<ul class="messages">
-    {% for message in messages %}
-    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-    {% endfor %}
-</ul>
-{% endif %}
-      <form method="POST">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <input type="submit">
-    </form>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    {{ form.media.js }}
-  </div></div>
+  {% if user.is_authenticated %}
+    <div class="row">
+      <div class="col-md-8">
+        <div class="alert alert-info" role="alert">
+          <h4>
+            Merge records about <strong>{{ candidate.full_name }}</strong>
+          </h4>
+
+          {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+          {% endif %}
+
+          <form method="post">
+            <p>Use the search box below to find one or more candidate records to merge with the current candidate record, <strong>{{ candidate.full_name }}</strong>. Merging will consolidate all related committees, candidacies, and transactions under the current candidate <strong>and cannot be undone</strong>. You can look up records to merge by candidate name or slug, e.g., <em>John Smith</em> or <em>john-smith-hvP0y</em>.</p>
+            <p>
+              {{ form.alias_objects }}
+            </p>
+            {% csrf_token %}
+            <div align="center"><input type="submit" class="btn btn-primary" style="width: unset!important;"></div>
+          </form>
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+          {{ form.media.js }}
+        </div>
+      </div>
+    </div>      
+  {% endif %}
   <div class="row">
     <div class="col-xs-12">
       <a href="{% url 'bulk-contributions-list' %}?candidate_id={{ candidate.id }}" class="btn btn-default"

@@ -20,6 +20,8 @@ docker-compose run --rm app python make nightly
 docker-compose run --rm app python manage.py make_search_index
 ```
 
+To enable candidate merging for local development, create an admin user (`python manage.py createsuperuser`) and turn on database caching by adding `DJANGO_CACHE_BACKEND: "db.DatabaseCache"` to the environment block in `docker-compose.yml`. (django-select2 requires a persistent cache.) _This step is not necessary if you do not need to test merge functionality._
+
 Finally, run the app:
 
 ```bash
