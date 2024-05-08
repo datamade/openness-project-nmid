@@ -473,6 +473,6 @@ h4 small {
     padding: 10px;
 }
 
-.alert-info .select2-selection__choice {
+.alert-info .select2-selection__choice, .select2-search__field {
     color: #000;
 }

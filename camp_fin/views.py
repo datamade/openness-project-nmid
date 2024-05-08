@@ -10,6 +10,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib import messages
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from django.core.management import call_command
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import connection
 from django.db.models import Max, Q
@@ -1327,11 +1328,10 @@ class CandidateDetail(FormView, CommitteeDetailBaseView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class=form_class)
+
         form.fields["alias_objects"].choices = [
             (choice, name)
-            for choice, name in Candidate.objects.exclude(
-                slug=self.object.slug
-            ).values_list("id", "full_name")
+            for choice, name in Candidate.objects.values_list("id", "full_name")
         ]
         return form
 
@@ -1405,10 +1405,13 @@ class CandidateDetail(FormView, CommitteeDetailBaseView):
             primary_object, Candidate.objects.filter(id__in=alias_objects)
         )
 
+        call_command("aggregate_data")
+        call_command("clear_cache")
+
         messages.add_message(
             self.request,
             messages.SUCCESS,
-            f"Merged {n_merged} candidates {obj}, {', '.join(a.full_name for a in aliases)} into single candidate {obj}",
+            f"Merged candidates {obj}, {', '.join(a.full_name for a in aliases)} into single candidate {obj}",
         )
 
         return super().form_valid(form)
