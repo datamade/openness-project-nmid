@@ -2119,7 +2119,7 @@ def bulk_candidates(request):
         end_date = request.GET.get("to")
         args.append(end_date)
         copy += """
-            AND campaign.date_added <= %s
+            AND campaign.date_added::date <= %s
         """
 
     copy += """
