@@ -26,8 +26,6 @@ required a small change to work for us, and I didn't want to introduce a large
 dependency for two functions. Permalink to source code:
 https://github.com/django-extensions/django-extensions/blob/b7dfee0be0c16ba7fca107380f81fc86b6aaaaa8/django_extensions/management/commands/merge_model_instances.py
 """
-import sys
-
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey
 
