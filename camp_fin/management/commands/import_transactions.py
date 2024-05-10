@@ -59,7 +59,6 @@ class Command(BaseCommand):
         year = options["year"]
 
         with open(options["file"]) as f:
-
             if options["transaction_type"] == "CON":
                 self.import_contributions(f, year)
 
@@ -209,7 +208,6 @@ class Command(BaseCommand):
         return contact
 
     def _get_filing(self, record):
-
         start_date = parse_date(record["Start of Period"])
         end_date = parse_date(record["End of Period"])
         if start_date is None or end_date is None:
@@ -312,7 +310,7 @@ class Command(BaseCommand):
 
             elif "Contribution" in record["Contribution Type"]:
                 transaction_type, _ = models.TransactionType.objects.get_or_create(
-                    description="Monetary contribution",
+                    description=record["Contribution Type"],
                     contribution=True,
                     anonymous=False,
                 )
