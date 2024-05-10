@@ -6,14 +6,38 @@ from django.db.utils import ProgrammingError
 class Command(BaseCommand):
     help = "Import New Mexico Campaign Finance data"
 
-    def handle(self, *args, **options):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--recreate-views",
+            dest="recreate_views",
+            action="store_true",
+            help="Drop and recreate materialized views. Helpful when the underlying query changes.",
+        )
 
-        self.makeLoanBalanceView()
-        self.makeTransactionAggregates()
+    def handle(self, *args, **options):
+        self.makeLoanBalanceView(options["recreate_views"])
+        self.makeTransactionAggregates(options["recreate_views"])
         self.stdout.write(self.style.SUCCESS("Aggregates complete!"))
 
-    def makeTransactionAggregates(self):
+    def makeTransactionAggregates(self, recreate_views):
         for interval in ["day", "week", "month"]:
+            if recreate_views:
+                self.executeTransaction(
+                    """
+                    DROP MATERIALIZED VIEW IF EXISTS contributions_by_{}
+                """.format(
+                        interval
+                    )
+                )
+
+                self.executeTransaction(
+                    """
+                    DROP MATERIALIZED VIEW IF EXISTS expenditures_by_{}
+                """.format(
+                        interval
+                    )
+                )
+
             try:
                 self.executeTransaction(
                     """
@@ -40,8 +64,10 @@ class Command(BaseCommand):
                         JOIN camp_fin_filing AS f
                           ON t.filing_id = f.id
                         WHERE tt.contribution = TRUE
-                          AND (tt.description = 'Monetary contribution' or
-                               tt.description = 'Anonymous Contribution')
+                          AND tt.description in (
+                            'Monetary Contribution',
+                            'Anonymous Contribution'
+                          )
                         GROUP BY f.entity_id, date_trunc('{0}', t.received_date)
                         UNION
                         SELECT
@@ -117,7 +143,13 @@ class Command(BaseCommand):
 
                 self.executeTransaction(view)
 
-    def makeLoanBalanceView(self):
+    def makeLoanBalanceView(self, recreate_views):
+        if recreate_views:
+            self.executeTransaction(
+                """
+                    DROP MATERIALIZED VIEW IF EXISTS current_loan_status
+                """
+            )
 
         try:
             self.executeTransaction(

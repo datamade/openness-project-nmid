@@ -309,10 +309,19 @@ class Command(BaseCommand):
                 )
 
             elif "Contribution" in record["Contribution Type"]:
+                if "in-kind" in record["Contribution Type"].lower():
+                    description = "In-Kind Contribution"
+                elif "return" in record["Contribution Type"].lower():
+                    description = "Return Contribution"
+                elif "anonymous" in record["Contribution Type"].lower():
+                    description = "Anonymous Contribution"
+                else:
+                    description = "Monetary Contribution"
+
                 transaction_type, _ = models.TransactionType.objects.get_or_create(
-                    description=record["Contribution Type"],
+                    description=description,
                     contribution=True,
-                    anonymous=False,
+                    anonymous="anonymous" in record["Contribution Type"].lower(),
                 )
 
                 contribution = models.Transaction(

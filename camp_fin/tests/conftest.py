@@ -35,7 +35,6 @@ class FakeTestData(object):
 
     @classmethod
     def races(cls):
-
         cls.first_entity = Entity.objects.create(user_id=1)
         cls.second_entity = Entity.objects.create(user_id=2)
         cls.third_entity = Entity.objects.create(user_id=3)
@@ -176,7 +175,7 @@ class FakeTestData(object):
         )
 
         contribution = TransactionType.objects.create(
-            description="Monetary contribution", contribution=True, anonymous=False
+            description="Monetary Contribution", contribution=True, anonymous=False
         )
 
         expenditure = TransactionType.objects.create(
