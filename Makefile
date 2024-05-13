@@ -1,10 +1,11 @@
 
 .PHONY : quarterly
 quarterly: import/candidates import/pacs import/candidate_filings import/pac_filings import/CON_2020 import/EXP_2020 import/CON_2021 import/EXP_2021 import/CON_2022 import/EXP_2022 import/CON_2023 import/EXP_2023 import/CON_2024 import/EXP_2024
+	python manage.py make_search_index
 
 .PHONY : nightly
 nightly: import/candidates import/pacs import/candidate_filings import/pac_filings import/CON_2023 import/EXP_2023 import/CON_2024 import/EXP_2024
-
+	python manage.py make_search_index
 
 import/% : _data/sorted/%.csv
 	python manage.py import_transactions --transaction-type $(word 1, $(subst _, , $*)) \
@@ -22,7 +23,6 @@ import/candidates : _data/raw/candidate_committees.csv
 
 import/pacs : _data/raw/pac_committees.csv
 	python manage.py import_pac_committees --file $<
-
 
 _data/raw/%_committees.csv :
 	wget --no-use-server-timestamps -O $@ "https://openness-project-nmid.s3.amazonaws.com/$*_committees.csv"
