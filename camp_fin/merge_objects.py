@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 Developer's note:
-The get_generic_fields and merge_candidates functions were copied from the
+The get_generic_fields and merge_objects functions were copied from the
 merge_model_instances management command from django-extensions. The code
 required a small change to work for us, and I didn't want to introduce a large
 dependency for two functions. Permalink to source code:
@@ -40,7 +40,7 @@ def get_generic_fields():
     return generic_fields
 
 
-def merge_candidates(primary_object, alias_objects):
+def merge_objects(primary_object, alias_objects):
     """
     Merge several model instances into one, the `primary_object`.
     Use this function to merge model objects and migrate all of the related

@@ -64,7 +64,7 @@ from .models import (
     Transaction,
 )
 from .templatetags.helpers import format_money, get_transaction_verb
-from .merge_candidates import merge_candidates
+from .merge_objects import merge_objects
 
 TWENTY_TEN = timezone.make_aware(datetime.datetime(2010, 1, 1))
 
@@ -1284,11 +1284,14 @@ class CandidateDetail(FormView, CommitteeDetailBaseView):
         primary_object = self.get_object()
         alias_objects = form.data.getlist("alias_objects")
 
-        obj, aliases, n_merged = merge_candidates(
-            primary_object, Candidate.objects.filter(id__in=alias_objects)
+        alias_objects = Candidate.objects.filter(id__in=alias_objects)
+
+        merge_objects(
+            primary_object.entity, Entity.objects.filter(candidate__in=alias_objects)
         )
 
-        call_command("aggregate_data")
+        obj, aliases, _ = merge_objects(primary_object, alias_objects)
+
         call_command("clear_cache")
 
         messages.add_message(

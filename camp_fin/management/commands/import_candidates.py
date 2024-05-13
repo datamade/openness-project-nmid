@@ -27,16 +27,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         with open(options["file"]) as f:
-
             reader = csv.DictReader(f)
 
             candidates_created = 0
             candidates_linked = 0
 
-            models.Campaign.objects.filter(election_season__year__gte=2021).delete()
-
             for record in tqdm(reader):
-
                 try:
                     pac = models.PAC.objects.get(entity__user_id=record["StateID"])
                 except models.PAC.DoesNotExist:
@@ -114,7 +110,6 @@ class Command(BaseCommand):
                         )
                         candidates_linked += 1
                     except models.Candidate.DoesNotExist:
-
                         candidate_type, _ = models.EntityType.objects.get_or_create(
                             description="Candidate"
                         )
