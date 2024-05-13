@@ -1,0 +1,22 @@
+name: Import scraped data to configured database
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [trigger-workflow]
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build containers and import scraped data
+        run: |
+          touch .env
+          docker-compose \
+            -e AWS_STORAGE_BUCKET_NAME=${secrets.AWS_STORAGE_BUCKET_NAME}
+            -e AWS_ACCESS_KEY_ID=${secrets.AWS_ACCESS_KEY_ID}
+            -e AWS_SECRET_ACCESS_KEY=${secrets.AWS_SECRET_ACCESS_KEY}
+            -e DJANGO_DATABASE_URL=${secrets.DATABASE_URL} 
+            run --rm app make nightly
