@@ -1292,6 +1292,7 @@ class CandidateDetail(FormView, CommitteeDetailBaseView):
 
         obj, aliases, _ = merge_objects(primary_object, alias_objects)
 
+        call_command("aggregate_data")
         call_command("clear_cache")
 
         messages.add_message(
