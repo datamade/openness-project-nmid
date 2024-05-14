@@ -50,6 +50,7 @@ from .base_views import (
     TransactionDownloadViewSet,
     iterate_cursor,
 )
+from .merge_objects import merge_objects
 from .models import (
     PAC,
     Candidate,
@@ -64,7 +65,6 @@ from .models import (
     Transaction,
 )
 from .templatetags.helpers import format_money, get_transaction_verb
-from .merge_objects import merge_objects
 
 TWENTY_TEN = timezone.make_aware(datetime.datetime(2010, 1, 1))
 
@@ -195,7 +195,7 @@ class LobbyistContextMixin(object):
         return context
 
 
-class IndexView(TopEarnersBase, LobbyistContextMixin, PagesMixin):
+class IndexView(TopEarnersBase, PagesMixin):
     template_name = "index.html"
     page_path = "/"
 

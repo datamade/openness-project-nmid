@@ -3,17 +3,19 @@ name: Import scraped data to configured database
 on:
   schedule:
     # * is a special character in YAML so you have to quote this string
-    - cron:  '15 7 * * *'   
+    - cron: "15 7 * * *"
   workflow_dispatch:
   repository_dispatch:
     types: [trigger-workflow]
-    
+
 jobs:
   etl:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: "deploy"
       - name: Build containers and import scraped data
         # It would be awesome to be able to send the make target in the payload
         # of the triggering workflow, defaulting to "nightly" for manual runs
