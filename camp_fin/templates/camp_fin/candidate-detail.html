@@ -4,10 +4,10 @@
 {% block title %}{{ candidate.full_name }}{% endblock %}
 
 {% block extra_css %}
-{{ form.media.css }}
-<style>
-  input, select {width: 100%}
-</style>
+  {{ form.media.css }}
+  <style>
+    input, select {width: 100%}
+  </style>
 {% endblock %}
 
 {% block header %}
@@ -64,7 +64,7 @@
           {{ form.media.js }}
         </div>
       </div>
-    </div>      
+    </div>
   {% endif %}
   <div class="row">
     <div class="col-xs-12">
@@ -115,9 +115,7 @@
             </td>
             <td>
               {% if campaign.committee.name %}
-                <a href="{% url 'search' %}?term={{ campaign.committee.name|urlencode }}">
-                  {{ campaign.committee.name }}
-                </a>
+                {{ campaign.committee.name }}
               {% endif %}
             </td>
             <td>{{ campaign.election_season.year }}</td>
