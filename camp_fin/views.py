@@ -2024,7 +2024,7 @@ def bulk_committees(request):
           pac.*,
           treasurer.full_name AS treasurer_name
         FROM camp_fin_pac AS pac
-        JOIN camp_fin_treasurer AS treasurer
+        LEFT JOIN camp_fin_treasurer AS treasurer
           ON pac.treasurer_id = treasurer.id
         JOIN camp_fin_filing AS filing
           ON filing.entity_id = pac.entity_id
