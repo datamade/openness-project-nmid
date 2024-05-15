@@ -6,7 +6,7 @@ on:
     - cron: "15 7 * * *"
   workflow_dispatch:
   repository_dispatch:
-    types: [trigger-workflow]
+    types: [nightly-scrape-done]
 
 jobs:
   etl:
