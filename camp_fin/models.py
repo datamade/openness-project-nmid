@@ -763,7 +763,6 @@ class SpecialEvent(models.Model):
 
 
 class Filing(models.Model):
-
     entity = models.ForeignKey("Entity", on_delete=models.CASCADE)
     olddb_campaign_id = models.IntegerField(null=True)
     olddb_profile_id = models.IntegerField(null=True)
@@ -884,7 +883,7 @@ class Address(models.Model):
     street = models.CharField(null=True, max_length=255)
     city = models.CharField(null=True, max_length=255)
     state = models.ForeignKey("State", null=True, on_delete=models.CASCADE)
-    zipcode = models.CharField(null=True, max_length=10)
+    zipcode = models.CharField(null=True, max_length=100)
     county = models.ForeignKey("County", null=True, on_delete=models.CASCADE)
     country = models.CharField(max_length=255, null=True)
     address_type = models.ForeignKey("AddressType", null=True, on_delete=models.CASCADE)
