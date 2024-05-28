@@ -6,16 +6,14 @@ on:
     types: [nightly-scrape-done]
 
 jobs:
-  etl:
+  import_filings:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
         with:
           ref: "deploy"
-      - name: Build containers and import scraped data
-        # It would be awesome to be able to send the make target in the payload
-        # of the triggering workflow, defaulting to "nightly" for manual runs
+      - name: Import candidate, PAC, and filing data
         run: |
           touch .env
           docker-compose -f docker-compose.etl.yml run --rm \
@@ -23,4 +21,40 @@ jobs:
             -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
             -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
             -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
-            app make nightly
+            app make import/candidates import/pacs import/candidate_filings import/pac_filings
+
+  import_2023:
+    runs-on: ubuntu-latest
+
+    steps:
+      - needs: import_filings
+      - uses: actions/checkout@v3
+        with:
+          ref: "deploy"
+      - name: Import data for 2023
+        run: |
+          touch .env
+          docker-compose -f docker-compose.etl.yml run --rm \
+            -e AWS_STORAGE_BUCKET_NAME=${{ secrets.AWS_STORAGE_BUCKET_NAME }} \
+            -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+            -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+            -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
+            app make import/CON_2023 import/EXP_2023
+
+  import_2024:
+    runs-on: ubuntu-latest
+
+    steps:
+      - needs: import_filings
+      - uses: actions/checkout@v3
+        with:
+          ref: "deploy"
+      - name: Import data for 2024
+        run: |
+          touch .env
+          docker-compose -f docker-compose.etl.yml run --rm \
+            -e AWS_STORAGE_BUCKET_NAME=${{ secrets.AWS_STORAGE_BUCKET_NAME }} \
+            -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+            -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+            -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
+            app make import/CON_2024 import/EXP_2024
