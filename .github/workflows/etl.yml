@@ -25,9 +25,9 @@ jobs:
 
   import_2023:
     runs-on: ubuntu-latest
+    needs: import_filings
 
     steps:
-      - needs: import_filings
       - uses: actions/checkout@v3
         with:
           ref: "deploy"
@@ -43,9 +43,9 @@ jobs:
 
   import_2024:
     runs-on: ubuntu-latest
+    needs: import_filings
 
     steps:
-      - needs: import_filings
       - uses: actions/checkout@v3
         with:
           ref: "deploy"
