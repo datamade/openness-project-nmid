@@ -259,7 +259,15 @@ class Command(BaseCommand):
         except models.Filing.DoesNotExist:
             raise ValueError
         except models.Filing.MultipleObjectsExist:
-            msg = f"{filings.count()} filings found for PAC {pac} from record {record}: {filings}"
+            filing_meta = filings.values(
+                "campaign__committee__name",
+                "entity",
+                "filing_period__description",
+                "filed_date",
+                "filing_period__initial_date",
+                "filing_period__end_date",
+            )
+            msg = f"{filings.count()} filings found for PAC {pac} from record {record}: {filing_meta}"
             self.stderr.write(msg)
             raise ValueError(msg)
 
