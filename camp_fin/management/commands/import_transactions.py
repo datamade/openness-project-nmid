@@ -258,7 +258,7 @@ class Command(BaseCommand):
             filing = filings.get()
         except models.Filing.DoesNotExist:
             raise ValueError
-        except models.Filing.MultipleObjectsExist:
+        except models.Filing.MultipleObjectsReturned:
             filing_meta = filings.values(
                 "campaign__committee__name",
                 "entity",
