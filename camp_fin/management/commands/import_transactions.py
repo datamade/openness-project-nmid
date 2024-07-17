@@ -259,6 +259,7 @@ class Command(BaseCommand):
         except models.Filing.DoesNotExist:
             raise ValueError
         except models.Filing.MultipleObjectsReturned:
+            filing = filings.order_by("filed_date").last()
             filing_meta = filings.values(
                 "campaign__committee__name",
                 "entity",
@@ -267,9 +268,8 @@ class Command(BaseCommand):
                 "filing_period__initial_date",
                 "filing_period__end_date",
             )
-            msg = f"{filings.count()} filings found for PAC {pac} from record {record}: {filing_meta}"
+            msg = f"{filings.count()} filings found for PAC {pac} from record {record}:\n{filing_meta}\n\nUsing most recent filing matching query..."
             self.stderr.write(msg)
-            raise ValueError(msg)
 
         return filing
 
