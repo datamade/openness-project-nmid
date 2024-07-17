@@ -24,19 +24,12 @@ class Command:
 
     def handle(self, *args, **options):
         with open(options["file"]) as f:
-
             reader = csv.DictReader(f)
 
             filings_created = 0
             filings_linked = 0
 
             for record in tqdm(reader):
-
-                # Duplicate Filings:
-                # https://login.cfis.sos.state.nm.us/#/exploreDetails/mP8cXhW3dUTpRJ9Yk07LpZP4048PFnxLXRUfdOLcQk01/14/120/119/2022 (Second Primary Report) # noqa
-                if record["ReportID"] in {"21785"}:
-                    continue
-
                 # our lives are much simpler if we only
                 # work on final filings, so we won't even bother
                 # importing amended filings
