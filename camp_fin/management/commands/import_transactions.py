@@ -218,9 +218,15 @@ class Command(BaseCommand):
         try:
             pac = models.PAC.objects.get(entity__user_id=state_id)
         except models.PAC.DoesNotExist:
-            pac = models.PAC.objects.get(name=record["Committee Name"])
-            pac.entity.user_id = state_id
-            pac.entity.save()
+            try:
+                pac = models.PAC.objects.get(name=record["Committee Name"])
+            except models.PAC.DoesNotExist:
+                msg = f"PAC with name {record['Committee Name']} does not exist."
+                self.stderr.write(msg)
+                raise ValueError(msg)
+            else:
+                pac.entity.user_id = state_id
+                pac.entity.save()
 
         try:
             # candidate entity
@@ -252,6 +258,18 @@ class Command(BaseCommand):
             filing = filings.get()
         except models.Filing.DoesNotExist:
             raise ValueError
+        except models.Filing.MultipleObjectsReturned:
+            filing = filings.order_by("filed_date").last()
+            filing_meta = filings.values(
+                "campaign__committee__name",
+                "entity",
+                "filing_period__description",
+                "filed_date",
+                "filing_period__initial_date",
+                "filing_period__end_date",
+            )
+            msg = f"{filings.count()} filings found for PAC {pac} from record {record}:\n{filing_meta}\n\nUsing most recent filing matching query..."
+            self.stderr.write(msg)
 
         return filing
 
