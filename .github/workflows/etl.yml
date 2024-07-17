@@ -11,8 +11,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-#        with:
-#          ref: "deploy"
+        with:
+          ref: "deploy"
       - name: Import candidate, PAC, and filing data
         run: |
           touch .env
@@ -29,8 +29,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-#        with:
-#          ref: "deploy"
+        with:
+          ref: "deploy"
       - name: Import data for 2023
         run: |
           touch .env
@@ -47,8 +47,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-#        with:
-#          ref: "deploy"
+        with:
+          ref: "deploy"
       - name: Import data for 2024
         run: |
           touch .env
