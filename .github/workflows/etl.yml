@@ -16,7 +16,7 @@ jobs:
       - name: Import candidate, PAC, and filing data
         run: |
           touch .env
-          docker-compose -f docker-compose.etl.yml run --rm \
+          docker compose -f docker-compose.etl.yml run --rm \
             -e AWS_STORAGE_BUCKET_NAME=${{ secrets.AWS_STORAGE_BUCKET_NAME }} \
             -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
             -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
@@ -34,7 +34,7 @@ jobs:
       - name: Import data for 2023
         run: |
           touch .env
-          docker-compose -f docker-compose.etl.yml run --rm \
+          docker compose -f docker-compose.etl.yml run --rm \
             -e AWS_STORAGE_BUCKET_NAME=${{ secrets.AWS_STORAGE_BUCKET_NAME }} \
             -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
             -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
@@ -52,7 +52,7 @@ jobs:
       - name: Import data for 2024
         run: |
           touch .env
-          docker-compose -f docker-compose.etl.yml run --rm \
+          docker compose -f docker-compose.etl.yml run --rm \
             -e AWS_STORAGE_BUCKET_NAME=${{ secrets.AWS_STORAGE_BUCKET_NAME }} \
             -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
             -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
