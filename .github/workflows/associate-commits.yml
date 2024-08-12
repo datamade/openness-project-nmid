@@ -1,3 +1,4 @@
+name: Associate Commits
 
 on: deployment_status
 
