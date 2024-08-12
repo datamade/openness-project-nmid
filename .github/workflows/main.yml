@@ -17,4 +17,4 @@ jobs:
       - name: Build containers and run tests
         run: |
           cp .env.example .env
-          docker-compose -f docker-compose.yml -f camp_fin/tests/docker-compose.yml run --rm app
+          docker compose -f docker-compose.yml -f camp_fin/tests/docker-compose.yml run --rm app
