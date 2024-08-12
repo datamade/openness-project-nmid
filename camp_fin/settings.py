@@ -35,15 +35,41 @@ allowed_hosts = os.getenv("DJANGO_ALLOWED_HOSTS", [])
 ALLOWED_HOSTS = allowed_hosts.split(",") if allowed_hosts else []
 
 # Configure Sentry for error logging
-if os.getenv("SENTRY_DSN"):
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+
+if SENTRY_DSN:
+    import logging
+
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
+    from sentry_sdk.integrations.logging import LoggingIntegration
 
-    sentry_sdk.init(
-        dsn=os.environ["SENTRY_DSN"],
-        integrations=[DjangoIntegration()],
+    def custom_sampler(ctx):
+        if "wsgi_environ" in ctx:
+            path = ctx["wsgi_environ"].get("PATH_INFO", "")
+            # Don't trace performance of static assets
+            if path.startswith("/static/"):
+                return 0
+
+        # Sample other pages at 5% rate
+        return 0.05
+
+    sentry_logging = LoggingIntegration(
+        level=logging.INFO,  # Capture info and above as breadcrumbs
+        event_level=logging.WARNING,  # Send warnings and above as events
     )
 
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration(), sentry_logging],
+        # If you wish to associate users to errors (assuming you are using
+        # django.contrib.auth) you may enable sending PII data.
+        send_default_pii=True,
+        release=f"{os.environ['HEROKU_RELEASE_VERSION']}-{os.environ['HEROKU_APP_NAME']}",
+        enable_tracing=True,
+        traces_sampler=custom_sampler,
+        profiles_sample_rate=0.05,
+    )
 
 # Application definition
 

@@ -8,7 +8,7 @@ pytz==2024.1
 django-ckeditor==6.7.1
 Pillow==10.3.0
 djangorestframework-csv==3.0.2
-sentry-sdk[django]==1.39.1
+sentry-sdk[django]==1.39.2
 python-dateutil==2.9.0.post0
 dj-database-url
 whitenoise
