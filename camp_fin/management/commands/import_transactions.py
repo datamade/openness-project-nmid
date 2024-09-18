@@ -13,14 +13,11 @@ from .utils import parse_date
 
 
 def filing_key(record):
-    start_date = parse_date(record["Start of Period"])
-    end_date = parse_date(record["End of Period"])
-
     return (
         record["OrgID"],
         record["Report Name"],
-        start_date.year if start_date else None,
-        end_date.year if end_date else None,
+        parse_date(record["Start of Period"]),
+        parse_date(record["End of Period"]),
     )
 
 
@@ -40,6 +37,12 @@ class Command(BaseCommand):
             help="Type of transaction to import: CON, EXP (Default: CON)",
         )
         parser.add_argument(
+            "--months",
+            dest="months",
+            default="1,2,3,4,5,6,7,8,9,10,11,12",
+            help="Comma-separated list of months to import (Default: 1,2,3,4,5,6,7,8,9,10,11,12)",
+        )
+        parser.add_argument(
             "--year",
             dest="year",
             default="2023",
@@ -57,21 +60,33 @@ class Command(BaseCommand):
             raise ValueError("Transaction type must be one of: EXP, CON")
 
         year = options["year"]
+        months = [int(m) for m in options["months"].split(",")]
 
         with open(options["file"]) as f:
-            if options["transaction_type"] == "CON":
-                self.import_contributions(f, year)
+            for month in months:
+                self.stdout.write(f"Importing transactions from filing periods beginning {month}/{year}")
+                
+                if options["transaction_type"] == "CON":
+                    self.import_contributions(f, month, year)
 
-            elif options["transaction_type"] == "EXP":
-                self.import_expenditures(f, year)
+                elif options["transaction_type"] == "EXP":
+                    self.import_expenditures(f, month, year)
 
-        self.total_filings(year)
+                self.stdout.write(self.style.SUCCESS("Transactions imported!"))
+
+        self.stdout.write(f"Totaling filings from periods beginning {month}/{year}")
+        self.total_filings(month, year)
+        self.stdout.write(self.style.SUCCESS("Filings totaled!"))
+
         call_command("aggregate_data")
 
-    def import_contributions(self, f, year):
+    def import_contributions(self, f, month, year):
         reader = csv.DictReader(f)
 
-        for filing_group, records in groupby(tqdm(reader), key=filing_key):
+        for _, records in tqdm(filter(
+            lambda x: x[0][2].month == month, 
+            groupby(reader, key=filing_key)
+        )):
             for i, record in enumerate(records):
                 if i == 0:
                     try:
@@ -112,10 +127,13 @@ class Command(BaseCommand):
                         f"Could not determine contribution type from record: {record['Contribution Type']}"
                     )
 
-    def import_expenditures(self, f, year):
+    def import_expenditures(self, f, month, year):
         reader = csv.DictReader(f)
 
-        for filing_group, records in groupby(tqdm(reader), key=filing_key):
+        for _, records in tqdm(filter(
+            lambda x: x[0][2].month == month, 
+            groupby(reader, key=filing_key)
+        )):
             for i, record in enumerate(records):
                 if i == 0:
                     try:
@@ -410,12 +428,13 @@ class Command(BaseCommand):
 
         return contribution
 
-    def total_filings(self, year):
-        for filing in models.Filing.objects.filter(
+    def total_filings(self, month, year):
+        for filing in tqdm(models.Filing.objects.filter(
             final=True,
+            filing_period__initial_date__month=month,
             filing_period__initial_date__year__lte=year,
             filing_period__end_date__year__gte=year,
-        ).iterator():
+        ).iterator()):
             contributions = filing.contributions().aggregate(total=Sum("amount"))
             expenditures = filing.expenditures().aggregate(total=Sum("amount"))
             loans = filing.loans().aggregate(total=Sum("amount"))
@@ -425,5 +444,3 @@ class Command(BaseCommand):
             filing.total_loans = loans["total"] or 0
 
             filing.save()
-
-            self.stdout.write(f"Totalled {filing}")

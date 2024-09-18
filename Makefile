@@ -7,9 +7,11 @@ quarterly: import/candidates import/pacs import/candidate_filings import/pac_fil
 nightly: import/candidates import/pacs import/candidate_filings import/pac_filings import/CON_2023 import/EXP_2023 import/CON_2024 import/EXP_2024
 	python manage.py make_search_index
 
-import/% : _data/sorted/%.csv
+.SECONDEXPANSION:
+import/% : _data/sorted/$$(word 1, $$(subst _, , $$*))_$$(word 3, $$(subst _, , $$*)).csv
 	python manage.py import_transactions --transaction-type $(word 1, $(subst _, , $*)) \
-		--year $(word 2, $(subst _, , $*)) \
+		--months $(word 2, $(subst _, , $*)) \
+		--year $(word 3, $(subst _, , $*)) \
 		--file $<
 
 import/pac_filings : _data/raw/pac_committee_filings.csv
@@ -29,7 +31,6 @@ _data/raw/%_committees.csv :
 
 _data/raw/%_committee_filings.csv :
 	wget --no-check-certificate --no-use-server-timestamps -O $@ "https://openness-project-nmid.s3.amazonaws.com/$*_committee_filings.csv"
-
 
 _data/sorted/%.csv : _data/raw/%.csv
 	xsv fixlengths $< | xsv sort -s OrgID,"Report Name","Start of Period","End of Period" > $@
