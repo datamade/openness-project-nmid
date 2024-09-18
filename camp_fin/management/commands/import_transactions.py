@@ -1,4 +1,5 @@
 import csv
+import math
 import re
 from itertools import groupby
 
@@ -21,6 +22,10 @@ def filing_key(record):
     )
 
 
+def get_quarter(date):
+    return math.ceil(date.month/3.)
+
+
 class Command(BaseCommand):
     help = """
         Import data from the New Mexico Campaign Finance System:
@@ -37,10 +42,10 @@ class Command(BaseCommand):
             help="Type of transaction to import: CON, EXP (Default: CON)",
         )
         parser.add_argument(
-            "--months",
-            dest="months",
-            default="1,2,3,4,5,6,7,8,9,10,11,12",
-            help="Comma-separated list of months to import (Default: 1,2,3,4,5,6,7,8,9,10,11,12)",
+            "--quarters",
+            dest="quarters",
+            default="1,2,3,4",
+            help="Comma-separated list of months to import (Default: 1,2,3,4)",
         )
         parser.add_argument(
             "--year",
@@ -56,35 +61,40 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        if options["transaction_type"] not in ("EXP", "CON"):
+        transaction_type = options["transaction_type"] 
+
+        if transaction_type not in ("EXP", "CON"):
             raise ValueError("Transaction type must be one of: EXP, CON")
 
         year = options["year"]
-        months = [int(m) for m in options["months"].split(",")]
+
+        self.stdout.write(f"Loading data from {transaction_type}_{year}.csv")
+        
+        quarters = [int(q) for q in options["quarters"].split(",")]
 
         with open(options["file"]) as f:
-            for month in months:
-                self.stdout.write(f"Importing transactions from filing periods beginning {month}/{year}")
+            for quarter in quarters:
+                self.stdout.write(f"Importing transactions from filing periods beginning in Q{quarter}")
                 
-                if options["transaction_type"] == "CON":
-                    self.import_contributions(f, month, year)
+                if transaction_type == "CON":
+                    self.import_contributions(f, quarter, year)
 
-                elif options["transaction_type"] == "EXP":
-                    self.import_expenditures(f, month, year)
+                elif transaction_type == "EXP":
+                    self.import_expenditures(f, quarter, year)
 
                 self.stdout.write(self.style.SUCCESS("Transactions imported!"))
 
-        self.stdout.write(f"Totaling filings from periods beginning {month}/{year}")
-        self.total_filings(month, year)
+        self.stdout.write(f"Totaling filings from periods beginning in Q{quarter}")
+        self.total_filings(quarter, year)
         self.stdout.write(self.style.SUCCESS("Filings totaled!"))
 
         call_command("aggregate_data")
 
-    def import_contributions(self, f, month, year):
+    def import_contributions(self, f, quarter, year):
         reader = csv.DictReader(f)
 
         for _, records in tqdm(filter(
-            lambda x: x[0][2].month == month, 
+            lambda x: get_quarter(x[0][2]) == quarter, 
             groupby(reader, key=filing_key)
         )):
             for i, record in enumerate(records):
@@ -127,11 +137,11 @@ class Command(BaseCommand):
                         f"Could not determine contribution type from record: {record['Contribution Type']}"
                     )
 
-    def import_expenditures(self, f, month, year):
+    def import_expenditures(self, f, quarter, year):
         reader = csv.DictReader(f)
 
         for _, records in tqdm(filter(
-            lambda x: x[0][2].month == month, 
+            lambda x: get_quarter(x[0][2]) == quarter, 
             groupby(reader, key=filing_key)
         )):
             for i, record in enumerate(records):
