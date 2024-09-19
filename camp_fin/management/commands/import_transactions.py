@@ -498,9 +498,7 @@ class Command(BaseCommand):
         for filing in tqdm(models.Filing.objects.filter(
             final=True,
             filing_period__initial_date__month__gte=start,
-            filing_period__initial_date__month__lte=end,
-            filing_period__initial_date__year__lte=year,
-            filing_period__end_date__year__gte=year,
+            filing_period__initial_date__month__lte=end
         ).iterator()):
             contributions = filing.contributions().aggregate(total=Sum("amount"))
             expenditures = filing.expenditures().aggregate(total=Sum("amount"))
