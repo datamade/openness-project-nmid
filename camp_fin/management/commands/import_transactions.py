@@ -21,8 +21,9 @@ def filing_key(record):
         parse_date(record["End of Period"]),
     )
 
+
 def get_quarter(date):
-    return math.ceil(date.month/3.)
+    return math.ceil(date.month / 3.0)
 
 
 def get_month_range(quarters):
@@ -72,7 +73,7 @@ class Command(BaseCommand):
             "--batch-size",
             dest="batch_size",
             default=500,
-            help="Number of transaction records to bulk create at once (Default: 500)"
+            help="Number of transaction records to bulk create at once (Default: 500)",
         )
         parser.add_argument(
             "--file",
@@ -82,7 +83,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        transaction_type = options["transaction_type"] 
+        transaction_type = options["transaction_type"]
 
         if transaction_type not in ("EXP", "CON"):
             raise ValueError("Transaction type must be one of: EXP, CON")
@@ -90,13 +91,15 @@ class Command(BaseCommand):
         year = options["year"]
 
         self.stdout.write(f"Loading data from {transaction_type}_{year}.csv")
-        
+
         quarters = {int(q) for q in options["quarters"].split(",")}
         quarter_string = ", ".join(f"Q{q}" for q in quarters)
 
         with open(options["file"]) as f:
-            self.stdout.write(f"Importing transactions from filing periods beginning in {quarter_string}")
-            
+            self.stdout.write(
+                f"Importing transactions from filing periods beginning in {quarter_string}"
+            )
+
             if transaction_type == "CON":
                 self.import_contributions(f, quarters, year, options["batch_size"])
 
@@ -105,7 +108,9 @@ class Command(BaseCommand):
 
             self.stdout.write(self.style.SUCCESS("Transactions imported!"))
 
-        self.stdout.write(f"Totaling filings from periods beginning in {quarter_string}")
+        self.stdout.write(
+            f"Totaling filings from periods beginning in {quarter_string}"
+        )
         self.total_filings(quarters, year)
         self.stdout.write(self.style.SUCCESS("Filings totaled!"))
 
@@ -123,8 +128,8 @@ class Command(BaseCommand):
         get them all, you would run the Q4 import for both 2023 and 2024.
         """
         return filter(
-            lambda x: get_quarter(x[0][2]) in filing_quarters, 
-            groupby(tqdm(records), key=filing_key)
+            lambda x: get_quarter(x[0][2]) in filing_quarters,
+            groupby(tqdm(records), key=filing_key),
         )
 
     def _save_batch(self, batch):
@@ -133,8 +138,7 @@ class Command(BaseCommand):
         then group them by class, then save each group of records.
         """
         for cls, cls_records in groupby(
-            sorted(batch, key=lambda x: str(type(x))),
-            key=lambda x: type(x)
+            sorted(batch, key=lambda x: str(type(x))), key=lambda x: type(x)
         ):
             yield cls.objects.bulk_create(cls_records)
 
@@ -185,7 +189,7 @@ class Command(BaseCommand):
                     )
 
                 if not len(batch) % batch_size:
-                    self._save_batch(batch)                    
+                    self._save_batch(batch)
                     batch = []
 
     def import_expenditures(self, f, quarters, year, batch_size):
@@ -206,11 +210,11 @@ class Command(BaseCommand):
                         received_date__year=year,
                     ).delete()
 
-                constribution = self.make_contribution(record, None, filing)
+                contribution = self.make_contribution(record, None, filing)
                 batch.append(contribution)
 
                 if not len(batch) % batch_size:
-                    self._save_batch(batch)                    
+                    self._save_batch(batch)
                     batch = []
 
     def make_contributor(self, record):
@@ -350,7 +354,10 @@ class Command(BaseCommand):
                 "filing_period__initial_date",
                 "filing_period__end_date",
             )
-            msg = f"{filings.count()} filings found for PAC {pac} from record {record}:\n{filing_meta}\n\nUsing most recent filing matching query..."
+            msg = (
+                f"{filings.count()} filings found for PAC {pac} from record "
+                f"{record}:\n{filing_meta}\n\nUsing most recent filing matching query..."
+            )
             self.stderr.write(msg)
 
         return filing
@@ -495,11 +502,13 @@ class Command(BaseCommand):
     def total_filings(self, quarters, year):
         start, end = get_month_range(quarters)
 
-        for filing in tqdm(models.Filing.objects.filter(
-            final=True,
-            filing_period__initial_date__month__gte=start,
-            filing_period__initial_date__month__lte=end
-        ).iterator()):
+        for filing in tqdm(
+            models.Filing.objects.filter(
+                final=True,
+                filing_period__initial_date__month__gte=start,
+                filing_period__initial_date__month__lte=end,
+            ).iterator()
+        ):
             contributions = filing.contributions().aggregate(total=Sum("amount"))
             expenditures = filing.expenditures().aggregate(total=Sum("amount"))
             loans = filing.loans().aggregate(total=Sum("amount"))
