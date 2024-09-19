@@ -35,7 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: "deploy"
+          ref: "hcg/batch-it-up"
       - name: Import transaction data
         run: |
           touch .env
