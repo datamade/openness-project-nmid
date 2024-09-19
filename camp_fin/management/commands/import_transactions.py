@@ -21,9 +21,24 @@ def filing_key(record):
         parse_date(record["End of Period"]),
     )
 
-
 def get_quarter(date):
     return math.ceil(date.month/3.)
+
+
+def get_month_range(quarters):
+    quarter_to_month_range = {
+        1: (1, 3),
+        2: (4, 6),
+        3: (7, 9),
+        4: (10, 12),
+    }
+
+    months = []
+
+    for q in quarters:
+        months.extend(quarter_to_month_range[q])
+
+    return min(months), max(months)
 
 
 class Command(BaseCommand):
@@ -45,13 +60,19 @@ class Command(BaseCommand):
             "--quarters",
             dest="quarters",
             default="1,2,3,4",
-            help="Comma-separated list of months to import (Default: 1,2,3,4)",
+            help="Comma-separated list of quarters to import (Default: 1,2,3,4)",
         )
         parser.add_argument(
             "--year",
             dest="year",
             default="2023",
             help="Year to import (Default: 2023)",
+        )
+        parser.add_argument(
+            "--batch-size",
+            dest="batch_size",
+            default=500,
+            help="Number of transaction records to bulk create at once (Default: 500)"
         )
         parser.add_argument(
             "--file",
@@ -70,33 +91,58 @@ class Command(BaseCommand):
 
         self.stdout.write(f"Loading data from {transaction_type}_{year}.csv")
         
-        quarters = [int(q) for q in options["quarters"].split(",")]
+        quarters = {int(q) for q in options["quarters"].split(",")}
+        quarter_string = ", ".join(f"Q{q}" for q in quarters)
 
         with open(options["file"]) as f:
-            for quarter in quarters:
-                self.stdout.write(f"Importing transactions from filing periods beginning in Q{quarter}")
-                
-                if transaction_type == "CON":
-                    self.import_contributions(f, quarter, year)
+            self.stdout.write(f"Importing transactions from filing periods beginning in {quarter_string}")
+            
+            if transaction_type == "CON":
+                self.import_contributions(f, quarters, year, options["batch_size"])
 
-                elif transaction_type == "EXP":
-                    self.import_expenditures(f, quarter, year)
+            elif transaction_type == "EXP":
+                self.import_expenditures(f, quarters, year, options["batch_size"])
 
-                self.stdout.write(self.style.SUCCESS("Transactions imported!"))
+            self.stdout.write(self.style.SUCCESS("Transactions imported!"))
 
-        self.stdout.write(f"Totaling filings from periods beginning in Q{quarter}")
-        self.total_filings(quarter, year)
+        self.stdout.write(f"Totaling filings from periods beginning in {quarter_string}")
+        self.total_filings(quarters, year)
         self.stdout.write(self.style.SUCCESS("Filings totaled!"))
 
         call_command("aggregate_data")
 
-    def import_contributions(self, f, quarter, year):
-        reader = csv.DictReader(f)
+    def _records_by_filing(self, records, filing_quarters):
+        """
+        Group records by filing, then filter for filings beginning in the specified
+        quarter/s. Note that, because transactions are organized by year, transactions
+        for one filing can appear across two files, if the reporting period begins in
+        one year and ends in the next. This approach will return filings beginning in
+        the specified quarter in *any* year, so that these split cases will be covered.
+        For example, consider a filing period starting in December 2023 and ending in
+        February 2024. Transactions would be split across the 2023 and 2024 files. To
+        get them all, you would run the Q4 import for both 2023 and 2024.
+        """
+        return filter(
+            lambda x: get_quarter(x[0][2]) in filing_quarters, 
+            groupby(tqdm(records), key=filing_key)
+        )
 
-        for _, records in tqdm(filter(
-            lambda x: get_quarter(x[0][2]) == quarter, 
-            groupby(reader, key=filing_key)
-        )):
+    def _save_batch(self, batch):
+        """
+        Contributions are represented by several different types of models. Sort
+        then group them by class, then save each group of records.
+        """
+        for cls, cls_records in groupby(
+            sorted(batch, key=lambda x: str(type(x))),
+            key=lambda x: type(x)
+        ):
+            yield cls.objects.bulk_create(cls_records)
+
+    def import_contributions(self, f, quarters, year, batch_size):
+        reader = csv.DictReader(f)
+        batch = []
+
+        for _, records in self._records_by_filing(reader, quarters):
             for i, record in enumerate(records):
                 if i == 0:
                     try:
@@ -104,12 +150,12 @@ class Command(BaseCommand):
                     except ValueError:
                         break
 
-                    # the contributions file are organized by the year
-                    # of a transaction date not the date of the
+                    # The contributions files are organized by the year
+                    # of the transaction date, not the date of the
                     # filing, so transactions from the same filing can
                     # appear in multiple contribution files.
                     #
-                    # we need to make sure we just clear out the
+                    # We need to make sure we just clear out the
                     # contributions in a file that were purportedly made
                     # in a given year.
                     models.Loan.objects.filter(
@@ -130,20 +176,23 @@ class Command(BaseCommand):
                     record["Contribution Type"] in {"Loans Received", "Special Event"}
                     or "Contribution" in record["Contribution Type"]
                 ):
-                    self.make_contribution(record, contributor, filing).save()
+                    contribution = self.make_contribution(record, contributor, filing)
+                    batch.append(contribution)
 
                 else:
                     self.stderr.write(
                         f"Could not determine contribution type from record: {record['Contribution Type']}"
                     )
 
-    def import_expenditures(self, f, quarter, year):
-        reader = csv.DictReader(f)
+                if not len(batch) % batch_size:
+                    self._save_batch(batch)                    
+                    batch = []
 
-        for _, records in tqdm(filter(
-            lambda x: get_quarter(x[0][2]) == quarter, 
-            groupby(reader, key=filing_key)
-        )):
+    def import_expenditures(self, f, quarters, year, batch_size):
+        reader = csv.DictReader(f)
+        batch = []
+
+        for _, records in self._records_by_filing(reader, quarters):
             for i, record in enumerate(records):
                 if i == 0:
                     try:
@@ -157,7 +206,12 @@ class Command(BaseCommand):
                         received_date__year=year,
                     ).delete()
 
-                self.make_contribution(record, None, filing).save()
+                constribution = self.make_contribution(record, None, filing)
+                batch.append(contribution)
+
+                if not len(batch) % batch_size:
+                    self._save_batch(batch)                    
+                    batch = []
 
     def make_contributor(self, record):
         state, _ = models.State.objects.get_or_create(
@@ -438,10 +492,13 @@ class Command(BaseCommand):
 
         return contribution
 
-    def total_filings(self, month, year):
+    def total_filings(self, quarters, year):
+        start, end = get_month_range(quarters)
+
         for filing in tqdm(models.Filing.objects.filter(
             final=True,
-            filing_period__initial_date__month=month,
+            filing_period__initial_date__month__gte=start,
+            filing_period__initial_date__month__lte=end,
             filing_period__initial_date__year__lte=year,
             filing_period__end_date__year__gte=year,
         ).iterator()):
