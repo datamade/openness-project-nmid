@@ -1,9 +1,7 @@
-version: '2.4'
-
 services:
   app:
     image: nmid
-    build: .    
+    build: .
     container_name: nmid-etl
     environment:
       DJANGO_SECRET_KEY: "etl secret key"
