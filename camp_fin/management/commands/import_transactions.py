@@ -22,7 +22,8 @@ def filing_key(record):
     )
 
 
-def get_quarter(date):
+def get_quarter(date_str):
+    date = parse_date(date_str)
     return math.ceil(date.month / 3.0)
 
 
@@ -127,10 +128,10 @@ class Command(BaseCommand):
         February 2024. Transactions would be split across the 2023 and 2024 files. To
         get them all, you would run the Q4 import for both 2023 and 2024.
         """
-        return filter(
-            lambda x: get_quarter(x[0][2]) in filing_quarters,
-            groupby(tqdm(records), key=filing_key),
+        records_in_quarters = filter(
+            lambda x: get_quarter(x["Start of Period"]) in filing_quarters, records
         )
+        return groupby(tqdm(records_in_quarters), key=filing_key)
 
     def _save_batch(self, batch):
         """
@@ -188,9 +189,12 @@ class Command(BaseCommand):
                         f"Could not determine contribution type from record: {record['Contribution Type']}"
                     )
 
-                if not len(batch) % batch_size:
+                if len(batch) % batch_size == 0:
                     self._save_batch(batch)
                     batch = []
+
+        if len(batch) > 0:
+            self._save_batch(batch)
 
     def import_expenditures(self, f, quarters, year, batch_size):
         reader = csv.DictReader(f)
