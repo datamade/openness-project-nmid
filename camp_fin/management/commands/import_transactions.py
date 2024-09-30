@@ -156,7 +156,6 @@ class Command(BaseCommand):
                     try:
                         filing = self._get_filing(record)
                     except ValueError:
-                        self.stderr.write(f"Could not get filing from record: {record}")
                         break
 
                     # The contributions files are organized by the year
