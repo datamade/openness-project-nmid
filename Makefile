@@ -20,7 +20,7 @@ nightly: import/candidates import/pacs import/candidate_filings import/pac_filin
 import/% : _data/sorted/$$(word 1, $$(subst _, , $$*))_$$(word 3, $$(subst _, , $$*)).csv
 	python manage.py import_transactions --transaction-type $(word 1, $(subst _, , $*)) \
 		--quarters $(word 2, $(subst _, , $*)) \
-		--year $(word 3, $(subst _, , $*)) \
+		--file-year $(word 3, $(subst _, , $*)) \
 		--file $<
 
 import/pac_filings : _data/raw/pac_committee_filings.csv

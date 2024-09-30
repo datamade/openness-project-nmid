@@ -59,16 +59,19 @@ class Command(BaseCommand):
             help="Type of transaction to import: CON, EXP (Default: CON)",
         )
         parser.add_argument(
+            "--file-year",
+            dest="file_year",
+            default="2023",
+            help=(
+                "Year to import. Combined with --transaction-type, determines "
+                "file to be imported, e.g., CON_2023 (Default: 2023)"
+            ),
+        )
+        parser.add_argument(
             "--quarters",
             dest="quarters",
             default="1,2,3,4",
             help="Comma-separated list of quarters to import (Default: 1,2,3,4)",
-        )
-        parser.add_argument(
-            "--year",
-            dest="year",
-            default="2023",
-            help="Year to import (Default: 2023)",
         )
         parser.add_argument(
             "--batch-size",
@@ -89,9 +92,9 @@ class Command(BaseCommand):
         if transaction_type not in ("EXP", "CON"):
             raise ValueError("Transaction type must be one of: EXP, CON")
 
-        year = options["year"]
+        file_year = options["file_year"]
 
-        self.stdout.write(f"Loading data from {transaction_type}_{year}.csv")
+        self.stdout.write(f"Loading data from {transaction_type}_{file_year}.csv")
 
         quarters = {int(q) for q in options["quarters"].split(",")}
         quarter_string = ", ".join(f"Q{q}" for q in quarters)
@@ -102,17 +105,17 @@ class Command(BaseCommand):
             )
 
             if transaction_type == "CON":
-                self.import_contributions(f, quarters, year, options["batch_size"])
+                self.import_contributions(f, quarters, options["batch_size"])
 
             elif transaction_type == "EXP":
-                self.import_expenditures(f, quarters, year, options["batch_size"])
+                self.import_expenditures(f, quarters, options["batch_size"])
 
             self.stdout.write(self.style.SUCCESS("Transactions imported!"))
 
         self.stdout.write(
             f"Totaling filings from periods beginning in {quarter_string}"
         )
-        self.total_filings(quarters, year)
+        self.total_filings(quarters)
         self.stdout.write(self.style.SUCCESS("Filings totaled!"))
 
         call_command("aggregate_data")
@@ -143,7 +146,7 @@ class Command(BaseCommand):
         ):
             yield cls.objects.bulk_create(cls_records)
 
-    def import_contributions(self, f, quarters, year, batch_size):
+    def import_contributions(self, f, quarters, batch_size):
         reader = csv.DictReader(f)
         batch = []
 
@@ -155,22 +158,25 @@ class Command(BaseCommand):
                     except ValueError:
                         break
 
-                    # The contributions files are organized by the year
-                    # of the transaction date, not the date of the
-                    # filing, so transactions from the same filing can
-                    # appear in multiple contribution files.
-                    #
-                    # We need to make sure we just clear out the
-                    # contributions in a file that were purportedly made
-                    # in a given year.
+                    # We import based on quarter in _any_ year. Only
+                    # delete transactions dated within the configured
+                    # quarter.
+                    start, end = get_month_range(quarters)
+
                     models.Loan.objects.filter(
-                        filing=filing, received_date__year=year
+                        filing=filing,
+                        filing__filing_period__initial_date__month=start,
+                        filing__filing_period__end_date__month=end,
                     ).delete()
                     models.SpecialEvent.objects.filter(
-                        filing=filing, event_date__year=year
+                        filing=filing,
+                        filing__filing_period__initial_date__month=start,
+                        filing__filing_period__end_date__month=end,
                     ).delete()
                     models.Transaction.objects.filter(
-                        filing=filing, received_date__year=year
+                        filing=filing,
+                        filing__filing_period__initial_date__month=start,
+                        filing__filing_period__end_date__month=end,
                     ).exclude(
                         transaction_type__description="Monetary Expenditure"
                     ).delete()
@@ -196,7 +202,7 @@ class Command(BaseCommand):
         if len(batch) > 0:
             self._save_batch(batch)
 
-    def import_expenditures(self, f, quarters, year, batch_size):
+    def import_expenditures(self, f, quarters, batch_size):
         reader = csv.DictReader(f)
         batch = []
 
@@ -208,10 +214,13 @@ class Command(BaseCommand):
                     except ValueError:
                         break
 
+                    start, end = get_month_range(quarters)
+
                     models.Transaction.objects.filter(
                         filing=filing,
+                        filing__filing_period__initial_date__month__gte=start,
+                        filing__filing_period__end_date__month__lte=end,
                         transaction_type__description="Monetary Expenditure",
-                        received_date__year=year,
                     ).delete()
 
                 contribution = self.make_contribution(record, None, filing)
@@ -503,7 +512,7 @@ class Command(BaseCommand):
 
         return contribution
 
-    def total_filings(self, quarters, year):
+    def total_filings(self, quarters):
         start, end = get_month_range(quarters)
 
         for filing in tqdm(
