@@ -141,11 +141,14 @@ class Command(BaseCommand):
         for cls, cls_records in groupby(
             sorted(batch, key=lambda x: str(type(x))), key=lambda x: type(x)
         ):
-            yield cls.objects.bulk_create(cls_records)
+            cls.objects.bulk_create(cls_records)
 
     def import_contributions(self, f, quarters, year, batch_size):
         reader = csv.DictReader(f)
         batch = []
+
+        n_deleted = 0
+        n_imported = 0
 
         for _, records in self._records_by_filing(reader, quarters):
             for i, record in enumerate(records):
@@ -153,6 +156,7 @@ class Command(BaseCommand):
                     try:
                         filing = self._get_filing(record)
                     except ValueError:
+                        self.stderr.write(f"Could not get filing from record: {record}")
                         break
 
                     # The contributions files are organized by the year
@@ -163,17 +167,23 @@ class Command(BaseCommand):
                     # We need to make sure we just clear out the
                     # contributions in a file that were purportedly made
                     # in a given year.
-                    models.Loan.objects.filter(
+                    n_loans_deleted, _ = models.Loan.objects.filter(
                         filing=filing, received_date__year=year
                     ).delete()
-                    models.SpecialEvent.objects.filter(
+                    n_events_deleted, _ = models.SpecialEvent.objects.filter(
                         filing=filing, event_date__year=year
                     ).delete()
-                    models.Transaction.objects.filter(
-                        filing=filing, received_date__year=year
-                    ).exclude(
-                        transaction_type__description="Monetary Expenditure"
-                    ).delete()
+                    n_transactions_deleted, _ = (
+                        models.Transaction.objects.filter(
+                            filing=filing, received_date__year=year
+                        )
+                        .exclude(transaction_type__description="Monetary Expenditure")
+                        .delete()
+                    )
+
+                    n_deleted += (
+                        n_loans_deleted + n_events_deleted + n_transactions_deleted
+                    )
 
                 contributor = self.make_contributor(record)
 
@@ -191,14 +201,25 @@ class Command(BaseCommand):
 
                 if len(batch) % batch_size == 0:
                     self._save_batch(batch)
+                    n_imported += batch_size
                     batch = []
 
         if len(batch) > 0:
             self._save_batch(batch)
+            n_imported += len(batch)
+
+        self.stdout.write(
+            self.style.NOTICE(
+                f"Deleted {n_deleted} records, created {n_imported} records"
+            )
+        )
 
     def import_expenditures(self, f, quarters, year, batch_size):
         reader = csv.DictReader(f)
         batch = []
+
+        n_deleted = 0
+        n_imported = 0
 
         for _, records in self._records_by_filing(reader, quarters):
             for i, record in enumerate(records):
@@ -208,18 +229,31 @@ class Command(BaseCommand):
                     except ValueError:
                         break
 
-                    models.Transaction.objects.filter(
+                    n_transactions, _ = models.Transaction.objects.filter(
                         filing=filing,
                         transaction_type__description="Monetary Expenditure",
                         received_date__year=year,
                     ).delete()
 
+                    n_deleted += n_transactions
+
                 contribution = self.make_contribution(record, None, filing)
                 batch.append(contribution)
 
-                if not len(batch) % batch_size:
+                if len(batch) % batch_size == 0:
                     self._save_batch(batch)
+                    n_imported += batch_size
                     batch = []
+
+        if len(batch) > 0:
+            self._save_batch(batch)
+            n_imported += len(batch)
+
+        self.stdout.write(
+            self.style.NOTICE(
+                f"Deleted {n_deleted} records, created {n_imported} records"
+            )
+        )
 
     def make_contributor(self, record):
         state, _ = models.State.objects.get_or_create(
