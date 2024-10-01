@@ -1,7 +1,6 @@
 from collections import namedtuple
 from datetime import datetime
 
-from dateutil.rrule import MONTHLY, rrule
 from django.db import connection, models
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -944,52 +943,6 @@ class Entity(models.Model):
         Generate a dict of filing trends for use in contribution/expenditure charts
         for this Entity.
         """
-
-        def stack_trends(trend):
-            """
-            Private helper method for compiling trends.
-            """
-            stacked_trend = []
-            for begin, end, rate in trend:
-                if not stacked_trend:
-                    stacked_trend.append((rate, begin))
-                    stacked_trend.append((rate, end))
-
-                elif begin == stacked_trend[-1][1]:
-                    stacked_trend.append((rate, begin))
-                    stacked_trend.append((rate, end))
-
-                elif begin > stacked_trend[-1][1]:
-                    previous_rate, previous_end = stacked_trend[-1]
-                    stacked_trend.append((previous_rate, begin))
-                    stacked_trend.append((rate, begin))
-                    stacked_trend.append((rate, end))
-
-                elif begin < stacked_trend[-1][1]:
-                    previous_rate, previous_end = stacked_trend.pop()
-                    stacked_trend.append((previous_rate, begin))
-                    stacked_trend.append((rate + previous_rate, begin))
-
-                    if end < previous_end:
-                        stacked_trend.append((rate + previous_rate, end))
-                        stacked_trend.append((previous_rate, end))
-                        stacked_trend.append((previous_rate, previous_end))
-
-                    elif end > previous_end:
-                        stacked_trend.append((rate + previous_rate, previous_end))
-                        stacked_trend.append((rate, previous_end))
-                        stacked_trend.append((rate, end))
-                    else:
-                        stacked_trend.append((rate + previous_rate, end))
-
-            flattened_trend = []
-
-            for i, point in enumerate(stacked_trend):
-                rate, date = point
-                flattened_trend.append([rate, *date])
-
-            return flattened_trend
-
         # Balances and debts
         summed_filings = """
             SELECT
@@ -1065,68 +1018,43 @@ class Entity(models.Model):
         # Donations and expenditures
         monthly_query = """
             SELECT
-              {table}.amount AS amount,
-              {table}.month AS month
-            FROM {table}_by_month AS {table}
-            WHERE {table}.entity_id = %s
-              AND {table}.month >= '{year}-01-01'::date
-            ORDER BY month
+              months.year,
+              months.month,
+              {table}.amount
+            FROM (
+              SELECT
+                DISTINCT DATE_PART('year', month) AS year,
+                GENERATE_SERIES(1, 12) AS month
+              FROM {table}_by_month
+              ORDER BY year, month
+            ) months
+            LEFT JOIN (
+              SELECT
+                {table}.amount AS amount,
+                DATE_PART('month', {table}.month) AS month,
+                DATE_PART('year', {table}.month) AS year
+              FROM {table}_by_month AS {table}
+              WHERE {table}.entity_id = %s
+                AND {table}.month >= '{year}-01-01'::date
+            ) {table}
+            USING (year, month)
         """
 
         contributions_query = monthly_query.format(table="contributions", year=since)
-        expenditures_query = monthly_query.format(table="expenditures", year=since)
 
         cursor.execute(contributions_query, [self.id])
 
-        columns = [c[0] for c in cursor.description]
-        amount_tuple = namedtuple("Amount", columns)
+        donation_trend = [
+            [amount or 0, year, month, 1] for year, month, amount in cursor
+        ]
 
-        contributions = [amount_tuple(*r) for r in cursor]
+        expenditures_query = monthly_query.format(table="expenditures", year=since)
 
         cursor.execute(expenditures_query, [self.id])
 
-        columns = [c[0] for c in cursor.description]
-        amount_tuple = namedtuple("Amount", columns)
-
-        expenditures = [amount_tuple(*r) for r in cursor]
-
-        donation_trend, expend_trend = [], []
-
-        if contributions or expenditures:
-            contributions_lookup = {r.month.date(): r.amount for r in contributions}
-            expenditures_lookup = {r.month.date(): r.amount for r in expenditures}
-
-            start_month = datetime(int(since), 1, 1)
-
-            end_month = (
-                self.filing_set.order_by("-filed_date").first().filed_date.date()
-            )
-
-            for month in rrule(freq=MONTHLY, dtstart=start_month, until=end_month):
-                replacements = {"month": month.month - 1}
-
-                if replacements["month"] < 1:
-                    replacements["month"] = 12
-                    replacements["year"] = month.year - 1
-
-                begin_date = month.replace(**replacements)
-
-                begin_date_array = [begin_date.year, begin_date.month, begin_date.day]
-
-                end_date_array = [month.year, month.month, month.day]
-
-                contribution_amount = contributions_lookup.get(month.date(), 0)
-                expenditure_amount = expenditures_lookup.get(month.date(), 0)
-
-                donation_trend.append(
-                    [begin_date_array, end_date_array, contribution_amount]
-                )
-                expend_trend.append(
-                    [begin_date_array, end_date_array, (-1 * expenditure_amount)]
-                )
-
-            donation_trend = stack_trends(donation_trend)
-            expend_trend = stack_trends(expend_trend)
+        expend_trend = [
+            [(amount or 0) * -1, year, month, 1] for year, month, amount in cursor
+        ]
 
         output_trends["donation_trend"] = donation_trend
         output_trends["expend_trend"] = expend_trend

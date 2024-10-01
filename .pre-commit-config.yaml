@@ -25,21 +25,6 @@ repos:
         files: .*/templates/.*\.html$
         args: [--tabwidth=2] # tabs should be 2 spaces in Django templates
 
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.5.1
-    hooks:
-      - id: prettier
-        files: \.(js|ts|jsx|tsx|css|less|json|markdown|md|yaml|yml)$
-
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: "1f7d592"
-    hooks:
-      - id: eslint
-        additional_dependencies:
-          - eslint@8.19.0
-          - eslint-plugin-react@7.30.1
-          - eslint-config-prettier@8.5.0
-
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2
     hooks:
