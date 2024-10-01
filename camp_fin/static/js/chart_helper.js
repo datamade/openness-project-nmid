@@ -210,7 +210,6 @@ ChartHelper.donation_expenditure = function(el, title, sourceTxt, yaxisLabel, da
       plotOptions: {
         series: {
           step: true,
-          shade: true,
           marker: {
             fillColor: color,
             radius: 0,
