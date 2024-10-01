@@ -186,7 +186,7 @@ ChartHelper.donation_expenditure = function(el, title, sourceTxt, yaxisLabel, da
   return new Highcharts.Chart({
       chart: {
           renderTo: el,
-          type: "area",
+          type: "line",
           marginRight: 10,
           marginBottom: 25
       },
@@ -208,10 +208,9 @@ ChartHelper.donation_expenditure = function(el, title, sourceTxt, yaxisLabel, da
           title: null
       },
       plotOptions: {
-        line: {
-          animation: false
-        },
         series: {
+          step: true,
+          shade: true,
           marker: {
             fillColor: color,
             radius: 0,
@@ -234,7 +233,7 @@ ChartHelper.donation_expenditure = function(el, title, sourceTxt, yaxisLabel, da
             });
             return s;
           },
-          shared: true
+          shared: true,
       },
       series: seriesData
     });
