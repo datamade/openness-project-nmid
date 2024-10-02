@@ -260,7 +260,7 @@
       debt_trend_f.push([Date.UTC(debt_trend[i][1],debt_trend[i][2]-1,debt_trend[i][3]), debt_trend[i][0]]);
     }
 
-    ChartHelper.netfunds('net-funds-chart', 'Net funds over time', '', 'Funds', [balance_trend_f, debt_trend_f]);
+    ChartHelper.netfunds('net-funds-chart', 'Funds available and debts by filing date', '', 'Funds available / Debts', [balance_trend_f, debt_trend_f], balance_trend[0][1], balance_trend[balance_trend.length - 1][1]);
 
 
     //render donation/expenditure chart
@@ -280,7 +280,7 @@
       expend_trend_f.push([Date.UTC(expend_trend[i][1],expend_trend[i][2]-1,expend_trend[i][3]), expend_trend[i][0]]);
     }
 
-    ChartHelper.donation_expenditure('expend-chart', 'Donations and expenditures over time', '', 'Money', [donation_trend_f, expend_trend_f]);
+    ChartHelper.donation_expenditure('expend-chart', 'Contributions and expenditures by month', '', 'Contributions / Expenditures', [donation_trend_f, expend_trend_f], donation_trend[0][1], donation_trend[donation_trend.length - 1][1]);
   </script>
   <script type="text/javascript">
     function getPersonName(object){

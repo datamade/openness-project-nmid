@@ -1,5 +1,4 @@
 from collections import namedtuple
-from datetime import datetime
 
 from django.db import connection, models
 from django.utils import timezone
@@ -946,16 +945,9 @@ class Entity(models.Model):
         # Balances and debts
         summed_filings = """
             SELECT
-              SUM(f.total_contributions) + \
-                SUM(COALESCE(f.total_supplemental_contributions, 0)) AS total_contributions,
-              SUM(f.total_expenditures) AS total_expenditures,
-              SUM(COALESCE(f.total_loans, 0)) AS total_loans,
               SUM(COALESCE(f.total_unpaid_debts, 0)) AS total_unpaid_debts,
               SUM(f.closing_balance) AS closing_balance,
-              SUM(f.opening_balance) AS opening_balance,
-              SUM(f.total_debt_carried_forward) AS debt_carried_forward,
-              f.filed_date,
-              MIN(fp.initial_date) AS initial_date
+              f.filed_date
             FROM camp_fin_filing AS f
             JOIN camp_fin_filingperiod AS fp
               ON f.filing_period_id = fp.id
@@ -973,45 +965,16 @@ class Entity(models.Model):
 
         cursor.execute(summed_filings, [self.id])
 
-        columns = [c[0] for c in cursor.description]
-        filing_tuple = namedtuple("Filings", columns)
-
-        summed_filings = [filing_tuple(*r) for r in cursor]
-
         balance_trend, debt_trend = [], []
 
-        if summed_filings:
-            for filing in summed_filings:
-                filing_date = filing.filed_date
-                date_array = [filing_date.year, filing_date.month, filing_date.day]
-                debts = -1 * filing.total_unpaid_debts
-                if filing.closing_balance:
-                    balance_trend.append([filing.closing_balance, *date_array])
-                    debt_trend.append([debts, *date_array])
-
-            if summed_filings[0].opening_balance:
-                first_opening_balance = summed_filings[0].opening_balance
-            else:
-                first_opening_balance = 0
-
-            if summed_filings[0].debt_carried_forward:
-                first_debt = summed_filings[0].debt_carried_forward
-            else:
-                first_debt = 0
-
-            init_date = summed_filings[0].initial_date
-
-            first_initial_date = [int(since), 1, 1]
-
-            # If the first available filing date is on or before the start date
-            # passed into this method, use that as the first date in the trendline
-            if init_date:
-                init_date_parts = [init_date.year, init_date.month, init_date.day]
-                if datetime(*init_date_parts) <= datetime(*first_initial_date):
-                    first_initial_date = init_date_parts
-
-            debt_trend.insert(0, [first_debt, *first_initial_date])
-            balance_trend.insert(0, [first_opening_balance, *first_initial_date])
+        for (
+            total_unpaid_debts,
+            closing_balance,
+            filed_date,
+        ) in cursor:
+            filing_date = (filed_date.year, filed_date.month, filed_date.day)
+            balance_trend.append([closing_balance, *filing_date])
+            debt_trend.append([total_unpaid_debts * -1, *filing_date])
 
         output_trends = {"balance_trend": balance_trend, "debt_trend": debt_trend}
 
@@ -1020,7 +983,7 @@ class Entity(models.Model):
             SELECT
               months.year,
               months.month,
-              {table}.amount
+              COALESCE({table}.amount, 0) AS amount
             FROM (
               SELECT
                 DISTINCT DATE_PART('year', month) AS year,
@@ -1028,7 +991,7 @@ class Entity(models.Model):
               FROM {table}_by_month
               ORDER BY year, month
             ) months
-            LEFT JOIN (
+            JOIN (
               SELECT
                 {table}.amount AS amount,
                 DATE_PART('month', {table}.month) AS month,
@@ -1038,23 +1001,20 @@ class Entity(models.Model):
                 AND {table}.month >= '{year}-01-01'::date
             ) {table}
             USING (year, month)
+            ORDER BY year, month
         """
 
         contributions_query = monthly_query.format(table="contributions", year=since)
 
         cursor.execute(contributions_query, [self.id])
 
-        donation_trend = [
-            [amount or 0, year, month, 1] for year, month, amount in cursor
-        ]
+        donation_trend = [[amount, year, month, 1] for year, month, amount in cursor]
 
         expenditures_query = monthly_query.format(table="expenditures", year=since)
 
         cursor.execute(expenditures_query, [self.id])
 
-        expend_trend = [
-            [(amount or 0) * -1, year, month, 1] for year, month, amount in cursor
-        ]
+        expend_trend = [[amount * -1, year, month, 1] for year, month, amount in cursor]
 
         output_trends["donation_trend"] = donation_trend
         output_trends["expend_trend"] = expend_trend

@@ -96,7 +96,7 @@ ChartHelper.donations = function(el, title, sourceTxt, yaxisLabel, data, pointIn
     });
   }
 
-ChartHelper.netfunds = function(el, title, sourceTxt, yaxisLabel, data) {
+ChartHelper.netfunds = function(el, title, sourceTxt, yaxisLabel, data, startYear, endYear) {
   var color = '#007E85';
 
   var seriesData = [{
@@ -114,9 +114,7 @@ ChartHelper.netfunds = function(el, title, sourceTxt, yaxisLabel, data) {
   return new Highcharts.Chart({
       chart: {
           renderTo: el,
-          type: "area",
-          marginRight: 10,
-          marginBottom: 25
+          type: "line",
       },
       legend: {
         backgroundColor: "#ffffff",
@@ -130,18 +128,28 @@ ChartHelper.netfunds = function(el, title, sourceTxt, yaxisLabel, data) {
       title: null,
       xAxis: {
           dateTimeLabelFormats: { year: "%Y" },
-          type: "datetime"
+          type: "datetime",
+          title: {
+            enabled: true,
+            text: "Filing date"
+          },
+          tickPixelInterval: 50,
+          min: Date.UTC(startYear, 1, 1),
+          max: Date.UTC(endYear+1, 1, 1),
+          startOnTick: true,
       },
       yAxis: {
-          title: null
+          title: {
+            text: yaxisLabel
+          }
       },
       plotOptions: {
         line: {
           animation: false
         },
         series: {
+          step: true,
           marker: {
-            fillColor: color,
             radius: 0,
             states: {
               hover: {
@@ -150,7 +158,12 @@ ChartHelper.netfunds = function(el, title, sourceTxt, yaxisLabel, data) {
               }
             }
           },
-          shadow: false
+          shadow: false,
+          states: {
+            hover: {
+              lineWidthPlus: 0
+            }
+          }
         }
       },
       tooltip: {
@@ -168,7 +181,7 @@ ChartHelper.netfunds = function(el, title, sourceTxt, yaxisLabel, data) {
     });
   }
 
-ChartHelper.donation_expenditure = function(el, title, sourceTxt, yaxisLabel, data) {
+ChartHelper.donation_expenditure = function(el, title, sourceTxt, yaxisLabel, data, startYear, endYear) {
   var color = '#007E85';
 
   var seriesData = [{
@@ -187,8 +200,6 @@ ChartHelper.donation_expenditure = function(el, title, sourceTxt, yaxisLabel, da
       chart: {
           renderTo: el,
           type: "line",
-          marginRight: 10,
-          marginBottom: 25
       },
       legend: {
         backgroundColor: "#ffffff",
@@ -201,17 +212,26 @@ ChartHelper.donation_expenditure = function(el, title, sourceTxt, yaxisLabel, da
       },
       title: null,
       xAxis: {
-          dateTimeLabelFormats: { year: "%Y" },
-          type: "datetime"
+          dateTimeLabelFormats: { year: "%b '%y" },
+          type: "datetime",
+          title: {
+            enabled: true,
+            text: "Month",
+          },
+          tickPixelInterval: 50,
+          min: Date.UTC(startYear, 1, 1),
+          max: Date.UTC(endYear+1, 1, 1),
+          startOnTick: true,
       },
       yAxis: {
-          title: null
+          title: {
+            text: yaxisLabel
+          }
       },
       plotOptions: {
         series: {
           step: true,
           marker: {
-            fillColor: color,
             radius: 0,
             states: {
               hover: {
@@ -220,7 +240,12 @@ ChartHelper.donation_expenditure = function(el, title, sourceTxt, yaxisLabel, da
               }
             }
           },
-          shadow: false
+          shadow: false,
+          states: {
+            hover: {
+              lineWidthPlus: 0
+            }
+          }
         }
       },
       tooltip: {
