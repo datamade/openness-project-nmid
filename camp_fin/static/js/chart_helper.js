@@ -114,7 +114,7 @@ ChartHelper.netfunds = function(el, title, sourceTxt, yaxisLabel, data, startYea
   return new Highcharts.Chart({
       chart: {
           renderTo: el,
-          type: "line",
+          type: "area",
       },
       legend: {
         backgroundColor: "#ffffff",
@@ -127,13 +127,13 @@ ChartHelper.netfunds = function(el, title, sourceTxt, yaxisLabel, data, startYea
       },
       title: null,
       xAxis: {
-          dateTimeLabelFormats: { year: "%Y" },
+          dateTimeLabelFormats: { year: "%b '%y" },
           type: "datetime",
           title: {
             enabled: true,
-            text: "Filing date"
+            text: "Filing period end date"
           },
-          tickPixelInterval: 50,
+          tickPixelInterval: 75,
           min: Date.UTC(startYear, 1, 1),
           max: Date.UTC(endYear+1, 1, 1),
           startOnTick: true,
@@ -168,9 +168,16 @@ ChartHelper.netfunds = function(el, title, sourceTxt, yaxisLabel, data, startYea
       },
       tooltip: {
           crosshairs: true,
+          useHTML: true,
           formatter: function() {
-            var s = "<strong>" + ChartHelper.toolTipDateFormat("day", this.x) + "</strong>";
+            let s = ""
             $.each(this.points, function(i, point) {
+              if (i === 0) {
+                s += `
+                  <strong>${point.point.description}</strong><br />
+                  <strong>Period ending ${ChartHelper.toolTipDateFormat("day", this.x)}</strong>
+                `
+              }
               s += "<br /><span style='color: " + point.series.color + "'>" + point.series.name + ":</span> $" + Highcharts.numberFormat(point.y, 0, '.', ',');
             });
             return s;
@@ -199,7 +206,7 @@ ChartHelper.donation_expenditure = function(el, title, sourceTxt, yaxisLabel, da
   return new Highcharts.Chart({
       chart: {
           renderTo: el,
-          type: "line",
+          type: "area",
       },
       legend: {
         backgroundColor: "#ffffff",
@@ -218,7 +225,7 @@ ChartHelper.donation_expenditure = function(el, title, sourceTxt, yaxisLabel, da
             enabled: true,
             text: "Month",
           },
-          tickPixelInterval: 50,
+          tickPixelInterval: 75,
           min: Date.UTC(startYear, 1, 1),
           max: Date.UTC(endYear+1, 1, 1),
           startOnTick: true,
@@ -250,6 +257,7 @@ ChartHelper.donation_expenditure = function(el, title, sourceTxt, yaxisLabel, da
       },
       tooltip: {
           crosshairs: true,
+          useHTML: true,
           formatter: function() {
             var s = "<strong>" + ChartHelper.toolTipDateFormat("month", this.x) + "</strong>";
             $.each(this.points, function(i, point) {

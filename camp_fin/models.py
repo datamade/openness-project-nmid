@@ -945,9 +945,10 @@ class Entity(models.Model):
         # Balances and debts
         summed_filings = """
             SELECT
-              SUM(COALESCE(f.total_unpaid_debts, 0)) AS total_unpaid_debts,
-              SUM(f.closing_balance) AS closing_balance,
-              f.filed_date
+              COALESCE(f.total_unpaid_debts, 0) AS total_unpaid_debts,
+              f.closing_balance AS closing_balance,
+              fp.end_date,
+              fp.description
             FROM camp_fin_filing AS f
             JOIN camp_fin_filingperiod AS fp
               ON f.filing_period_id = fp.id
@@ -955,8 +956,7 @@ class Entity(models.Model):
               AND fp.exclude_from_cascading = FALSE
               AND fp.regular_filing_period_id IS NULL
               AND f.filed_date >= '{year}-01-01'
-            GROUP BY f.filed_date
-            ORDER BY f.filed_date
+            ORDER BY fp.end_date
         """.format(
             year=since
         )
@@ -967,40 +967,37 @@ class Entity(models.Model):
 
         balance_trend, debt_trend = [], []
 
-        for (
-            total_unpaid_debts,
-            closing_balance,
-            filed_date,
-        ) in cursor:
-            filing_date = (filed_date.year, filed_date.month, filed_date.day)
-            balance_trend.append([closing_balance, *filing_date])
-            debt_trend.append([total_unpaid_debts * -1, *filing_date])
+        for total_unpaid_debts, closing_balance, end_date, description in cursor:
+            period_end = {
+                "description": description,
+                "year": end_date.year,
+                "month": end_date.month,
+                "day": end_date.day,
+            }
+            balance_trend.append(
+                {
+                    "amount": closing_balance,
+                    **period_end,
+                }
+            )
+            debt_trend.append(
+                {
+                    "amount": total_unpaid_debts * -1,
+                    **period_end,
+                }
+            )
 
         output_trends = {"balance_trend": balance_trend, "debt_trend": debt_trend}
 
         # Donations and expenditures
         monthly_query = """
             SELECT
-              months.year,
-              months.month,
-              COALESCE({table}.amount, 0) AS amount
-            FROM (
-              SELECT
-                DISTINCT DATE_PART('year', month) AS year,
-                GENERATE_SERIES(1, 12) AS month
-              FROM {table}_by_month
-              ORDER BY year, month
-            ) months
-            JOIN (
-              SELECT
-                {table}.amount AS amount,
-                DATE_PART('month', {table}.month) AS month,
-                DATE_PART('year', {table}.month) AS year
-              FROM {table}_by_month AS {table}
-              WHERE {table}.entity_id = %s
-                AND {table}.month >= '{year}-01-01'::date
-            ) {table}
-            USING (year, month)
+              DATE_PART('year', {table}.month) AS year,
+              DATE_PART('month', {table}.month) AS month,
+              {table}.amount AS amount
+            FROM {table}_by_month AS {table}
+            WHERE {table}.entity_id = %s
+              AND {table}.month >= '{year}-01-01'::date
             ORDER BY year, month
         """
 
@@ -1008,13 +1005,19 @@ class Entity(models.Model):
 
         cursor.execute(contributions_query, [self.id])
 
-        donation_trend = [[amount, year, month, 1] for year, month, amount in cursor]
+        donation_trend = [
+            {"amount": amount, "year": year, "month": month}
+            for year, month, amount in cursor
+        ]
 
         expenditures_query = monthly_query.format(table="expenditures", year=since)
 
         cursor.execute(expenditures_query, [self.id])
 
-        expend_trend = [[amount * -1, year, month, 1] for year, month, amount in cursor]
+        expend_trend = [
+            {"amount": amount * -1, "year": year, "month": month}
+            for year, month, amount in cursor
+        ]
 
         output_trends["donation_trend"] = donation_trend
         output_trends["expend_trend"] = expend_trend

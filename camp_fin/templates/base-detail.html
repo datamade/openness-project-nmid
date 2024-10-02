@@ -245,42 +245,62 @@
     }
 
     //render net balance chart
-    var balance_trend = {{balance_trend}};
+    var balance_trend = {{balance_trend|safe}};
     var balance_trend_f = [];
-    var debt_trend = {{debt_trend}};
+
+    var debt_trend = {{debt_trend|safe}};
     var debt_trend_f = [];
 
-    // format balances
-    for (i = 0; i < balance_trend.length; i++) {
-      balance_trend_f.push([Date.UTC(balance_trend[i][1],balance_trend[i][2]-1,balance_trend[i][3]), balance_trend[i][0]]);
-    }
-
-    // format debt
-    for (i = 0; i < debt_trend.length; i++) {
-      debt_trend_f.push([Date.UTC(debt_trend[i][1],debt_trend[i][2]-1,debt_trend[i][3]), debt_trend[i][0]]);
-    }
-
-    ChartHelper.netfunds('net-funds-chart', 'Funds available and debts by filing date', '', 'Funds available / Debts', [balance_trend_f, debt_trend_f], balance_trend[0][1], balance_trend[balance_trend.length - 1][1]);
-
-
-    //render donation/expenditure chart
-    var expend_trend = {{expend_trend}};
+    var expend_trend = {{expend_trend|safe}};
     var expend_trend_f = [];
 
-    var donation_trend = {{donation_trend}};
+    var donation_trend = {{donation_trend|safe}};
     var donation_trend_f = [];
 
-    // format donations
-    for (i = 0; i < donation_trend.length; i++) {
-      donation_trend_f.push([Date.UTC(donation_trend[i][1],donation_trend[i][2]-1,donation_trend[i][3]), donation_trend[i][0]]);
-    }
+    balance_trend.forEach(function(bal) {
+      balance_trend_f.push({
+        y: bal.amount,
+        x: Date.UTC(bal.year, bal.month-1, bal.day),
+        description: bal.description,
+      })
+    })
 
-    // format expenditures
-    for (i = 0; i < expend_trend.length; i++) {
-      expend_trend_f.push([Date.UTC(expend_trend[i][1],expend_trend[i][2]-1,expend_trend[i][3]), expend_trend[i][0]]);
-    }
+    debt_trend.forEach(function(debt) {
+      debt_trend_f.push({
+        y: debt.amount,
+        x: Date.UTC(debt.year, debt.month-1, debt.day),
+        description: debt.description,
+      })
+    })
 
-    ChartHelper.donation_expenditure('expend-chart', 'Contributions and expenditures by month', '', 'Contributions / Expenditures', [donation_trend_f, expend_trend_f], donation_trend[0][1], donation_trend[donation_trend.length - 1][1]);
+    expend_trend.forEach(function(exp) {
+      expend_trend_f.push({
+        y: exp.amount,
+        x: Date.UTC(exp.year, exp.month-1),
+      })
+    })
+
+    donation_trend.forEach(function(don) {
+      donation_trend_f.push({
+        y: don.amount,
+        x: Date.UTC(don.year, don.month-1),
+        description: don.description,
+      })
+    })
+
+    const chartValues = Array.prototype.concat(balance_trend, debt_trend, expend_trend, donation_trend)
+
+    const startYear = chartValues.reduce(function(prev, current) {
+      return (prev && prev.year > current.year) ? current : prev
+    }).year
+
+    const endYear = chartValues.reduce(function(prev, current) {
+      return (prev && prev.year > current.year) ? prev : current
+    }).year
+
+    ChartHelper.netfunds('net-funds-chart', 'Funds available and debts by filing period', '', 'Funds available / Debts', [balance_trend_f, debt_trend_f], startYear, endYear);
+
+    ChartHelper.donation_expenditure('expend-chart', 'Contributions and expenditures by month', '', 'Contributions / Expenditures', [donation_trend_f, expend_trend_f], startYear, endYear);
   </script>
   <script type="text/javascript">
     function getPersonName(object){
