@@ -945,10 +945,10 @@ class Entity(models.Model):
         # Balances and debts
         summed_filings = """
             SELECT
-              COALESCE(f.total_unpaid_debts, 0) AS total_unpaid_debts,
-              f.closing_balance AS closing_balance,
+              SUM(COALESCE(f.total_unpaid_debts, 0)) AS total_unpaid_debts,
+              SUM(f.closing_balance) AS closing_balance,
               fp.end_date,
-              fp.description
+              ARRAY_AGG(fp.description) AS description
             FROM camp_fin_filing AS f
             JOIN camp_fin_filingperiod AS fp
               ON f.filing_period_id = fp.id
@@ -956,6 +956,7 @@ class Entity(models.Model):
               AND fp.exclude_from_cascading = FALSE
               AND fp.regular_filing_period_id IS NULL
               AND f.filed_date >= '{year}-01-01'
+            GROUP BY fp.end_date
             ORDER BY fp.end_date
         """.format(
             year=since

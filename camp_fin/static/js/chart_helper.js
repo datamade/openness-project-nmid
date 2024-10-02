@@ -174,7 +174,7 @@ ChartHelper.netfunds = function(el, title, sourceTxt, yaxisLabel, data, startYea
             $.each(this.points, function(i, point) {
               if (i === 0) {
                 s += `
-                  <strong>${point.point.description}</strong><br />
+                  <strong>${point.point.description.join(", ")}</strong><br />
                   <strong>Period ending ${ChartHelper.toolTipDateFormat("day", this.x)}</strong>
                 `
               }
