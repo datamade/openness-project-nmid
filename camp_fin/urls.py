@@ -46,6 +46,7 @@ from camp_fin.views import (
     TopEarnersWidgetView,
     TopExpensesView,
     TransactionViewSet,
+    downloads_redirect_view,
     bulk_candidates,
     bulk_committees,
     bulk_employers,
@@ -104,6 +105,7 @@ urlpatterns = [
         name="expenditure-detail",
     ),
     path("committees/", CommitteeList.as_view(), name="committee-list"),
+    path("downloads/", downloads_redirect_view, name="downloads"),
     path(
         r"committees/<slug:slug>/",
         CommitteeDetail.as_view(),
