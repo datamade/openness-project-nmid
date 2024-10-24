@@ -129,9 +129,9 @@ class LobbyistsView(PagesMixin):
         return context
 
 
-class DownloadView(PagesMixin):
-    template_name = "downloads.html"
-    page_path = "/downloads/"
+class CampaignFinanceDownloadView(PagesMixin):
+    template_name = "camp_fin_downloads.html"
+    page_path = "/camp-fin-downloads/"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -141,6 +141,26 @@ class DownloadView(PagesMixin):
             "2020-01-01", "%Y-%m-%d"
         ).date()
         context["end_date"] = datetime.datetime.today().date()
+
+        seo = {}
+        seo.update(settings.SITE_META)
+
+        seo["title"] = "Data downloads"
+        seo[
+            "site_desc"
+        ] = "Download campaign finance data from New Mexico In Depth’s Money Trail NM"
+
+        context["seo"] = seo
+
+        return context
+
+
+class LobbyistDownloadView(PagesMixin):
+    template_name = "lobbyist_downloads.html"
+    page_path = "/lobbyist-downloads/"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
 
         seo = {}
         seo.update(settings.SITE_META)
