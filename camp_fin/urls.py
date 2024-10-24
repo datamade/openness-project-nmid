@@ -16,10 +16,12 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import include, path
+from django.views.generic import RedirectView
 from rest_framework import routers
 
 from camp_fin.views import (
     AboutView,
+    CampaignFinanceDownloadView,
     CandidateDetail,
     CandidateList,
     CommitteeDetail,
@@ -28,14 +30,13 @@ from camp_fin.views import (
     ContributionDownloadViewSet,
     ContributionViewSet,
     DonationsView,
-    CampaignFinanceDownloadView,
-    LobbyistDownloadView,
     ExpenditureDetail,
     ExpenditureDownloadViewSet,
     ExpenditureViewSet,
     FinancialDisclosuresView,
     IndexView,
     LoanViewSet,
+    LobbyistDownloadView,
     LobbyistsView,
     OrganizationDetail,
     OrganizationList,
@@ -46,7 +47,6 @@ from camp_fin.views import (
     TopEarnersWidgetView,
     TopExpensesView,
     TransactionViewSet,
-    downloads_redirect_view,
     bulk_candidates,
     bulk_committees,
     bulk_employers,
@@ -105,7 +105,6 @@ urlpatterns = [
         name="expenditure-detail",
     ),
     path("committees/", CommitteeList.as_view(), name="committee-list"),
-    path("downloads/", downloads_redirect_view, name="downloads"),
     path(
         r"committees/<slug:slug>/",
         CommitteeDetail.as_view(),
@@ -118,6 +117,12 @@ urlpatterns = [
     ),
     path(
         "lobbyist-downloads/", LobbyistDownloadView.as_view(), name="lobbyist-downloads"
+    ),
+    # Redirect requests to the old downloads page to campaign finance downloads
+    path(
+        "downloads/",
+        RedirectView.as_view(permanent=True, url="/camp-fin-downloads/"),
+        name="downloads",
     ),
     path("organizations/", OrganizationList.as_view(), name="organization-list"),
     path(

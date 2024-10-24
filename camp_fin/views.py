@@ -11,12 +11,7 @@ from django.core.management import call_command
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import connection
 from django.db.models import Max, Q
-from django.http import (
-    HttpResponse,
-    StreamingHttpResponse,
-    HttpResponsePermanentRedirect,
-)
-from django.urls import reverse
+from django.http import HttpResponse, StreamingHttpResponse
 from django.shortcuts import render
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -151,9 +146,9 @@ class CampaignFinanceDownloadView(PagesMixin):
         seo.update(settings.SITE_META)
 
         seo["title"] = "Data downloads"
-        seo["site_desc"] = (
-            "Download campaign finance data from New Mexico In Depth’s Money Trail NM"
-        )
+        seo[
+            "site_desc"
+        ] = "Download campaign finance data from New Mexico In Depth’s Money Trail NM"
 
         context["seo"] = seo
 
@@ -171,9 +166,9 @@ class LobbyistDownloadView(PagesMixin):
         seo.update(settings.SITE_META)
 
         seo["title"] = "Data downloads"
-        seo["site_desc"] = (
-            "Download campaign finance data from New Mexico In Depth’s Money Trail NM"
-        )
+        seo[
+            "site_desc"
+        ] = "Download campaign finance data from New Mexico In Depth’s Money Trail NM"
 
         context["seo"] = seo
 
@@ -211,9 +206,9 @@ class LobbyistContextMixin(object):
         seo.update(settings.SITE_META)
 
         seo["title"] = "Lobbyist portal - Money Trail NM"
-        seo["site_desc"] = (
-            "Browse lobbyists and their employers in New Mexico politics."
-        )
+        seo[
+            "site_desc"
+        ] = "Browse lobbyists and their employers in New Mexico politics."
 
         context["seo"] = seo
 
@@ -447,10 +442,10 @@ class RaceDetail(DetailView):
 
         race_str = str(race)
         seo["title"] = race_str
-        seo["site_desc"] = (
-            "View campaign finance contributions for the {race} in New Mexico".format(
-                race=race_str
-            )
+        seo[
+            "site_desc"
+        ] = "View campaign finance contributions for the {race} in New Mexico".format(
+            race=race_str
         )
 
         context["seo"] = seo
@@ -592,17 +587,17 @@ class DonationsView(PaginatedList):
             seo["title"] = "Donations between {start_date} and {end_date}".format(
                 **fmt_args
             )
-            seo["site_desc"] = (
-                "{count} donations between {start_date} and {end_date} totalling {total}".format(
-                    **fmt_args
-                )
+            seo[
+                "site_desc"
+            ] = "{count} donations between {start_date} and {end_date} totalling {total}".format(
+                **fmt_args
             )
 
         else:
             seo["title"] = "Donations on {start_date}".format(**fmt_args)
-            seo["site_desc"] = (
-                "{count} donations on {start_date} totalling {total}".format(**fmt_args)
-            )
+            seo[
+                "site_desc"
+            ] = "{count} donations on {start_date} totalling {total}".format(**fmt_args)
 
         context["seo"] = seo
 
@@ -1145,9 +1140,9 @@ class LobbyistTransactionList(PaginatedList):
         seo.update(settings.SITE_META)
 
         seo["title"] = "Lobbyist transactions in New Mexico"
-        seo["site_desc"] = (
-            "Browse contributions and expenditures of lobbyists in New Mexico"
-        )
+        seo[
+            "site_desc"
+        ] = "Browse contributions and expenditures of lobbyists in New Mexico"
 
         context["seo"] = seo
 
@@ -1947,9 +1942,9 @@ class TopEarnersView(PaginatedList):
         seo.update(settings.SITE_META)
 
         seo["title"] = "Top earners"
-        seo["site_desc"] = (
-            "Top earning political committees and candidates in New Mexico"
-        )
+        seo[
+            "site_desc"
+        ] = "Top earning political committees and candidates in New Mexico"
 
         context["seo"] = seo
 
@@ -1959,15 +1954,6 @@ class TopEarnersView(PaginatedList):
 @method_decorator(xframe_options_exempt, name="dispatch")
 class TopEarnersWidgetView(TopEarnersBase):
     template_name = "camp_fin/widgets/top-earners.html"
-
-
-def downloads_redirect_view(request):
-    """
-    Sends a 301 redirect to campaign finance downloads for the previous
-    generic /downloads/ path.
-    """
-
-    return HttpResponsePermanentRedirect(reverse("camp-fin-downloads"))
 
 
 def make_response(query, filename, args=[]):
