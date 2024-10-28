@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Data downloads{% endblock %}
+
+{% block full_content %}
+  <div class="container">
+    <div class='row'>
+      <div class='col-sm-8 col-sm-offset-2'>
+        <h1 id='download'><i class='fa fa-fw fa-download'></i> Lobbyist data downloads</h1>
+        <hr />
+        {{ page.text|safe }}
+
+        <div class="row mb-3">
+          <h3>
+            <i class="fa fa-table"></i>
+            Independent Expenditures
+          </h3>
+          <a href="https://openness-project-nmid.s3.amazonaws.com/independent_expenditures.xlsx" target="_blank">
+            Download Independent Expenditures Spreadsheet
+          </a>
+          <div class="col-xs-12">
+            <br/><br />
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <h3>
+            <i class="fa fa-table"></i>
+            Lobbyist Employer
+          </h3>
+          <a href="https://openness-project-nmid.s3.amazonaws.com/lobbyist_employer.xlsx" target="_blank">
+            Download Lobbyist Employer Spreadsheet
+          </a>
+          <div class="col-xs-12">
+            <br/><br />
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <h3>
+            <i class="fa fa-table"></i>
+            Lobbyist
+          </h3>
+          <a href="https://openness-project-nmid.s3.amazonaws.com/lobbyist.xlsx" target="_blank">
+            Download Lobbyist Spreadsheet
+          </a>
+          <div class="col-xs-12">
+            <br/><br />
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+{% endblock %}
