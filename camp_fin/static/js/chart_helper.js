@@ -114,7 +114,7 @@ ChartHelper.netfunds = function(el, title, sourceTxt, yaxisLabel, data, startYea
   return new Highcharts.Chart({
       chart: {
           renderTo: el,
-          type: "area",
+          type: "line",
       },
       legend: {
         backgroundColor: "#ffffff",
@@ -206,7 +206,7 @@ ChartHelper.donation_expenditure = function(el, title, sourceTxt, yaxisLabel, da
   return new Highcharts.Chart({
       chart: {
           renderTo: el,
-          type: "area",
+          type: "line",
       },
       legend: {
         backgroundColor: "#ffffff",
