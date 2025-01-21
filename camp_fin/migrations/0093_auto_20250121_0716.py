@@ -16,7 +16,9 @@ def drop_triggers(apps, schema_editor):
             ("transaction_search_update", "camp_fin_transaction"),
             ("treasurer_search_update", "camp_fin_treasurer"),
         ):
-            c.execute("drop trigger {0} on {1}".format(trigger_name, table_name))
+            c.execute(
+                "drop trigger if exists {0} on {1}".format(trigger_name, table_name)
+            )
 
 
 def add_triggers(apps, schema_editor):
