@@ -39,7 +39,7 @@ class Candidate(models.Model):
 class PAC(models.Model):
     entity = models.ForeignKey("Entity", on_delete=models.CASCADE)
     sos_link = models.URLField()
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=255)
     acronym = models.CharField(max_length=15, null=True)
     business_phone = models.CharField(max_length=20, null=True)
     home_phone = models.CharField(max_length=20, null=True)
@@ -55,7 +55,7 @@ class PAC(models.Model):
     status = models.ForeignKey("Status", null=True, on_delete=models.CASCADE)
     contact = models.ForeignKey("Contact", null=True, on_delete=models.CASCADE)
     date_updated = models.DateTimeField(null=True)
-    bank_name = models.CharField(max_length=100, null=True)
+    bank_name = models.CharField(max_length=255, null=True)
     bank_phone = models.CharField(max_length=255, null=True)
     fax_number = models.CharField(max_length=255, null=True)
     bank_address = models.ForeignKey(
@@ -102,7 +102,7 @@ class Campaign(models.Model):
     last_updated = models.DateTimeField(null=True)
     primary_election_winner_status = models.IntegerField(null=True)
     general_election_winner_status = models.IntegerField(null=True)
-    bank_name = models.CharField(max_length=100, null=True)
+    bank_name = models.CharField(max_length=255, null=True)
     bank_phone = models.CharField(max_length=255, null=True)
     bank_address = models.ForeignKey(
         "Address",
@@ -533,7 +533,7 @@ class OfficeType(models.Model):
 
 
 class Office(models.Model):
-    description = models.CharField(max_length=100)
+    description = models.CharField(max_length=255)
     status = models.ForeignKey("Status", db_constraint=False, on_delete=models.CASCADE)
     office_type = models.ForeignKey("OfficeType", null=True, on_delete=models.CASCADE)
 
@@ -569,7 +569,7 @@ class Transaction(models.Model):
     amount = models.FloatField(db_index=True)
     received_date = models.DateTimeField(db_index=True)
     date_added = models.DateTimeField(default=timezone.now)
-    check_number = models.CharField(max_length=100, null=True)
+    check_number = models.CharField(max_length=255, null=True)
     memo = models.TextField(null=True)
     description = models.CharField(max_length=75, null=True)
     transaction_type = models.ForeignKey("TransactionType", on_delete=models.CASCADE)
@@ -582,11 +582,11 @@ class Transaction(models.Model):
     suffix = models.CharField(max_length=15, null=True)
     company_name = models.CharField(max_length=255, null=True, db_index=True)
     address = models.CharField(max_length=255, null=True)
-    city = models.CharField(max_length=100, null=True)
+    city = models.CharField(max_length=255, null=True)
     state = models.CharField(max_length=25, null=True)
     zipcode = models.CharField(max_length=255, null=True)
     county = models.ForeignKey("County", null=True, on_delete=models.CASCADE)
-    country = models.CharField(max_length=100, null=True)
+    country = models.CharField(max_length=255, null=True)
     contact_type = models.ForeignKey("ContactType", null=True, on_delete=models.CASCADE)
     transaction_status = models.ForeignKey(
         "Status", db_constraint=False, null=True, on_delete=models.CASCADE
@@ -747,7 +747,7 @@ class SpecialEvent(models.Model):
     filing = models.ForeignKey("Filing", on_delete=models.CASCADE)
     olddb_id = models.IntegerField(null=True)
     address = models.CharField(max_length=255, null=True)
-    city = models.CharField(max_length=100, null=True)
+    city = models.CharField(max_length=255, null=True)
     zipcode = models.CharField(max_length=255, null=True)
     county = models.ForeignKey("County", null=True, on_delete=models.CASCADE)
     country = models.CharField(max_length=255, null=True)
@@ -786,7 +786,7 @@ class Filing(models.Model):
     total_debt_carried_forward = models.FloatField(null=True)
     total_debt_paid = models.FloatField(null=True)
     total_loans_forgiven = models.FloatField(null=True)
-    pdf_report = models.CharField(max_length=1000, null=True)
+    pdf_report = models.CharField(max_length=2550, null=True)
     final = models.BooleanField(null=True)
     no_activity = models.BooleanField(null=True)
     supplement_count = models.IntegerField(null=True)
@@ -883,7 +883,7 @@ class Address(models.Model):
     street = models.CharField(null=True, max_length=255)
     city = models.CharField(null=True, max_length=255)
     state = models.ForeignKey("State", null=True, on_delete=models.CASCADE)
-    zipcode = models.CharField(null=True, max_length=100)
+    zipcode = models.CharField(null=True, max_length=255)
     county = models.ForeignKey("County", null=True, on_delete=models.CASCADE)
     country = models.CharField(max_length=255, null=True)
     address_type = models.ForeignKey("AddressType", null=True, on_delete=models.CASCADE)
@@ -906,7 +906,7 @@ class Address(models.Model):
 
 
 class CampaignStatus(models.Model):
-    description = models.CharField(max_length=100)
+    description = models.CharField(max_length=255)
 
     def __str__(self):
         return self.description
@@ -1174,10 +1174,10 @@ class Contact(models.Model):
     middle_name = models.CharField(max_length=255, null=True)
     last_name = models.CharField(max_length=255, null=True)
     suffix = models.CharField(max_length=255, null=True)
-    occupation = models.CharField(max_length=100, null=True)
+    occupation = models.CharField(max_length=255, null=True)
     address = models.ForeignKey("Address", on_delete=models.CASCADE)
     phone = models.CharField(max_length=30, null=True)
-    email = models.CharField(max_length=100, null=True)
+    email = models.CharField(max_length=255, null=True)
     memo = models.TextField(null=True)
     company_name = models.CharField(max_length=255, null=True)
     contact_type = models.ForeignKey("ContactType", on_delete=models.CASCADE)
@@ -1194,7 +1194,7 @@ class Contact(models.Model):
 
 
 class ContactType(models.Model):
-    description = models.CharField(max_length=100)
+    description = models.CharField(max_length=255)
 
     def __str__(self):
         return self.description
@@ -1501,7 +1501,7 @@ class Lobbyist(models.Model, LobbyistMethodMixin):
     middle_name = models.CharField(max_length=255, null=True)
     last_name = models.CharField(max_length=255, null=True)
     suffix = models.CharField(max_length=255, null=True)
-    email = models.CharField(max_length=100, null=True)
+    email = models.CharField(max_length=255, null=True)
     registration_date = models.DateTimeField(null=True)
     termination_date = models.DateTimeField(null=True)
     filing_period = models.ForeignKey(
@@ -1581,8 +1581,8 @@ class Organization(models.Model, LobbyistMethodMixin):
     entity = models.ForeignKey("Entity", on_delete=models.CASCADE)
     date_added = models.DateTimeField(null=True, default=timezone.now)
     status = models.ForeignKey("Status", null=True, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100)
-    email = models.CharField(max_length=100, null=True)
+    name = models.CharField(max_length=255)
+    email = models.CharField(max_length=255, null=True)
     permanent_address = models.ForeignKey(
         "Address",
         related_name="organization_permanent_address",
@@ -1645,7 +1645,7 @@ class LobbyistEmployer(models.Model):
 class LobbyistFilingPeriod(models.Model):
     filing_date = models.DateTimeField(null=True)
     due_date = models.DateTimeField(null=True)
-    description = models.CharField(max_length=100)
+    description = models.CharField(max_length=255)
     allow_statement_of_no_activity = models.BooleanField(null=True)
     initial_date = models.DateTimeField(null=True)
     lobbyist_filing_period_type = models.ForeignKey(
@@ -1681,7 +1681,7 @@ class LobbyistTransaction(models.Model):
 
 
 class LobbyistTransactionType(models.Model):
-    description = models.CharField(max_length=100)
+    description = models.CharField(max_length=255)
     group = models.ForeignKey(
         "LobbyistTransactionGroup",
         null=True,
@@ -1710,8 +1710,8 @@ class LobbyistReport(models.Model):
 
 class LobbyistSpecialEvent(models.Model):
     lobbyist_report = models.ForeignKey("LobbyistReport", on_delete=models.CASCADE)
-    event_type = models.CharField(max_length=100)
-    location = models.CharField(max_length=100)
+    event_type = models.CharField(max_length=255)
+    location = models.CharField(max_length=255)
     received_date = models.DateTimeField(null=True)
     amount = models.FloatField()
     groups_invited = models.CharField(max_length=2000, null=True)
@@ -1724,7 +1724,7 @@ class LobbyistSpecialEvent(models.Model):
 
 
 class LobbyistBundlingDisclosure(models.Model):
-    destinatary_name = models.CharField(max_length=100)
+    destinatary_name = models.CharField(max_length=255)
     lobbyist_report = models.ForeignKey("LobbyistReport", on_delete=models.CASCADE)
     date_added = models.DateTimeField(null=True, default=timezone.now)
     transaction_status = models.ForeignKey(
@@ -1739,7 +1739,7 @@ class LobbyistBundlingDisclosureContributor(models.Model):
         "LobbyistBundlingDisclosure",
         on_delete=models.CASCADE,
     )
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=255)
     address = models.ForeignKey(
         "Address",
         related_name="lobbyist_bundling_disclosure_contributor_address",
