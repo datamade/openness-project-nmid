@@ -1,7 +1,5 @@
 from collections import namedtuple
-from datetime import datetime
 
-from dateutil.rrule import MONTHLY, rrule
 from django.db import connection, models
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -944,65 +942,13 @@ class Entity(models.Model):
         Generate a dict of filing trends for use in contribution/expenditure charts
         for this Entity.
         """
-
-        def stack_trends(trend):
-            """
-            Private helper method for compiling trends.
-            """
-            stacked_trend = []
-            for begin, end, rate in trend:
-                if not stacked_trend:
-                    stacked_trend.append((rate, begin))
-                    stacked_trend.append((rate, end))
-
-                elif begin == stacked_trend[-1][1]:
-                    stacked_trend.append((rate, begin))
-                    stacked_trend.append((rate, end))
-
-                elif begin > stacked_trend[-1][1]:
-                    previous_rate, previous_end = stacked_trend[-1]
-                    stacked_trend.append((previous_rate, begin))
-                    stacked_trend.append((rate, begin))
-                    stacked_trend.append((rate, end))
-
-                elif begin < stacked_trend[-1][1]:
-                    previous_rate, previous_end = stacked_trend.pop()
-                    stacked_trend.append((previous_rate, begin))
-                    stacked_trend.append((rate + previous_rate, begin))
-
-                    if end < previous_end:
-                        stacked_trend.append((rate + previous_rate, end))
-                        stacked_trend.append((previous_rate, end))
-                        stacked_trend.append((previous_rate, previous_end))
-
-                    elif end > previous_end:
-                        stacked_trend.append((rate + previous_rate, previous_end))
-                        stacked_trend.append((rate, previous_end))
-                        stacked_trend.append((rate, end))
-                    else:
-                        stacked_trend.append((rate + previous_rate, end))
-
-            flattened_trend = []
-
-            for i, point in enumerate(stacked_trend):
-                rate, date = point
-                flattened_trend.append([rate, *date])
-
-            return flattened_trend
-
         # Balances and debts
         summed_filings = """
             SELECT
-              SUM(f.total_contributions) + \
-                SUM(COALESCE(f.total_supplemental_contributions, 0)) AS total_contributions,
-              SUM(f.total_expenditures) AS total_expenditures,
-              SUM(COALESCE(f.total_loans, 0)) AS total_loans,
               SUM(COALESCE(f.total_unpaid_debts, 0)) AS total_unpaid_debts,
               SUM(f.closing_balance) AS closing_balance,
-              SUM(f.opening_balance) AS opening_balance,
-              SUM(f.total_debt_carried_forward) AS debt_carried_forward,
-              f.filed_date,
-              MIN(fp.initial_date) AS initial_date
+              fp.end_date,
+              ARRAY_AGG(fp.description) AS description
             FROM camp_fin_filing AS f
             JOIN camp_fin_filingperiod AS fp
               ON f.filing_period_id = fp.id
@@ -1010,8 +956,8 @@ class Entity(models.Model):
               AND fp.exclude_from_cascading = FALSE
               AND fp.regular_filing_period_id IS NULL
               AND f.filed_date >= '{year}-01-01'
-            GROUP BY f.filed_date
-            ORDER BY f.filed_date
+            GROUP BY fp.end_date
+            ORDER BY fp.end_date
         """.format(
             year=since
         )
@@ -1020,113 +966,59 @@ class Entity(models.Model):
 
         cursor.execute(summed_filings, [self.id])
 
-        columns = [c[0] for c in cursor.description]
-        filing_tuple = namedtuple("Filings", columns)
-
-        summed_filings = [filing_tuple(*r) for r in cursor]
-
         balance_trend, debt_trend = [], []
 
-        if summed_filings:
-            for filing in summed_filings:
-                filing_date = filing.filed_date
-                date_array = [filing_date.year, filing_date.month, filing_date.day]
-                debts = -1 * filing.total_unpaid_debts
-                if filing.closing_balance:
-                    balance_trend.append([filing.closing_balance, *date_array])
-                    debt_trend.append([debts, *date_array])
-
-            if summed_filings[0].opening_balance:
-                first_opening_balance = summed_filings[0].opening_balance
-            else:
-                first_opening_balance = 0
-
-            if summed_filings[0].debt_carried_forward:
-                first_debt = summed_filings[0].debt_carried_forward
-            else:
-                first_debt = 0
-
-            init_date = summed_filings[0].initial_date
-
-            first_initial_date = [int(since), 1, 1]
-
-            # If the first available filing date is on or before the start date
-            # passed into this method, use that as the first date in the trendline
-            if init_date:
-                init_date_parts = [init_date.year, init_date.month, init_date.day]
-                if datetime(*init_date_parts) <= datetime(*first_initial_date):
-                    first_initial_date = init_date_parts
-
-            debt_trend.insert(0, [first_debt, *first_initial_date])
-            balance_trend.insert(0, [first_opening_balance, *first_initial_date])
+        for total_unpaid_debts, closing_balance, end_date, description in cursor:
+            period_end = {
+                "description": description,
+                "year": end_date.year,
+                "month": end_date.month,
+                "day": end_date.day,
+            }
+            balance_trend.append(
+                {
+                    "amount": closing_balance,
+                    **period_end,
+                }
+            )
+            debt_trend.append(
+                {
+                    "amount": total_unpaid_debts * -1,
+                    **period_end,
+                }
+            )
 
         output_trends = {"balance_trend": balance_trend, "debt_trend": debt_trend}
 
         # Donations and expenditures
         monthly_query = """
             SELECT
-              {table}.amount AS amount,
-              {table}.month AS month
+              DATE_PART('year', {table}.month) AS year,
+              DATE_PART('month', {table}.month) AS month,
+              {table}.amount AS amount
             FROM {table}_by_month AS {table}
             WHERE {table}.entity_id = %s
               AND {table}.month >= '{year}-01-01'::date
-            ORDER BY month
+            ORDER BY year, month
         """
 
         contributions_query = monthly_query.format(table="contributions", year=since)
-        expenditures_query = monthly_query.format(table="expenditures", year=since)
 
         cursor.execute(contributions_query, [self.id])
 
-        columns = [c[0] for c in cursor.description]
-        amount_tuple = namedtuple("Amount", columns)
+        donation_trend = [
+            {"amount": amount, "year": year, "month": month}
+            for year, month, amount in cursor
+        ]
 
-        contributions = [amount_tuple(*r) for r in cursor]
+        expenditures_query = monthly_query.format(table="expenditures", year=since)
 
         cursor.execute(expenditures_query, [self.id])
 
-        columns = [c[0] for c in cursor.description]
-        amount_tuple = namedtuple("Amount", columns)
-
-        expenditures = [amount_tuple(*r) for r in cursor]
-
-        donation_trend, expend_trend = [], []
-
-        if contributions or expenditures:
-            contributions_lookup = {r.month.date(): r.amount for r in contributions}
-            expenditures_lookup = {r.month.date(): r.amount for r in expenditures}
-
-            start_month = datetime(int(since), 1, 1)
-
-            end_month = (
-                self.filing_set.order_by("-filed_date").first().filed_date.date()
-            )
-
-            for month in rrule(freq=MONTHLY, dtstart=start_month, until=end_month):
-                replacements = {"month": month.month - 1}
-
-                if replacements["month"] < 1:
-                    replacements["month"] = 12
-                    replacements["year"] = month.year - 1
-
-                begin_date = month.replace(**replacements)
-
-                begin_date_array = [begin_date.year, begin_date.month, begin_date.day]
-
-                end_date_array = [month.year, month.month, month.day]
-
-                contribution_amount = contributions_lookup.get(month.date(), 0)
-                expenditure_amount = expenditures_lookup.get(month.date(), 0)
-
-                donation_trend.append(
-                    [begin_date_array, end_date_array, contribution_amount]
-                )
-                expend_trend.append(
-                    [begin_date_array, end_date_array, (-1 * expenditure_amount)]
-                )
-
-            donation_trend = stack_trends(donation_trend)
-            expend_trend = stack_trends(expend_trend)
+        expend_trend = [
+            {"amount": amount * -1, "year": year, "month": month}
+            for year, month, amount in cursor
+        ]
 
         output_trends["donation_trend"] = donation_trend
         output_trends["expend_trend"] = expend_trend
