@@ -29,7 +29,7 @@ jobs:
     strategy:
       matrix:
         transaction_type: [CON, EXP]
-        year: [2023, 2024]
+        year: [2024, 2025]
         quarter: [1, 2, 3, 4]
 
     steps:

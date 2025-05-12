@@ -1,5 +1,5 @@
 THIS_YEAR=$(shell date +"%Y")
-NIGHTLY_YEARS=$(shell seq 2023 $(THIS_YEAR))
+NIGHTLY_YEARS=$(shell seq 2024 $(THIS_YEAR))
 QUARTERLY_YEARS=$(shell seq 2020 $(THIS_YEAR))
 
 define quarterly_target
