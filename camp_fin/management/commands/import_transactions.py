@@ -5,6 +5,7 @@ from itertools import groupby
 
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from django.db.models import Sum
 from tqdm import tqdm
 
@@ -145,67 +146,79 @@ class Command(BaseCommand):
 
     def import_contributions(self, f, quarters, year, batch_size):
         reader = csv.DictReader(f)
-        batch = []
 
         n_deleted = 0
         n_imported = 0
 
         for _, records in self._records_by_filing(reader, quarters):
-            for i, record in enumerate(records):
-                if i == 0:
-                    try:
-                        filing = self._get_filing(record)
-                    except ValueError:
-                        break
+            batch = []
+            filing = None
 
-                    # The contributions files are organized by the year
-                    # of the transaction date, not the date of the
-                    # filing, so transactions from the same filing can
-                    # appear in multiple contribution files.
-                    #
-                    # We need to make sure we just clear out the
-                    # contributions in a file that were purportedly made
-                    # in a given year.
-                    n_loans_deleted, _ = models.Loan.objects.filter(
-                        filing=filing, received_date__year=year
-                    ).delete()
-                    n_events_deleted, _ = models.SpecialEvent.objects.filter(
-                        filing=filing, event_date__year=year
-                    ).delete()
-                    n_transactions_deleted, _ = (
-                        models.Transaction.objects.filter(
-                            filing=filing, received_date__year=year
+            with transaction.atomic():
+                for i, record in enumerate(records):
+                    if i == 0:
+                        try:
+                            filing = self._get_filing(record)
+                        except ValueError:
+                            break
+
+                        filing = models.Filing.objects.select_for_update().get(
+                            id=filing.id
                         )
-                        .exclude(transaction_type__description="Monetary Expenditure")
-                        .delete()
-                    )
 
-                    n_deleted += (
-                        n_loans_deleted + n_events_deleted + n_transactions_deleted
-                    )
+                        # The contributions files are organized by the year
+                        # of the transaction date, not the date of the
+                        # filing, so transactions from the same filing can
+                        # appear in multiple contribution files.
+                        #
+                        # We need to make sure we just clear out the
+                        # contributions in a file that were purportedly made
+                        # in a given year.
+                        n_loans_deleted, _ = models.Loan.objects.filter(
+                            filing=filing, received_date__year=year
+                        ).delete()
+                        n_events_deleted, _ = models.SpecialEvent.objects.filter(
+                            filing=filing, event_date__year=year
+                        ).delete()
+                        n_transactions_deleted, _ = (
+                            models.Transaction.objects.filter(
+                                filing=filing, received_date__year=year
+                            )
+                            .exclude(
+                                transaction_type__description="Monetary Expenditure"
+                            )
+                            .delete()
+                        )
 
-                contributor = self.make_contributor(record)
+                        n_deleted += (
+                            n_loans_deleted + n_events_deleted + n_transactions_deleted
+                        )
 
-                if (
-                    record["Contribution Type"] in {"Loans Received", "Special Event"}
-                    or "Contribution" in record["Contribution Type"]
-                ):
-                    contribution = self.make_contribution(record, contributor, filing)
-                    batch.append(contribution)
+                    contributor = self.make_contributor(record)
 
-                else:
-                    self.stderr.write(
-                        f"Could not determine contribution type from record: {record['Contribution Type']}"
-                    )
+                    if (
+                        record["Contribution Type"]
+                        in {"Loans Received", "Special Event"}
+                        or "Contribution" in record["Contribution Type"]
+                    ):
+                        contribution = self.make_contribution(
+                            record, contributor, filing
+                        )
+                        batch.append(contribution)
 
-                if len(batch) % batch_size == 0:
+                    else:
+                        self.stderr.write(
+                            f"Could not determine contribution type from record: {record['Contribution Type']}"
+                        )
+
+                    if len(batch) % batch_size == 0 and batch:
+                        self._save_batch(batch)
+                        n_imported += len(batch)
+                        batch = []
+
+                if batch:
                     self._save_batch(batch)
-                    n_imported += batch_size
-                    batch = []
-
-        if len(batch) > 0:
-            self._save_batch(batch)
-            n_imported += len(batch)
+                    n_imported += len(batch)
 
         self.stdout.write(
             self.style.NOTICE(
@@ -215,38 +228,45 @@ class Command(BaseCommand):
 
     def import_expenditures(self, f, quarters, year, batch_size):
         reader = csv.DictReader(f)
-        batch = []
 
         n_deleted = 0
         n_imported = 0
 
         for _, records in self._records_by_filing(reader, quarters):
-            for i, record in enumerate(records):
-                if i == 0:
-                    try:
-                        filing = self._get_filing(record)
-                    except ValueError:
-                        break
+            batch = []
+            filing = None
 
-                    n_transactions, _ = models.Transaction.objects.filter(
-                        filing=filing,
-                        transaction_type__description="Monetary Expenditure",
-                        received_date__year=year,
-                    ).delete()
+            with transaction.atomic():
+                for i, record in enumerate(records):
+                    if i == 0:
+                        try:
+                            filing = self._get_filing(record)
+                        except ValueError:
+                            break
 
-                    n_deleted += n_transactions
+                        filing = models.Filing.objects.select_for_update().get(
+                            id=filing.id
+                        )
 
-                contribution = self.make_contribution(record, None, filing)
-                batch.append(contribution)
+                        n_transactions, _ = models.Transaction.objects.filter(
+                            filing=filing,
+                            transaction_type__description="Monetary Expenditure",
+                            received_date__year=year,
+                        ).delete()
 
-                if len(batch) % batch_size == 0:
+                        n_deleted += n_transactions
+
+                    contribution = self.make_contribution(record, None, filing)
+                    batch.append(contribution)
+
+                    if len(batch) % batch_size == 0 and batch:
+                        self._save_batch(batch)
+                        n_imported += len(batch)
+                        batch = []
+
+                if batch:
                     self._save_batch(batch)
-                    n_imported += batch_size
-                    batch = []
-
-        if len(batch) > 0:
-            self._save_batch(batch)
-            n_imported += len(batch)
+                    n_imported += len(batch)
 
         self.stdout.write(
             self.style.NOTICE(
@@ -393,7 +413,7 @@ class Command(BaseCommand):
             )
             msg = (
                 f"{filings.count()} filings found for PAC {pac} from record "
-                f"{record}:\n{filing_meta}\n\nUsing most recent filing matching query..."
+                f"{record}:\n{filing_meta}\n\nUsing most recent filing matching query..."  # noqa
             )
             self.stderr.write(msg)
 
