@@ -27,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: import_filings
     strategy:
+      fail-fast: false
       matrix:
         transaction_type: [CON, EXP]
         year: [2024, 2025]
