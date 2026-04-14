@@ -52,6 +52,16 @@ class Command(BaseCommand):
         Data will be retrieved from S3 unless a local CSV is specified as --file
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._cache = {}
+
+    def _cached_get_or_create(self, model, **kwargs):
+        key = (model, tuple(sorted(kwargs.items())))
+        if key not in self._cache:
+            self._cache[key], _ = model.objects.get_or_create(**kwargs)
+        return self._cache[key]
+
     def add_arguments(self, parser):
         parser.add_argument(
             "--transaction-type",
@@ -275,11 +285,12 @@ class Command(BaseCommand):
         )
 
     def make_contributor(self, record):
-        state, _ = models.State.objects.get_or_create(
-            postal_code=record["Contributor State"]
+        state = self._cached_get_or_create(
+            models.State, postal_code=record["Contributor State"]
         )
 
-        address, _ = models.Address.objects.get_or_create(
+        address = self._cached_get_or_create(
+            models.Address,
             street=(
                 f"{record['Contributor Address Line 1']}"
                 f"{' ' + record['Contributor Address Line 2'] if record['Contributor Address Line 2'] else ''}"
@@ -289,8 +300,8 @@ class Command(BaseCommand):
             zipcode=record["Contributor Zip Code"],
         )
 
-        contact_type, _ = models.ContactType.objects.get_or_create(
-            description=record["Contributor Code"]
+        contact_type = self._cached_get_or_create(
+            models.ContactType, description=record["Contributor Code"]
         )
 
         full_name = re.sub(
@@ -332,8 +343,8 @@ class Command(BaseCommand):
                 contact_type=contact_type,
             )
         except models.Contact.DoesNotExist:
-            entity_type, _ = models.EntityType.objects.get_or_create(
-                description=record["Contributor Code"][:24]
+            entity_type = self._cached_get_or_create(
+                models.EntityType, description=record["Contributor Code"][:24]
             )
 
             entity = models.Entity.objects.create(
@@ -432,8 +443,8 @@ class Command(BaseCommand):
             )
 
             if record["Contribution Type"] == "Loans Received":
-                transaction_type, _ = models.LoanTransactionType.objects.get_or_create(
-                    description="Payment"
+                transaction_type = self._cached_get_or_create(
+                    models.LoanTransactionType, description="Payment"
                 )
 
                 loan, _ = models.Loan.objects.get_or_create(
@@ -482,7 +493,8 @@ class Command(BaseCommand):
                 else:
                     description = "Monetary Contribution"
 
-                transaction_type, _ = models.TransactionType.objects.get_or_create(
+                transaction_type = self._cached_get_or_create(
+                    models.TransactionType,
                     description=description,
                     contribution=True,
                     anonymous="anonymous" in record["Contribution Type"].lower(),
@@ -518,7 +530,8 @@ class Command(BaseCommand):
                 zipcode=record["Payee Zip Code"],
             )
 
-            transaction_type, _ = models.TransactionType.objects.get_or_create(
+            transaction_type = self._cached_get_or_create(
+                models.TransactionType,
                 description="Monetary Expenditure",
                 contribution=False,
                 anonymous=False,
@@ -559,13 +572,17 @@ class Command(BaseCommand):
     def total_filings(self, quarters, year):
         start, end = get_month_range(quarters)
 
-        for filing in tqdm(
-            models.Filing.objects.filter(
-                final=True,
-                filing_period__initial_date__month__gte=start,
-                filing_period__initial_date__month__lte=end,
-            ).iterator()
-        ):
+        filings = list(
+            tqdm(
+                models.Filing.objects.filter(
+                    final=True,
+                    filing_period__initial_date__month__gte=start,
+                    filing_period__initial_date__month__lte=end,
+                ).iterator()
+            )
+        )
+
+        for filing in filings:
             contributions = filing.contributions().aggregate(total=Sum("amount"))
             expenditures = filing.expenditures().aggregate(total=Sum("amount"))
             loans = filing.loans().aggregate(total=Sum("amount"))
@@ -574,4 +591,6 @@ class Command(BaseCommand):
             filing.total_expenditures = expenditures["total"] or 0
             filing.total_loans = loans["total"] or 0
 
-            filing.save()
+        models.Filing.objects.bulk_update(
+            filings, ["total_contributions", "total_expenditures", "total_loans"]
+        )
