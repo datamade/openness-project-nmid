@@ -30,8 +30,8 @@ jobs:
       fail-fast: false
       matrix:
         transaction_type: [CON, EXP]
-        year: [2024, 2025]
-        quarter: [1, 2, 3, 4]
+        year: [2024, 2025, 2026]
+        month: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
     steps:
       - uses: actions/checkout@v3
@@ -45,4 +45,4 @@ jobs:
             -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
             -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
             -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
-            app make import/${{ matrix.transaction_type }}_${{ matrix.quarter }}_${{ matrix.year }}
+            app make import/${{ matrix.transaction_type }}_${{ matrix.month }}_${{ matrix.year }}

@@ -1,5 +1,4 @@
 import csv
-import math
 import re
 from itertools import groupby
 
@@ -23,25 +22,9 @@ def filing_key(record):
     )
 
 
-def get_quarter(date_str):
+def get_month(date_str):
     date = parse_date(date_str)
-    return math.ceil(date.month / 3.0)
-
-
-def get_month_range(quarters):
-    quarter_to_month_range = {
-        1: (1, 3),
-        2: (4, 6),
-        3: (7, 9),
-        4: (10, 12),
-    }
-
-    months = []
-
-    for q in quarters:
-        months.extend(quarter_to_month_range[q])
-
-    return min(months), max(months)
+    return date.month
 
 
 class Command(BaseCommand):
@@ -70,10 +53,10 @@ class Command(BaseCommand):
             help="Type of transaction to import: CON, EXP (Default: CON)",
         )
         parser.add_argument(
-            "--quarters",
-            dest="quarters",
-            default="1,2,3,4",
-            help="Comma-separated list of quarters to import (Default: 1,2,3,4)",
+            "--months",
+            dest="months",
+            default="1,2,3,4,5,6,7,8,9,10,11,12",
+            help="Comma-separated list of months to import (Default: 1,2,3,4,5,6,7,8,9,10,11,12)",
         )
         parser.add_argument(
             "--year",
@@ -104,45 +87,45 @@ class Command(BaseCommand):
 
         self.stdout.write(f"Loading data from {transaction_type}_{year}.csv")
 
-        quarters = {int(q) for q in options["quarters"].split(",")}
-        quarter_string = ", ".join(f"Q{q}" for q in quarters)
+        months = {int(m) for m in options["months"].split(",")}
+        month_string = ", ".join(str(m) for m in sorted(months))
 
         with open(options["file"]) as f:
             self.stdout.write(
-                f"Importing transactions from filing periods beginning in {quarter_string}"
+                f"Importing transactions from filing periods beginning in months {month_string}"
             )
 
             if transaction_type == "CON":
-                self.import_contributions(f, quarters, year, options["batch_size"])
+                self.import_contributions(f, months, year, options["batch_size"])
 
             elif transaction_type == "EXP":
-                self.import_expenditures(f, quarters, year, options["batch_size"])
+                self.import_expenditures(f, months, year, options["batch_size"])
 
             self.stdout.write(self.style.SUCCESS("Transactions imported!"))
 
         self.stdout.write(
-            f"Totaling filings from periods beginning in {quarter_string}"
+            f"Totaling filings from periods beginning in months {month_string}"
         )
-        self.total_filings(quarters, year)
+        self.total_filings(months)
         self.stdout.write(self.style.SUCCESS("Filings totaled!"))
 
         call_command("aggregate_data")
 
-    def _records_by_filing(self, records, filing_quarters):
+    def _records_by_filing(self, records, filing_months):
         """
         Group records by filing, then filter for filings beginning in the specified
-        quarter/s. Note that, because transactions are organized by year, transactions
+        month/s. Note that, because transactions are organized by year, transactions
         for one filing can appear across two files, if the reporting period begins in
         one year and ends in the next. This approach will return filings beginning in
-        the specified quarter in *any* year, so that these split cases will be covered.
+        the specified month in *any* year, so that these split cases will be covered.
         For example, consider a filing period starting in December 2023 and ending in
         February 2024. Transactions would be split across the 2023 and 2024 files. To
-        get them all, you would run the Q4 import for both 2023 and 2024.
+        get them all, you would run the December import for both 2023 and 2024.
         """
-        records_in_quarters = filter(
-            lambda x: get_quarter(x["Start of Period"]) in filing_quarters, records
+        records_in_months = filter(
+            lambda x: get_month(x["Start of Period"]) in filing_months, records
         )
-        return groupby(tqdm(records_in_quarters), key=filing_key)
+        return groupby(tqdm(records_in_months), key=filing_key)
 
     def _save_batch(self, batch):
         """
@@ -154,13 +137,13 @@ class Command(BaseCommand):
         ):
             cls.objects.bulk_create(cls_records)
 
-    def import_contributions(self, f, quarters, year, batch_size):
+    def import_contributions(self, f, months, year, batch_size):
         reader = csv.DictReader(f)
 
         n_deleted = 0
         n_imported = 0
 
-        for _, records in self._records_by_filing(reader, quarters):
+        for _, records in self._records_by_filing(reader, months):
             batch = []
             filing = None
 
@@ -236,13 +219,13 @@ class Command(BaseCommand):
             )
         )
 
-    def import_expenditures(self, f, quarters, year, batch_size):
+    def import_expenditures(self, f, months, year, batch_size):
         reader = csv.DictReader(f)
 
         n_deleted = 0
         n_imported = 0
 
-        for _, records in self._records_by_filing(reader, quarters):
+        for _, records in self._records_by_filing(reader, months):
             batch = []
             filing = None
 
@@ -569,15 +552,13 @@ class Command(BaseCommand):
 
         return contribution
 
-    def total_filings(self, quarters, year):
-        start, end = get_month_range(quarters)
-
+    def total_filings(self, months):
         filings = list(
             tqdm(
                 models.Filing.objects.filter(
                     final=True,
-                    filing_period__initial_date__month__gte=start,
-                    filing_period__initial_date__month__lte=end,
+                    filing_period__initial_date__month__gte=min(months),
+                    filing_period__initial_date__month__lte=max(months),
                 ).iterator()
             )
         )
