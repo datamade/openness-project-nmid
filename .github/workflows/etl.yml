@@ -28,6 +28,7 @@ jobs:
     needs: import_filings
     strategy:
       fail-fast: false
+      max-parallel: 5
       matrix:
         transaction_type: [CON, EXP]
         year: [2024, 2025, 2026]
