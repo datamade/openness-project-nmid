@@ -14,12 +14,18 @@ jobs:
       - name: Generate year range
         id: set_years
         run: |
-          echo "years=$(python3 -c "
-          import json
-          from datetime import date
-          current_year = date.today().year
-          print(json.dumps(list(current_year - 1, current_year + 1))))
-          ")" >> $GITHUB_OUTPUT
+          echo "years=$(
+            python3 -c "
+              import json
+              from datetime import date
+              current_year = date.today().year
+              print(
+                json.dumps(
+                  [current_year - 1, current_year]
+                )
+              )
+            "
+          )" >> $GITHUB_OUTPUT
 
   import_filings:
     runs-on: ubuntu-latest
