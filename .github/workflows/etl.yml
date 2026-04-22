@@ -6,13 +6,23 @@ on:
     types: [nightly-scrape-done]
 
 jobs:
+  generate_years_array:
+    runs-on: ubuntu-latest
+    outputs:
+      years: ${{ steps.set_years.outputs.years }}
+    steps:
+      - name: Generate year range
+        id: set_years
+        run: |
+          echo "years=$(python3 -c "import json; from datetime import date; y = date.today().year; print(json.dumps([y - 1, y]))")" >> $GITHUB_OUTPUT
+
   import_filings:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: "deploy"
+          ref: ${{ github.ref }}
       - name: Import candidate, PAC, and filing data
         run: |
           touch .env
@@ -25,17 +35,19 @@ jobs:
 
   import_transactions:
     runs-on: ubuntu-latest
-    needs: import_filings
+    needs: [generate_years_array, import_filings]
     strategy:
+      fail-fast: false
+      max-parallel: 3
       matrix:
         transaction_type: [CON, EXP]
-        year: [2024, 2025]
-        quarter: [1, 2, 3, 4]
+        year: ${{ fromJson(needs.generate_years_array.outputs.years) }}
+        month: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: "deploy"
+          ref: ${{ github.ref }}
       - name: Import transaction data
         run: |
           touch .env
@@ -44,4 +56,4 @@ jobs:
             -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
             -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
             -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
-            app make import/${{ matrix.transaction_type }}_${{ matrix.quarter }}_${{ matrix.year }}
+            app make import/${{ matrix.transaction_type }}_${{ matrix.month }}_${{ matrix.year }}

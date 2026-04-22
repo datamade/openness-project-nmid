@@ -41,7 +41,10 @@ class Command(FilingCommand, BaseCommand):
             .get()
         )
 
-        url = f"https://login.cfis.sos.state.nm.us//ReportsOutput//{record['ReportFileName']}"
+        url = (
+            "https://login.cfis.sos.state.nm.us//ReportsOutput//"
+            + record["ReportFileName"]
+        )
         final = record["Amended"] == "0" or None
 
         filing = models.Filing.objects.create(
@@ -55,18 +58,26 @@ class Command(FilingCommand, BaseCommand):
             report_version_id=record["ReportVersionID"],
         )
 
+        campaign = models.Campaign.objects.filter(
+            election_season__year=re.match(r"\d{4}", record["ElectionYear"]).group(0),
+            candidate__entity=entity,
+            office__description=record["OfficeName"],
+            district__name=record["District"],
+            county__name=record["Jurisdiction"] or None,
+        )
+
         try:
-            campaign = models.Campaign.objects.get(
-                election_season__year=re.match(r"\d{4}", record["ElectionYear"]).group(
-                    0
-                ),
-                candidate__entity=entity,
-                office__description=record["OfficeName"],
-                district__name=record["District"],
-                county__name=record["Jurisdiction"] or None,
-            )
+            campaign = campaign.get()
+
         except models.Campaign.DoesNotExist:
             pass
+
+        except models.Campaign.MultipleObjectsReturned:
+            self.stderr.write(
+                f"Found multiple matching campaigns for record {record}: {[c.__dict__ for c in campaign]}"
+            )
+            campaign = campaign.first()
+
         else:
             filing.campaign = campaign
             filing.save()

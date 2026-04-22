@@ -96,19 +96,19 @@ class Command(BaseCommand):
                         political_party=political_party,
                     )
                 except models.Campaign.DoesNotExist:
-                    try:
-                        candidate = (
-                            models.Candidate.objects.filter(
-                                Q(campaign__in=pac.campaigns.all())
-                                | Q(
-                                    email__iexact=record["CandidateEmail"],
-                                    business_phone=record["PublicPhoneNumber"],
-                                )
-                            )
-                            .distinct()
-                            .get()
+                    candidate = models.Candidate.objects.filter(
+                        Q(campaign__in=pac.campaigns.all())
+                        | Q(
+                            email__iexact=record["CandidateEmail"],
+                            business_phone=record["PublicPhoneNumber"],
                         )
+                    ).distinct()
+
+                    try:
+                        # If there's only one result, take it
+                        candidate = candidate.get()
                         candidates_linked += 1
+
                     except models.Candidate.DoesNotExist:
                         candidate_type, _ = models.EntityType.objects.get_or_create(
                             description="Candidate"
@@ -126,6 +126,22 @@ class Command(BaseCommand):
                         )
 
                         candidates_created += 1
+
+                    except models.Candidate.MultipleObjectsReturned:
+                        # If there are multiple matches, prefer the candidate explicitly
+                        # linked to the PAC
+                        try:
+                            candidate = candidate.get(
+                                campaign__in=pac.campaigns.only("id")
+                            )
+                        except (
+                            models.Candidate.DoesNotExist,
+                            models.Candidate.MultipleObjectsReturned,
+                        ):
+                            candidate = candidate.filter(
+                                campaign__in=pac.campaigns.only("id")
+                            ).first()
+                        candidates_linked += 1
 
                     campaign = models.Campaign.objects.create(
                         election_season=election_season,

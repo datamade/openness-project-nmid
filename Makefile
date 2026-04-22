@@ -2,24 +2,24 @@ THIS_YEAR=$(shell date +"%Y")
 NIGHTLY_YEARS=$(shell seq 2024 $(THIS_YEAR))
 QUARTERLY_YEARS=$(shell seq 2020 $(THIS_YEAR))
 
-define quarterly_target
-	$(foreach YEAR,$(1),$(patsubst %,import/$(2)_%_$(YEAR),1 2 3 4))
+define monthly_target
+	$(foreach YEAR,$(1),$(patsubst %,import/$(2)_%_$(YEAR),1 2 3 4 5 6 7 8 9 10 11 12))
 endef
 
 .PHONY : quarterly
 quarterly: import/candidates import/pacs import/candidate_filings import/pac_filings \
-	$(call quarterly_target,$(QUARTERLY_YEARS),CON) $(call quarterly_target,$(QUARTERLY_YEARS),EXP)
+	$(call monthly_target,$(QUARTERLY_YEARS),CON) $(call monthly_target,$(QUARTERLY_YEARS),EXP)
 	python manage.py make_search_index
 
 .PHONY : nightly
 nightly: import/candidates import/pacs import/candidate_filings import/pac_filings \
-	$(call quarterly_target,$(NIGHTLY_YEARS),CON) $(call quarterly_target,$(NIGHTLY_YEARS),EXP)
+	$(call monthly_target,$(NIGHTLY_YEARS),CON) $(call monthly_target,$(NIGHTLY_YEARS),EXP)
 	python manage.py make_search_index
 
 .SECONDEXPANSION:
 import/% : _data/sorted/$$(word 1, $$(subst _, , $$*))_$$(word 3, $$(subst _, , $$*)).csv
 	python manage.py import_transactions --transaction-type $(word 1, $(subst _, , $*)) \
-		--quarters $(word 2, $(subst _, , $*)) \
+		--months $(word 2, $(subst _, , $*)) \
 		--year $(word 3, $(subst _, , $*)) \
 		--file $<
 
