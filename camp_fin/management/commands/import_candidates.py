@@ -130,7 +130,17 @@ class Command(BaseCommand):
                     except models.Candidate.MultipleObjectsReturned:
                         # If there are multiple matches, prefer the candidate explicitly
                         # linked to the PAC
-                        candidate = candidate.get(campaign__in=pac.campaigns.only("id"))
+                        try:
+                            candidate = candidate.get(
+                                campaign__in=pac.campaigns.only("id")
+                            )
+                        except (
+                            models.Candidate.DoesNotExist,
+                            models.Candidate.MultipleObjectsReturned,
+                        ):
+                            candidate = candidate.filter(
+                                campaign__in=pac.campaigns.only("id")
+                            ).first()
                         candidates_linked += 1
 
                     campaign = models.Campaign.objects.create(

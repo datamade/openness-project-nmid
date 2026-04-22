@@ -407,7 +407,8 @@ class Command(BaseCommand):
             )
             msg = (
                 f"{filings.count()} filings found for PAC {pac} from record "
-                f"{record}:\n{filing_meta}\n\nUsing most recent filing matching query..."  # noqa
+                f"{record}:\n{filing_meta}\n\n"
+                "Using most recent filing matching query..."
             )
             self.stderr.write(msg)
 

@@ -41,7 +41,10 @@ class Command(FilingCommand, BaseCommand):
             .get()
         )
 
-        url = f"https://login.cfis.sos.state.nm.us//ReportsOutput//{record['ReportFileName']}"  # noqa
+        url = (
+            "https://login.cfis.sos.state.nm.us//ReportsOutput//"
+            + record["ReportFileName"]
+        )
         final = record["Amended"] == "0" or None
 
         filing = models.Filing.objects.create(
