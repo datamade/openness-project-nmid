@@ -6,6 +6,21 @@ on:
     types: [nightly-scrape-done]
 
 jobs:
+  generate_years_array:
+    runs-on: ubuntu-latest
+    outputs:
+      years: ${{ steps.set_years.outputs.years }}
+    steps:
+      - name: Generate year range
+        id: set_years
+        run: |
+          echo "years=$(python3 -c "
+          import json
+          from datetime import date
+          current_year = date.today().year
+          print(json.dumps(list(current_year - 2, current_year + 1))))
+          ")" >> $GITHUB_OUTPUT
+
   import_filings:
     runs-on: ubuntu-latest
 
@@ -25,13 +40,13 @@ jobs:
 
   import_transactions:
     runs-on: ubuntu-latest
-    needs: import_filings
+    needs: [generate_years_array, import_filings]
     strategy:
       fail-fast: false
-      max-parallel: 5
+      max-parallel: 3
       matrix:
         transaction_type: [CON, EXP]
-        year: [2024, 2025, 2026]
+        year: ${{ fromJson(needs.generate_years_array.outputs.years) }}
         month: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
     steps:
