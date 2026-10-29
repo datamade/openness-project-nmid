@@ -243,3 +243,5 @@ LOGGING = {
         },
     },
 }
+
+SILENCED_SYSTEM_CHECKS = ["models.W042"]

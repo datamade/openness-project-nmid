@@ -1,7 +1,10 @@
+import logging
 import re
 
 from dateutil.parser import ParserError, parse
 from dateutil.tz import gettz
+
+logger = logging.getLogger(__name__)
 
 
 def convert_to_float(value):
@@ -17,4 +20,5 @@ def parse_date(date_str):
         mountain_tz = gettz("America/Denver")
         return parse(date_str).replace(tzinfo=mountain_tz)
     except (ParserError, TypeError):
+        logger.warning(f"Could not parse date '{date_str}'.")
         return None

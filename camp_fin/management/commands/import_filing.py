@@ -28,6 +28,7 @@ class Command:
 
             filings_created = 0
             filings_linked = 0
+            filings_skipped = 0
 
             for record in tqdm(reader):
                 # our lives are much simpler if we only
@@ -50,8 +51,11 @@ class Command:
                         report_id=record["ReportID"], final=True
                     ).delete()
 
-                    filing = self._create_filing(record)
-                    filings_created += 1
+                    if filing := self._create_filing(record):
+                        filings_created += 1
+                    else:
+                        filings_skipped += 1
+                        continue
 
                 if record["opening_balance"]:
                     filing.opening_balance = convert_to_float(record["opening_balance"])
@@ -63,5 +67,5 @@ class Command:
                     filing.save()
 
         self.stderr.write(
-            f"found {filings_linked} filings, " f"created {filings_created} filings, "
+            f"found {filings_linked} filings, created {filings_created} filings, skipped {filings_skipped} filings"
         )

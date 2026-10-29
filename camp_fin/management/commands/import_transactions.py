@@ -24,7 +24,8 @@ def filing_key(record):
 
 def get_month(date_str):
     date = parse_date(date_str)
-    return date.month
+    if date:
+        return date.month
 
 
 class Command(BaseCommand):
@@ -354,17 +355,57 @@ class Command(BaseCommand):
 
         try:
             pac = models.PAC.objects.get(entity__user_id=state_id)
+            filing = self._filing_for_pac(pac, record, start_date, end_date)
+
         except models.PAC.DoesNotExist:
-            try:
-                pac = models.PAC.objects.get(name=record["Committee Name"])
-            except models.PAC.DoesNotExist:
+            # Transaction records don't carry a member id, so if the state
+            # id doesn't resolve to a PAC, name is the only thing we have
+            # to go on. Name isn't always unique, so where more than one
+            # PAC shares this name, disambiguate by finding the one with a
+            # filing matching this record's reporting period.
+            candidate_pacs = list(
+                models.PAC.objects.filter(name=record["Committee Name"])
+            )
+
+            if not candidate_pacs:
                 msg = f"PAC with name {record['Committee Name']} does not exist."
                 self.stderr.write(msg)
                 raise ValueError(msg)
-            else:
+
+            pac = None
+            filing = None
+
+            for candidate_pac in candidate_pacs:
+                try:
+                    candidate_filing = self._filing_for_pac(
+                        candidate_pac, record, start_date, end_date
+                    )
+                except ValueError:
+                    continue
+
+                pac = candidate_pac
+                filing = candidate_filing
+                break
+
+            if filing is None:
+                msg = (
+                    f"Could not find a filing matching record {record} for "
+                    f"any of the {len(candidate_pacs)} PAC(s) named "
+                    f"{record['Committee Name']}."
+                )
+                self.stderr.write(msg)
+                raise ValueError(msg)
+
+            # Only backfill the state id if it isn't already linked to a
+            # different PAC's entity via member id, so we don't clobber an
+            # existing, reliable link.
+            if not pac.entity.user_id:
                 pac.entity.user_id = state_id
                 pac.entity.save()
 
+        return filing
+
+    def _filing_for_pac(self, pac, record, start_date, end_date):
         try:
             # candidate entity
             entity = (

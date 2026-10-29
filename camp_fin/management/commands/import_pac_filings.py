@@ -1,9 +1,13 @@
+import logging
+
 from django.core.management.base import BaseCommand
 
 from camp_fin import models
 
 from .import_filing import Command as FilingCommand
 from .utils import parse_date
+
+logger = logging.getLogger(__name__)
 
 
 class Command(FilingCommand, BaseCommand):
@@ -29,7 +33,31 @@ class Command(FilingCommand, BaseCommand):
             entity = models.Entity.objects.get(user_id=state_id)
 
         else:
-            entity = models.PAC.objects.get(name=record["CommitteeName"]).entity
+            # MemberID isn't stable across separate CFIS data pulls, so it
+            # can't be used to join this filings file back to the PAC
+            # committees file. Name is the only field the two files share
+            # reliably. It isn't always unique, so warn when a name maps to
+            # more than one PAC -- those need manual review -- but proceed
+            # with the most recently added match rather than skip the
+            # filing outright.
+            pacs = models.PAC.objects.filter(name=record["CommitteeName"])
+
+            if not pacs.exists():
+                logger.warning(
+                    f"No PAC named '{record['CommitteeName']}' exists. "
+                    f"Skipping filing record: {record}"
+                )
+                return
+
+            if pacs.count() > 1:
+                logger.warning(
+                    f"{pacs.count()} PACs named '{record['CommitteeName']}' "
+                    "exist and this filing has no state ID to disambiguate "
+                    "them. Using the most recently added PAC. Manual "
+                    "review recommended."
+                )
+
+            entity = pacs.order_by("date_added").last().entity
 
         url = f"https://login.cfis.sos.state.nm.us//ReportsOutput//{record['ReportFileName']}"
         final = record["Amended"] == "0" or None
