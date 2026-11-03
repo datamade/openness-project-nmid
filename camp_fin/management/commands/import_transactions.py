@@ -24,7 +24,8 @@ def filing_key(record):
 
 def get_month(date_str):
     date = parse_date(date_str)
-    return date.month
+    if date:
+        return date.month
 
 
 class Command(BaseCommand):
