@@ -16,6 +16,12 @@ nightly: import/candidates import/pacs import/candidate_filings import/pac_filin
 	$(call monthly_target,$(NIGHTLY_YEARS),CON) $(call monthly_target,$(NIGHTLY_YEARS),EXP)
 	python manage.py make_search_index
 
+.PHONY : sample
+sample: import/candidates import/pacs import/candidate_filings import/pac_filings \
+	import/CON_1_2024 import/CON_2_2024 import/CON_3_2024 \
+	import/EXP_1_2024 import/EXP_2_2024 import/EXP_3_2024
+	python manage.py make_search_index
+
 .SECONDEXPANSION:
 import/% : _data/sorted/$$(word 1, $$(subst _, , $$*))_$$(word 3, $$(subst _, , $$*)).csv
 	python manage.py import_transactions --transaction-type $(word 1, $(subst _, , $*)) \

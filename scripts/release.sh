@@ -5,8 +5,7 @@ python manage.py createcachetable
 python manage.py migrate --noinput
 
 if [ `psql ${DATABASE_URL} -tAX -c "SELECT COUNT(*) FROM camp_fin_candidate"` -eq "0" ]; then
-    make nightly
-    python manage.py make_search_index
+    make sample
 fi
 
 if [ `psql ${DATABASE_URL} -tAX -c "SELECT COUNT(*) FROM pages_page"` -eq "0" ]; then
